@@ -9,7 +9,7 @@ set LIB_DIRS=/libpath:lib\libtcod-1.6.3 /libpath:lib\SDL2-2.0.6
 set LIBS=libtcod.lib libtcod-gui.lib SDL2.lib SDL2main.lib
 
 set COMPILER_OPTS=/Fdpdb\ /Febin\%APP_NAME%.exe /Foobj\ /Zi
-set LINKER_OPTS=/subsystem:windows
+set LINKER_OPTS=/subsystem:console
 
 del bin\* /q
 del obj\* /q

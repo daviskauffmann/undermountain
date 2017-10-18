@@ -1,16 +1,25 @@
 #include <libtcod.h>
+
 #include "tile.h"
 
 void tile_init(Tile *tile, TileType type)
 {
     tile->type = type;
+    tile->seen = false;
 }
 
 void tile_draw(Tile *tile, int x, int y)
 {
+    // TODO: use visibility to determine color
+    // if visible && seen
+    //     white
+    // if !visible && seen
+    //     grey
+    // if !visible && !seen
+    //     don't draw
     TCOD_color_t color = TCOD_white;
-    char glyph = ' ';
 
+    char glyph = ' ';
     switch (tile->type)
     {
     case TILE_FLOOR:

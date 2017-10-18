@@ -15,6 +15,7 @@ typedef struct
 } Map;
 
 void map_init(Map *map);
+Entity *map_createEntity(Map *map, int x, int y, char glyph, TCOD_color_t color);
 void map_generate(Map *map);
 void map_update(Map *map);
 void map_draw(Map *map);

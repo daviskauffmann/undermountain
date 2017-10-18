@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "libtcod.h": "c",
+        "xiosbase": "c",
+        "xlocale": "cpp",
+        "xlocnum": "cpp",
+        "map.h": "c",
+        "entity.h": "c"
+    }
+}

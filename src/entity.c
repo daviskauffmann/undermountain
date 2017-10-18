@@ -1,9 +1,11 @@
 #include <libtcod.h>
+
 #include "entity.h"
 #include "map.h"
 
-void entity_init(Entity *entity, int x, int y, char glyph, TCOD_color_t color)
+void entity_init(Entity *entity, int id, int x, int y, char glyph, TCOD_color_t color)
 {
+    entity->id = id;
     entity->x = x;
     entity->y = y;
     entity->glyph = glyph;

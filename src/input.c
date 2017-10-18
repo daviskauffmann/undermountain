@@ -1,9 +1,8 @@
 #include <libtcod.h>
 #include "entity.h"
 #include "input.h"
-#include "map.h"
 
-InputType input_handle(Map *map, Entity *player)
+InputType input_handle(Entity *player)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;
@@ -17,19 +16,15 @@ InputType input_handle(Map *map, Entity *player)
             return INPUT_QUIT;
         case TCODK_UP:
             entity_move(player, 0, -1);
-            map_update(map);
             return INPUT_TRUE;
         case TCODK_LEFT:
             entity_move(player, -1, 0);
-            map_update(map);
             return INPUT_TRUE;
         case TCODK_DOWN:
             entity_move(player, 0, 1);
-            map_update(map);
             return INPUT_TRUE;
         case TCODK_RIGHT:
             entity_move(player, 1, 0);
-            map_update(map);
             return INPUT_TRUE;
         }
     }

@@ -1,6 +1,7 @@
 #include <libtcod.h>
 #include <SDL.h>
 #include <stdio.h>
+
 #include "entity.h"
 #include "input.h"
 #include "map.h"
@@ -16,35 +17,26 @@ int main(int argc, char *argv[])
 
     TCOD_console_init_root(WIDTH, HEIGHT, TITLE, false, TCOD_RENDERER_SDL);
 
-    Map maps[1];
-
-    Map *map = &maps[0];
+    Map *map = malloc(sizeof(Map));
     map_init(map);
     map_generate(map);
 
-    Entity *player = &map->entities[MAX_ENTITIES - 1];
-    entity_init(player, 1, 1, '@', TCOD_white);
+    Entity *player = &map->entities[0];
+    entity_init(player, ID_PLAYER, 1, 1, '@', TCOD_white);
 
-    Entity *npc = &map->entities[0];
-    entity_init(npc, 5, 5, '@', TCOD_yellow);
+    Entity *npc = map_createEntity(map, 5, 5, '@', TCOD_yellow);
 
     map_draw(map);
 
     while (!TCOD_console_is_window_closed())
     {
-        bool quit = false;
-
-        switch (input_handle(map, player))
+        InputType input = input_handle(player);
+        if (input == INPUT_TRUE)
         {
-        case INPUT_QUIT:
-            quit = true;
-            break;
-        case INPUT_TRUE:
+            map_update(map);
             map_draw(map);
-            break;
         }
-
-        if (quit)
+        else if (input == INPUT_QUIT)
         {
             break;
         }

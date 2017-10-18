@@ -10,6 +10,7 @@ typedef enum {
 typedef struct
 {
     TileType type;
+    bool seen;
 } Tile;
 
 void tile_init(Tile *tile, TileType type);

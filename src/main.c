@@ -1,6 +1,5 @@
 #include <SDL.h>
 #include <libtcod.h>
-#include <stdio.h>
 
 #include "game.h"
 
@@ -14,6 +13,8 @@ int main(int argc, char *argv[])
     srand((unsigned)time(&t));
 
     TCOD_console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE, false, TCOD_RENDERER_SDL);
+
+    tileinfo_init();
 
     map_t *map = (map_t *)malloc(sizeof(map_t));
     map_init(map);

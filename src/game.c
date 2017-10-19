@@ -2,6 +2,26 @@
 
 #include "game.h"
 
+tileinfo_t tileinfo[TILETYPE_COUNT];
+
+void tileinfo_init(void)
+{
+    tileinfo[TILETYPE_EMPTY].glyph = ' ';
+    tileinfo[TILETYPE_EMPTY].color = TCOD_white;
+    tileinfo[TILETYPE_EMPTY].opaque = false;
+    tileinfo[TILETYPE_EMPTY].solid = false;
+
+    tileinfo[TILETYPE_FLOOR].glyph = '.';
+    tileinfo[TILETYPE_FLOOR].color = TCOD_white;
+    tileinfo[TILETYPE_FLOOR].opaque = false;
+    tileinfo[TILETYPE_FLOOR].solid = false;
+
+    tileinfo[TILETYPE_WALL].glyph = '#';
+    tileinfo[TILETYPE_WALL].color = TCOD_white;
+    tileinfo[TILETYPE_WALL].opaque = true;
+    tileinfo[TILETYPE_WALL].solid = true;
+}
+
 void tile_init(tile_t *tile, tiletype_t type)
 {
     tile->type = type;
@@ -17,21 +37,27 @@ void tile_draw(tile_t *tile, int x, int y)
     //     grey
     // if !visible && !seen
     //     don't draw
-    TCOD_color_t color = TCOD_white;
+    TCOD_console_set_default_foreground(NULL, tileinfo[tile->type].color);
+    TCOD_console_put_char(NULL, x, y, tileinfo[tile->type].glyph, TCOD_BKGND_NONE);
+}
 
-    char glyph = ' ';
-    switch (tile->type)
+void room_init(room_t *room, int x, int y, int w, int h)
+{
+    room->x1 = x;
+    room->y1 = y;
+    room->x2 = x + w;
+    room->y2 = y + h;
+}
+
+void room_carve(map_t *map, room_t *room)
+{
+    for (int x = room->x1; x < room->x2; x++)
     {
-    case TILETYPE_FLOOR:
-        glyph = '.';
-        break;
-    case TILETYPE_WALL:
-        glyph = '#';
-        break;
+        for (int y = room->y1; y < room->y2; y++)
+        {
+            map->tiles[x][y].type = TILETYPE_FLOOR;
+        }
     }
-
-    TCOD_console_set_default_foreground(NULL, color);
-    TCOD_console_put_char(NULL, x, y, glyph, TCOD_BKGND_NONE);
 }
 
 void entity_init(entity_t *entity, int id, int x, int y, char glyph, TCOD_color_t color)
@@ -74,7 +100,7 @@ void entity_move(map_t *map, entity_t *entity, int dx, int dy)
     }
 
     tile_t *tile = &map->tiles[x][y];
-    if (tile->type == TILETYPE_WALL)
+    if (tileinfo[tile->type].solid)
     {
         return;
     }
@@ -101,6 +127,13 @@ void map_init(map_t *map)
         }
     }
 
+    for (int i = 0; i < MAX_ROOMS; i++)
+    {
+        room_t *room = &map->rooms[i];
+
+        room_init(room, 0, 0, 0, 0);
+    }
+
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
         entity_t *entity = &map->entities[i];
@@ -109,29 +142,10 @@ void map_init(map_t *map)
     }
 }
 
-void room_init(room_t *room, int x, int y, int w, int h)
-{
-    room->x1 = x;
-    room->y1 = y;
-    room->x2 = x + w;
-    room->y2 = y + h;
-}
-
-void room_carve(map_t *map, room_t *room)
-{
-    for (int x = room->x1; x < room->x2; x++)
-    {
-        for (int y = room->y1; y < room->y2; y++)
-        {
-            map->tiles[x][y].type = TILETYPE_FLOOR;
-        }
-    }
-}
-
 void map_generate(map_t *map)
 {
     // TODO: libtcod BSP generation
-    room_t *room1 = (room_t *)malloc(sizeof(room_t));
+    room_t *room1 = &map->rooms[0];
     room_init(room1, 20, 15, 10, 15);
     room_carve(map, room1);
 

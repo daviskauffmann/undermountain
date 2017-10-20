@@ -8,15 +8,15 @@ typedef enum {
     TILETYPE_EMPTY = 0,
     TILETYPE_FLOOR,
     TILETYPE_WALL,
-    TILETYPE_COUNT
+    NB_TILETYPES
 } tiletype_t;
 
 typedef struct
 {
     uint8_t glyph;
     TCOD_color_t color;
-    bool opaque;
-    bool solid;
+    bool is_transparent;
+    bool is_walkable;
 } tileinfo_t;
 
 typedef struct
@@ -25,10 +25,8 @@ typedef struct
     bool seen;
 } tile_t;
 
-extern tileinfo_t tileinfo[TILETYPE_COUNT];
+extern tileinfo_t tileinfo[NB_TILETYPES];
 
 void tileinfo_init(void);
-
-void tile_draw(tile_t *tile, int x, int y);
 
 #endif

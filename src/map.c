@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <libtcod.h>
 
 #include "map.h"
@@ -13,44 +14,62 @@ void map_init(map_t *map)
         {
             tile_t *tile = &map->tiles[x][y];
             tile->type = TILETYPE_EMPTY;
+            tile->seen = false;
         }
+    }
+
+    for (int i = 0; i < MAP_MAX_ROOMS; i++)
+    {
+        room_t *room = &map->rooms[i];
+        room->is_created = false;
     }
 
     for (int i = 0; i < MAP_MAX_ENTITIES; i++)
     {
         entity_t *entity = &map->entities[i];
-        entity->id = ENTITY_ID_UNUSED;
+        entity->is_active = false;
     }
 }
 
 void map_generate(map_t *map)
 {
-    // TODO: libtcod BSP generation
-    room_t *room = &map->rooms[0];
-    room_init(room, 20, 15, 10, 15);
-    map_room_carve(map, room);
+    // TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    // TCOD_bsp_split_recursive(bsp, NULL, 4, 5, 5, 1.5f, 1.5f);
+    // TCOD_bsp_delete(bsp);
 
-    entity_t *player = &map->entities[ENTITY_ID_PLAYER];
-    entity_init(player, ENTITY_ID_PLAYER, 1, 1, '@', TCOD_white);
+    map_room_create(map, 20, 10, 40, 20);
 
     for (int i = 0; i < 10; i++)
     {
-        entity_t *npc = &map->entities[i];
-        entity_init(npc, i, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow);
+        entity_t *entity = map_entity_create(map, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow);
     }
 }
 
-void map_room_carve(map_t *map, room_t *room)
+room_t *map_room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h)
 {
-    for (int x = room->x1; x < room->x2; x++)
+    for (int i = 0; i < MAP_MAX_ROOMS; i++)
     {
-        for (int y = room->y1; y < room->y2; y++)
-        {
-            tile_t *tile = &map->tiles[x][y];
+        room_t *room = &map->rooms[i];
 
-            tile->type = TILETYPE_FLOOR;
+        if (room->is_created)
+        {
+            continue;
+        }
+
+        room_init(room, x, y, w, h);
+
+        for (int x = room->x1; x < room->x2; x++)
+        {
+            for (int y = room->y1; y < room->y2; y++)
+            {
+                tile_t *tile = &map->tiles[x][y];
+
+                tile->type = TILETYPE_FLOOR;
+            }
         }
     }
+
+    return NULL;
 }
 
 void map_update(map_t *map)
@@ -59,16 +78,32 @@ void map_update(map_t *map)
     {
         entity_t *entity = &map->entities[i];
 
-        if (entity->id == ENTITY_ID_UNUSED)
+        if (!entity->is_active || entity->is_player)
         {
             continue;
         }
 
-        if (entity->id != ENTITY_ID_PLAYER)
-        {
-            map_entity_update(map, entity);
-        }
+        map_entity_update(map, entity);
     }
+}
+
+entity_t *map_entity_create(map_t *map, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color)
+{
+    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    {
+        entity_t *entity = &map->entities[i];
+
+        if (entity->is_active)
+        {
+            continue;
+        }
+
+        entity_init(entity, x, y, glyph, color);
+
+        return entity;
+    }
+
+    return NULL;
 }
 
 void map_entity_update(map_t *map, entity_t *entity)
@@ -102,7 +137,7 @@ void map_entity_move(map_t *map, entity_t *entity, int dx, int dy)
     }
 
     tile_t *tile = &map->tiles[x][y];
-    if (tileinfo[tile->type].solid)
+    if (!tileinfo[tile->type].is_walkable)
     {
         return;
     }
@@ -111,33 +146,78 @@ void map_entity_move(map_t *map, entity_t *entity, int dx, int dy)
     {
         entity_t *other = &map->entities[i];
 
-        if (other->id == entity->id || other->id == ENTITY_ID_UNUSED || other->id == ENTITY_ID_PLAYER)
+        if (!other->is_active || other->is_player)
         {
             continue;
         }
 
-        if (other->x == x && other->y == y)
+        if (other->x != x || other->y != y)
         {
-            entity_destroy(other);
-
-            return;
+            continue;
         }
+
+        entity_destroy(other);
+
+        return;
     }
 
     entity->x = x;
     entity->y = y;
 }
 
-void map_draw(map_t *map)
+TCOD_map_t map_calc_fov(map_t *map, entity_t *entity)
 {
+    TCOD_map_t fov_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
+
     for (int x = 0; x < MAP_WIDTH; x++)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            // TODO: check if visible
-            tile_draw(tile, x, y /*, visible: bool*/);
+            TCOD_map_set_properties(fov_map, x, y, tileinfo[tile->type].is_transparent, tileinfo[tile->type].is_walkable);
+        }
+    }
+
+    // TODO: entity->sight_radius
+    TCOD_map_compute_fov(fov_map, entity->x, entity->y, 10, true, FOV_DIAMOND);
+
+    return fov_map;
+}
+
+void map_draw(map_t *map, entity_t *player)
+{
+    TCOD_map_t fov_map = map_calc_fov(map, player);
+
+    TCOD_console_clear(NULL);
+
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            tile_t *tile = &map->tiles[x][y];
+
+            TCOD_color_t color;
+            if (TCOD_map_is_in_fov(fov_map, x, y))
+            {
+                tile->seen = true;
+
+                color = tileinfo[tile->type].color;
+            }
+            else
+            {
+                if (tile->seen)
+                {
+                    color = TCOD_gray;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
+            TCOD_console_set_char_foreground(NULL, x, y, color);
+            TCOD_console_set_char(NULL, x, y, tileinfo[tile->type].glyph);
         }
     }
 
@@ -145,13 +225,18 @@ void map_draw(map_t *map)
     {
         entity_t *entity = &map->entities[i];
 
-        if (entity->id == ENTITY_ID_UNUSED)
+        if (!entity->is_active)
         {
             continue;
         }
 
-        // TODO: check if visible
-        entity_draw(entity);
+        if (!TCOD_map_is_in_fov(fov_map, entity->x, entity->y))
+        {
+            continue;
+        }
+
+        TCOD_console_set_char_foreground(NULL, entity->x, entity->y, entity->color);
+        TCOD_console_set_char(NULL, entity->x, entity->y, entity->glyph);
     }
 
     TCOD_console_flush();

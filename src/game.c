@@ -138,7 +138,7 @@ void map_init(map_t *map)
     {
         entity_t *entity = &map->entities[i];
 
-        entity_init(entity, ID_UNUSED, 0, 0, ' ', TCOD_white);
+        entity_init(entity, ENTITY_ID_UNUSED, 0, 0, ' ', TCOD_white);
     }
 }
 
@@ -149,8 +149,8 @@ void map_generate(map_t *map)
     room_init(room1, 20, 15, 10, 15);
     room_carve(map, room1);
 
-    entity_t *player = &map->entities[ID_PLAYER];
-    entity_init(player, ID_PLAYER, 1, 1, '@', TCOD_white);
+    entity_t *player = &map->entities[ENTITY_ID_PLAYER];
+    entity_init(player, ENTITY_ID_PLAYER, 1, 1, '@', TCOD_white);
 
     int npcId = 0;
     entity_t *npc = &map->entities[npcId];
@@ -163,12 +163,12 @@ void map_update(map_t *map)
     {
         entity_t *entity = &map->entities[i];
 
-        if (entity->id == ID_UNUSED)
+        if (entity->id == ENTITY_ID_UNUSED)
         {
             continue;
         }
 
-        if (entity->id != ID_PLAYER)
+        if (entity->id != ENTITY_ID_PLAYER)
         {
             entity_think(map, entity);
         }
@@ -192,7 +192,7 @@ void map_draw(map_t *map)
     {
         entity_t *entity = &map->entities[i];
 
-        if (entity->id == ID_UNUSED)
+        if (entity->id == ENTITY_ID_UNUSED)
         {
             continue;
         }

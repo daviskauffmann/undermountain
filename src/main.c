@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     map_draw(map);
 
-    entity_t *player = &map->entities[ID_PLAYER];
+    entity_t *player = &map->entities[ENTITY_ID_PLAYER];
 
     while (!TCOD_console_is_window_closed())
     {

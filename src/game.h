@@ -9,8 +9,8 @@
 #define MAX_ROOMS 10
 #define MAX_ENTITIES 255
 
-#define ID_UNUSED -1
-#define ID_PLAYER 254
+#define ENTITY_ID_UNUSED -1
+#define ENTITY_ID_PLAYER 254
 
 typedef enum {
     TILETYPE_EMPTY = 0,

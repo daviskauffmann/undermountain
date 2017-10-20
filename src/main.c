@@ -1,7 +1,9 @@
-#include <SDL.h>
 #include <libtcod.h>
+#include <SDL.h>
 
-#include "game.h"
+#include "tile.h"
+#include "entity.h"
+#include "map.h"
 
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 50
@@ -16,7 +18,7 @@ int main(int argc, char *argv[])
 
     tileinfo_init();
 
-    map_t *map = (map_t *)malloc(sizeof(map_t));
+    map_t *map = malloc(sizeof(map_t));
     map_init(map);
     map_generate(map);
 
@@ -37,22 +39,22 @@ int main(int argc, char *argv[])
             case TCODK_ESCAPE:
                 goto quit;
             case TCODK_UP:
-                entity_move(map, player, 0, -1);
+                map_entity_move(map, player, 0, -1);
                 map_update(map);
                 map_draw(map);
                 break;
             case TCODK_LEFT:
-                entity_move(map, player, -1, 0);
+                map_entity_move(map, player, -1, 0);
                 map_update(map);
                 map_draw(map);
                 break;
             case TCODK_DOWN:
-                entity_move(map, player, 0, 1);
+                map_entity_move(map, player, 0, 1);
                 map_update(map);
                 map_draw(map);
                 break;
             case TCODK_RIGHT:
-                entity_move(map, player, 1, 0);
+                map_entity_move(map, player, 1, 0);
                 map_update(map);
                 map_draw(map);
                 break;

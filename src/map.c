@@ -41,11 +41,11 @@ void map_init(map_t *map)
         room->is_created = false;
     }
 
-    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    for (int i = 0; i < MAP_MAX_ACTORS; i++)
     {
-        entity_t *entity = &map->entities[i];
-        entity->is_active = false;
-        entity->is_player = false;
+        actor_t *actor = &map->actors[i];
+        actor->is_active = false;
+        actor->is_player = false;
     }
 }
 
@@ -59,7 +59,7 @@ void map_generate(map_t *map)
 
     for (int i = 0; i < 10; i++)
     {
-        map_entity_create(map, false, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow);
+        map_actor_create(map, false, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow);
     }
 }
 
@@ -93,25 +93,25 @@ room_t *map_room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h)
     return NULL;
 }
 
-entity_t *map_entity_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color)
+actor_t *map_actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color)
 {
-    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    for (int i = 0; i < MAP_MAX_ACTORS; i++)
     {
-        entity_t *entity = &map->entities[i];
+        actor_t *actor = &map->actors[i];
 
-        if (entity->is_active)
+        if (actor->is_active)
         {
             continue;
         }
 
-        entity->is_active = true;
-        entity->is_player = is_player;
-        entity->x = x;
-        entity->y = y;
-        entity->glyph = glyph;
-        entity->color = color;
+        actor->is_active = true;
+        actor->is_player = is_player;
+        actor->x = x;
+        actor->y = y;
+        actor->glyph = glyph;
+        actor->color = color;
 
-        return entity;
+        return actor;
     }
 
     return NULL;
@@ -119,11 +119,11 @@ entity_t *map_entity_create(map_t *map, bool is_player, uint8_t x, uint8_t y, ui
 
 void map_update(map_t *map)
 {
-    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    for (int i = 0; i < MAP_MAX_ACTORS; i++)
     {
-        entity_t *entity = &map->entities[i];
+        actor_t *actor = &map->actors[i];
 
-        if (!entity->is_active || entity->is_player)
+        if (!actor->is_active || actor->is_player)
         {
             continue;
         }
@@ -132,25 +132,25 @@ void map_update(map_t *map)
         switch (dir)
         {
         case 0:
-            map_entity_move(map, entity, 0, -1);
+            map_actor_move(map, actor, 0, -1);
             break;
         case 1:
-            map_entity_move(map, entity, 0, 1);
+            map_actor_move(map, actor, 0, 1);
             break;
         case 2:
-            map_entity_move(map, entity, -1, 0);
+            map_actor_move(map, actor, -1, 0);
             break;
         case 3:
-            map_entity_move(map, entity, 1, 0);
+            map_actor_move(map, actor, 1, 0);
             break;
         }
     }
 }
 
-void map_entity_move(map_t *map, entity_t *entity, int dx, int dy)
+void map_actor_move(map_t *map, actor_t *actor, int dx, int dy)
 {
-    int x = entity->x + dx;
-    int y = entity->y + dy;
+    int x = actor->x + dx;
+    int y = actor->y + dy;
 
     if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
     {
@@ -163,9 +163,9 @@ void map_entity_move(map_t *map, entity_t *entity, int dx, int dy)
         return;
     }
 
-    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    for (int i = 0; i < MAP_MAX_ACTORS; i++)
     {
-        entity_t *other = &map->entities[i];
+        actor_t *other = &map->actors[i];
 
         if (!other->is_active)
         {
@@ -177,22 +177,27 @@ void map_entity_move(map_t *map, entity_t *entity, int dx, int dy)
             continue;
         }
 
+        // TODO: damage and health
+        // TODO: player death
+        // TODO: dealing with corpses, is_dead flag or separate object alltogether?
+        // if corpses can be resurrected, they will need to store information about the actor
+        // if corpses can be picked up, they will need to act like items
         other->is_active = other->is_player ? true : false;
 
         return;
     }
 
-    entity->x = x;
-    entity->y = y;
+    actor->x = x;
+    actor->y = y;
 }
 
-void map_entity_change_map(map_t *mapFrom, map_t *mapTo, entity_t *entity)
+void map_actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor)
 {
-    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    for (int i = 0; i < MAP_MAX_ACTORS; i++)
     {
-        entity_t *current = &mapFrom->entities[i];
+        actor_t *current = &mapFrom->actors[i];
 
-        if (current == entity)
+        if (current == actor)
         {
             current->is_active = false;
 
@@ -200,20 +205,20 @@ void map_entity_change_map(map_t *mapFrom, map_t *mapTo, entity_t *entity)
         }
     }
 
-    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    for (int i = 0; i < MAP_MAX_ACTORS; i++)
     {
-        entity_t *current = &mapTo->entities[i];
+        actor_t *current = &mapTo->actors[i];
 
         if (!current->is_active)
         {
-            // figure out how to copy the entity to it's place in the new map
-            // also, if the moving entity is the player,
+            // figure out how to copy the actor to it's place in the new map
+            // also, if the moving actor is the player,
             // we need to inform the rest of the game the player's new address
         }
     }
 }
 
-TCOD_map_t map_entity_calc_fov(map_t *map, entity_t *entity)
+TCOD_map_t map_actor_calc_fov(map_t *map, actor_t *actor)
 {
     TCOD_map_t fov_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
 
@@ -227,15 +232,15 @@ TCOD_map_t map_entity_calc_fov(map_t *map, entity_t *entity)
         }
     }
 
-    // TODO: entity->sight_radius
-    TCOD_map_compute_fov(fov_map, entity->x, entity->y, 10, true, FOV_DIAMOND);
+    // TODO: actor->sight_radius
+    TCOD_map_compute_fov(fov_map, actor->x, actor->y, 10, true, FOV_DIAMOND);
 
     return fov_map;
 }
 
-void map_draw(map_t *map, entity_t *player)
+void map_draw(map_t *map, actor_t *player)
 {
-    TCOD_map_t fov_map = map_entity_calc_fov(map, player);
+    TCOD_map_t fov_map = map_actor_calc_fov(map, player);
 
     TCOD_console_clear(NULL);
 
@@ -269,22 +274,22 @@ void map_draw(map_t *map, entity_t *player)
         }
     }
 
-    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    for (int i = 0; i < MAP_MAX_ACTORS; i++)
     {
-        entity_t *entity = &map->entities[i];
+        actor_t *actor = &map->actors[i];
 
-        if (!entity->is_active)
+        if (!actor->is_active)
         {
             continue;
         }
 
-        if (!TCOD_map_is_in_fov(fov_map, entity->x, entity->y))
+        if (!TCOD_map_is_in_fov(fov_map, actor->x, actor->y))
         {
             continue;
         }
 
-        TCOD_console_set_char_foreground(NULL, entity->x, entity->y, entity->color);
-        TCOD_console_set_char(NULL, entity->x, entity->y, entity->glyph);
+        TCOD_console_set_char_foreground(NULL, actor->x, actor->y, actor->color);
+        TCOD_console_set_char(NULL, actor->x, actor->y, actor->glyph);
     }
 
     TCOD_console_flush();

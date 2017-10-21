@@ -55,6 +55,7 @@ typedef struct
     tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
     room_t rooms[MAP_MAX_ROOMS];
     actor_t actors[MAP_MAX_ACTORS];
+    // TCOD_list_t actorlist;
 } map_t;
 
 extern tileinfo_t tileinfo[NB_TILETYPES];

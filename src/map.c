@@ -47,6 +47,8 @@ void map_init(map_t *map)
         actor->is_active = false;
         actor->is_player = false;
     }
+
+    // map->actorlist = TCOD_list_new();
 }
 
 void map_generate(map_t *map)
@@ -115,6 +117,19 @@ actor_t *map_actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint
     }
 
     return NULL;
+
+    // actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
+
+    // actor->is_active = true;
+    // actor->is_player = is_player;
+    // actor->x = x;
+    // actor->y = y;
+    // actor->glyph = glyph;
+    // actor->color = color;
+
+    // TCOD_list_push(map->actorlist, actor);
+
+    // return actor;
 }
 
 void map_update(map_t *map)
@@ -291,6 +306,10 @@ void map_draw(map_t *map, actor_t *player)
         TCOD_console_set_char_foreground(NULL, actor->x, actor->y, actor->color);
         TCOD_console_set_char(NULL, actor->x, actor->y, actor->glyph);
     }
+
+    // for (actor_t *actor = (actor_t *)TCOD_list_begin(map->actorlist); actor != (actor_t *)TCOD_list_end(map->actorlist); actor++)
+    // {
+    // }
 
     TCOD_console_flush();
 }

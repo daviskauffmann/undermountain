@@ -1,8 +1,6 @@
 #include <libtcod.h>
 #include <SDL.h>
 
-#include "tile.h"
-#include "entity.h"
 #include "map.h"
 
 #define SCREEN_WIDTH 80
@@ -25,8 +23,7 @@ int main(int argc, char *argv[])
     map_init(map);
     map_generate(map);
 
-    entity_t *player = map_entity_create(map, MAP_WIDTH / 2, MAP_HEIGHT / 2, '@', TCOD_white);
-    player->is_player = true;
+    entity_t *player = map_entity_create(map, true, MAP_WIDTH / 2, MAP_HEIGHT / 2, '@', TCOD_white);
 
     map_draw(map, player);
 

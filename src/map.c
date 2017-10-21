@@ -2,9 +2,26 @@
 #include <libtcod.h>
 
 #include "map.h"
-#include "tile.h"
-#include "room.h"
-#include "entity.h"
+
+tileinfo_t tileinfo[NB_TILETYPES];
+
+void tileinfo_init(void)
+{
+    tileinfo[TILETYPE_EMPTY].glyph = ' ';
+    tileinfo[TILETYPE_EMPTY].color = TCOD_white;
+    tileinfo[TILETYPE_EMPTY].is_transparent = true;
+    tileinfo[TILETYPE_EMPTY].is_walkable = true;
+
+    tileinfo[TILETYPE_FLOOR].glyph = '.';
+    tileinfo[TILETYPE_FLOOR].color = TCOD_white;
+    tileinfo[TILETYPE_FLOOR].is_transparent = true;
+    tileinfo[TILETYPE_FLOOR].is_walkable = true;
+
+    tileinfo[TILETYPE_WALL].glyph = '#';
+    tileinfo[TILETYPE_WALL].color = TCOD_white;
+    tileinfo[TILETYPE_WALL].is_transparent = false;
+    tileinfo[TILETYPE_WALL].is_walkable = false;
+}
 
 void map_init(map_t *map)
 {
@@ -28,6 +45,7 @@ void map_init(map_t *map)
     {
         entity_t *entity = &map->entities[i];
         entity->is_active = false;
+        entity->is_player = false;
     }
 }
 
@@ -41,7 +59,7 @@ void map_generate(map_t *map)
 
     for (int i = 0; i < 10; i++)
     {
-        entity_t *entity = map_entity_create(map, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow);
+        map_entity_create(map, false, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow);
     }
 }
 
@@ -56,17 +74,44 @@ room_t *map_room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h)
             continue;
         }
 
-        room_init(room, x, y, w, h);
+        room->x1 = x;
+        room->y1 = y;
+        room->x2 = x + w;
+        room->y2 = y + h;
+        room->is_created = true;
 
         for (int x = room->x1; x < room->x2; x++)
         {
             for (int y = room->y1; y < room->y2; y++)
             {
                 tile_t *tile = &map->tiles[x][y];
-
                 tile->type = TILETYPE_FLOOR;
             }
         }
+    }
+
+    return NULL;
+}
+
+entity_t *map_entity_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color)
+{
+    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    {
+        entity_t *entity = &map->entities[i];
+
+        if (entity->is_active)
+        {
+            continue;
+        }
+
+        entity->is_active = true;
+        entity->is_player = is_player;
+        entity->x = x;
+        entity->y = y;
+        entity->glyph = glyph;
+        entity->color = color;
+
+        return entity;
     }
 
     return NULL;
@@ -83,46 +128,22 @@ void map_update(map_t *map)
             continue;
         }
 
-        map_entity_update(map, entity);
-    }
-}
-
-entity_t *map_entity_create(map_t *map, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color)
-{
-    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
-    {
-        entity_t *entity = &map->entities[i];
-
-        if (entity->is_active)
+        int dir = rand() % 8;
+        switch (dir)
         {
-            continue;
+        case 0:
+            map_entity_move(map, entity, 0, -1);
+            break;
+        case 1:
+            map_entity_move(map, entity, 0, 1);
+            break;
+        case 2:
+            map_entity_move(map, entity, -1, 0);
+            break;
+        case 3:
+            map_entity_move(map, entity, 1, 0);
+            break;
         }
-
-        entity_init(entity, x, y, glyph, color);
-
-        return entity;
-    }
-
-    return NULL;
-}
-
-void map_entity_update(map_t *map, entity_t *entity)
-{
-    int dir = rand() % 8;
-    switch (dir)
-    {
-    case 0:
-        map_entity_move(map, entity, 0, -1);
-        break;
-    case 1:
-        map_entity_move(map, entity, 0, 1);
-        break;
-    case 2:
-        map_entity_move(map, entity, -1, 0);
-        break;
-    case 3:
-        map_entity_move(map, entity, 1, 0);
-        break;
     }
 }
 
@@ -146,7 +167,7 @@ void map_entity_move(map_t *map, entity_t *entity, int dx, int dy)
     {
         entity_t *other = &map->entities[i];
 
-        if (!other->is_active || other->is_player)
+        if (!other->is_active)
         {
             continue;
         }
@@ -156,7 +177,7 @@ void map_entity_move(map_t *map, entity_t *entity, int dx, int dy)
             continue;
         }
 
-        entity_destroy(other);
+        other->is_active = other->is_player ? true : false;
 
         return;
     }
@@ -165,7 +186,34 @@ void map_entity_move(map_t *map, entity_t *entity, int dx, int dy)
     entity->y = y;
 }
 
-TCOD_map_t map_calc_fov(map_t *map, entity_t *entity)
+void map_entity_change_map(map_t *mapFrom, map_t *mapTo, entity_t *entity)
+{
+    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    {
+        entity_t *current = &mapFrom->entities[i];
+
+        if (current == entity)
+        {
+            current->is_active = false;
+
+            break;
+        }
+    }
+
+    for (int i = 0; i < MAP_MAX_ENTITIES; i++)
+    {
+        entity_t *current = &mapTo->entities[i];
+
+        if (!current->is_active)
+        {
+            // figure out how to copy the entity to it's place in the new map
+            // also, if the moving entity is the player,
+            // we need to inform the rest of the game the player's new address
+        }
+    }
+}
+
+TCOD_map_t map_entity_calc_fov(map_t *map, entity_t *entity)
 {
     TCOD_map_t fov_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
 
@@ -187,7 +235,7 @@ TCOD_map_t map_calc_fov(map_t *map, entity_t *entity)
 
 void map_draw(map_t *map, entity_t *player)
 {
-    TCOD_map_t fov_map = map_calc_fov(map, player);
+    TCOD_map_t fov_map = map_entity_calc_fov(map, player);
 
     TCOD_console_clear(NULL);
 

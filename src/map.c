@@ -23,8 +23,10 @@ void tileinfo_init(void)
     tileinfo[TILETYPE_WALL].is_walkable = false;
 }
 
-void map_init(map_t *map)
+map_t *map_create()
 {
+    map_t *map = (map_t *)malloc(sizeof(map_t));
+
     for (int x = 0; x < MAP_WIDTH; x++)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
@@ -35,24 +37,9 @@ void map_init(map_t *map)
         }
     }
 
-    for (int i = 0; i < MAP_MAX_ROOMS; i++)
-    {
-        room_t *room = &map->rooms[i];
-        room->is_created = false;
-    }
+    map->rooms = TCOD_list_new();
+    map->actors = TCOD_list_new();
 
-    for (int i = 0; i < MAP_MAX_ACTORS; i++)
-    {
-        actor_t *actor = &map->actors[i];
-        actor->is_active = false;
-        actor->is_player = false;
-    }
-
-    // map->actorlist = TCOD_list_new();
-}
-
-void map_generate(map_t *map)
-{
     // TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
     // TCOD_bsp_split_recursive(bsp, NULL, 4, 5, 5, 1.5f, 1.5f);
     // TCOD_bsp_delete(bsp);
@@ -63,82 +50,19 @@ void map_generate(map_t *map)
     {
         map_actor_create(map, false, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow);
     }
-}
 
-room_t *map_room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h)
-{
-    for (int i = 0; i < MAP_MAX_ROOMS; i++)
-    {
-        room_t *room = &map->rooms[i];
-
-        if (room->is_created)
-        {
-            continue;
-        }
-
-        room->x1 = x;
-        room->y1 = y;
-        room->x2 = x + w;
-        room->y2 = y + h;
-        room->is_created = true;
-
-        for (int x = room->x1; x < room->x2; x++)
-        {
-            for (int y = room->y1; y < room->y2; y++)
-            {
-                tile_t *tile = &map->tiles[x][y];
-                tile->type = TILETYPE_FLOOR;
-            }
-        }
-    }
-
-    return NULL;
-}
-
-actor_t *map_actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color)
-{
-    for (int i = 0; i < MAP_MAX_ACTORS; i++)
-    {
-        actor_t *actor = &map->actors[i];
-
-        if (actor->is_active)
-        {
-            continue;
-        }
-
-        actor->is_active = true;
-        actor->is_player = is_player;
-        actor->x = x;
-        actor->y = y;
-        actor->glyph = glyph;
-        actor->color = color;
-
-        return actor;
-    }
-
-    return NULL;
-
-    // actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
-
-    // actor->is_active = true;
-    // actor->is_player = is_player;
-    // actor->x = x;
-    // actor->y = y;
-    // actor->glyph = glyph;
-    // actor->color = color;
-
-    // TCOD_list_push(map->actorlist, actor);
-
-    // return actor;
+    return map;
 }
 
 void map_update(map_t *map)
 {
-    for (int i = 0; i < MAP_MAX_ACTORS; i++)
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+         iterator != (actor_t **)TCOD_list_end(map->actors);
+         iterator++)
     {
-        actor_t *actor = &map->actors[i];
+        actor_t *actor = *iterator;
 
-        if (!actor->is_active || actor->is_player)
+        if (actor->is_player)
         {
             continue;
         }
@@ -160,97 +84,6 @@ void map_update(map_t *map)
             break;
         }
     }
-}
-
-void map_actor_move(map_t *map, actor_t *actor, int dx, int dy)
-{
-    int x = actor->x + dx;
-    int y = actor->y + dy;
-
-    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
-    {
-        return;
-    }
-
-    tile_t *tile = &map->tiles[x][y];
-    if (!tileinfo[tile->type].is_walkable)
-    {
-        return;
-    }
-
-    for (int i = 0; i < MAP_MAX_ACTORS; i++)
-    {
-        actor_t *other = &map->actors[i];
-
-        if (!other->is_active)
-        {
-            continue;
-        }
-
-        if (other->x != x || other->y != y)
-        {
-            continue;
-        }
-
-        // TODO: damage and health
-        // TODO: player death
-        // TODO: dealing with corpses, is_dead flag or separate object alltogether?
-        // if corpses can be resurrected, they will need to store information about the actor
-        // if corpses can be picked up, they will need to act like items
-        other->is_active = other->is_player ? true : false;
-
-        return;
-    }
-
-    actor->x = x;
-    actor->y = y;
-}
-
-void map_actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor)
-{
-    for (int i = 0; i < MAP_MAX_ACTORS; i++)
-    {
-        actor_t *current = &mapFrom->actors[i];
-
-        if (current == actor)
-        {
-            current->is_active = false;
-
-            break;
-        }
-    }
-
-    for (int i = 0; i < MAP_MAX_ACTORS; i++)
-    {
-        actor_t *current = &mapTo->actors[i];
-
-        if (!current->is_active)
-        {
-            // figure out how to copy the actor to it's place in the new map
-            // also, if the moving actor is the player,
-            // we need to inform the rest of the game the player's new address
-        }
-    }
-}
-
-TCOD_map_t map_actor_calc_fov(map_t *map, actor_t *actor)
-{
-    TCOD_map_t fov_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
-
-    for (int x = 0; x < MAP_WIDTH; x++)
-    {
-        for (int y = 0; y < MAP_HEIGHT; y++)
-        {
-            tile_t *tile = &map->tiles[x][y];
-
-            TCOD_map_set_properties(fov_map, x, y, tileinfo[tile->type].is_transparent, tileinfo[tile->type].is_walkable);
-        }
-    }
-
-    // TODO: actor->sight_radius
-    TCOD_map_compute_fov(fov_map, actor->x, actor->y, 10, true, FOV_DIAMOND);
-
-    return fov_map;
 }
 
 void map_draw(map_t *map, actor_t *player)
@@ -289,14 +122,11 @@ void map_draw(map_t *map, actor_t *player)
         }
     }
 
-    for (int i = 0; i < MAP_MAX_ACTORS; i++)
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+         iterator != (actor_t **)TCOD_list_end(map->actors);
+         iterator++)
     {
-        actor_t *actor = &map->actors[i];
-
-        if (!actor->is_active)
-        {
-            continue;
-        }
+        actor_t *actor = *iterator;
 
         if (!TCOD_map_is_in_fov(fov_map, actor->x, actor->y))
         {
@@ -307,9 +137,121 @@ void map_draw(map_t *map, actor_t *player)
         TCOD_console_set_char(NULL, actor->x, actor->y, actor->glyph);
     }
 
-    // for (actor_t *actor = (actor_t *)TCOD_list_begin(map->actorlist); actor != (actor_t *)TCOD_list_end(map->actorlist); actor++)
-    // {
-    // }
-
     TCOD_console_flush();
+}
+
+room_t *map_room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h)
+{
+    room_t *room = (room_t *)malloc(sizeof(room_t));
+
+    room->x1 = x;
+    room->y1 = y;
+    room->x2 = x + w;
+    room->y2 = y + h;
+    room->is_created = true;
+
+    for (int x = room->x1; x < room->x2; x++)
+    {
+        for (int y = room->y1; y < room->y2; y++)
+        {
+            tile_t *tile = &map->tiles[x][y];
+            tile->type = TILETYPE_FLOOR;
+        }
+    }
+
+    TCOD_list_push(map->rooms, room);
+
+    return room;
+}
+
+actor_t *map_actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color)
+{
+    actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
+
+    actor->is_player = is_player;
+    actor->x = x;
+    actor->y = y;
+    actor->glyph = glyph;
+    actor->color = color;
+
+    TCOD_list_push(map->actors, actor);
+
+    return actor;
+}
+
+void map_actor_destroy(map_t *map, actor_t *actor)
+{
+    free(actor);
+
+    TCOD_list_remove(map->actors, actor);
+}
+
+void map_actor_move(map_t *map, actor_t *actor, int dx, int dy)
+{
+    int x = actor->x + dx;
+    int y = actor->y + dy;
+
+    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
+    {
+        return;
+    }
+
+    tile_t *tile = &map->tiles[x][y];
+    if (!tileinfo[tile->type].is_walkable)
+    {
+        return;
+    }
+
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+         iterator != (actor_t **)TCOD_list_end(map->actors);
+         iterator++)
+    {
+        actor_t *other = *iterator;
+
+        if (other->x != x || other->y != y)
+        {
+            continue;
+        }
+
+        // TODO: damage and health
+        // TODO: player death
+        // TODO: dealing with corpses, is_dead flag or separate object alltogether?
+        // if corpses can be resurrected, they will need to store information about the actor
+        // if corpses can be picked up, they will need to act like items
+        if (!other->is_player)
+        {
+            map_actor_destroy(map, other);
+        }
+
+        return;
+    }
+
+    actor->x = x;
+    actor->y = y;
+}
+
+void map_actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor)
+{
+    TCOD_list_remove(mapFrom->actors, actor);
+    TCOD_list_push(mapTo->actors, actor);
+}
+
+TCOD_map_t map_actor_calc_fov(map_t *map, actor_t *actor)
+{
+    TCOD_map_t fov_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
+
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            tile_t *tile = &map->tiles[x][y];
+
+            TCOD_map_set_properties(fov_map, x, y, tileinfo[tile->type].is_transparent, tileinfo[tile->type].is_walkable);
+        }
+    }
+
+    // TODO: actor->sight_radius
+    TCOD_map_compute_fov(fov_map, actor->x, actor->y, 10, true, FOV_DIAMOND);
+
+    return fov_map;
 }

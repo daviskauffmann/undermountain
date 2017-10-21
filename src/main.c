@@ -17,9 +17,7 @@ int main(int argc, char *argv[])
 
     tileinfo_init();
 
-    map_t *map = malloc(sizeof(map_t));
-    map_init(map);
-    map_generate(map);
+    map_t *map = map_create();
 
     actor_t *player = map_actor_create(map, true, MAP_WIDTH / 2, MAP_HEIGHT / 2, '@', TCOD_white);
 

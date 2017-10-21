@@ -9,13 +9,11 @@
 
 int main(int argc, char *argv[])
 {
-    // TODO: use TCOD RNG
-    time_t t;
-    srand((unsigned)time(&t));
-
     TCOD_console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE, false, TCOD_RENDERER_SDL);
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
+
+    TCOD_random_t random = TCOD_random_get_instance();
 
     tileinfo_init();
 

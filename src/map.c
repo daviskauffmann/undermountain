@@ -143,7 +143,7 @@ void map_update(map_t *map)
             continue;
         }
 
-        int dir = rand() % 8;
+        int dir = TCOD_random_get_int(NULL, 0, 8);
         switch (dir)
         {
         case 0:

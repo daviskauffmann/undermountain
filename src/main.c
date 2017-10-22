@@ -1,5 +1,6 @@
 #include <libtcod.h>
 #include <SDL.h>
+#include <stdio.h>
 
 #include "map.h"
 
@@ -52,22 +53,23 @@ int main(int argc, char *argv[])
             case TCODK_ESCAPE:
                 goto quit;
             case TCODK_UP:
-                actor_move(map, player, 0, -1);
-                map_update(map);
-                map_draw(map, player);
-                break;
-            case TCODK_LEFT:
-                actor_move(map, player, -1, 0);
+                actor_move(map, player, player->x, player->y - 1);
                 map_update(map);
                 map_draw(map, player);
                 break;
             case TCODK_DOWN:
-                actor_move(map, player, 0, 1);
+                actor_move(map, player, player->x, player->y + 1);
                 map_update(map);
                 map_draw(map, player);
                 break;
+            case TCODK_LEFT:
+                actor_move(map, player, player->x - 1, player->y);
+                map_update(map);
+                map_draw(map, player);
+                break;
+
             case TCODK_RIGHT:
-                actor_move(map, player, 1, 0);
+                actor_move(map, player, player->x + 1, player->y);
                 map_update(map);
                 map_draw(map, player);
                 break;
@@ -75,6 +77,10 @@ int main(int argc, char *argv[])
         }
     }
 quit:
+
+    map_destroy(map);
+
+    TCOD_console_delete(NULL);
 
     SDL_Quit();
 

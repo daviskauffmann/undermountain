@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "stdint.h": "c",
-        "map.h": "c",
-        "sdl.h": "c",
-        "libtcod.h": "c"
-    }
-}

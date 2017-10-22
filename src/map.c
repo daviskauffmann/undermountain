@@ -3,8 +3,6 @@
 
 #include "map.h"
 
-tileinfo_t tileinfo[NB_TILETYPES];
-
 void tileinfo_init(void)
 {
     tileinfo[TILETYPE_EMPTY].glyph = ' ';
@@ -44,11 +42,11 @@ map_t *map_create()
     // TCOD_bsp_split_recursive(bsp, NULL, 4, 5, 5, 1.5f, 1.5f);
     // TCOD_bsp_delete(bsp);
 
-    map_room_create(map, 20, 10, 40, 20);
+    room_create(map, 20, 10, 40, 20);
 
     for (int i = 0; i < 10; i++)
     {
-        map_actor_create(map, false, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow);
+        actor_create(map, false, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow, 10);
     }
 
     return map;
@@ -67,20 +65,39 @@ void map_update(map_t *map)
             continue;
         }
 
+        TCOD_map_t fov_map = actor_calc_fov(map, actor);
+
+        for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+             iterator != (actor_t **)TCOD_list_end(map->actors);
+             iterator++)
+        {
+            actor_t *other = *iterator;
+
+            if (other == actor)
+            {
+                continue;
+            }
+
+            if (TCOD_map_is_in_fov(fov_map, other->x, other->y))
+            {
+                // start pathfinding towards the other actor
+            }
+        }
+
         int dir = TCOD_random_get_int(NULL, 0, 8);
         switch (dir)
         {
         case 0:
-            map_actor_move(map, actor, 0, -1);
+            actor_move(map, actor, 0, -1);
             break;
         case 1:
-            map_actor_move(map, actor, 0, 1);
+            actor_move(map, actor, 0, 1);
             break;
         case 2:
-            map_actor_move(map, actor, -1, 0);
+            actor_move(map, actor, -1, 0);
             break;
         case 3:
-            map_actor_move(map, actor, 1, 0);
+            actor_move(map, actor, 1, 0);
             break;
         }
     }
@@ -88,7 +105,7 @@ void map_update(map_t *map)
 
 void map_draw(map_t *map, actor_t *player)
 {
-    TCOD_map_t fov_map = map_actor_calc_fov(map, player);
+    TCOD_map_t fov_map = actor_calc_fov(map, player);
 
     TCOD_console_clear(NULL);
 
@@ -140,7 +157,7 @@ void map_draw(map_t *map, actor_t *player)
     TCOD_console_flush();
 }
 
-room_t *map_room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h)
+static room_t *room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h)
 {
     room_t *room = (room_t *)malloc(sizeof(room_t));
 
@@ -164,7 +181,7 @@ room_t *map_room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h)
     return room;
 }
 
-actor_t *map_actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color)
+actor_t *actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
@@ -173,20 +190,21 @@ actor_t *map_actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint
     actor->y = y;
     actor->glyph = glyph;
     actor->color = color;
+    actor->sight_radius = sight_radius;
 
     TCOD_list_push(map->actors, actor);
 
     return actor;
 }
 
-void map_actor_destroy(map_t *map, actor_t *actor)
+static void actor_destroy(map_t *map, actor_t *actor)
 {
     free(actor);
 
     TCOD_list_remove(map->actors, actor);
 }
 
-void map_actor_move(map_t *map, actor_t *actor, int dx, int dy)
+void actor_move(map_t *map, actor_t *actor, int dx, int dy)
 {
     int x = actor->x + dx;
     int y = actor->y + dy;
@@ -220,7 +238,7 @@ void map_actor_move(map_t *map, actor_t *actor, int dx, int dy)
         // if corpses can be picked up, they will need to act like items
         if (!other->is_player)
         {
-            map_actor_destroy(map, other);
+            actor_destroy(map, other);
         }
 
         return;
@@ -230,13 +248,13 @@ void map_actor_move(map_t *map, actor_t *actor, int dx, int dy)
     actor->y = y;
 }
 
-void map_actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor)
+static void actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor)
 {
     TCOD_list_remove(mapFrom->actors, actor);
     TCOD_list_push(mapTo->actors, actor);
 }
 
-TCOD_map_t map_actor_calc_fov(map_t *map, actor_t *actor)
+static TCOD_map_t actor_calc_fov(map_t *map, actor_t *actor)
 {
     TCOD_map_t fov_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
 
@@ -250,8 +268,7 @@ TCOD_map_t map_actor_calc_fov(map_t *map, actor_t *actor)
         }
     }
 
-    // TODO: actor->sight_radius
-    TCOD_map_compute_fov(fov_map, actor->x, actor->y, 10, true, FOV_DIAMOND);
+    TCOD_map_compute_fov(fov_map, actor->x, actor->y, actor->sight_radius, true, FOV_DIAMOND);
 
     return fov_map;
 }

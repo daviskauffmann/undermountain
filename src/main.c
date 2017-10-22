@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
     map_t *map = map_create();
 
-    actor_t *player = map_actor_create(map, true, MAP_WIDTH / 2, MAP_HEIGHT / 2, '@', TCOD_white);
+    actor_t *player = actor_create(map, true, MAP_WIDTH / 2, MAP_HEIGHT / 2, '@', TCOD_white, 10);
 
     map_draw(map, player);
 
@@ -52,22 +52,22 @@ int main(int argc, char *argv[])
             case TCODK_ESCAPE:
                 goto quit;
             case TCODK_UP:
-                map_actor_move(map, player, 0, -1);
+                actor_move(map, player, 0, -1);
                 map_update(map);
                 map_draw(map, player);
                 break;
             case TCODK_LEFT:
-                map_actor_move(map, player, -1, 0);
+                actor_move(map, player, -1, 0);
                 map_update(map);
                 map_draw(map, player);
                 break;
             case TCODK_DOWN:
-                map_actor_move(map, player, 0, 1);
+                actor_move(map, player, 0, 1);
                 map_update(map);
                 map_draw(map, player);
                 break;
             case TCODK_RIGHT:
-                map_actor_move(map, player, 1, 0);
+                actor_move(map, player, 1, 0);
                 map_update(map);
                 map_draw(map, player);
                 break;

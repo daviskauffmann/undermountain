@@ -44,6 +44,7 @@ typedef struct
     uint8_t y;
     uint8_t glyph;
     TCOD_color_t color;
+    uint8_t sight_radius;
 } actor_t;
 
 typedef struct
@@ -53,7 +54,7 @@ typedef struct
     TCOD_list_t actors;
 } map_t;
 
-extern tileinfo_t tileinfo[NB_TILETYPES];
+tileinfo_t tileinfo[NB_TILETYPES];
 
 void tileinfo_init(void);
 
@@ -61,12 +62,12 @@ map_t *map_create();
 void map_update(map_t *map);
 void map_draw(map_t *map, actor_t *player);
 
-room_t *map_room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h);
+static room_t *room_create(map_t *map, uint8_t x, uint8_t y, uint8_t w, uint8_t h);
 
-actor_t *map_actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color);
-void map_actor_destroy(map_t *map, actor_t *actor);
-void map_actor_move(map_t *map, actor_t *actor, int dx, int dy);
-void map_actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor);
-TCOD_map_t map_actor_calc_fov(map_t *map, actor_t *actor);
+actor_t *actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius);
+static void actor_destroy(map_t *map, actor_t *actor);
+void actor_move(map_t *map, actor_t *actor, int dx, int dy);
+static void actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor);
+static TCOD_map_t actor_calc_fov(map_t *map, actor_t *actor);
 
 #endif

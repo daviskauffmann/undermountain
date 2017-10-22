@@ -44,7 +44,7 @@ typedef struct
     TCOD_list_t actors;
 } map_t;
 
-tileinfo_t tileinfo[NB_TILETYPES];
+extern tileinfo_t tileinfo[NB_TILETYPES];
 
 void tileinfo_init(void);
 

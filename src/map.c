@@ -4,6 +4,8 @@
 
 #include "map.h"
 
+tileinfo_t tileinfo[NB_TILETYPES];
+
 void tileinfo_init(void)
 {
     tileinfo[TILETYPE_EMPTY].glyph = ' ';
@@ -57,6 +59,8 @@ map_t *map_create()
 
 void map_destroy(map_t *map)
 {
+    TCOD_list_clear_and_delete(map->actors);
+
     free(map);
 }
 
@@ -76,6 +80,7 @@ void map_update(map_t *map)
         if (TCOD_random_get_int(NULL, 0, 1) == 0)
         {
             TCOD_map_t TCOD_map = map_to_TCOD_map(map);
+
             map_calc_fov(TCOD_map, actor->x, actor->y, actor->sight_radius);
 
             for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
@@ -91,22 +96,26 @@ void map_update(map_t *map)
 
                 if (TCOD_map_is_in_fov(TCOD_map, other->x, other->y))
                 {
+                    // TODO: maybe store the path on the actor somehow so it can be reused
                     TCOD_path_t path = map_calc_path(TCOD_map, actor->x, actor->y, other->x, other->y);
 
-                    if (!TCOD_path_is_empty(path))
+                    if (TCOD_path_is_empty(path))
                     {
-                        int x, y;
-                        if (TCOD_path_walk(path, &x, &y, true))
-                        {
-                            actor_move(map, actor, x, y);
-
-                            TCOD_path_delete(path);
-
-                            break;
-                        }
+                        goto end;
                     }
 
+                    int x, y;
+                    if (!TCOD_path_walk(path, &x, &y, true))
+                    {
+                        goto end;
+                    }
+
+                    actor_move(map, actor, x, y);
+
+                end:
                     TCOD_path_delete(path);
+
+                    break;
                 }
             }
 
@@ -137,6 +146,7 @@ void map_update(map_t *map)
 void map_draw(map_t *map, actor_t *player)
 {
     TCOD_map_t TCOD_map = map_to_TCOD_map(map);
+
     map_calc_fov(TCOD_map, player->x, player->y, player->sight_radius);
 
     TCOD_console_clear(NULL);

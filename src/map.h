@@ -11,6 +11,8 @@ typedef enum {
     TILETYPE_EMPTY = 0,
     TILETYPE_FLOOR,
     TILETYPE_WALL,
+    TILETYPE_STAIR_DOWN,
+    TILETYPE_STAIR_UP,
     NB_TILETYPES
 } tiletype_t;
 
@@ -41,6 +43,10 @@ typedef struct
 typedef struct
 {
     tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
+    uint8_t stair_down_x;
+    uint8_t stair_down_y;
+    uint8_t stair_up_x;
+    uint8_t stair_up_y;
     TCOD_list_t actors;
 } map_t;
 
@@ -49,7 +55,6 @@ extern tileinfo_t tileinfo[NB_TILETYPES];
 void tileinfo_init(void);
 
 map_t *map_create();
-void map_destroy(map_t *map);
 void map_update(map_t *map);
 void map_draw(map_t *map, actor_t *player);
 static TCOD_map_t map_to_TCOD_map(map_t *map);
@@ -59,6 +64,5 @@ static TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, in
 actor_t *actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius);
 void actor_destroy(map_t *map, actor_t *actor);
 void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y);
-static void actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor);
 
 #endif

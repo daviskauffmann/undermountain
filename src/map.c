@@ -22,6 +22,16 @@ void tileinfo_init(void)
     tileinfo[TILETYPE_WALL].color = TCOD_white;
     tileinfo[TILETYPE_WALL].is_transparent = false;
     tileinfo[TILETYPE_WALL].is_walkable = false;
+
+    tileinfo[TILETYPE_STAIR_DOWN].glyph = '>';
+    tileinfo[TILETYPE_STAIR_DOWN].color = TCOD_white;
+    tileinfo[TILETYPE_STAIR_DOWN].is_transparent = true;
+    tileinfo[TILETYPE_STAIR_DOWN].is_walkable = true;
+
+    tileinfo[TILETYPE_STAIR_UP].glyph = '<';
+    tileinfo[TILETYPE_STAIR_UP].color = TCOD_white;
+    tileinfo[TILETYPE_STAIR_UP].is_transparent = true;
+    tileinfo[TILETYPE_STAIR_UP].is_walkable = true;
 }
 
 map_t *map_create()
@@ -38,8 +48,19 @@ map_t *map_create()
         }
     }
 
+    map->stair_down_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1);
+    map->stair_down_y = TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1);
+    tile_t *stair_down_tile = &map->tiles[map->stair_down_x][map->stair_down_y];
+    stair_down_tile->type = TILETYPE_STAIR_DOWN;
+
+    map->stair_up_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1);
+    map->stair_up_y = TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1);
+    tile_t *stair_up_tile = &map->tiles[map->stair_up_x][map->stair_up_y];
+    stair_up_tile->type = TILETYPE_STAIR_UP;
+
     map->actors = TCOD_list_new();
 
+    // TODO: BSP map generation
     for (int x = 20; x < 40; x++)
     {
         for (int y = 20; y < 40; y++)
@@ -51,17 +72,10 @@ map_t *map_create()
 
     for (int i = 0; i < 20; i++)
     {
-        actor_create(map, false, rand() % MAP_WIDTH, rand() % MAP_HEIGHT, '@', TCOD_yellow, 10);
+        actor_create(map, false, TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1), TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1), '@', TCOD_yellow, 10);
     }
 
     return map;
-}
-
-void map_destroy(map_t *map)
-{
-    TCOD_list_clear_and_delete(map->actors);
-
-    free(map);
 }
 
 void map_update(map_t *map)
@@ -105,7 +119,7 @@ void map_update(map_t *map)
                     }
 
                     int x, y;
-                    if (!TCOD_path_walk(path, &x, &y, true))
+                    if (!TCOD_path_walk(path, &x, &y, false))
                     {
                         goto end;
                     }
@@ -211,9 +225,17 @@ static TCOD_map_t map_to_TCOD_map(map_t *map)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            // TODO: if there is an actor in the tile, it isn't walkable
             TCOD_map_set_properties(TCOD_map, x, y, tileinfo[tile->type].is_transparent, tileinfo[tile->type].is_walkable);
         }
+    }
+
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+         iterator != (actor_t **)TCOD_list_end(map->actors);
+         iterator++)
+    {
+        actor_t *actor = *iterator;
+
+        TCOD_map_set_properties(TCOD_map, actor->x, actor->y, TCOD_map_is_transparent(TCOD_map, actor->x, actor->y), false);
     }
 
     return TCOD_map;
@@ -226,8 +248,9 @@ static void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius)
 
 static TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy)
 {
-    TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 0.0f);
+    TCOD_map_set_properties(TCOD_map, dx, dy, TCOD_map_is_transparent(TCOD_map, dx, dy), true);
 
+    TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 0.0f);
     TCOD_path_compute(path, ox, oy, dx, dy);
 
     return path;
@@ -251,9 +274,9 @@ actor_t *actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t 
 
 void actor_destroy(map_t *map, actor_t *actor)
 {
-    free(actor);
-
     TCOD_list_remove(map->actors, actor);
+
+    free(actor);
 }
 
 void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y)
@@ -295,10 +318,4 @@ void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y)
 
     actor->x = x;
     actor->y = y;
-}
-
-static void actor_change_map(map_t *mapFrom, map_t *mapTo, actor_t *actor)
-{
-    TCOD_list_remove(mapFrom->actors, actor);
-    TCOD_list_push(mapTo->actors, actor);
 }

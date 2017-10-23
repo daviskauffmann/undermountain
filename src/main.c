@@ -18,7 +18,6 @@ int main(int argc, char *argv[])
     TCOD_console_set_default_foreground(NULL, TCOD_white);
 
     config_init();
-
     world_init();
 
     map_draw(current_map);
@@ -196,10 +195,6 @@ int main(int argc, char *argv[])
         }
     }
 quit:
-
-    world_destroy();
-
-    TCOD_console_delete(NULL);
 
     SDL_Quit();
 

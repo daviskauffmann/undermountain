@@ -3,36 +3,11 @@
 #include <libtcod.h>
 
 #include "map.h"
+#include "world.h"
 
-tileinfo_t tileinfo[NB_TILETYPES];
-
-void tileinfo_init(void)
-{
-    tileinfo[TILETYPE_EMPTY].glyph = ' ';
-    tileinfo[TILETYPE_EMPTY].color = TCOD_white;
-    tileinfo[TILETYPE_EMPTY].is_transparent = true;
-    tileinfo[TILETYPE_EMPTY].is_walkable = true;
-
-    tileinfo[TILETYPE_FLOOR].glyph = '.';
-    tileinfo[TILETYPE_FLOOR].color = TCOD_white;
-    tileinfo[TILETYPE_FLOOR].is_transparent = true;
-    tileinfo[TILETYPE_FLOOR].is_walkable = true;
-
-    tileinfo[TILETYPE_WALL].glyph = '#';
-    tileinfo[TILETYPE_WALL].color = TCOD_white;
-    tileinfo[TILETYPE_WALL].is_transparent = false;
-    tileinfo[TILETYPE_WALL].is_walkable = false;
-
-    tileinfo[TILETYPE_STAIR_DOWN].glyph = '>';
-    tileinfo[TILETYPE_STAIR_DOWN].color = TCOD_white;
-    tileinfo[TILETYPE_STAIR_DOWN].is_transparent = true;
-    tileinfo[TILETYPE_STAIR_DOWN].is_walkable = true;
-
-    tileinfo[TILETYPE_STAIR_UP].glyph = '<';
-    tileinfo[TILETYPE_STAIR_UP].color = TCOD_white;
-    tileinfo[TILETYPE_STAIR_UP].is_transparent = true;
-    tileinfo[TILETYPE_STAIR_UP].is_walkable = true;
-}
+TCOD_map_t map_to_TCOD_map(map_t *map);
+void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius);
+TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy);
 
 map_t *map_create()
 {
@@ -72,7 +47,7 @@ map_t *map_create()
 
     for (int i = 0; i < 20; i++)
     {
-        actor_create(map, false, TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1), TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1), '@', TCOD_yellow, 10);
+        actor_create(map, TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1), TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1), '@', TCOD_yellow, 10);
     }
 
     return map;
@@ -86,7 +61,7 @@ void map_update(map_t *map)
     {
         actor_t *actor = *iterator;
 
-        if (actor->is_player)
+        if (actor == player)
         {
             continue;
         }
@@ -157,7 +132,7 @@ void map_update(map_t *map)
     }
 }
 
-void map_draw(map_t *map, actor_t *player)
+void map_draw(map_t *map)
 {
     TCOD_map_t TCOD_map = map_to_TCOD_map(map);
 
@@ -215,7 +190,7 @@ void map_draw(map_t *map, actor_t *player)
     TCOD_map_delete(TCOD_map);
 }
 
-static TCOD_map_t map_to_TCOD_map(map_t *map)
+TCOD_map_t map_to_TCOD_map(map_t *map)
 {
     TCOD_map_t TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
 
@@ -241,12 +216,12 @@ static TCOD_map_t map_to_TCOD_map(map_t *map)
     return TCOD_map;
 }
 
-static void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius)
+void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius)
 {
     TCOD_map_compute_fov(TCOD_map, x, y, radius, true, FOV_DIAMOND);
 }
 
-static TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy)
+TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy)
 {
     TCOD_map_set_properties(TCOD_map, dx, dy, TCOD_map_is_transparent(TCOD_map, dx, dy), true);
 
@@ -256,11 +231,10 @@ static TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, in
     return path;
 }
 
-actor_t *actor_create(map_t *map, bool is_player, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius)
+actor_t *actor_create(map_t *map, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
-    actor->is_player = is_player;
     actor->x = x;
     actor->y = y;
     actor->glyph = glyph;
@@ -308,7 +282,7 @@ void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y)
         // TODO: dealing with corpses, is_dead flag or separate object alltogether?
         // if corpses can be resurrected, they will need to store information about the actor
         // if corpses can be picked up, they will need to act like items
-        if (!other->is_player)
+        if (other != player)
         {
             actor_destroy(map, other);
         }

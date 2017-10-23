@@ -16,6 +16,8 @@ void world_init(void)
     current_map_index = 0;
     current_map = map_create();
     player = actor_create(current_map, MAP_WIDTH / 2, MAP_HEIGHT / 2, '@', TCOD_white, 10);
+
+    map_draw(current_map);
 }
 
 void world_save(void)

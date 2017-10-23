@@ -20,8 +20,6 @@ int main(int argc, char *argv[])
     config_init();
     world_init();
 
-    map_draw(current_map);
-
     while (!TCOD_console_is_window_closed())
     {
         TCOD_key_t key;
@@ -57,8 +55,6 @@ int main(int argc, char *argv[])
                 case 'r':
                     world_destroy();
                     world_init();
-
-                    map_draw(current_map);
 
                     break;
 

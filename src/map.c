@@ -3,15 +3,21 @@
 #include <libtcod.h>
 
 #include "map.h"
+#include "config.h"
 #include "world.h"
 
 TCOD_map_t map_to_TCOD_map(map_t *map);
 void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius);
 TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy);
 
-map_t *map_create()
+map_t *map_create(void)
 {
     map_t *map = (map_t *)malloc(sizeof(map_t));
+
+    map->stair_down_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1);
+    map->stair_down_y = TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1);
+    map->stair_up_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1);
+    map->stair_up_y = TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1);
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -23,17 +29,11 @@ map_t *map_create()
         }
     }
 
-    map->stair_down_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1);
-    map->stair_down_y = TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1);
     tile_t *stair_down_tile = &map->tiles[map->stair_down_x][map->stair_down_y];
     stair_down_tile->type = TILETYPE_STAIR_DOWN;
 
-    map->stair_up_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1);
-    map->stair_up_y = TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1);
     tile_t *stair_up_tile = &map->tiles[map->stair_up_x][map->stair_up_y];
     stair_up_tile->type = TILETYPE_STAIR_UP;
-
-    map->actors = TCOD_list_new();
 
     // TODO: BSP map generation
     for (int x = 20; x < 40; x++)
@@ -45,10 +45,14 @@ map_t *map_create()
         }
     }
 
+    map->actors = TCOD_list_new();
+
     for (int i = 0; i < 20; i++)
     {
         actor_create(map, TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1), TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1), '@', TCOD_yellow, 10);
     }
+
+    TCOD_list_push(maps, map);
 
     return map;
 }

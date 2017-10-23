@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <libtcod.h>
 
+#include "config.h"
 #include "world.h"
 #include "map.h"
 
@@ -16,7 +17,7 @@ int main(int argc, char *argv[])
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
 
-    TCOD_random_t random = TCOD_random_get_instance();
+    config_init();
 
     world_init();
 
@@ -89,7 +90,7 @@ int main(int argc, char *argv[])
 
                         if (TCOD_list_size(maps) == current_map_index)
                         {
-                            TCOD_list_push(maps, map_create());
+                            map_create();
                         }
 
                         map_t *new_map = TCOD_list_get(maps, current_map_index);

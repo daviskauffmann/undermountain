@@ -41,11 +41,11 @@ typedef struct
 
 typedef struct
 {
-    tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
     uint8_t stair_down_x;
     uint8_t stair_down_y;
     uint8_t stair_up_x;
     uint8_t stair_up_y;
+    tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
     TCOD_list_t actors;
 } map_t;
 

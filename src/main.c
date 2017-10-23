@@ -54,6 +54,14 @@ int main(int argc, char *argv[])
             case TCODK_CHAR:
                 switch (key.c)
                 {
+                case 'r':
+                    world_destroy();
+                    world_init();
+
+                    map_draw(current_map);
+
+                    break;
+
                 case ',':
                     if (key.shift)
                     {

@@ -4,7 +4,58 @@
 #include <stdint.h>
 #include <libtcod.h>
 
-#include "map.h"
+#define MAP_WIDTH 80
+#define MAP_HEIGHT 50
+
+typedef enum {
+    TILETYPE_EMPTY = 0,
+    TILETYPE_FLOOR,
+    TILETYPE_WALL,
+    TILETYPE_STAIR_DOWN,
+    TILETYPE_STAIR_UP,
+    NB_TILETYPES
+} tiletype_t;
+
+typedef struct
+{
+    uint8_t glyph;
+    TCOD_color_t color;
+    bool is_transparent;
+    bool is_walkable;
+} tileinfo_t;
+
+typedef struct
+{
+    tiletype_t type;
+    bool seen;
+} tile_t;
+
+typedef struct
+{
+    uint8_t x;
+    uint8_t y;
+    uint8_t glyph;
+    TCOD_color_t color;
+    uint8_t sight_radius;
+} actor_t;
+
+typedef struct
+{
+    uint8_t stair_down_x;
+    uint8_t stair_down_y;
+    uint8_t stair_up_x;
+    uint8_t stair_up_y;
+    tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
+    TCOD_list_t actors;
+} map_t;
+
+typedef struct
+{
+    TCOD_list_t maps;
+    uint8_t current_map_index;
+    map_t *current_map;
+    actor_t *player;
+} world_t;
 
 typedef struct
 {
@@ -14,7 +65,6 @@ typedef struct
 
 typedef struct
 {
-    bool valid;
     bool is_player;
     uint8_t x;
     uint8_t y;
@@ -25,30 +75,37 @@ typedef struct
 
 typedef struct
 {
-    bool valid;
     uint8_t stair_down_x;
     uint8_t stair_down_y;
     uint8_t stair_up_x;
     uint8_t stair_up_y;
     tiledata_t tiledata[MAP_WIDTH][MAP_HEIGHT];
-    actordata_t actordata[255];
+    uint8_t actor_count;
+    actordata_t *actordata;
 } mapdata_t;
 
 typedef struct
 {
     uint8_t current_map_index;
     TCOD_random_t random;
-    mapdata_t mapdata[255];
+    uint8_t map_count;
+    mapdata_t *mapdata;
 } worlddata_t;
 
-extern TCOD_list_t maps;
-extern uint8_t current_map_index;
-extern map_t *current_map;
-extern actor_t *player;
+world_t *world_create(void);
+void world_save(world_t *world);
+world_t *world_load(void);
+void world_destroy(world_t *world);
 
-void world_init(void);
-void world_save(void);
-void world_load(void);
-void world_destroy(void);
+map_t *map_create(world_t *world);
+void map_update(map_t *map, actor_t *player);
+void map_draw(map_t *map, actor_t *player);
+TCOD_map_t map_to_TCOD_map(map_t *map);
+void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius);
+TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy);
+
+actor_t *actor_create(map_t *map, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius);
+void actor_destroy(map_t *map, actor_t *actor);
+void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y);
 
 #endif

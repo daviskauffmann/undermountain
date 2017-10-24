@@ -5,11 +5,10 @@
 
 #include "config.h"
 #include "world.h"
-#include "map.h"
 
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 50
-#define WINDOW_TITLE "Roguelike"
+#define WINDOW_TITLE "Roguelike v0.1"
 
 int main(int argc, char *argv[])
 {
@@ -18,7 +17,10 @@ int main(int argc, char *argv[])
     TCOD_console_set_default_foreground(NULL, TCOD_white);
 
     config_init();
-    world_init();
+
+    world_t *world = world_create();
+
+    map_draw(world->current_map, world->player);
 
     while (!TCOD_console_is_window_closed())
     {
@@ -28,18 +30,18 @@ int main(int argc, char *argv[])
 
         if (ev == TCOD_EVENT_MOUSE_PRESS)
         {
-            int x = player->x;
-            int y = player->y;
+            int x = world->player->x;
+            int y = world->player->y;
             int xTo = mouse.cx;
             int yTo = mouse.cy;
             TCOD_line_init(x, y, xTo, yTo);
             do
             {
-                tile_t *tile = &current_map->tiles[x][y];
+                tile_t *tile = &world->current_map->tiles[x][y];
                 tile->type = TILETYPE_WALL;
             } while (!TCOD_line_step(&x, &y));
 
-            map_draw(current_map);
+            map_draw(world->current_map, world->player);
         }
 
         if (ev == TCOD_EVENT_KEY_PRESS)
@@ -53,34 +55,42 @@ int main(int argc, char *argv[])
                 switch (key.c)
                 {
                 case 'r':
-                    world_destroy();
-                    world_init();
+                    world_destroy(world);
+                    world = world_create();
+
+                    map_draw(world->current_map, world->player);
 
                     break;
 
                 case ',':
                     if (key.shift)
                     {
-                        if (current_map_index <= 0)
+                        tile_t *tile = &world->current_map->tiles[world->player->x][world->player->y];
+                        if (tile->type != TILETYPE_STAIR_UP)
+                        {
+                            break;
+                        }
+
+                        if (world->current_map_index <= 0)
                         {
                             // TODO: exit game?
                             break;
                         }
 
-                        current_map_index--;
+                        world->current_map_index--;
 
-                        map_t *new_map = TCOD_list_get(maps, current_map_index);
+                        map_t *new_map = TCOD_list_get(world->maps, world->current_map_index);
 
-                        TCOD_list_remove(current_map->actors, player);
-                        TCOD_list_push(new_map->actors, player);
+                        TCOD_list_remove(world->current_map->actors, world->player);
+                        TCOD_list_push(new_map->actors, world->player);
 
-                        current_map = new_map;
+                        world->current_map = new_map;
 
-                        player->x = current_map->stair_down_x;
-                        player->y = current_map->stair_down_y;
+                        world->player->x = world->current_map->stair_down_x;
+                        world->player->y = world->current_map->stair_down_y;
 
-                        map_update(current_map);
-                        map_draw(current_map);
+                        map_update(world->current_map, world->player);
+                        map_draw(world->current_map, world->player);
                     }
 
                     break;
@@ -88,26 +98,28 @@ int main(int argc, char *argv[])
                 case '.':
                     if (key.shift)
                     {
-                        // TODO: max maps?
-                        current_map_index++;
-
-                        if (TCOD_list_size(maps) == current_map_index)
+                        tile_t *tile = &world->current_map->tiles[world->player->x][world->player->y];
+                        if (tile->type != TILETYPE_STAIR_DOWN)
                         {
-                            map_create();
+                            break;
                         }
 
-                        map_t *new_map = TCOD_list_get(maps, current_map_index);
+                        world->current_map_index++;
 
-                        TCOD_list_remove(current_map->actors, player);
-                        TCOD_list_push(new_map->actors, player);
+                        map_t *new_map = TCOD_list_size(world->maps) == world->current_map_index
+                                             ? map_create(world)
+                                             : TCOD_list_get(world->maps, world->current_map_index);
 
-                        current_map = new_map;
+                        TCOD_list_remove(world->current_map->actors, world->player);
+                        TCOD_list_push(new_map->actors, world->player);
 
-                        player->x = current_map->stair_up_x;
-                        player->y = current_map->stair_up_y;
+                        world->current_map = new_map;
 
-                        map_update(current_map);
-                        map_draw(current_map);
+                        world->player->x = world->current_map->stair_up_x;
+                        world->player->y = world->current_map->stair_up_y;
+
+                        map_update(world->current_map, world->player);
+                        map_draw(world->current_map, world->player);
                     }
 
                     break;
@@ -115,7 +127,7 @@ int main(int argc, char *argv[])
                 case 's':
                     if (key.lctrl)
                     {
-                        world_save();
+                        world_save(world);
                     }
 
                     break;
@@ -123,7 +135,10 @@ int main(int argc, char *argv[])
                 case 'l':
                     if (key.lctrl)
                     {
-                        world_load();
+                        world_destroy(world);
+                        world = world_load();
+
+                        map_draw(world->current_map, world->player);
                     }
 
                     break;
@@ -132,67 +147,67 @@ int main(int argc, char *argv[])
                 break;
 
             // case TCODK_KP1:
-            //     actor_move(current_map, player, player->x - 1, player->y + 1);
+            //     actor_move(world->current_map, world->player, world->player->x - 1, world->player->y + 1);
 
-            //     map_update(current_map);
-            //     map_draw(current_map);
+            //     map_update(world->current_map, world->player);
+            //     map_draw(world->current_map, world->player);
 
             //     break;
             // case TCODK_KP3:
-            //     actor_move(current_map, player, player->x + 1, player->y + 1);
+            //     actor_move(world->current_map, world->player, world->player->x + 1, world->player->y + 1);
 
-            //     map_update(current_map);
-            //     map_draw(current_map);
+            //     map_update(world->current_map, world->player);
+            //     map_draw(world->current_map, world->player);
 
             //     break;
             // case TCODK_KP7:
-            //     actor_move(current_map, player, player->x - 1, player->y - 1);
+            //     actor_move(world->current_map, world->player, world->player->x - 1, world->player->y - 1);
 
-            //     map_update(current_map);
-            //     map_draw(current_map);
+            //     map_update(world->current_map, world->player);
+            //     map_draw(world->current_map, world->player);
 
             //     break;
             // case TCODK_KP9:
-            //     actor_move(current_map, player, player->x + 1, player->y - 1);
+            //     actor_move(world->current_map, world->player, world->player->x + 1, world->player->y - 1);
 
-            //     map_update(current_map);
-            //     map_draw(current_map);
+            //     map_update(world->current_map, world->player);
+            //     map_draw(world->current_map, world->player);
 
             //     break;
 
             case TCODK_KP8:
             case TCODK_UP:
-                actor_move(current_map, player, player->x, player->y - 1);
+                actor_move(world->current_map, world->player, world->player->x, world->player->y - 1);
 
-                map_update(current_map);
-                map_draw(current_map);
+                map_update(world->current_map, world->player);
+                map_draw(world->current_map, world->player);
 
                 break;
 
             case TCODK_KP2:
             case TCODK_DOWN:
-                actor_move(current_map, player, player->x, player->y + 1);
+                actor_move(world->current_map, world->player, world->player->x, world->player->y + 1);
 
-                map_update(current_map);
-                map_draw(current_map);
+                map_update(world->current_map, world->player);
+                map_draw(world->current_map, world->player);
 
                 break;
 
             case TCODK_KP4:
             case TCODK_LEFT:
-                actor_move(current_map, player, player->x - 1, player->y);
+                actor_move(world->current_map, world->player, world->player->x - 1, world->player->y);
 
-                map_update(current_map);
-                map_draw(current_map);
+                map_update(world->current_map, world->player);
+                map_draw(world->current_map, world->player);
 
                 break;
 
             case TCODK_KP6:
             case TCODK_RIGHT:
-                actor_move(current_map, player, player->x + 1, player->y);
+                actor_move(world->current_map, world->player, world->player->x + 1, world->player->y);
 
-                map_update(current_map);
-                map_draw(current_map);
+                map_update(world->current_map, world->player);
+                map_draw(world->current_map, world->player);
 
                 break;
             }

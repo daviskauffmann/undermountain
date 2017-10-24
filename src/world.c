@@ -1,43 +1,40 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <libtcod.h>
 
+#include "config.h"
 #include "world.h"
-#include "map.h"
 
-tileinfo_t tileinfo[NB_TILETYPES];
-TCOD_list_t maps;
-uint8_t current_map_index;
-map_t *current_map;
-actor_t *player;
-
-void world_init(void)
+world_t *world_create(void)
 {
-    maps = TCOD_list_new();
-    current_map_index = 0;
-    current_map = map_create();
-    player = actor_create(current_map, MAP_WIDTH / 2, MAP_HEIGHT / 2, '@', TCOD_white, 10);
+    world_t *world = (world_t *)malloc(sizeof(world_t));
 
-    map_draw(current_map);
+    world->maps = TCOD_list_new();
+    world->current_map_index = 0;
+    world->current_map = map_create(world);
+    world->player = actor_create(world->current_map, MAP_WIDTH / 2, MAP_HEIGHT / 2, '@', TCOD_white, 10);
+
+    return world;
 }
 
-void world_save(void)
+void world_save(world_t *world)
 {
-    FILE *file = fopen("save.dat", "w");
-
+    // TODO: this crashes sometimes for unknown reasons
+    // may need to bring out the debugger
     worlddata_t *worlddata = (worlddata_t *)malloc(sizeof(worlddata_t));
 
     worlddata->random = TCOD_random_save(NULL);
-    worlddata->current_map_index = current_map_index;
+    worlddata->current_map_index = world->current_map_index;
 
+    worlddata->mapdata = (mapdata_t *)malloc(sizeof(mapdata_t) * TCOD_list_size(world->maps));
     int i = 0;
-    for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
-         iterator != (map_t **)TCOD_list_end(maps);
+    for (map_t **iterator = (map_t **)TCOD_list_begin(world->maps);
+         iterator != (map_t **)TCOD_list_end(world->maps);
          iterator++)
     {
         map_t *map = *iterator;
         mapdata_t *mapdata = &worlddata->mapdata[i];
 
-        mapdata->valid = true;
         mapdata->stair_down_x = map->stair_down_x;
         mapdata->stair_down_y = map->stair_down_y;
         mapdata->stair_up_x = map->stair_up_x;
@@ -55,6 +52,7 @@ void world_save(void)
             }
         }
 
+        mapdata->actordata = (actordata_t *)malloc(sizeof(actordata_t) * TCOD_list_size(map->actors));
         int j = 0;
         for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
              iterator != (actor_t **)TCOD_list_end(map->actors);
@@ -63,8 +61,7 @@ void world_save(void)
             actor_t *actor = *iterator;
             actordata_t *actordata = &mapdata->actordata[j];
 
-            actordata->valid = true;
-            actordata->is_player = actor == player;
+            actordata->is_player = actor == world->player;
             actordata->x = actor->x;
             actordata->y = actor->y;
             actordata->glyph = actor->glyph;
@@ -74,38 +71,40 @@ void world_save(void)
             j++;
         }
 
+        mapdata->actor_count = j;
+
         i++;
     }
 
-    fwrite(worlddata, sizeof(mapdata_t), 1, file);
+    worlddata->map_count = i;
 
+    FILE *file = fopen("save.dat", "w");
+    fwrite(worlddata, sizeof(mapdata_t), 1, file);
     fclose(file);
+
+    free(worlddata);
 }
 
-void world_load(void)
+world_t *world_load(void)
 {
-    world_destroy();
-
-    maps = TCOD_list_new();
-
-    FILE *file = fopen("save.dat", "r");
-
+    // TODO: this also crashes for unknown reasons
+    // it also always crashes when loading a file from another instance of the game
+    // it has only ever been successful when loading a file from the same process
+    // could have something to do with pointers?
     worlddata_t *worlddata = (worlddata_t *)malloc(sizeof(worlddata_t));
 
+    FILE *file = fopen("save.dat", "r");
     fread(worlddata, sizeof(worlddata_t), 1, file);
+    fclose(file);
 
-    TCOD_random_restore(NULL, worlddata->random);
-    current_map_index = worlddata->current_map_index;
+    world_t *world = (world_t *)malloc(sizeof(world_t));
 
-    for (int i = 0; i < 255; i++)
+    world->maps = TCOD_list_new();
+    world->current_map_index = worlddata->current_map_index;
+
+    for (int i = 0; i < worlddata->map_count; i++)
     {
-        mapdata_t *mapdata = &worlddata->mapdata[i];
-
-        if (!mapdata->valid)
-        {
-            continue;
-        }
-
+        mapdata_t *mapdata = worlddata->mapdata + i;
         map_t *map = (map_t *)malloc(sizeof(map_t));
 
         map->stair_down_x = mapdata->stair_down_x;
@@ -125,15 +124,9 @@ void world_load(void)
             }
         }
 
-        for (int j = 0; j < 255; j++)
+        for (int j = 0; j < mapdata->actor_count; j++)
         {
-            actordata_t *actordata = &mapdata->actordata[j];
-
-            if (!actordata->valid)
-            {
-                continue;
-            }
-
+            actordata_t *actordata = mapdata->actordata + j;
             actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
             actor->x = actordata->x;
@@ -146,24 +139,24 @@ void world_load(void)
 
             if (actordata->is_player)
             {
-                player = actor;
+                world->player = actor;
             }
         }
 
-        TCOD_list_push(maps, map);
+        TCOD_list_push(world->maps, map);
     }
 
-    current_map = TCOD_list_get(maps, current_map_index);
+    world->current_map = TCOD_list_get(world->maps, world->current_map_index);
 
-    fclose(file);
+    TCOD_random_restore(NULL, worlddata->random);
 
-    map_draw(current_map);
+    return world;
 }
 
-void world_destroy(void)
+void world_destroy(world_t *world)
 {
-    for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
-         iterator != (map_t **)TCOD_list_end(maps);
+    for (map_t **iterator = (map_t **)TCOD_list_begin(world->maps);
+         iterator != (map_t **)TCOD_list_end(world->maps);
          iterator++)
     {
         map_t *map = *iterator;
@@ -171,5 +164,5 @@ void world_destroy(void)
         TCOD_list_clear_and_delete(map->actors);
     }
 
-    TCOD_list_clear_and_delete(maps);
+    TCOD_list_clear_and_delete(world->maps);
 }

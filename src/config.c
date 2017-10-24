@@ -1,7 +1,9 @@
 #include <libtcod.h>
 
 #include "config.h"
-#include "map.h"
+#include "world.h"
+
+tileinfo_t tileinfo[NB_TILETYPES];
 
 void config_init(void)
 {

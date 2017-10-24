@@ -5,11 +5,12 @@
 #include "config.h"
 #include "world.h"
 
-#define DEPTH 10
-#define MIN_SIZE 5
+#define BSP_DEPTH 10
+#define MIN_ROOM_SIZE 5
+// TODO: fix this when false
 #define FULL_ROOMS true
 
-bool traverse_node(TCOD_bsp_t *node, void *userData);
+bool traverse_node(TCOD_bsp_t *node, map_t *map);
 void vline(map_t *map, int x, int y1, int y2);
 void vline_up(map_t *map, int x, int y);
 void vline_down(map_t *map, int x, int y);
@@ -33,7 +34,7 @@ map_t *map_create(world_t *world)
 
     map->rooms = TCOD_list_new();
     TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    TCOD_bsp_split_recursive(bsp, NULL, DEPTH, MIN_SIZE + 1, MIN_SIZE + 1, 1.5f, 1.5f);
+    TCOD_bsp_split_recursive(bsp, NULL, BSP_DEPTH, MIN_ROOM_SIZE + 1, MIN_ROOM_SIZE + 1, 1.5f, 1.5f);
     TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
     TCOD_bsp_delete(bsp);
 
@@ -52,7 +53,16 @@ map_t *map_create(world_t *world)
     map->actors = TCOD_list_new();
     for (int i = 0; i < 20; i++)
     {
-        actor_create(map, TCOD_random_get_int(NULL, 0, MAP_WIDTH - 1), TCOD_random_get_int(NULL, 0, MAP_HEIGHT - 1), '@', TCOD_yellow, 10);
+        room_t *actor_room = TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
+
+        if (actor_room == stair_up_room)
+        {
+            continue;
+        }
+
+        uint8_t x = TCOD_random_get_int(NULL, actor_room->x, actor_room->x + actor_room->w - 1);
+        uint8_t y = TCOD_random_get_int(NULL, actor_room->y, actor_room->y + actor_room->h - 1);
+        actor_create(map, x, y, '@', TCOD_yellow, 10);
     }
 
     TCOD_list_push(world->maps, map);
@@ -80,10 +90,10 @@ bool traverse_node(TCOD_bsp_t *node, map_t *map)
 
         if (!FULL_ROOMS)
         {
-            min_x = TCOD_random_get_int(NULL, min_x, max_x - MIN_SIZE + 1);
-            min_y = TCOD_random_get_int(NULL, min_y, max_y - MIN_SIZE + 1);
-            max_x = TCOD_random_get_int(NULL, min_x + MIN_SIZE - 2, max_x);
-            max_y = TCOD_random_get_int(NULL, min_y + MIN_SIZE - 2, max_y);
+            min_x = TCOD_random_get_int(NULL, min_x, max_x - MIN_ROOM_SIZE + 1);
+            min_y = TCOD_random_get_int(NULL, min_y, max_y - MIN_ROOM_SIZE + 1);
+            max_x = TCOD_random_get_int(NULL, min_x + MIN_ROOM_SIZE - 2, max_x);
+            max_y = TCOD_random_get_int(NULL, min_y + MIN_ROOM_SIZE - 2, max_y);
         }
 
         node->x = min_x;
@@ -198,7 +208,7 @@ void vline_up(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (y >= 0 && tile->type == TILETYPE_WALL)
+    while (y >= 0 && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
         y--;
@@ -209,7 +219,7 @@ void vline_down(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (y < MAP_HEIGHT && tile->type == TILETYPE_WALL)
+    while (y < MAP_HEIGHT && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
         y++;
@@ -235,7 +245,7 @@ void hline(map_t *map, int x1, int y, int x2)
 void hline_left(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
-    while (x >= 0 && tile->type == TILETYPE_WALL)
+    while (x >= 0 && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
         x--;
@@ -245,7 +255,7 @@ void hline_left(map_t *map, int x, int y)
 void hline_right(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
-    while (x < MAP_WIDTH && tile->type == TILETYPE_WALL)
+    while (x < MAP_WIDTH && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
         x++;

@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "world.h"
+#include "save.h"
 
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 50
@@ -214,6 +215,8 @@ int main(int argc, char *argv[])
         }
     }
 quit:
+
+    world_destroy(world);
 
     SDL_Quit();
 

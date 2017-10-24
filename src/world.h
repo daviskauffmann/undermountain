@@ -32,6 +32,14 @@ typedef struct
 
 typedef struct
 {
+    int x;
+    int y;
+    int w;
+    int h;
+} room_t;
+
+typedef struct
+{
     uint8_t x;
     uint8_t y;
     uint8_t glyph;
@@ -46,6 +54,7 @@ typedef struct
     uint8_t stair_up_x;
     uint8_t stair_up_y;
     tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
+    TCOD_list_t rooms;
     TCOD_list_t actors;
 } map_t;
 
@@ -57,44 +66,7 @@ typedef struct
     actor_t *player;
 } world_t;
 
-typedef struct
-{
-    tiletype_t type;
-    bool seen;
-} tiledata_t;
-
-typedef struct
-{
-    bool is_player;
-    uint8_t x;
-    uint8_t y;
-    uint8_t glyph;
-    TCOD_color_t color;
-    uint8_t sight_radius;
-} actordata_t;
-
-typedef struct
-{
-    uint8_t stair_down_x;
-    uint8_t stair_down_y;
-    uint8_t stair_up_x;
-    uint8_t stair_up_y;
-    tiledata_t tiledata[MAP_WIDTH][MAP_HEIGHT];
-    uint8_t actor_count;
-    actordata_t *actordata;
-} mapdata_t;
-
-typedef struct
-{
-    uint8_t current_map_index;
-    TCOD_random_t random;
-    uint8_t map_count;
-    mapdata_t *mapdata;
-} worlddata_t;
-
 world_t *world_create(void);
-void world_save(world_t *world);
-world_t *world_load(void);
 void world_destroy(world_t *world);
 
 map_t *map_create(world_t *world);

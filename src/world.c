@@ -104,7 +104,7 @@ world_t *world_load(void)
 
     for (int i = 0; i < worlddata->map_count; i++)
     {
-        mapdata_t *mapdata = worlddata->mapdata + i;
+        mapdata_t *mapdata = &worlddata->mapdata[i];
         map_t *map = (map_t *)malloc(sizeof(map_t));
 
         map->stair_down_x = mapdata->stair_down_x;
@@ -126,7 +126,7 @@ world_t *world_load(void)
 
         for (int j = 0; j < mapdata->actor_count; j++)
         {
-            actordata_t *actordata = mapdata->actordata + j;
+            actordata_t *actordata = &mapdata->actordata[j];
             actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
             actor->x = actordata->x;

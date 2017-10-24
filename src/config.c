@@ -7,6 +7,12 @@ tileinfo_t tileinfo[NB_TILETYPES];
 
 void config_init(void)
 {
+    // TODO: read these parameters from a config file
+    TCOD_console_set_custom_font("terminal.png", TCOD_FONT_LAYOUT_ASCII_INCOL, 16, 16);
+    TCOD_console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE, false, TCOD_RENDERER_SDL);
+    TCOD_console_set_default_background(NULL, TCOD_black);
+    TCOD_console_set_default_foreground(NULL, TCOD_white);
+
     // TODO: move this to a config file
     tileinfo[TILETYPE_EMPTY].glyph = ' ';
     tileinfo[TILETYPE_EMPTY].color = TCOD_white;

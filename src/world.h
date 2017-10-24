@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <libtcod.h>
 
-#define MAP_WIDTH 80
-#define MAP_HEIGHT 50
+#define MAP_WIDTH 100
+#define MAP_HEIGHT 100
 
 typedef enum {
     TILETYPE_EMPTY = 0,

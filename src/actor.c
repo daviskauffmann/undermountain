@@ -52,7 +52,7 @@ void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y)
 
         // TODO: damage and health
         // TODO: player death
-        // TODO: dealing with corpses, is_dead flag or separate object alltogether?
+        // TODO: dealing with corpses, is_dead flag or separate object altogether?
         // if corpses can be resurrected, they will need to store information about the actor
         // if corpses can be picked up, they will need to act like items
         actor_destroy(map, other);

@@ -10,6 +10,8 @@
 // TODO: fix this when false
 #define FULL_ROOMS true
 
+#define CONSTRAIN_VIEW true
+
 bool traverse_node(TCOD_bsp_t *node, map_t *map);
 void vline(map_t *map, int x, int y1, int y2);
 void vline_up(map_t *map, int x, int y);
@@ -349,10 +351,34 @@ void map_draw(map_t *map, actor_t *player)
 
     TCOD_console_clear(NULL);
 
-    for (int x = 0; x < MAP_WIDTH; x++)
+    int vw = SCREEN_WIDTH;
+    int vh = SCREEN_HEIGHT;
+    int vx = player->x - vw / 2;
+    int vy = player->y - vh / 2;
+
+    if (CONSTRAIN_VIEW)
     {
-        for (int y = 0; y < MAP_HEIGHT; y++)
+        vx = vx < 0
+                 ? 0
+                 : vx + vw > MAP_WIDTH
+                       ? MAP_WIDTH - vw
+                       : vx;
+        vy = vy < 0
+                 ? 0
+                 : vy + vh > MAP_HEIGHT
+                       ? MAP_HEIGHT - vh
+                       : vy;
+    }
+
+    for (int x = vx; x < vx + vw; x++)
+    {
+        for (int y = vy; y < vy + vh; y++)
         {
+            if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
+            {
+                continue;
+            }
+
             tile_t *tile = &map->tiles[x][y];
 
             TCOD_color_t color;
@@ -374,8 +400,8 @@ void map_draw(map_t *map, actor_t *player)
                 }
             }
 
-            TCOD_console_set_char_foreground(NULL, x, y, color);
-            TCOD_console_set_char(NULL, x, y, tileinfo[tile->type].glyph);
+            TCOD_console_set_char_foreground(NULL, x - vx, y - vy, color);
+            TCOD_console_set_char(NULL, x - vx, y - vy, tileinfo[tile->type].glyph);
         }
     }
 
@@ -390,8 +416,8 @@ void map_draw(map_t *map, actor_t *player)
             continue;
         }
 
-        TCOD_console_set_char_foreground(NULL, actor->x, actor->y, actor->color);
-        TCOD_console_set_char(NULL, actor->x, actor->y, actor->glyph);
+        TCOD_console_set_char_foreground(NULL, actor->x - vx, actor->y - vy, actor->color);
+        TCOD_console_set_char(NULL, actor->x - vx, actor->y - vy, actor->glyph);
     }
 
     TCOD_console_flush();
@@ -434,7 +460,7 @@ TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy)
 {
     TCOD_map_set_properties(TCOD_map, dx, dy, TCOD_map_is_transparent(TCOD_map, dx, dy), true);
 
-    TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 0.0f);
+    TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
     TCOD_path_compute(path, ox, oy, dx, dy);
 
     return path;

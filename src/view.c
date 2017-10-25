@@ -4,6 +4,7 @@
 #include "config.h"
 #include "game.h"
 #include "world.h"
+#include "map.h"
 
 int view_left;
 int view_top;

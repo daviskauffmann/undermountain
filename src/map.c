@@ -2,22 +2,10 @@
 #include <stdint.h>
 #include <libtcod.h>
 
+#include "map.h"
 #include "config.h"
 #include "game.h"
 #include "world.h"
-
-#define BSP_DEPTH 10
-#define MIN_ROOM_SIZE 5
-// TODO: fix this when false
-#define FULL_ROOMS true
-
-bool traverse_node(TCOD_bsp_t *node, map_t *map);
-void vline(map_t *map, int x, int y1, int y2);
-void vline_up(map_t *map, int x, int y);
-void vline_down(map_t *map, int x, int y);
-void hline(map_t *map, int x1, int y, int x2);
-void hline_left(map_t *map, int x, int y);
-void hline_right(map_t *map, int x, int y);
 
 map_t *map_create(void)
 {
@@ -71,7 +59,7 @@ map_t *map_create(void)
     return map;
 }
 
-bool traverse_node(TCOD_bsp_t *node, map_t *map)
+static bool traverse_node(TCOD_bsp_t *node, map_t *map)
 {
     if (TCOD_bsp_is_leaf(node))
     {
@@ -189,7 +177,7 @@ bool traverse_node(TCOD_bsp_t *node, map_t *map)
     return true;
 }
 
-void vline(map_t *map, int x, int y1, int y2)
+static void vline(map_t *map, int x, int y1, int y2)
 {
     if (y1 > y2)
     {
@@ -205,7 +193,7 @@ void vline(map_t *map, int x, int y1, int y2)
     }
 }
 
-void vline_up(map_t *map, int x, int y)
+static void vline_up(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
@@ -216,7 +204,7 @@ void vline_up(map_t *map, int x, int y)
     }
 }
 
-void vline_down(map_t *map, int x, int y)
+static void vline_down(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
@@ -227,7 +215,7 @@ void vline_down(map_t *map, int x, int y)
     }
 }
 
-void hline(map_t *map, int x1, int y, int x2)
+static void hline(map_t *map, int x1, int y, int x2)
 {
     if (x1 > x2)
     {
@@ -243,7 +231,7 @@ void hline(map_t *map, int x1, int y, int x2)
     }
 }
 
-void hline_left(map_t *map, int x, int y)
+static void hline_left(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
     while (x >= 0 && tile->type != TILETYPE_FLOOR)
@@ -253,7 +241,7 @@ void hline_left(map_t *map, int x, int y)
     }
 }
 
-void hline_right(map_t *map, int x, int y)
+static void hline_right(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
     while (x < MAP_WIDTH && tile->type != TILETYPE_FLOOR)

@@ -4,6 +4,8 @@
 
 #include "game.h"
 #include "world.h"
+#include "map.h"
+#include "actor.h"
 
 world_t *world;
 uint8_t current_map_index;

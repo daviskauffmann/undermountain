@@ -67,13 +67,4 @@ world_t *world_create(void);
 void world_update(void);
 void world_destroy(void);
 
-map_t *map_create(void);
-TCOD_map_t map_to_TCOD_map(map_t *map);
-void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius);
-TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy);
-
-actor_t *actor_create(map_t *map, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius);
-void actor_destroy(map_t *map, actor_t *actor);
-void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y);
-
 #endif

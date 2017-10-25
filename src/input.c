@@ -5,6 +5,7 @@
 #include "game.h"
 #include "view.h"
 #include "world.h"
+#include "map.h"
 
 input_t input_handle(void)
 {

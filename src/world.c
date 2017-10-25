@@ -15,7 +15,7 @@ world_t *world_create(void)
     return world;
 }
 
-void world_update()
+void world_update(void)
 {
     for (map_t **iterator = (map_t **)TCOD_list_begin(world->maps);
          iterator != (map_t **)TCOD_list_end(world->maps);
@@ -101,7 +101,7 @@ void world_update()
     }
 }
 
-void world_destroy()
+void world_destroy(void)
 {
     for (map_t **iterator = (map_t **)TCOD_list_begin(world->maps);
          iterator != (map_t **)TCOD_list_end(world->maps);

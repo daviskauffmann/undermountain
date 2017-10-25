@@ -6,7 +6,7 @@
 #include "view.h"
 #include "world.h"
 
-input_t input_handle()
+input_t input_handle(void)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;

@@ -19,7 +19,7 @@ void hline(map_t *map, int x1, int y, int x2);
 void hline_left(map_t *map, int x, int y);
 void hline_right(map_t *map, int x, int y);
 
-map_t *map_create()
+map_t *map_create(void)
 {
     map_t *map = (map_t *)malloc(sizeof(map_t));
 

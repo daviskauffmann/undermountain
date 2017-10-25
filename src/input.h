@@ -9,6 +9,6 @@ typedef enum {
     INPUT_QUIT
 } input_t;
 
-input_t input_handle();
+input_t input_handle(void);
 
 #endif

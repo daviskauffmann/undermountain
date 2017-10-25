@@ -10,7 +10,7 @@ int view_top;
 int view_right;
 int view_bottom;
 
-void view_update()
+void view_update(void)
 {
     view_right = SCREEN_WIDTH;
     view_bottom = SCREEN_HEIGHT;
@@ -32,7 +32,7 @@ void view_update()
     }
 }
 
-void view_render()
+void view_render(void)
 {
     TCOD_map_t TCOD_map = map_to_TCOD_map(current_map);
 

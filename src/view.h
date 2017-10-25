@@ -16,7 +16,7 @@ extern int view_top;
 extern int view_right;
 extern int view_bottom;
 
-void view_update();
-void view_render();
+void view_update(void);
+void view_render(void);
 
 #endif

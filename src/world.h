@@ -66,12 +66,13 @@ typedef struct
     actor_t *player;
 } world_t;
 
+extern world_t *world;
+
 world_t *world_create(void);
 void world_destroy(world_t *world);
 
 map_t *map_create(world_t *world);
 void map_update(map_t *map, actor_t *player);
-void map_draw(map_t *map, actor_t *player);
 TCOD_map_t map_to_TCOD_map(map_t *map);
 void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius);
 TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy);

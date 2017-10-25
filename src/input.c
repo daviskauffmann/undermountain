@@ -12,6 +12,8 @@ input_t input_handle(world_t *world)
 
     if (ev == TCOD_EVENT_MOUSE_PRESS)
     {
+        // TODO: offset by vx and vy
+        // this means they will need to be global
         int x = world->player->x;
         int y = world->player->y;
         int xTo = mouse.cx;

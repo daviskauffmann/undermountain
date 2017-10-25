@@ -5,6 +5,7 @@
 
 #include "config.h"
 #include "world.h"
+#include "render.h"
 #include "input.h"
 #include "save.h"
 
@@ -14,7 +15,7 @@ int main(int argc, char *argv[])
 
     world_t *world = world_create();
 
-    map_draw(world->current_map, world->player);
+    render(world);
 
     while (!TCOD_console_is_window_closed())
     {
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
 
         case INPUT_UPDATE:
             map_update(world->current_map, world->player);
-            map_draw(world->current_map, world->player);
+            render(world);
 
             break;
 
@@ -34,7 +35,7 @@ int main(int argc, char *argv[])
             world_destroy(world);
             world = world_create();
 
-            map_draw(world->current_map, world->player);
+            render(world);
 
             break;
 
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
             world_destroy(world);
             world = world_load();
 
-            map_draw(world->current_map, world->player);
+            render(world);
 
             break;
 

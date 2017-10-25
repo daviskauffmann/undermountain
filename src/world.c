@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <libtcod.h>
 
 #include "config.h"

@@ -1,11 +1,10 @@
-#include <stdint.h>
 #include <libtcod.h>
 
 #include "config.h"
 #include "game.h"
 #include "world.h"
 
-actor_t *actor_create(map_t *map, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius)
+actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int sight_radius)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
@@ -27,7 +26,7 @@ void actor_destroy(map_t *map, actor_t *actor)
     free(actor);
 }
 
-void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y)
+void actor_move(map_t *map, actor_t *actor, int x, int y)
 {
     if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
     {

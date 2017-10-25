@@ -1,7 +1,6 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <stdint.h>
 #include <libtcod.h>
 
 #define MAP_WIDTH 100
@@ -32,19 +31,19 @@ typedef struct
 
 typedef struct
 {
-    uint8_t x;
-    uint8_t y;
-    uint8_t glyph;
+    int x;
+    int y;
+    unsigned char glyph;
     TCOD_color_t color;
-    uint8_t sight_radius;
+    int sight_radius;
 } actor_t;
 
 typedef struct
 {
-    uint8_t stair_down_x;
-    uint8_t stair_down_y;
-    uint8_t stair_up_x;
-    uint8_t stair_up_y;
+    int stair_down_x;
+    int stair_down_y;
+    int stair_up_x;
+    int stair_up_y;
     tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
     TCOD_list_t rooms;
     TCOD_list_t actors;

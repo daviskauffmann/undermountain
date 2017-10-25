@@ -9,7 +9,7 @@
 
 typedef struct
 {
-    uint8_t glyph;
+    unsigned char glyph;
     TCOD_color_t color;
     bool is_transparent;
     bool is_walkable;

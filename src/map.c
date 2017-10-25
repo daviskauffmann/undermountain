@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <libtcod.h>
 
 #include "map.h"
 #include "config.h"
 #include "game.h"
 #include "world.h"
+#include "actor.h"
 
 map_t *map_create(void)
 {
@@ -27,31 +27,26 @@ map_t *map_create(void)
     TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
     TCOD_bsp_delete(bsp);
 
-    room_t *stair_down_room = TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
-    map->stair_down_x = TCOD_random_get_int(NULL, stair_down_room->x, stair_down_room->x + stair_down_room->w - 1);
-    map->stair_down_y = TCOD_random_get_int(NULL, stair_down_room->y, stair_down_room->y + stair_down_room->h - 1);
-    tile_t *stair_down_tile = &map->tiles[map->stair_down_x][map->stair_down_y];
-    stair_down_tile->type = TILETYPE_STAIR_DOWN;
+    room_t *stair_down_room = map_get_random_room(map);
+    room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
+    map->tiles[map->stair_down_x][map->stair_down_y].type = TILETYPE_STAIR_DOWN;
 
-    room_t *stair_up_room = TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
-    map->stair_up_x = TCOD_random_get_int(NULL, stair_up_room->x, stair_up_room->x + stair_up_room->w - 1);
-    map->stair_up_y = TCOD_random_get_int(NULL, stair_up_room->y, stair_up_room->y + stair_up_room->h - 1);
-    tile_t *stair_up_tile = &map->tiles[map->stair_up_x][map->stair_up_y];
-    stair_up_tile->type = TILETYPE_STAIR_UP;
+    room_t *stair_up_room = map_get_random_room(map);
+    room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
+    map->tiles[map->stair_up_x][map->stair_up_y].type = TILETYPE_STAIR_UP;
 
     map->actors = TCOD_list_new();
-    for (int i = 0; i < 0; i++)
+    for (int i = 0; i < 20; i++)
     {
-        room_t *actor_room = TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
+        room_t *actor_room = map_get_random_room(map);
 
         if (actor_room == stair_up_room)
         {
             continue;
         }
 
-        uint8_t x = TCOD_random_get_int(NULL, actor_room->x, actor_room->x + actor_room->w - 1);
-        uint8_t y = TCOD_random_get_int(NULL, actor_room->y, actor_room->y + actor_room->h - 1);
-        actor_create(map, x, y, '@', TCOD_yellow, 10);
+        actor_t *actor = actor_create(map, 0, 0, '@', TCOD_yellow, 10);
+        // room_get_random_pos(actor_room, &actor->x, &actor->y);
     }
 
     TCOD_list_push(world->maps, map);
@@ -249,6 +244,17 @@ static void hline_right(map_t *map, int x, int y)
         tile->type = TILETYPE_FLOOR;
         x++;
     }
+}
+
+room_t *map_get_random_room(map_t *map)
+{
+    return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
+}
+
+void room_get_random_pos(room_t *room, int *x, int *y)
+{
+    *x = TCOD_random_get_int(NULL, room->x, room->x + room->w - 1);
+    *y = TCOD_random_get_int(NULL, room->y, room->y + room->h - 1);
 }
 
 TCOD_map_t map_to_TCOD_map(map_t *map)

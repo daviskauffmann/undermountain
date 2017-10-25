@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <libtcod.h>
 
 #include "game.h"
@@ -8,7 +7,7 @@
 #include "actor.h"
 
 world_t *world;
-uint8_t current_map_index;
+int current_map_index;
 map_t *current_map;
 actor_t *player;
 
@@ -22,10 +21,6 @@ void game_init(void)
 
 void game_load(void)
 {
-    // TODO: this crashes for unknown reasons
-    // it also always crashes when loading a file from another instance of the game
-    // it has only ever been successful when loading a file from the same process
-    // could have something to do with pointers?
     gamedata_t *gamedata = (gamedata_t *)malloc(sizeof(gamedata_t));
 
     FILE *file = fopen("save.dat", "r");
@@ -103,8 +98,6 @@ void game_load(void)
 
 void game_save(void)
 {
-    // TODO: this crashes for unknown reasons
-    // may need to bring out the debugger
     gamedata_t *gamedata = (gamedata_t *)malloc(sizeof(gamedata_t));
 
     gamedata->random = TCOD_random_save(NULL);

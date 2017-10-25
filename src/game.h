@@ -1,7 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <stdint.h>
 #include <libtcod.h>
 
 #include "world.h"
@@ -14,50 +13,50 @@ typedef struct
 
 typedef struct
 {
-    uint8_t x;
-    uint8_t y;
-    uint8_t w;
-    uint8_t h;
+    int x;
+    int y;
+    int w;
+    int h;
 } roomdata_t;
 
 typedef struct
 {
     bool is_player;
-    uint8_t x;
-    uint8_t y;
-    uint8_t glyph;
+    int x;
+    int y;
+    unsigned char glyph;
     TCOD_color_t color;
-    uint8_t sight_radius;
+    int sight_radius;
 } actordata_t;
 
 typedef struct
 {
-    uint8_t stair_down_x;
-    uint8_t stair_down_y;
-    uint8_t stair_up_x;
-    uint8_t stair_up_y;
+    int stair_down_x;
+    int stair_down_y;
+    int stair_up_x;
+    int stair_up_y;
     tiledata_t tiledata[MAP_WIDTH][MAP_HEIGHT];
-    uint8_t room_count;
+    int room_count;
     roomdata_t *roomdata;
-    uint8_t actor_count;
+    int actor_count;
     actordata_t *actordata;
 } mapdata_t;
 
 typedef struct
 {
-    uint8_t map_count;
+    int map_count;
     mapdata_t *mapdata;
 } worlddata_t;
 
 typedef struct
 {
     TCOD_random_t random;
-    uint8_t current_map_index;
+    int current_map_index;
     worlddata_t *worlddata;
 } gamedata_t;
 
 extern world_t *world;
-extern uint8_t current_map_index;
+extern int current_map_index;
 extern map_t *current_map;
 extern actor_t *player;
 

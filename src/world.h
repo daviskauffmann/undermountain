@@ -18,14 +18,6 @@ typedef enum {
 
 typedef struct
 {
-    uint8_t glyph;
-    TCOD_color_t color;
-    bool is_transparent;
-    bool is_walkable;
-} tileinfo_t;
-
-typedef struct
-{
     tiletype_t type;
     bool seen;
 } tile_t;

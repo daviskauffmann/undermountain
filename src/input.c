@@ -81,10 +81,10 @@ input_t input_handle(void)
                     TCOD_list_remove(current_map->actors, player);
                     TCOD_list_push(new_map->actors, player);
 
-                    current_map = new_map;
+                    player->x = new_map->stair_down_x;
+                    player->y = new_map->stair_down_y;
 
-                    player->x = current_map->stair_down_x;
-                    player->y = current_map->stair_down_y;
+                    current_map = new_map;
 
                     return INPUT_UPDATE;
                 }
@@ -109,10 +109,10 @@ input_t input_handle(void)
                     TCOD_list_remove(current_map->actors, player);
                     TCOD_list_push(new_map->actors, player);
 
-                    current_map = new_map;
+                    player->x = new_map->stair_up_x;
+                    player->y = new_map->stair_up_y;
 
-                    player->x = current_map->stair_up_x;
-                    player->y = current_map->stair_up_y;
+                    current_map = new_map;
 
                     return INPUT_UPDATE;
                 }

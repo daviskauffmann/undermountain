@@ -15,6 +15,8 @@ input_t input_handle(void)
 
     if (ev == TCOD_EVENT_MOUSE_PRESS)
     {
+        view_update();
+
         int x = player->x;
         int y = player->y;
         int xTo = mouse.cx + view_left;

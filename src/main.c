@@ -19,45 +19,37 @@ int main(int argc, char *argv[])
 
     while (!TCOD_console_is_window_closed())
     {
-        input_t input = input_handle();
-
-        if (input == INPUT_NONE)
+        switch (input_handle())
         {
+        case INPUT_NONE:
             continue;
-        }
 
-        view_update();
-
-        switch (input)
-        {
         case INPUT_UPDATE:
             world_update();
-            view_render();
 
-            break;
+            goto redraw;
 
         case INPUT_RESTART:
             world_destroy();
             game_init();
 
-            view_update();
-            view_render();
-
-            break;
+            goto redraw;
 
         case INPUT_LOAD:
             world_destroy();
             game_load();
 
-            view_update();
-            view_render();
-
-            break;
+            goto redraw;
 
         case INPUT_QUIT:
             goto quit;
         }
+
+    redraw:
+        view_update();
+        view_render();
     }
+
 quit:
 
     world_destroy();

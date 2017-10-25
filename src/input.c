@@ -2,9 +2,11 @@
 
 #include "input.h"
 #include "config.h"
+#include "game.h"
+#include "view.h"
 #include "world.h"
 
-input_t input_handle(world_t *world)
+input_t input_handle()
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;
@@ -12,16 +14,14 @@ input_t input_handle(world_t *world)
 
     if (ev == TCOD_EVENT_MOUSE_PRESS)
     {
-        // TODO: offset by vx and vy
-        // this means they will need to be global
-        int x = world->player->x;
-        int y = world->player->y;
-        int xTo = mouse.cx;
-        int yTo = mouse.cy;
+        int x = player->x;
+        int y = player->y;
+        int xTo = mouse.cx + view_left;
+        int yTo = mouse.cy + view_top;
         TCOD_line_init(x, y, xTo, yTo);
         do
         {
-            tile_t *tile = &world->current_map->tiles[x][y];
+            tile_t *tile = &current_map->tiles[x][y];
             tile->type = TILETYPE_WALL;
         } while (!TCOD_line_step(&x, &y));
 
@@ -31,20 +31,20 @@ input_t input_handle(world_t *world)
     if (ev == TCOD_EVENT_KEY_PRESS)
     {
         // TODO: find a place for this
-        tile_t *tile_n = world->player->y - 1 > 0
-                             ? &world->current_map->tiles[world->player->x][world->player->y - 1]
+        tile_t *tile_n = player->y - 1 > 0
+                             ? &current_map->tiles[player->x][player->y - 1]
                              : NULL;
         bool walkable_n = tile_n == NULL ? false : tileinfo[tile_n->type].is_walkable;
-        tile_t *tile_e = world->player->x + 1 < MAP_WIDTH
-                             ? &world->current_map->tiles[world->player->x + 1][world->player->y]
+        tile_t *tile_e = player->x + 1 < MAP_WIDTH
+                             ? &current_map->tiles[player->x + 1][player->y]
                              : NULL;
         bool walkable_e = tile_e == NULL ? false : tileinfo[tile_e->type].is_walkable;
-        tile_t *tile_s = world->player->y + 1 < MAP_HEIGHT
-                             ? &world->current_map->tiles[world->player->x][world->player->y + 1]
+        tile_t *tile_s = player->y + 1 < MAP_HEIGHT
+                             ? &current_map->tiles[player->x][player->y + 1]
                              : NULL;
         bool walkable_s = tile_s == NULL ? false : tileinfo[tile_s->type].is_walkable;
-        tile_t *tile_w = world->player->x - 1 > 0
-                             ? &world->current_map->tiles[world->player->x - 1][world->player->y]
+        tile_t *tile_w = player->x - 1 > 0
+                             ? &current_map->tiles[player->x - 1][player->y]
                              : NULL;
         bool walkable_w = tile_w == NULL ? false : tileinfo[tile_w->type].is_walkable;
 
@@ -62,28 +62,28 @@ input_t input_handle(world_t *world)
             case ',':
                 if (key.shift)
                 {
-                    tile_t *tile = &world->current_map->tiles[world->player->x][world->player->y];
+                    tile_t *tile = &current_map->tiles[player->x][player->y];
                     if (tile->type != TILETYPE_STAIR_UP)
                     {
                         return INPUT_NONE;
                     }
 
-                    if (world->current_map_index <= 0)
+                    if (current_map_index <= 0)
                     {
                         return INPUT_QUIT;
                     }
 
-                    world->current_map_index--;
+                    current_map_index--;
 
-                    map_t *new_map = TCOD_list_get(world->maps, world->current_map_index);
+                    map_t *new_map = TCOD_list_get(world->maps, current_map_index);
 
-                    TCOD_list_remove(world->current_map->actors, world->player);
-                    TCOD_list_push(new_map->actors, world->player);
+                    TCOD_list_remove(current_map->actors, player);
+                    TCOD_list_push(new_map->actors, player);
 
-                    world->current_map = new_map;
+                    current_map = new_map;
 
-                    world->player->x = world->current_map->stair_down_x;
-                    world->player->y = world->current_map->stair_down_y;
+                    player->x = current_map->stair_down_x;
+                    player->y = current_map->stair_down_y;
 
                     return INPUT_UPDATE;
                 }
@@ -93,25 +93,25 @@ input_t input_handle(world_t *world)
             case '.':
                 if (key.shift)
                 {
-                    tile_t *tile = &world->current_map->tiles[world->player->x][world->player->y];
+                    tile_t *tile = &current_map->tiles[player->x][player->y];
                     if (tile->type != TILETYPE_STAIR_DOWN)
                     {
                         return INPUT_NONE;
                     }
 
-                    world->current_map_index++;
+                    current_map_index++;
 
-                    map_t *new_map = TCOD_list_size(world->maps) == world->current_map_index
-                                         ? map_create(world)
-                                         : TCOD_list_get(world->maps, world->current_map_index);
+                    map_t *new_map = TCOD_list_size(world->maps) == current_map_index
+                                         ? map_create()
+                                         : TCOD_list_get(world->maps, current_map_index);
 
-                    TCOD_list_remove(world->current_map->actors, world->player);
-                    TCOD_list_push(new_map->actors, world->player);
+                    TCOD_list_remove(current_map->actors, player);
+                    TCOD_list_push(new_map->actors, player);
 
-                    world->current_map = new_map;
+                    current_map = new_map;
 
-                    world->player->x = world->current_map->stair_up_x;
-                    world->player->y = world->current_map->stair_up_y;
+                    player->x = current_map->stair_up_x;
+                    player->y = current_map->stair_up_y;
 
                     return INPUT_UPDATE;
                 }
@@ -121,7 +121,7 @@ input_t input_handle(world_t *world)
             case 's':
                 if (key.lctrl)
                 {
-                    world_save(world);
+                    game_save();
                 }
 
                 return INPUT_NONE;
@@ -140,28 +140,28 @@ input_t input_handle(world_t *world)
         case TCODK_KP1:
             if (walkable_s || walkable_w)
             {
-                actor_move(world->current_map, world->player, world->player->x - 1, world->player->y + 1);
+                actor_move(current_map, player, player->x - 1, player->y + 1);
             }
 
             return INPUT_UPDATE;
 
         case TCODK_KP2:
         case TCODK_DOWN:
-            actor_move(world->current_map, world->player, world->player->x, world->player->y + 1);
+            actor_move(current_map, player, player->x, player->y + 1);
 
             return INPUT_UPDATE;
 
         case TCODK_KP3:
             if (walkable_e || walkable_s)
             {
-                actor_move(world->current_map, world->player, world->player->x + 1, world->player->y + 1);
+                actor_move(current_map, player, player->x + 1, player->y + 1);
             }
 
             return INPUT_UPDATE;
 
         case TCODK_KP4:
         case TCODK_LEFT:
-            actor_move(world->current_map, world->player, world->player->x - 1, world->player->y);
+            actor_move(current_map, player, player->x - 1, player->y);
 
             return INPUT_UPDATE;
 
@@ -170,28 +170,28 @@ input_t input_handle(world_t *world)
 
         case TCODK_KP6:
         case TCODK_RIGHT:
-            actor_move(world->current_map, world->player, world->player->x + 1, world->player->y);
+            actor_move(current_map, player, player->x + 1, player->y);
 
             return INPUT_UPDATE;
 
         case TCODK_KP7:
             if (walkable_n || walkable_w)
             {
-                actor_move(world->current_map, world->player, world->player->x - 1, world->player->y - 1);
+                actor_move(current_map, player, player->x - 1, player->y - 1);
             }
 
             return INPUT_UPDATE;
 
         case TCODK_KP8:
         case TCODK_UP:
-            actor_move(world->current_map, world->player, world->player->x, world->player->y - 1);
+            actor_move(current_map, player, player->x, player->y - 1);
 
             return INPUT_UPDATE;
 
         case TCODK_KP9:
             if (walkable_n || walkable_e)
             {
-                actor_move(world->current_map, world->player, world->player->x + 1, world->player->y - 1);
+                actor_move(current_map, player, player->x + 1, player->y - 1);
             }
 
             return INPUT_UPDATE;

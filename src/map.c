@@ -3,6 +3,7 @@
 #include <libtcod.h>
 
 #include "config.h"
+#include "game.h"
 #include "world.h"
 
 #define BSP_DEPTH 10
@@ -18,7 +19,7 @@ void hline(map_t *map, int x1, int y, int x2);
 void hline_left(map_t *map, int x, int y);
 void hline_right(map_t *map, int x, int y);
 
-map_t *map_create(world_t *world)
+map_t *map_create()
 {
     map_t *map = (map_t *)malloc(sizeof(map_t));
 
@@ -51,7 +52,7 @@ map_t *map_create(world_t *world)
     stair_up_tile->type = TILETYPE_STAIR_UP;
 
     map->actors = TCOD_list_new();
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 0; i++)
     {
         room_t *actor_room = TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
 
@@ -259,85 +260,6 @@ void hline_right(map_t *map, int x, int y)
     {
         tile->type = TILETYPE_FLOOR;
         x++;
-    }
-}
-
-void map_update(map_t *map, actor_t *player)
-{
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-         iterator != (actor_t **)TCOD_list_end(map->actors);
-         iterator++)
-    {
-        actor_t *actor = *iterator;
-
-        if (actor == player)
-        {
-            continue;
-        }
-
-        if (TCOD_random_get_int(NULL, 0, 1) == 0)
-        {
-            TCOD_map_t TCOD_map = map_to_TCOD_map(map);
-
-            map_calc_fov(TCOD_map, actor->x, actor->y, actor->sight_radius);
-
-            for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-                 iterator != (actor_t **)TCOD_list_end(map->actors);
-                 iterator++)
-            {
-                actor_t *other = *iterator;
-
-                if (other == actor)
-                {
-                    continue;
-                }
-
-                if (TCOD_map_is_in_fov(TCOD_map, other->x, other->y))
-                {
-                    // TODO: maybe store the path on the actor somehow so it can be reused
-                    TCOD_path_t path = map_calc_path(TCOD_map, actor->x, actor->y, other->x, other->y);
-
-                    if (TCOD_path_is_empty(path))
-                    {
-                        goto end;
-                    }
-
-                    int x, y;
-                    if (!TCOD_path_walk(path, &x, &y, false))
-                    {
-                        goto end;
-                    }
-
-                    actor_move(map, actor, x, y);
-
-                end:
-                    TCOD_path_delete(path);
-
-                    break;
-                }
-            }
-
-            TCOD_map_delete(TCOD_map);
-        }
-        else
-        {
-            int dir = TCOD_random_get_int(NULL, 0, 8);
-            switch (dir)
-            {
-            case 0:
-                actor_move(map, actor, actor->x, actor->y - 1);
-                break;
-            case 1:
-                actor_move(map, actor, actor->x, actor->y + 1);
-                break;
-            case 2:
-                actor_move(map, actor, actor->x - 1, actor->y);
-                break;
-            case 3:
-                actor_move(map, actor, actor->x + 1, actor->y);
-                break;
-            }
-        }
     }
 }
 

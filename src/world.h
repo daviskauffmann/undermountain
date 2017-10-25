@@ -61,18 +61,13 @@ typedef struct
 typedef struct
 {
     TCOD_list_t maps;
-    uint8_t current_map_index;
-    map_t *current_map;
-    actor_t *player;
 } world_t;
 
-extern world_t *world;
-
 world_t *world_create(void);
-void world_destroy(world_t *world);
+void world_update(void);
+void world_destroy(void);
 
-map_t *map_create(world_t *world);
-void map_update(map_t *map, actor_t *player);
+map_t *map_create(void);
 TCOD_map_t map_to_TCOD_map(map_t *map);
 void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius);
 TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy);

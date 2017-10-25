@@ -1,5 +1,5 @@
-#ifndef SAVE_H
-#define SAVE_H
+#ifndef GAME_H
+#define GAME_H
 
 #include <stdint.h>
 #include <libtcod.h>
@@ -45,13 +45,24 @@ typedef struct
 
 typedef struct
 {
-    uint8_t current_map_index;
-    TCOD_random_t random;
     uint8_t map_count;
     mapdata_t *mapdata;
 } worlddata_t;
 
-void world_save(world_t *world);
-world_t *world_load(void);
+typedef struct
+{
+    TCOD_random_t random;
+    uint8_t current_map_index;
+    worlddata_t *worlddata;
+} gamedata_t;
+
+extern world_t *world;
+extern uint8_t current_map_index;
+extern map_t *current_map;
+extern actor_t *player;
+
+void game_init(void);
+void game_load(void);
+void game_save(void);
 
 #endif

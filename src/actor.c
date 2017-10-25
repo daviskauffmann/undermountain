@@ -2,6 +2,7 @@
 #include <libtcod.h>
 
 #include "config.h"
+#include "game.h"
 #include "world.h"
 
 actor_t *actor_create(map_t *map, uint8_t x, uint8_t y, uint8_t glyph, TCOD_color_t color, uint8_t sight_radius)
@@ -55,7 +56,10 @@ void actor_move(map_t *map, actor_t *actor, uint8_t x, uint8_t y)
         // TODO: dealing with corpses, is_dead flag or separate object altogether?
         // if corpses can be resurrected, they will need to store information about the actor
         // if corpses can be picked up, they will need to act like items
-        actor_destroy(map, other);
+        if (other != player)
+        {
+            actor_destroy(map, other);
+        }
 
         return;
     }

@@ -4,46 +4,53 @@
 #include <libtcod.h>
 
 #include "config.h"
-#include "world.h"
-#include "render.h"
+#include "game.h"
+#include "view.h"
 #include "input.h"
-#include "save.h"
+#include "world.h"
 
 int main(int argc, char *argv[])
 {
     config_init();
+    game_init();
 
-    world_t *world = world_create();
-
-    render(world);
+    view_update();
+    view_render();
 
     while (!TCOD_console_is_window_closed())
     {
-        input_t input = input_handle(world);
+        input_t input = input_handle();
+
+        if (input == INPUT_NONE)
+        {
+            continue;
+        }
+
+        view_update();
+
         switch (input)
         {
-        case INPUT_NONE:
-            break;
-
         case INPUT_UPDATE:
-            map_update(world->current_map, world->player);
-            render(world);
+            world_update();
+            view_render();
 
             break;
 
         case INPUT_RESTART:
-            world_destroy(world);
-            world = world_create();
+            world_destroy();
+            game_init();
 
-            render(world);
+            view_update();
+            view_render();
 
             break;
 
         case INPUT_LOAD:
-            world_destroy(world);
-            world = world_load();
+            world_destroy();
+            game_load();
 
-            render(world);
+            view_update();
+            view_render();
 
             break;
 
@@ -53,7 +60,7 @@ int main(int argc, char *argv[])
     }
 quit:
 
-    world_destroy(world);
+    world_destroy();
 
     SDL_Quit();
 

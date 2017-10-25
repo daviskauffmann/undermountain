@@ -1,8 +1,6 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "world.h"
-
 typedef enum {
     INPUT_NONE,
     INPUT_UPDATE,
@@ -11,6 +9,6 @@ typedef enum {
     INPUT_QUIT
 } input_t;
 
-input_t input_handle(world_t *world);
+input_t input_handle();
 
 #endif

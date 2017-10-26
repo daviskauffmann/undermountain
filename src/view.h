@@ -3,7 +3,7 @@
 
 #define CONSTRAIN_VIEW true
 
-typedef struct
+typedef struct view_s
 {
     int left;
     int top;

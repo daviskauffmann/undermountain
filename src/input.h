@@ -1,7 +1,7 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-typedef enum {
+typedef enum input_e {
     INPUT_NONE,
     INPUT_UPDATE,
     INPUT_RESTART,

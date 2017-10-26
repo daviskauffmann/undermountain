@@ -5,7 +5,6 @@
 #include "map.h"
 #include "config.h"
 #include "game.h"
-#include "world.h"
 #include "actor.h"
 
 map_t *map_create(void)
@@ -50,7 +49,7 @@ map_t *map_create(void)
         room_get_random_pos(actor_room, &actor->x, &actor->y);
     }
 
-    TCOD_list_push(world->maps, map);
+    TCOD_list_push(maps, map);
 
     return map;
 }

@@ -1,7 +1,8 @@
 #include <libtcod.h>
 
 #include "config.h"
-#include "world.h"
+#include "map.h"
+#include "actor.h"
 
 tileinfo_t tileinfo[NUM_TILETYPES];
 actorinfo_t actorinfo[NUM_ACTORTYPES];

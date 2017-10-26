@@ -6,7 +6,6 @@
 #include "game.h"
 #include "view.h"
 #include "input.h"
-#include "world.h"
 
 int main(int argc, char *argv[])
 {
@@ -24,18 +23,18 @@ int main(int argc, char *argv[])
             continue;
 
         case INPUT_UPDATE:
-            world_update();
+            game_update();
 
             goto redraw;
 
         case INPUT_RESTART:
-            world_destroy();
+            game_destroy();
             game_init();
 
             goto redraw;
 
         case INPUT_LOAD:
-            world_destroy();
+            game_destroy();
             game_load();
 
             goto redraw;
@@ -51,7 +50,7 @@ int main(int argc, char *argv[])
 
 quit:
 
-    world_destroy();
+    game_destroy();
 
     SDL_Quit();
 

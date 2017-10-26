@@ -4,8 +4,8 @@
 #include "config.h"
 #include "game.h"
 #include "view.h"
-#include "world.h"
 #include "map.h"
+#include "actor.h"
 
 input_t input_handle(void)
 {
@@ -78,7 +78,7 @@ input_t input_handle(void)
 
                     current_map_index--;
 
-                    map_t *new_map = TCOD_list_get(world->maps, current_map_index);
+                    map_t *new_map = TCOD_list_get(maps, current_map_index);
 
                     TCOD_list_remove(current_map->actors, player);
                     TCOD_list_push(new_map->actors, player);
@@ -104,9 +104,9 @@ input_t input_handle(void)
 
                     current_map_index++;
 
-                    map_t *new_map = TCOD_list_size(world->maps) == current_map_index
+                    map_t *new_map = TCOD_list_size(maps) == current_map_index
                                          ? map_create()
-                                         : TCOD_list_get(world->maps, current_map_index);
+                                         : TCOD_list_get(maps, current_map_index);
 
                     TCOD_list_remove(current_map->actors, player);
                     TCOD_list_push(new_map->actors, player);

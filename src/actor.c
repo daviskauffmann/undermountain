@@ -1,8 +1,9 @@
 #include <libtcod.h>
 
+#include "actor.h"
 #include "config.h"
 #include "game.h"
-#include "world.h"
+#include "map.h"
 
 actor_t *actor_create(map_t *map, actortype_t type, int x, int y, unsigned char glyph, TCOD_color_t color, int sight_radius)
 {

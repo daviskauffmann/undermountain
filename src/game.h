@@ -3,15 +3,16 @@
 
 #include <libtcod.h>
 
-#include "world.h"
+#include "map.h"
+#include "actor.h"
 
-typedef struct
+typedef struct tiledata_s
 {
     tiletype_t type;
     bool seen;
 } tiledata_t;
 
-typedef struct
+typedef struct roomdata_s
 {
     int x;
     int y;
@@ -19,14 +20,14 @@ typedef struct
     int h;
 } roomdata_t;
 
-typedef struct
+typedef struct actordata_s
 {
     actortype_t type;
     int x;
     int y;
 } actordata_t;
 
-typedef struct
+typedef struct mapdata_s
 {
     int stair_down_x;
     int stair_down_y;
@@ -39,20 +40,15 @@ typedef struct
     actordata_t *actordata;
 } mapdata_t;
 
-typedef struct
-{
-    int map_count;
-    mapdata_t *mapdata;
-} worlddata_t;
-
-typedef struct
+typedef struct gamedata_s
 {
     TCOD_random_t random;
+    int map_count;
+    mapdata_t *mapdata;
     int current_map_index;
-    worlddata_t *worlddata;
 } gamedata_t;
 
-extern world_t *world;
+extern TCOD_list_t maps;
 extern int current_map_index;
 extern map_t *current_map;
 extern actor_t *player;
@@ -60,5 +56,9 @@ extern actor_t *player;
 void game_init(void);
 void game_load(void);
 void game_save(void);
+void game_update(void);
+static void map_update(map_t *map);
+static void actor_update(map_t *map, actor_t *actor);
+void game_destroy(void);
 
 #endif

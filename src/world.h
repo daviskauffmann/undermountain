@@ -79,6 +79,13 @@ void world_update(void);
 void world_destroy(void);
 
 map_t *map_create(void);
+bool traverse_node(TCOD_bsp_t *node, map_t *map);
+void vline(map_t *map, int x, int y1, int y2);
+void vline_up(map_t *map, int x, int y);
+void vline_down(map_t *map, int x, int y);
+void hline(map_t *map, int x1, int y, int x2);
+void hline_left(map_t *map, int x, int y);
+void hline_right(map_t *map, int x, int y);
 void map_update(map_t *map);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);

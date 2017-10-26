@@ -5,14 +5,6 @@
 #include "config.h"
 #include "game.h"
 
-static bool traverse_node(TCOD_bsp_t *node, map_t *map);
-static void vline(map_t *map, int x, int y1, int y2);
-static void vline_up(map_t *map, int x, int y);
-static void vline_down(map_t *map, int x, int y);
-static void hline(map_t *map, int x1, int y, int x2);
-static void hline_left(map_t *map, int x, int y);
-static void hline_right(map_t *map, int x, int y);
-
 void world_init(void)
 {
     maps = TCOD_list_new();
@@ -91,7 +83,7 @@ map_t *map_create(void)
     return map;
 }
 
-static bool traverse_node(TCOD_bsp_t *node, map_t *map)
+bool traverse_node(TCOD_bsp_t *node, map_t *map)
 {
     if (TCOD_bsp_is_leaf(node))
     {
@@ -206,7 +198,7 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
     return true;
 }
 
-static void vline(map_t *map, int x, int y1, int y2)
+void vline(map_t *map, int x, int y1, int y2)
 {
     if (y1 > y2)
     {
@@ -222,7 +214,7 @@ static void vline(map_t *map, int x, int y1, int y2)
     }
 }
 
-static void vline_up(map_t *map, int x, int y)
+void vline_up(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
@@ -233,7 +225,7 @@ static void vline_up(map_t *map, int x, int y)
     }
 }
 
-static void vline_down(map_t *map, int x, int y)
+void vline_down(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
@@ -244,7 +236,7 @@ static void vline_down(map_t *map, int x, int y)
     }
 }
 
-static void hline(map_t *map, int x1, int y, int x2)
+void hline(map_t *map, int x1, int y, int x2)
 {
     if (x1 > x2)
     {
@@ -260,7 +252,7 @@ static void hline(map_t *map, int x1, int y, int x2)
     }
 }
 
-static void hline_left(map_t *map, int x, int y)
+void hline_left(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
     while (x >= 0 && tile->type != TILETYPE_FLOOR)
@@ -270,7 +262,7 @@ static void hline_left(map_t *map, int x, int y)
     }
 }
 
-static void hline_right(map_t *map, int x, int y)
+void hline_right(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
     while (x < MAP_WIDTH && tile->type != TILETYPE_FLOOR)

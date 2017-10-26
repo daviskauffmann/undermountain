@@ -7,16 +7,18 @@
 #include "actor.h"
 
 world_t *world;
+
 int current_map_index;
 map_t *current_map;
 actor_t *player;
 
 void game_init(void)
 {
-    world = world_create();
+    world_create();
+
     current_map_index = 0;
     current_map = map_create();
-    player = actor_create(current_map, current_map->stair_up_x, current_map->stair_up_y, '@', TCOD_white, 10);
+    player = actor_create(current_map, ACTORTYPE_PLAYER, current_map->stair_up_x, current_map->stair_up_y, '@', TCOD_white, 10);
 }
 
 void game_load(void)
@@ -76,15 +78,13 @@ void game_load(void)
             actordata_t *actordata = &mapdata->actordata[j];
             actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
+            actor->type = actordata->type;
             actor->x = actordata->x;
             actor->y = actordata->y;
-            actor->glyph = actordata->glyph;
-            actor->color = actordata->color;
-            actor->sight_radius = actordata->sight_radius;
 
             TCOD_list_push(map->actors, actor);
 
-            if (actordata->is_player)
+            if (actordata->type == ACTORTYPE_PLAYER)
             {
                 player = actor;
             }
@@ -158,12 +158,9 @@ void game_save(void)
             actor_t *actor = *iterator;
             actordata_t *actordata = &mapdata->actordata[mapdata->actor_count];
 
-            actordata->is_player = actor == player;
+            actordata->type = actor->type;
             actordata->x = actor->x;
             actordata->y = actor->y;
-            actordata->glyph = actor->glyph;
-            actordata->color = actor->color;
-            actordata->sight_radius = actor->sight_radius;
 
             mapdata->actor_count++;
         }

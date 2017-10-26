@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <libtcod.h>
 
 #include "map.h"
@@ -36,7 +37,7 @@ map_t *map_create(void)
     map->tiles[map->stair_up_x][map->stair_up_y].type = TILETYPE_STAIR_UP;
 
     map->actors = TCOD_list_new();
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < NUM_ACTORS; i++)
     {
         room_t *actor_room = map_get_random_room(map);
 
@@ -45,8 +46,8 @@ map_t *map_create(void)
             continue;
         }
 
-        actor_t *actor = actor_create(map, 0, 0, '@', TCOD_yellow, 10);
-        // room_get_random_pos(actor_room, &actor->x, &actor->y);
+        actor_t *actor = actor_create(map, ACTORTYPE_MONSTER, 0, 0, '@', TCOD_yellow, 10);
+        room_get_random_pos(actor_room, &actor->x, &actor->y);
     }
 
     TCOD_list_push(world->maps, map);
@@ -72,13 +73,10 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             max_y--;
         }
 
-        if (!FULL_ROOMS)
-        {
-            min_x = TCOD_random_get_int(NULL, min_x, max_x - MIN_ROOM_SIZE + 1);
-            min_y = TCOD_random_get_int(NULL, min_y, max_y - MIN_ROOM_SIZE + 1);
-            max_x = TCOD_random_get_int(NULL, min_x + MIN_ROOM_SIZE - 2, max_x);
-            max_y = TCOD_random_get_int(NULL, min_y + MIN_ROOM_SIZE - 2, max_y);
-        }
+        // min_x = TCOD_random_get_int(NULL, min_x, max_x - MIN_ROOM_SIZE + 1);
+        // min_y = TCOD_random_get_int(NULL, min_y, max_y - MIN_ROOM_SIZE + 1);
+        // max_x = TCOD_random_get_int(NULL, min_x + MIN_ROOM_SIZE - 2, max_x);
+        // max_y = TCOD_random_get_int(NULL, min_y + MIN_ROOM_SIZE - 2, max_y);
 
         node->x = min_x;
         node->y = min_y;
@@ -108,10 +106,10 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
         TCOD_bsp_t *left = TCOD_bsp_left(node);
         TCOD_bsp_t *right = TCOD_bsp_right(node);
 
-        node->x = left->x < right->x ? left->x : right->x;
-        node->y = left->y < right->y ? left->y : right->y;
-        node->w = (left->x + left->w > right->x + right->w ? left->x + left->w : right->x + right->w) - node->x;
-        node->h = (left->y + left->h > right->y + right->h ? left->y + left->h : right->y + right->h) - node->y;
+        node->x = min(left->x, right->x);
+        node->y = min(left->y, right->y);
+        node->w = max(left->x + left->w, right->x + right->w) - node->x;
+        node->h = max(left->y + left->h, right->y + right->h) - node->y;
 
         if (node->horizontal)
         {
@@ -127,8 +125,8 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             }
             else
             {
-                int min_x = left->x > right->x ? left->x : right->x;
-                int max_x = left->x + left->w - 1 < right->x + right->w - 1 ? left->x + left->w - 1 : right->x + right->w - 1;
+                int min_x = max(left->x, right->x);
+                int max_x = min(left->x + left->w - 1, right->x + right->w - 1);
                 int x = TCOD_random_get_int(NULL, min_x, max_x);
 
                 while (x > MAP_WIDTH - 1)
@@ -154,8 +152,8 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             }
             else
             {
-                int min_y = left->y > right->y ? left->y : right->y;
-                int max_y = left->y + left->h - 1 < right->y + right->h - 1 ? left->y + left->h - 1 : right->y + right->h - 1;
+                int min_y = max(left->y, right->y);
+                int max_y = min(left->y + left->h - 1, right->y + right->h - 1);
                 int y = TCOD_random_get_int(NULL, min_y, max_y);
 
                 while (y > MAP_HEIGHT - 1)

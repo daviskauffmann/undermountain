@@ -7,8 +7,7 @@
 
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
-// TODO: fix for when this is false
-#define FULL_ROOMS true
+#define NUM_ACTORS 50
 
 map_t *map_create(void);
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);

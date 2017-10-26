@@ -10,13 +10,11 @@
 static void map_update(map_t *map);
 static void actor_update(map_t *map, actor_t *actor);
 
-world_t *world_create(void)
+void world_create(void)
 {
-    world_t *world = (world_t *)malloc(sizeof(world_t));
+    world = (world_t *)malloc(sizeof(world_t));
 
     world->maps = TCOD_list_new();
-
-    return world;
 }
 
 void world_update(void)
@@ -54,7 +52,7 @@ static void actor_update(map_t *map, actor_t *actor)
     {
         TCOD_map_t TCOD_map = map_to_TCOD_map(map);
 
-        map_calc_fov(TCOD_map, actor->x, actor->y, actor->sight_radius);
+        map_calc_fov(TCOD_map, actor->x, actor->y, actorinfo[actor->type].sight_radius);
 
         for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
              iterator != (actor_t **)TCOD_list_end(map->actors);

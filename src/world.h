@@ -12,7 +12,7 @@ typedef enum {
     TILETYPE_WALL,
     TILETYPE_STAIR_DOWN,
     TILETYPE_STAIR_UP,
-    NB_TILETYPES
+    NUM_TILETYPES
 } tiletype_t;
 
 typedef struct
@@ -29,13 +29,18 @@ typedef struct
     int h;
 } room_t;
 
+typedef enum {
+    ACTORTYPE_NONE = 0,
+    ACTORTYPE_PLAYER,
+    ACTORTYPE_MONSTER,
+    NUM_ACTORTYPES
+} actortype_t;
+
 typedef struct
 {
+    actortype_t type;
     int x;
     int y;
-    unsigned char glyph;
-    TCOD_color_t color;
-    int sight_radius;
 } actor_t;
 
 typedef struct
@@ -54,7 +59,7 @@ typedef struct
     TCOD_list_t maps;
 } world_t;
 
-world_t *world_create(void);
+void world_create(void);
 void world_update(void);
 void world_destroy(void);
 

@@ -37,7 +37,7 @@ void view_render(void)
 {
     TCOD_map_t TCOD_map = map_to_TCOD_map(current_map);
 
-    map_calc_fov(TCOD_map, player->x, player->y, player->sight_radius);
+    map_calc_fov(TCOD_map, player->x, player->y, actorinfo[player->type].sight_radius);
 
     TCOD_console_clear(NULL);
 
@@ -87,8 +87,8 @@ void view_render(void)
             continue;
         }
 
-        TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actor->color);
-        TCOD_console_set_char(NULL, actor->x - view_left, actor->y - view_top, actor->glyph);
+        TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].color);
+        TCOD_console_set_char(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].glyph);
     }
 
     TCOD_console_flush();

@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <libtcod.h>
+
 #include "world.h"
 
 #define SCREEN_WIDTH 80
@@ -15,7 +17,15 @@ typedef struct
     bool is_walkable;
 } tileinfo_t;
 
-extern tileinfo_t tileinfo[NB_TILETYPES];
+typedef struct
+{
+    unsigned char glyph;
+    TCOD_color_t color;
+    int sight_radius;
+} actorinfo_t;
+
+extern tileinfo_t tileinfo[NUM_TILETYPES];
+extern actorinfo_t actorinfo[NUM_ACTORTYPES];
 
 void config_init(void);
 

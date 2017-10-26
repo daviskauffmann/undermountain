@@ -3,7 +3,8 @@
 #include "config.h"
 #include "world.h"
 
-tileinfo_t tileinfo[NB_TILETYPES];
+tileinfo_t tileinfo[NUM_TILETYPES];
+actorinfo_t actorinfo[NUM_ACTORTYPES];
 
 // TODO: get all this information from external config file
 void config_init(void)
@@ -37,4 +38,12 @@ void config_init(void)
     tileinfo[TILETYPE_STAIR_UP].color = TCOD_white;
     tileinfo[TILETYPE_STAIR_UP].is_transparent = true;
     tileinfo[TILETYPE_STAIR_UP].is_walkable = true;
+
+    actorinfo[ACTORTYPE_PLAYER].glyph = '@';
+    actorinfo[ACTORTYPE_PLAYER].color = TCOD_white;
+    actorinfo[ACTORTYPE_PLAYER].sight_radius = 10;
+
+    actorinfo[ACTORTYPE_MONSTER].glyph = '@';
+    actorinfo[ACTORTYPE_MONSTER].color = TCOD_yellow;
+    actorinfo[ACTORTYPE_MONSTER].sight_radius = 10;
 }

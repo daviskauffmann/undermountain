@@ -4,15 +4,13 @@
 #include "game.h"
 #include "world.h"
 
-actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int sight_radius)
+actor_t *actor_create(map_t *map, actortype_t type, int x, int y, unsigned char glyph, TCOD_color_t color, int sight_radius)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
+    actor->type = type;
     actor->x = x;
     actor->y = y;
-    actor->glyph = glyph;
-    actor->color = color;
-    actor->sight_radius = sight_radius;
 
     TCOD_list_push(map->actors, actor);
 

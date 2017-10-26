@@ -21,12 +21,9 @@ typedef struct
 
 typedef struct
 {
-    bool is_player;
+    actortype_t type;
     int x;
     int y;
-    unsigned char glyph;
-    TCOD_color_t color;
-    int sight_radius;
 } actordata_t;
 
 typedef struct

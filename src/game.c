@@ -3,17 +3,52 @@
 
 #include "game.h"
 #include "config.h"
-#include "map.h"
-#include "actor.h"
+#include "world.h"
 
-TCOD_list_t maps;
-int current_map_index;
-map_t *current_map;
-actor_t *player;
+typedef struct tiledata_s
+{
+    tiletype_t type;
+    bool seen;
+} tiledata_t;
+
+typedef struct roomdata_s
+{
+    int x;
+    int y;
+    int w;
+    int h;
+} roomdata_t;
+
+typedef struct actordata_s
+{
+    actortype_t type;
+    int x;
+    int y;
+} actordata_t;
+
+typedef struct mapdata_s
+{
+    int stair_down_x;
+    int stair_down_y;
+    int stair_up_x;
+    int stair_up_y;
+    tiledata_t tiledata[MAP_WIDTH][MAP_HEIGHT];
+    int room_count;
+    roomdata_t *roomdata;
+    int actor_count;
+    actordata_t *actordata;
+} mapdata_t;
+
+typedef struct gamedata_s
+{
+    TCOD_random_t random;
+    int map_count;
+    mapdata_t *mapdata;
+    int current_map_index;
+} gamedata_t;
 
 void game_init(void)
 {
-    maps = TCOD_list_new();
     current_map_index = 0;
     current_map = map_create();
     player = actor_create(current_map, ACTORTYPE_PLAYER, current_map->stair_up_x, current_map->stair_up_y, '@', TCOD_white, 10);
@@ -172,114 +207,4 @@ void game_save(void)
     fclose(file);
 
     free(gamedata);
-}
-
-void game_update(void)
-{
-    for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
-         iterator != (map_t **)TCOD_list_end(maps);
-         iterator++)
-    {
-        map_t *map = *iterator;
-
-        map_update(map);
-    }
-}
-
-static void map_update(map_t *map)
-{
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-         iterator != (actor_t **)TCOD_list_end(map->actors);
-         iterator++)
-    {
-        actor_t *actor = *iterator;
-
-        actor_update(map, actor);
-    }
-}
-
-static void actor_update(map_t *map, actor_t *actor)
-{
-    if (actor == player)
-    {
-        return;
-    }
-
-    if (TCOD_random_get_int(NULL, 0, 1) == 0)
-    {
-        TCOD_map_t TCOD_map = map_to_TCOD_map(map);
-
-        map_calc_fov(TCOD_map, actor->x, actor->y, actorinfo[actor->type].sight_radius);
-
-        for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-             iterator != (actor_t **)TCOD_list_end(map->actors);
-             iterator++)
-        {
-            actor_t *other = *iterator;
-
-            if (other == actor)
-            {
-                continue;
-            }
-
-            if (TCOD_map_is_in_fov(TCOD_map, other->x, other->y))
-            {
-                // TODO: maybe store the path on the actor somehow so it can be reused
-                TCOD_path_t path = map_calc_path(TCOD_map, actor->x, actor->y, other->x, other->y);
-
-                if (TCOD_path_is_empty(path))
-                {
-                    goto end;
-                }
-
-                int x, y;
-                if (!TCOD_path_walk(path, &x, &y, false))
-                {
-                    goto end;
-                }
-
-                actor_move(map, actor, x, y);
-
-            end:
-                TCOD_path_delete(path);
-
-                break;
-            }
-        }
-
-        TCOD_map_delete(TCOD_map);
-    }
-    else
-    {
-        int dir = TCOD_random_get_int(NULL, 0, 8);
-        switch (dir)
-        {
-        case 0:
-            actor_move(map, actor, actor->x, actor->y - 1);
-            break;
-        case 1:
-            actor_move(map, actor, actor->x, actor->y + 1);
-            break;
-        case 2:
-            actor_move(map, actor, actor->x - 1, actor->y);
-            break;
-        case 3:
-            actor_move(map, actor, actor->x + 1, actor->y);
-            break;
-        }
-    }
-}
-
-void game_destroy(void)
-{
-    for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
-         iterator != (map_t **)TCOD_list_end(maps);
-         iterator++)
-    {
-        map_t *map = *iterator;
-
-        TCOD_list_clear_and_delete(map->actors);
-    }
-
-    TCOD_list_clear_and_delete(maps);
 }

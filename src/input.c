@@ -3,9 +3,8 @@
 #include "input.h"
 #include "config.h"
 #include "game.h"
+#include "world.h"
 #include "view.h"
-#include "map.h"
-#include "actor.h"
 
 input_t input_handle(void)
 {
@@ -60,7 +59,11 @@ input_t input_handle(void)
             switch (key.c)
             {
             case 'r':
-                return INPUT_RESTART;
+                world_destroy();
+                world_init();
+                game_init();
+
+                return INPUT_REDRAW;
 
             case ',':
                 if (key.shift)
@@ -132,7 +135,10 @@ input_t input_handle(void)
             case 'l':
                 if (key.lctrl)
                 {
-                    return INPUT_LOAD;
+                    world_destroy();
+                    game_load();
+
+                    return INPUT_REDRAW;
                 }
 
                 return INPUT_NONE;

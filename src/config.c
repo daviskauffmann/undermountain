@@ -1,11 +1,7 @@
 #include <libtcod.h>
 
 #include "config.h"
-#include "map.h"
-#include "actor.h"
-
-tileinfo_t tileinfo[NUM_TILETYPES];
-actorinfo_t actorinfo[NUM_ACTORTYPES];
+#include "world.h"
 
 // TODO: get all this information from external config file
 void config_init(void)

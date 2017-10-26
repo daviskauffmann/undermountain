@@ -3,12 +3,7 @@
 #include "view.h"
 #include "config.h"
 #include "game.h"
-#include "map.h"
-
-int view_left;
-int view_top;
-int view_right;
-int view_bottom;
+#include "world.h"
 
 void view_update(void)
 {
@@ -35,8 +30,7 @@ void view_update(void)
 void view_render(void)
 {
     TCOD_map_t TCOD_map = map_to_TCOD_map(current_map);
-
-    map_calc_fov(TCOD_map, player->x, player->y, actorinfo[player->type].sight_radius);
+    TCOD_map = map_calc_fov(TCOD_map, player->x, player->y, actorinfo[player->type].sight_radius);
 
     TCOD_console_clear(NULL);
 

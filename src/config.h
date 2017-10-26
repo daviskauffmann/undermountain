@@ -3,15 +3,14 @@
 
 #include <libtcod.h>
 
-#include "map.h"
-#include "actor.h"
+#include "world.h"
 
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 50
 #define WINDOW_TITLE "Roguelike v0.1"
 
-extern tileinfo_t tileinfo[NUM_TILETYPES];
-extern actorinfo_t actorinfo[NUM_ACTORTYPES];
+tileinfo_t tileinfo[NUM_TILETYPES];
+actorinfo_t actorinfo[NUM_ACTORTYPES];
 
 void config_init(void);
 

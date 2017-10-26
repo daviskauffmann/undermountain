@@ -1,5 +1,5 @@
-#ifndef MAP_H
-#define MAP_H
+#ifndef WORLD_H
+#define WORLD_H
 
 #include <libtcod.h>
 
@@ -40,6 +40,27 @@ typedef struct room_s
     int h;
 } room_t;
 
+typedef enum actortype_e {
+    ACTORTYPE_NONE = 0,
+    ACTORTYPE_PLAYER,
+    ACTORTYPE_MONSTER,
+    NUM_ACTORTYPES
+} actortype_t;
+
+typedef struct actor_s
+{
+    actortype_t type;
+    int x;
+    int y;
+} actor_t;
+
+typedef struct actorinfo_s
+{
+    unsigned char glyph;
+    TCOD_color_t color;
+    int sight_radius;
+} actorinfo_t;
+
 typedef struct map_s
 {
     int stair_down_x;
@@ -51,18 +72,25 @@ typedef struct map_s
     TCOD_list_t actors;
 } map_t;
 
+TCOD_list_t maps;
+
+void world_init(void);
+void world_update(void);
+void world_destroy(void);
+
 map_t *map_create(void);
-static bool traverse_node(TCOD_bsp_t *node, map_t *map);
-static void vline(map_t *map, int x, int y1, int y2);
-static void vline_up(map_t *map, int x, int y);
-static void vline_down(map_t *map, int x, int y);
-static void hline(map_t *map, int x1, int y, int x2);
-static void hline_left(map_t *map, int x, int y);
-static void hline_right(map_t *map, int x, int y);
+void map_update(map_t *map);
 room_t *map_get_random_room(map_t *map);
-void room_get_random_pos(room_t *room, int *x, int *y);
 TCOD_map_t map_to_TCOD_map(map_t *map);
-void map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius);
+TCOD_map_t map_calc_fov(TCOD_map_t TCOD_map, int x, int y, int radius);
 TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy);
+void map_destroy(map_t *map);
+
+void room_get_random_pos(room_t *room, int *x, int *y);
+
+actor_t *actor_create(map_t *map, actortype_t type, int x, int y, unsigned char glyph, TCOD_color_t color, int sight_radius);
+void actor_update(map_t *map, actor_t *actor);
+void actor_move(map_t *map, actor_t *actor, int x, int y);
+void actor_destroy(map_t *map, actor_t *actor);
 
 #endif

@@ -4,8 +4,7 @@
 typedef enum input_e {
     INPUT_NONE,
     INPUT_UPDATE,
-    INPUT_RESTART,
-    INPUT_LOAD,
+    INPUT_REDRAW,
     INPUT_QUIT
 } input_t;
 

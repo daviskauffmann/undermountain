@@ -3,6 +3,7 @@
 #include <libtcod.h>
 
 #include "config.h"
+#include "world.h"
 #include "game.h"
 #include "view.h"
 #include "input.h"
@@ -10,6 +11,7 @@
 int main(int argc, char *argv[])
 {
     config_init();
+    world_init();
     game_init();
 
     view_update();
@@ -23,25 +25,17 @@ int main(int argc, char *argv[])
             continue;
 
         case INPUT_UPDATE:
-            game_update();
+            goto update;
 
-            goto redraw;
-
-        case INPUT_RESTART:
-            game_destroy();
-            game_init();
-
-            goto redraw;
-
-        case INPUT_LOAD:
-            game_destroy();
-            game_load();
-
+        case INPUT_REDRAW:
             goto redraw;
 
         case INPUT_QUIT:
             goto quit;
         }
+
+    update:
+        world_update();
 
     redraw:
         view_update();
@@ -49,8 +43,7 @@ int main(int argc, char *argv[])
     }
 
 quit:
-
-    game_destroy();
+    world_destroy();
 
     SDL_Quit();
 

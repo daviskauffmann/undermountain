@@ -5,8 +5,6 @@
 
 #include "map.h"
 
-typedef struct map_s map_t;
-
 typedef enum actortype_e {
     ACTORTYPE_NONE = 0,
     ACTORTYPE_PLAYER,

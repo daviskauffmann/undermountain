@@ -3,8 +3,6 @@
 
 #include <libtcod.h>
 
-#include "actor.h"
-
 #define MAP_WIDTH 100
 #define MAP_HEIGHT 100
 #define BSP_DEPTH 10

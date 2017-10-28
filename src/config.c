@@ -44,6 +44,7 @@ void config_init(void)
 {
     TCOD_console_set_custom_font("terminal.png", TCOD_FONT_LAYOUT_ASCII_INCOL, 16, 16);
     TCOD_console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE, false, TCOD_RENDERER_SDL);
+    TCOD_sys_set_fps(60);
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
 

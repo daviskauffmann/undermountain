@@ -52,6 +52,7 @@ typedef struct actor_s
     actortype_t type;
     int x;
     int y;
+    TCOD_path_t path;
 } actor_t;
 
 typedef struct actorinfo_s

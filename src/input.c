@@ -12,26 +12,16 @@ input_t input_handle(void)
     TCOD_mouse_t mouse;
     TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
 
-    if (ev == TCOD_EVENT_MOUSE_PRESS)
+    switch (ev)
     {
-        view_update();
+    case TCOD_EVENT_MOUSE_PRESS:
+        player->path = map_calc_path(map_to_TCOD_map(current_map), player->x, player->y, mouse.cx + view_left, mouse.cy + view_top);
 
-        int x = player->x;
-        int y = player->y;
-        int xTo = mouse.cx + view_left;
-        int yTo = mouse.cy + view_top;
-        TCOD_line_init(x, y, xTo, yTo);
-        do
-        {
-            tile_t *tile = &current_map->tiles[x][y];
-            tile->type = TILETYPE_WALL;
-        } while (!TCOD_line_step(&x, &y));
+        break;
 
-        return INPUT_UPDATE;
-    }
+    case TCOD_EVENT_KEY_PRESS:
+        player->path = NULL;
 
-    if (ev == TCOD_EVENT_KEY_PRESS)
-    {
         // TODO: find a place for this
         tile_t *tile_n = player->y - 1 > 0
                              ? &current_map->tiles[player->x][player->y - 1]
@@ -71,7 +61,7 @@ input_t input_handle(void)
                     tile_t *tile = &current_map->tiles[player->x][player->y];
                     if (tile->type != TILETYPE_STAIR_UP)
                     {
-                        return INPUT_NONE;
+                        break;
                     }
 
                     if (current_map_index <= 0)
@@ -94,7 +84,7 @@ input_t input_handle(void)
                     return INPUT_UPDATE;
                 }
 
-                return INPUT_NONE;
+                break;
 
             case '.':
                 if (key.shift)
@@ -102,7 +92,7 @@ input_t input_handle(void)
                     tile_t *tile = &current_map->tiles[player->x][player->y];
                     if (tile->type != TILETYPE_STAIR_DOWN)
                     {
-                        return INPUT_NONE;
+                        break;
                     }
 
                     current_map_index++;
@@ -122,7 +112,7 @@ input_t input_handle(void)
                     return INPUT_UPDATE;
                 }
 
-                return INPUT_NONE;
+                break;
 
             case 's':
                 if (key.lctrl)
@@ -130,7 +120,7 @@ input_t input_handle(void)
                     game_save();
                 }
 
-                return INPUT_NONE;
+                break;
 
             case 'l':
                 if (key.lctrl)
@@ -141,10 +131,10 @@ input_t input_handle(void)
                     return INPUT_REDRAW;
                 }
 
-                return INPUT_NONE;
+                break;
             }
 
-            return INPUT_NONE;
+            break;
 
         case TCODK_KP1:
             if (walkable_s || walkable_w)
@@ -205,7 +195,22 @@ input_t input_handle(void)
 
             return INPUT_UPDATE;
         }
+
+        break;
     }
+
+    if (!TCOD_path_is_empty(player->path))
+    {
+        int x, y;
+        if (TCOD_path_walk(player->path, &x, &y, false))
+        {
+            actor_move(current_map, player, x, y);
+
+            return INPUT_UPDATE;
+        }
+    }
+
+    player->path = NULL;
 
     return INPUT_NONE;
 }

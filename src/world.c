@@ -389,26 +389,18 @@ void actor_update(map_t *map, actor_t *actor)
 
             if (TCOD_map_is_in_fov(TCOD_map, other->x, other->y))
             {
-                // TODO: maybe store the path on the actor somehow so it can be reused
-                TCOD_path_t path = map_calc_path(TCOD_map, actor->x, actor->y, other->x, other->y);
+                actor->path = map_calc_path(TCOD_map, actor->x, actor->y, other->x, other->y);
 
-                if (TCOD_path_is_empty(path))
+                if (!TCOD_path_is_empty(actor->path))
                 {
-                    goto end;
+                    int x, y;
+                    if (TCOD_path_walk(actor->path, &x, &y, false))
+                    {
+                        actor_move(current_map, actor, x, y);
+                    }
                 }
 
-                int x, y;
-                if (!TCOD_path_walk(path, &x, &y, false))
-                {
-                    goto end;
-                }
-
-                actor_move(map, actor, x, y);
-
-            end:
-                TCOD_path_delete(path);
-
-                break;
+                actor->path = NULL;
             }
         }
 

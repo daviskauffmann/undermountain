@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <SDL.h>
+#include <time.h>
 #include <libtcod.h>
 
 #include "config.h"

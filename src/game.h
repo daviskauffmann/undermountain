@@ -7,7 +7,7 @@
 
 typedef struct tiledata_s
 {
-    tiletype_t type;
+    tile_type_t type;
     bool seen;
 } tiledata_t;
 
@@ -21,7 +21,7 @@ typedef struct roomdata_s
 
 typedef struct actordata_s
 {
-    actortype_t type;
+    actor_type_t type;
     int x;
     int y;
 } actordata_t;

@@ -15,32 +15,37 @@ int main(int argc, char *argv[])
     world_init();
     game_init();
 
-    view_update();
-    view_render();
+    goto draw;
 
     while (!TCOD_console_is_window_closed())
     {
         switch (input_handle())
         {
-        case INPUT_NONE:
-            continue;
+        case INPUT_TICK:
+            goto tick;
 
-        case INPUT_UPDATE:
-            goto update;
+        case INPUT_DRAW:
+            goto draw;
 
-        case INPUT_REDRAW:
-            goto redraw;
+        case INPUT_TURN:
+            goto turn;
 
         case INPUT_QUIT:
             goto quit;
         }
 
-    update:
-        world_update();
+    turn:
+        world_turn();
 
-    redraw:
+    draw:
+        TCOD_console_clear(NULL);
         view_update();
-        view_render();
+        world_draw_turn();
+
+    tick:
+        world_tick();
+        world_draw_tick();
+        TCOD_console_flush();
     }
 
 quit:

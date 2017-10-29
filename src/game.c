@@ -9,7 +9,7 @@ void game_init(void)
 {
     current_map_index = 0;
     current_map = map_create();
-    player = actor_create(current_map, ACTORTYPE_PLAYER, current_map->stair_up_x, current_map->stair_up_y, '@', TCOD_white, 10);
+    player = actor_create(current_map, ACTORTYPE_PLAYER, current_map->stair_up_x, current_map->stair_up_y);
 }
 
 void game_load(void)
@@ -72,6 +72,8 @@ void game_load(void)
             actor->type = actordata->type;
             actor->x = actordata->x;
             actor->y = actordata->y;
+            actor->target_x = -1;
+            actor->target_y = -1;
 
             TCOD_list_push(map->actors, actor);
 

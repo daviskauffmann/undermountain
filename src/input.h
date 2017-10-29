@@ -2,9 +2,9 @@
 #define INPUT_H
 
 typedef enum input_e {
-    INPUT_NONE,
-    INPUT_UPDATE,
-    INPUT_REDRAW,
+    INPUT_TICK,
+    INPUT_TURN,
+    INPUT_DRAW,
     INPUT_QUIT
 } input_t;
 

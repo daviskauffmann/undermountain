@@ -55,13 +55,27 @@ input_t input_handle(void)
 
                 return INPUT_DRAW;
 
+            case 't':
+                torch = !torch;
+
+                if (torch)
+                {
+                    actor_info[player->type].sight_radius *= 2;
+                }
+                else
+                {
+                    actor_info[player->type].sight_radius /= 2;
+                }
+
+                return INPUT_DRAW;
+
             case ',':
                 if (key.shift)
                 {
                     tile_t *tile = &current_map->tiles[player->x][player->y];
                     if (tile->type != TILETYPE_STAIR_UP)
                     {
-                        return INPUT_TICK;
+                        // return INPUT_TICK;
                     }
 
                     if (current_map_index <= 0)
@@ -89,10 +103,12 @@ input_t input_handle(void)
             case '.':
                 if (key.shift)
                 {
+                    // TODO: this is now crashing after a few floors
+                    // the crashing seems to come from a turn being taken on the new floor, but only sometimes
                     tile_t *tile = &current_map->tiles[player->x][player->y];
                     if (tile->type != TILETYPE_STAIR_DOWN)
                     {
-                        return INPUT_TICK;
+                        // return INPUT_TICK;
                     }
 
                     current_map_index++;

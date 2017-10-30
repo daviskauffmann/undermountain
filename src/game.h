@@ -50,6 +50,7 @@ typedef struct gamedata_s
 int current_map_index;
 map_t *current_map;
 actor_t *player;
+bool torch;
 
 void game_init(void);
 void game_load(void);

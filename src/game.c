@@ -10,6 +10,7 @@ void game_init(void)
     current_map_index = 0;
     current_map = map_create();
     player = actor_create(current_map, ACTORTYPE_PLAYER, current_map->stair_up_x, current_map->stair_up_y);
+    torch = false;
 }
 
 void game_load(void)

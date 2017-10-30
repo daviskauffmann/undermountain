@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 #include <libtcod.h>
 
 #include "world.h"
@@ -13,13 +14,20 @@ void world_init(void)
 
 void world_turn(void)
 {
-    for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
-         iterator != (map_t **)TCOD_list_end(maps);
-         iterator++)
+    if (SIMULATE_ALL_MAPS)
     {
-        map_t *map = *iterator;
+        for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
+             iterator != (map_t **)TCOD_list_end(maps);
+             iterator++)
+        {
+            map_t *map = *iterator;
 
-        map_update(map);
+            map_update(map);
+        }
+    }
+    else
+    {
+        map_update(current_map);
     }
 }
 
@@ -29,90 +37,9 @@ void world_tick(void)
 
 void world_draw_turn(void)
 {
-    TCOD_map_t TCOD_map = map_to_TCOD_map(current_map);
-    map_calc_fov(TCOD_map, current_map, player->x, player->y, actor_info[player->type].sight_radius);
+    TCOD_map_t fov_map = map_calc_fov(current_map, player->x, player->y, actor_info[player->type].sight_radius);
 
-    for (int x = view_left; x < view_left + view_right; x++)
-    {
-        for (int y = view_top; y < view_top + view_bottom; y++)
-        {
-            if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
-            {
-                continue;
-            }
-
-            tile_t *tile = &current_map->tiles[x][y];
-
-            TCOD_color_t color;
-            if (TCOD_map_is_in_fov(TCOD_map, x, y))
-            {
-                tile->seen = true;
-
-                color = tile_info[tile->type].color;
-            }
-            else
-            {
-                if (tile->seen)
-                {
-                    color = TCOD_gray;
-                }
-                else
-                {
-                    continue;
-                }
-            }
-
-            TCOD_console_set_char_foreground(NULL, x - view_left, y - view_top, color);
-            TCOD_console_set_char(NULL, x - view_left, y - view_top, tile_info[tile->type].glyph);
-        }
-    }
-
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(current_map->actors);
-         iterator != (actor_t **)TCOD_list_end(current_map->actors);
-         iterator++)
-    {
-        actor_t *actor = *iterator;
-
-        if (!TCOD_map_is_in_fov(TCOD_map, actor->x, actor->y))
-        {
-            continue;
-        }
-
-        TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actor_info[actor->type].color);
-        TCOD_console_set_char(NULL, actor->x - view_left, actor->y - view_top, actor_info[actor->type].glyph);
-    }
-
-    TCOD_map_delete(TCOD_map);
-}
-
-void world_draw_tick(void)
-{
-    TCOD_map_t TCOD_map = map_to_TCOD_map(current_map);
-    map_calc_fov(TCOD_map, current_map, player->x, player->y, actor_info[player->type].sight_radius);
-
-    static float coef = 0.0f;
-    static bool coef_rising;
-
-    if (coef_rising)
-    {
-        coef += TCOD_sys_get_last_frame_length();
-
-        if (coef >= 0.5f)
-        {
-            coef = 0.5f;
-            coef_rising = false;
-        }
-    }
-    else
-    {
-        coef -= TCOD_sys_get_last_frame_length();
-
-        if (coef <= 0.0f)
-        {
-            coef = 0.0f;
-            coef_rising = true;
-        }
-    }
+    float r2 = pow(actor_info[player->type].sight_radius, 2);
 
     for (int x = view_left; x < view_left + view_right; x++)
     {
@@ -137,14 +64,127 @@ void world_draw_tick(void)
 
             tile_t *tile = &current_map->tiles[x][y];
 
-            if (TCOD_map_is_in_fov(TCOD_map, x, y))
+            TCOD_color_t color;
+            if (TCOD_map_is_in_fov(fov_map, x, y))
             {
-                TCOD_color_t orig = tile_info[tile->type].color;
-                TCOD_color_t new = TCOD_color_lerp(TCOD_color_RGB(255, 0, 0), orig, coef);
+                tile->seen = true;
 
-                TCOD_console_set_char_foreground(NULL, x - view_left, y - view_top, new);
+                float d = pow(x - player->x, 2) + pow(y - player->y, 2);
+                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+                if (torch)
+                {
+                    color = TCOD_color_lerp(tile_info[tile->type].dark_color, TCOD_color_lerp(tile_info[tile->type].light_color, TCOD_light_amber, l), l);
+                }
+                else
+                {
+                    color = TCOD_color_lerp(tile_info[tile->type].dark_color, tile_info[tile->type].light_color, l);
+                }
             }
+            else
+            {
+                if (tile->seen)
+                {
+                    color = tile_info[tile->type].dark_color;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
+            TCOD_console_set_char_foreground(NULL, x - view_left, y - view_top, color);
+            TCOD_console_set_char(NULL, x - view_left, y - view_top, tile_info[tile->type].glyph);
+
         out:;
+        }
+    }
+
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(current_map->actors);
+         iterator != (actor_t **)TCOD_list_end(current_map->actors);
+         iterator++)
+    {
+        actor_t *actor = *iterator;
+
+        if (!TCOD_map_is_in_fov(fov_map, actor->x, actor->y))
+        {
+            continue;
+        }
+
+        TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actor_info[actor->type].color);
+        TCOD_console_set_char(NULL, actor->x - view_left, actor->y - view_top, actor_info[actor->type].glyph);
+    }
+
+    TCOD_map_delete(fov_map);
+}
+
+void world_draw_tick(void)
+{
+    if (SFX)
+    {
+        if (torch)
+        {
+            TCOD_map_t fov_map = map_calc_fov(current_map, player->x, player->y, actor_info[player->type].sight_radius);
+
+            static TCOD_noise_t noise = NULL;
+            if (noise == NULL)
+            {
+                noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
+            }
+
+            static float torchx = 0.0f;
+            float tdx;
+            float dx;
+            float dy;
+            float di;
+
+            torchx += 0.2f;
+            tdx = torchx + 20.0f;
+            dx = TCOD_noise_get(noise, &tdx) * 0.5f;
+            tdx += 30.0f;
+            dy = TCOD_noise_get(noise, &tdx) * 0.5f;
+            di = 0.2f * TCOD_noise_get(noise, &torchx);
+
+            float r2 = pow(actor_info[player->type].sight_radius, 2);
+
+            for (int x = view_left; x < view_left + view_right; x++)
+            {
+                for (int y = view_top; y < view_top + view_bottom; y++)
+                {
+                    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
+                    {
+                        continue;
+                    }
+
+                    if (!TCOD_map_is_in_fov(fov_map, x, y))
+                    {
+                        continue;
+                    }
+
+                    for (actor_t **iterator = (actor_t **)TCOD_list_begin(current_map->actors);
+                         iterator != (actor_t **)TCOD_list_end(current_map->actors);
+                         iterator++)
+                    {
+                        actor_t *actor = *iterator;
+
+                        if (actor->x == x && actor->y == y)
+                        {
+                            goto out;
+                        }
+                    }
+
+                    tile_t *tile = &current_map->tiles[x][y];
+
+                    float d = pow(x - player->x + dx, 2) + pow(y - player->y + dy, 2);
+                    float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
+                    TCOD_color_t color = TCOD_color_lerp(tile_info[tile->type].dark_color, TCOD_color_lerp(tile_info[tile->type].light_color, TCOD_light_amber, l), l);
+
+                    TCOD_console_set_char_foreground(NULL, x - view_left, y - view_top, color);
+
+                out:;
+                }
+            }
+
+            TCOD_map_delete(fov_map);
         }
     }
 }
@@ -407,6 +447,20 @@ void map_update(map_t *map)
     {
         actor_t *actor = *iterator;
 
+        if (actor->mark_for_delete)
+        {
+            iterator = (actor_t **)TCOD_list_remove_iterator_fast(map->actors, (void **)iterator);
+
+            free(actor);
+        }
+    }
+
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+         iterator != (actor_t **)TCOD_list_end(map->actors);
+         iterator++)
+    {
+        actor_t *actor = *iterator;
+
         actor_update(map, actor);
     }
 }
@@ -442,9 +496,11 @@ room_t *map_get_random_room(map_t *map)
     return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
 }
 
-void map_calc_fov(TCOD_map_t TCOD_map, map_t *map, int x, int y, int radius)
+TCOD_map_t map_calc_fov(map_t *map, int x, int y, int radius)
 {
-    TCOD_map_compute_fov(TCOD_map, x, y, radius, true, FOV_DIAMOND);
+    TCOD_map_t fov_map = map_to_TCOD_map(map);
+
+    TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_DIAMOND);
 
     if (LIT_ROOMS)
     {
@@ -463,24 +519,35 @@ void map_calc_fov(TCOD_map_t TCOD_map, map_t *map, int x, int y, int radius)
             {
                 for (int y = room->y - 1; y <= room->y + room->h; y++)
                 {
-                    TCOD_map_set_in_fov(TCOD_map, x, y, true);
+                    TCOD_map_set_in_fov(fov_map, x, y, true);
                 }
             }
         }
     }
+
+    return fov_map;
 }
 
-TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy)
+TCOD_path_t map_calc_path(map_t *map, int ox, int oy, int dx, int dy)
 {
-    TCOD_map_t TCOD_map_cpy = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
-    TCOD_map_copy(TCOD_map, TCOD_map_cpy);
+    TCOD_map_t path_map = map_to_TCOD_map(map);
 
-    TCOD_map_set_properties(TCOD_map_cpy, dx, dy, TCOD_map_is_transparent(TCOD_map, dx, dy), true);
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+         iterator != (actor_t **)TCOD_list_end(map->actors);
+         iterator++)
+    {
+        actor_t *actor = *iterator;
 
-    TCOD_path_t path = TCOD_path_new_using_map(TCOD_map_cpy, 1.0f);
+        if (actor->x == ox && actor->y == oy)
+        {
+            TCOD_map_set_properties(path_map, dx, dy, TCOD_map_is_transparent(path_map, dx, dy), true);
+        }
+    }
+
+    TCOD_path_t path = TCOD_path_new_using_map(path_map, 1.0f);
     TCOD_path_compute(path, ox, oy, dx, dy);
 
-    TCOD_map_delete(TCOD_map_cpy);
+    TCOD_map_delete(path_map);
 
     return path;
 }
@@ -512,6 +579,7 @@ actor_t *actor_create(map_t *map, actor_type_t type, int x, int y)
     actor->y = y;
     actor->target_x = -1;
     actor->target_y = -1;
+    actor->mark_for_delete = false;
 
     TCOD_list_push(map->actors, actor);
 
@@ -527,8 +595,7 @@ void actor_update(map_t *map, actor_t *actor)
 
     if (TCOD_random_get_int(NULL, 0, 1) == 0)
     {
-        TCOD_map_t TCOD_map = map_to_TCOD_map(map);
-        map_calc_fov(TCOD_map, map, actor->x, actor->y, actor_info[actor->type].sight_radius);
+        TCOD_map_t fov_map = map_calc_fov(map, actor->x, actor->y, actor_info[actor->type].sight_radius);
 
         for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
              iterator != (actor_t **)TCOD_list_end(map->actors);
@@ -541,14 +608,14 @@ void actor_update(map_t *map, actor_t *actor)
                 continue;
             }
 
-            if (TCOD_map_is_in_fov(TCOD_map, other->x, other->y))
+            if (TCOD_map_is_in_fov(fov_map, other->x, other->y))
             {
                 actor_target_set(actor, other->x, other->y);
                 actor_target_moveto(map, actor);
             }
         }
 
-        TCOD_map_delete(TCOD_map);
+        TCOD_map_delete(fov_map);
     }
     else
     {
@@ -602,7 +669,7 @@ void actor_move(map_t *map, actor_t *actor, int x, int y)
         // if corpses can be picked up, they will need to act like items
         if (other != player)
         {
-            actor_destroy(map, other);
+            other->mark_for_delete = true;
         }
 
         return;
@@ -625,9 +692,11 @@ bool actor_target_moveto(map_t *map, actor_t *actor)
         return false;
     }
 
-    TCOD_path_t path = map_calc_path(map_to_TCOD_map(map), actor->x, actor->y, actor->target_x, actor->target_y);
+    TCOD_path_t path = map_calc_path(map, actor->x, actor->y, actor->target_x, actor->target_y);
+
     int x, y;
     bool valid_path = !TCOD_path_is_empty(path) && TCOD_path_walk(path, &x, &y, false);
+
     if (valid_path)
     {
         actor_move(map, actor, x, y);

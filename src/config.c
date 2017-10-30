@@ -42,7 +42,7 @@
 // TODO: get all this information from external config file
 void config_init(void)
 {
-    TCOD_console_set_custom_font("terminal.png", TCOD_FONT_LAYOUT_ASCII_INCOL, 16, 16);
+    TCOD_console_set_custom_font("tiles.png", TCOD_FONT_LAYOUT_ASCII_INROW, 16, 16);
     TCOD_console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE, false, TCOD_RENDERER_SDL);
     TCOD_sys_set_fps(60);
     TCOD_console_set_default_background(NULL, TCOD_black);
@@ -72,35 +72,40 @@ void config_init(void)
     // TCOD_parser_delete(parser);
 
     tile_info[TILETYPE_EMPTY].glyph = ' ';
-    tile_info[TILETYPE_EMPTY].color = TCOD_white;
+    tile_info[TILETYPE_EMPTY].light_color = TCOD_white;
+    tile_info[TILETYPE_EMPTY].dark_color = TCOD_darkest_gray;
     tile_info[TILETYPE_EMPTY].is_transparent = true;
     tile_info[TILETYPE_EMPTY].is_walkable = true;
 
     tile_info[TILETYPE_FLOOR].glyph = '.';
-    tile_info[TILETYPE_FLOOR].color = TCOD_white;
+    tile_info[TILETYPE_FLOOR].light_color = TCOD_white;
+    tile_info[TILETYPE_FLOOR].dark_color = TCOD_darkest_gray;
     tile_info[TILETYPE_FLOOR].is_transparent = true;
     tile_info[TILETYPE_FLOOR].is_walkable = true;
 
     tile_info[TILETYPE_WALL].glyph = '#';
-    tile_info[TILETYPE_WALL].color = TCOD_white;
+    tile_info[TILETYPE_WALL].light_color = TCOD_white;
+    tile_info[TILETYPE_WALL].dark_color = TCOD_darkest_gray;
     tile_info[TILETYPE_WALL].is_transparent = false;
     tile_info[TILETYPE_WALL].is_walkable = false;
 
     tile_info[TILETYPE_STAIR_DOWN].glyph = '>';
-    tile_info[TILETYPE_STAIR_DOWN].color = TCOD_white;
+    tile_info[TILETYPE_STAIR_DOWN].light_color = TCOD_white;
+    tile_info[TILETYPE_STAIR_DOWN].dark_color = TCOD_darkest_gray;
     tile_info[TILETYPE_STAIR_DOWN].is_transparent = true;
     tile_info[TILETYPE_STAIR_DOWN].is_walkable = true;
 
     tile_info[TILETYPE_STAIR_UP].glyph = '<';
-    tile_info[TILETYPE_STAIR_UP].color = TCOD_white;
+    tile_info[TILETYPE_STAIR_UP].light_color = TCOD_white;
+    tile_info[TILETYPE_STAIR_UP].dark_color = TCOD_darkest_gray;
     tile_info[TILETYPE_STAIR_UP].is_transparent = true;
     tile_info[TILETYPE_STAIR_UP].is_walkable = true;
 
     actor_info[ACTORTYPE_PLAYER].glyph = '@';
     actor_info[ACTORTYPE_PLAYER].color = TCOD_white;
-    actor_info[ACTORTYPE_PLAYER].sight_radius = 10;
+    actor_info[ACTORTYPE_PLAYER].sight_radius = 5;
 
     actor_info[ACTORTYPE_MONSTER].glyph = '@';
-    actor_info[ACTORTYPE_MONSTER].color = TCOD_yellow;
-    actor_info[ACTORTYPE_MONSTER].sight_radius = 10;
+    actor_info[ACTORTYPE_MONSTER].color = TCOD_red;
+    actor_info[ACTORTYPE_MONSTER].sight_radius = 5;
 }

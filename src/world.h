@@ -8,7 +8,8 @@
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
 #define NUM_ACTORS 100
-#define LIT_ROOMS true
+#define LIT_ROOMS false
+#define SIMULATE_ALL_MAPS false
 
 typedef enum tile_type_e {
     TILETYPE_EMPTY = 0,
@@ -28,7 +29,8 @@ typedef struct tile_s
 typedef struct tile_info_s
 {
     unsigned char glyph;
-    TCOD_color_t color;
+    TCOD_color_t light_color;
+    TCOD_color_t dark_color;
     bool is_transparent;
     bool is_walkable;
 } tile_info_t;
@@ -55,6 +57,7 @@ typedef struct actor_s
     int y;
     int target_x;
     int target_y;
+    bool mark_for_delete;
 } actor_t;
 
 typedef struct actor_info_s
@@ -95,8 +98,8 @@ void hline_right(map_t *map, int x, int y);
 void map_update(map_t *map);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
-void map_calc_fov(TCOD_map_t TCOD_map, map_t *map, int x, int y, int radius);
-TCOD_path_t map_calc_path(TCOD_map_t TCOD_map, int ox, int oy, int dx, int dy);
+TCOD_map_t map_calc_fov(map_t *map, int x, int y, int radius);
+TCOD_path_t map_calc_path(map_t *map, int ox, int oy, int dx, int dy);
 void map_destroy(map_t *map);
 
 void room_get_random_pos(room_t *room, int *x, int *y);

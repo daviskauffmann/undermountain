@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <libtcod.h>
 
 #include "view.h"
@@ -8,8 +7,8 @@
 
 void view_update(void)
 {
-    view_right = SCREEN_WIDTH;
-    view_bottom = SCREEN_HEIGHT;
+    view_right = screen_width;
+    view_bottom = screen_height;
     view_left = player->x - view_right / 2;
     view_top = player->y - view_bottom / 2;
 

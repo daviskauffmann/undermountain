@@ -26,19 +26,19 @@ input_t input_handle(void)
         tile_t *tile_n = player->y - 1 > 0
                              ? &current_map->tiles[player->x][player->y - 1]
                              : NULL;
-        bool walkable_n = tile_n == NULL ? false : tile_info[tile_n->type].is_walkable;
+        bool walkable_n = tile_n == NULL ? false : tileinfo[tile_n->type].is_walkable;
         tile_t *tile_e = player->x + 1 < MAP_WIDTH
                              ? &current_map->tiles[player->x + 1][player->y]
                              : NULL;
-        bool walkable_e = tile_e == NULL ? false : tile_info[tile_e->type].is_walkable;
+        bool walkable_e = tile_e == NULL ? false : tileinfo[tile_e->type].is_walkable;
         tile_t *tile_s = player->y + 1 < MAP_HEIGHT
                              ? &current_map->tiles[player->x][player->y + 1]
                              : NULL;
-        bool walkable_s = tile_s == NULL ? false : tile_info[tile_s->type].is_walkable;
+        bool walkable_s = tile_s == NULL ? false : tileinfo[tile_s->type].is_walkable;
         tile_t *tile_w = player->x - 1 > 0
                              ? &current_map->tiles[player->x - 1][player->y]
                              : NULL;
-        bool walkable_w = tile_w == NULL ? false : tile_info[tile_w->type].is_walkable;
+        bool walkable_w = tile_w == NULL ? false : tileinfo[tile_w->type].is_walkable;
 
         switch (key.vk)
         {
@@ -48,27 +48,6 @@ input_t input_handle(void)
         case TCODK_CHAR:
             switch (key.c)
             {
-            case 'r':
-                world_destroy();
-                world_init();
-                game_init();
-
-                return INPUT_DRAW;
-
-            case 't':
-                torch = !torch;
-
-                if (torch)
-                {
-                    actor_info[player->type].sight_radius *= 2;
-                }
-                else
-                {
-                    actor_info[player->type].sight_radius /= 2;
-                }
-
-                return INPUT_DRAW;
-
             case ',':
                 if (key.shift)
                 {
@@ -103,8 +82,6 @@ input_t input_handle(void)
             case '.':
                 if (key.shift)
                 {
-                    // TODO: this is now crashing after a few floors
-                    // the crashing seems to come from a turn being taken on the new floor, but only sometimes
                     tile_t *tile = &current_map->tiles[player->x][player->y];
                     if (tile->type != TILETYPE_STAIR_DOWN)
                     {
@@ -130,12 +107,39 @@ input_t input_handle(void)
 
                 return INPUT_TICK;
 
-            case 's':
-                if (key.lctrl)
-                {
-                    game_save();
-                }
+            case 'a':
+                sfx = !sfx;
 
+                return INPUT_DRAW;
+
+            case 'b':
+                return INPUT_TICK;
+
+            case 'c':
+                return INPUT_TICK;
+
+            case 'd':
+                return INPUT_TICK;
+
+            case 'e':
+                return INPUT_TICK;
+
+            case 'f':
+                return INPUT_TICK;
+
+            case 'g':
+                return INPUT_TICK;
+
+            case 'h':
+                return INPUT_TICK;
+
+            case 'i':
+                return INPUT_TICK;
+
+            case 'j':
+                return INPUT_TICK;
+
+            case 'k':
                 return INPUT_TICK;
 
             case 'l':
@@ -147,6 +151,70 @@ input_t input_handle(void)
                     return INPUT_DRAW;
                 }
 
+                return INPUT_TICK;
+
+            case 'm':
+                return INPUT_TICK;
+
+            case 'n':
+                return INPUT_TICK;
+
+            case 'o':
+                return INPUT_TICK;
+
+            case 'p':
+                return INPUT_TICK;
+
+            case 'q':
+                return INPUT_TICK;
+
+            case 'r':
+                world_destroy();
+                world_init();
+                game_init();
+
+                return INPUT_DRAW;
+
+            case 's':
+                if (key.lctrl)
+                {
+                    game_save();
+                }
+
+                return INPUT_TICK;
+
+            case 't':
+                torch = !torch;
+
+                if (torch)
+                {
+                    actorinfo[player->type].sight_radius *= 2;
+                }
+                else
+                {
+                    actorinfo[player->type].sight_radius /= 2;
+                }
+
+                return INPUT_DRAW;
+
+            case 'u':
+                return INPUT_TICK;
+
+            case 'v':
+                return INPUT_TICK;
+
+            case 'w':
+                return INPUT_TICK;
+
+            case 'x':
+                return INPUT_TICK;
+
+            case 'y':
+                torch_color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
+
+                return INPUT_DRAW;
+
+            case 'z':
                 return INPUT_TICK;
             }
 

@@ -12,6 +12,13 @@
 int main(int argc, char *argv[])
 {
     config_init();
+
+    TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
+    TCOD_console_init_root(screen_width, screen_height, WINDOW_TITLE, fullscreen, renderer);
+    TCOD_sys_set_fps(FPS);
+    TCOD_console_set_default_background(NULL, default_background_color);
+    TCOD_console_set_default_foreground(NULL, default_foreground_color);
+
     world_init();
     game_init();
 
@@ -24,11 +31,11 @@ int main(int argc, char *argv[])
         case INPUT_TICK:
             goto tick;
 
-        case INPUT_DRAW:
-            goto draw;
-
         case INPUT_TURN:
             goto turn;
+
+        case INPUT_DRAW:
+            goto draw;
 
         case INPUT_QUIT:
             goto quit;

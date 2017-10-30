@@ -7,9 +7,10 @@
 #define MAP_HEIGHT 100
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
+#define FULL_ROOMS 0
 #define NUM_ACTORS 100
-#define LIT_ROOMS false
-#define SIMULATE_ALL_MAPS false
+#define LIT_ROOMS 0
+#define SIMULATE_ALL_MAPS 1
 
 typedef enum tile_type_e {
     TILETYPE_EMPTY = 0,
@@ -18,13 +19,7 @@ typedef enum tile_type_e {
     TILETYPE_STAIR_DOWN,
     TILETYPE_STAIR_UP,
     NUM_TILETYPES
-} tile_type_t;
-
-typedef struct tile_s
-{
-    tile_type_t type;
-    bool seen;
-} tile_t;
+} tiletype_t;
 
 typedef struct tile_info_s
 {
@@ -33,7 +28,13 @@ typedef struct tile_info_s
     TCOD_color_t dark_color;
     bool is_transparent;
     bool is_walkable;
-} tile_info_t;
+} tileinfo_t;
+
+typedef struct tile_s
+{
+    tiletype_t type;
+    bool seen;
+} tile_t;
 
 typedef struct room_s
 {
@@ -48,24 +49,25 @@ typedef enum actor_type_e {
     ACTORTYPE_PLAYER,
     ACTORTYPE_MONSTER,
     NUM_ACTORTYPES
-} actor_type_t;
-
-typedef struct actor_s
-{
-    actor_type_t type;
-    int x;
-    int y;
-    int target_x;
-    int target_y;
-    bool mark_for_delete;
-} actor_t;
+} actortype_t;
 
 typedef struct actor_info_s
 {
     unsigned char glyph;
     TCOD_color_t color;
     int sight_radius;
-} actor_info_t;
+    TCOD_color_t torch_color;
+} actorinfo_t;
+
+typedef struct actor_s
+{
+    actortype_t type;
+    int x;
+    int y;
+    int target_x;
+    int target_y;
+    bool mark_for_delete;
+} actor_t;
 
 typedef struct map_s
 {
@@ -105,7 +107,7 @@ void map_destroy(map_t *map);
 void room_get_random_pos(room_t *room, int *x, int *y);
 bool room_is_inside(room_t *room, int x, int y);
 
-actor_t *actor_create(map_t *map, actor_type_t type, int x, int y);
+actor_t *actor_create(map_t *map, actortype_t type, int x, int y);
 void actor_update(map_t *map, actor_t *actor);
 void actor_move(map_t *map, actor_t *actor, int x, int y);
 void actor_target_set(actor_t *actor, int x, int y);

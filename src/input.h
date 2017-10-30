@@ -1,6 +1,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+#define AUTOMOVE_DELAY 0.1f
+
 typedef enum input_e {
     INPUT_TICK,
     INPUT_TURN,

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <libtcod.h>
 
 #include "input.h"
@@ -283,9 +284,28 @@ input_t input_handle(void)
         return INPUT_TICK;
     }
 
-    if (actor_target_moveto(current_map, player))
+    static float automove_timer = 0.0f;
+    static bool automove_ready = true;
+
+    if (automove_ready)
     {
-        return INPUT_TURN;
+        if (actor_target_moveto(current_map, player))
+        {
+            automove_ready = false;
+
+            return INPUT_TURN;
+        }
+    }
+    else
+    {
+        automove_timer += TCOD_sys_get_last_frame_length();
+
+        if (automove_timer >= AUTOMOVE_DELAY)
+        {
+            automove_ready = true;
+
+            automove_timer = 0.0f;
+        }
     }
 
     return INPUT_TICK;

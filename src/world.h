@@ -85,8 +85,6 @@ TCOD_list_t maps;
 void world_init(void);
 void world_turn(void);
 void world_tick(void);
-void world_draw_turn(void);
-void world_draw_tick(void);
 void world_destroy(void);
 
 map_t *map_create(void);

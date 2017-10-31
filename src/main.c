@@ -4,6 +4,7 @@
 #include <libtcod.h>
 
 #include "config.h"
+#include "console.h"
 #include "world.h"
 #include "game.h"
 #include "input.h"
@@ -11,12 +12,7 @@
 int main(int argc, char *argv[])
 {
     config_init();
-
-    TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
-    TCOD_console_init_root(screen_width, screen_height, WINDOW_TITLE, fullscreen, renderer);
-    TCOD_sys_set_fps(FPS);
-    TCOD_console_set_default_background(NULL, default_background_color);
-    TCOD_console_set_default_foreground(NULL, default_foreground_color);
+    console_init();
 
     world_init();
     game_init();
@@ -43,20 +39,30 @@ int main(int argc, char *argv[])
     turn:
         world_turn();
 
+        switch (TCOD_random_get_int(NULL, 0, 2))
+        {
+        case 0:
+            console_log("Hello, World!");
+            break;
+
+        case 1:
+            console_log("Greetings, World!");
+            break;
+
+        case 2:
+            console_log("Saluations, World!");
+            break;
+        }
+
     draw:
-        TCOD_console_clear(NULL);
-        game_update();
-        world_draw_turn();
+        console_turn_draw();
 
     tick:
         world_tick();
-        world_draw_tick();
-        TCOD_console_flush();
+        console_tick_draw();
     }
 
 quit:
-    world_destroy();
-
     SDL_Quit();
 
     return 0;

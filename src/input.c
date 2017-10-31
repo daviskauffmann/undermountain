@@ -3,6 +3,7 @@
 
 #include "input.h"
 #include "config.h"
+#include "console.h"
 #include "world.h"
 #include "game.h"
 
@@ -44,6 +45,16 @@ input_t input_handle(void)
         {
         case TCODK_ESCAPE:
             return INPUT_QUIT;
+
+        case TCODK_F1:
+            right_panel_visible = !right_panel_visible;
+
+            return INPUT_DRAW;
+
+        case TCODK_F2:
+            bottom_panel_visible = !bottom_panel_visible;
+
+            return INPUT_DRAW;
 
         case TCODK_CHAR:
             switch (key.c)
@@ -146,6 +157,8 @@ input_t input_handle(void)
                 if (key.lctrl)
                 {
                     world_destroy();
+
+                    console_init();
                     game_load();
 
                     return INPUT_DRAW;
@@ -170,6 +183,8 @@ input_t input_handle(void)
 
             case 'r':
                 world_destroy();
+
+                console_init();
                 world_init();
                 game_init();
 

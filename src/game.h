@@ -5,8 +5,6 @@
 
 #include "world.h"
 
-#define CONSTRAIN_VIEW true
-
 typedef struct tiledata_s
 {
     tiletype_t type;
@@ -54,13 +52,7 @@ map_t *current_map;
 actor_t *player;
 bool torch;
 
-int view_left;
-int view_top;
-int view_right;
-int view_bottom;
-
 void game_init(void);
-void game_update(void);
 void game_save(void);
 void game_load(void);
 

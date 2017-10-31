@@ -3,6 +3,7 @@
 
 #include "game.h"
 #include "config.h"
+#include "console.h"
 #include "world.h"
 
 void game_init(void)
@@ -11,28 +12,8 @@ void game_init(void)
     current_map = map_create();
     player = actor_create(current_map, ACTORTYPE_PLAYER, current_map->stair_up_x, current_map->stair_up_y);
     torch = false;
-}
 
-void game_update(void)
-{
-    view_right = screen_width;
-    view_bottom = screen_height;
-    view_left = player->x - view_right / 2;
-    view_top = player->y - view_bottom / 2;
-
-    if (CONSTRAIN_VIEW)
-    {
-        view_left = view_left < 0
-                        ? 0
-                        : view_left + view_right > MAP_WIDTH
-                              ? MAP_WIDTH - view_right
-                              : view_left;
-        view_top = view_top < 0
-                       ? 0
-                       : view_top + view_bottom > MAP_HEIGHT
-                             ? MAP_HEIGHT - view_bottom
-                             : view_top;
-    }
+    console_log("Hail, Player!");
 }
 
 void game_save(void)

@@ -13,81 +13,26 @@ void game_init(void)
     torch = false;
 }
 
-void game_load(void)
+void game_update(void)
 {
-    gamedata_t *gamedata = (gamedata_t *)malloc(sizeof(gamedata_t));
+    view_right = screen_width;
+    view_bottom = screen_height;
+    view_left = player->x - view_right / 2;
+    view_top = player->y - view_bottom / 2;
 
-    FILE *file = fopen("save.dat", "r");
-    fread(gamedata, sizeof(gamedata_t), 1, file);
-    fclose(file);
-
-    TCOD_random_restore(NULL, gamedata->random);
-    current_map_index = gamedata->current_map_index;
-
-    maps = TCOD_list_new();
-    for (int i = 0; i < gamedata->map_count; i++)
+    if (CONSTRAIN_VIEW)
     {
-        mapdata_t *mapdata = &gamedata->mapdata[i];
-
-        map_t *map = (map_t *)malloc(sizeof(map_t));
-
-        map->stair_down_x = mapdata->stair_down_x;
-        map->stair_down_y = mapdata->stair_down_y;
-        map->stair_up_x = mapdata->stair_up_x;
-        map->stair_up_y = mapdata->stair_up_y;
-
-        for (int x = 0; x < MAP_WIDTH; x++)
-        {
-            for (int y = 0; y < MAP_HEIGHT; y++)
-            {
-                tiledata_t *tiledata = &mapdata->tiledata[x][y];
-                tile_t *tile = &map->tiles[x][y];
-
-                tile->type = tiledata->type;
-                tile->seen = tiledata->seen;
-            }
-        }
-
-        map->rooms = TCOD_list_new();
-        for (int j = 0; j < mapdata->room_count; j++)
-        {
-            roomdata_t *roomdata = &mapdata->roomdata[j];
-
-            room_t *room = (room_t *)malloc(sizeof(room_t));
-
-            room->x = roomdata->x;
-            room->y = roomdata->y;
-            room->w = roomdata->w;
-            room->h = roomdata->h;
-
-            TCOD_list_push(map->rooms, room);
-        }
-
-        map->actors = TCOD_list_new();
-        for (int j = 0; j < mapdata->actor_count; j++)
-        {
-            actordata_t *actordata = &mapdata->actordata[j];
-
-            actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
-
-            actor->type = actordata->type;
-            actor->x = actordata->x;
-            actor->y = actordata->y;
-            actor->target_x = -1;
-            actor->target_y = -1;
-
-            TCOD_list_push(map->actors, actor);
-
-            if (actordata->type == ACTORTYPE_PLAYER)
-            {
-                player = actor;
-            }
-        }
-
-        TCOD_list_push(maps, map);
+        view_left = view_left < 0
+                        ? 0
+                        : view_left + view_right > MAP_WIDTH
+                              ? MAP_WIDTH - view_right
+                              : view_left;
+        view_top = view_top < 0
+                       ? 0
+                       : view_top + view_bottom > MAP_HEIGHT
+                             ? MAP_HEIGHT - view_bottom
+                             : view_top;
     }
-
-    current_map = TCOD_list_get(maps, current_map_index);
 }
 
 void game_save(void)
@@ -168,4 +113,81 @@ void game_save(void)
     fclose(file);
 
     free(gamedata);
+}
+
+void game_load(void)
+{
+    gamedata_t *gamedata = (gamedata_t *)malloc(sizeof(gamedata_t));
+
+    FILE *file = fopen("save.dat", "r");
+    fread(gamedata, sizeof(gamedata_t), 1, file);
+    fclose(file);
+
+    TCOD_random_restore(NULL, gamedata->random);
+    current_map_index = gamedata->current_map_index;
+
+    maps = TCOD_list_new();
+    for (int i = 0; i < gamedata->map_count; i++)
+    {
+        mapdata_t *mapdata = &gamedata->mapdata[i];
+
+        map_t *map = (map_t *)malloc(sizeof(map_t));
+
+        map->stair_down_x = mapdata->stair_down_x;
+        map->stair_down_y = mapdata->stair_down_y;
+        map->stair_up_x = mapdata->stair_up_x;
+        map->stair_up_y = mapdata->stair_up_y;
+
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            for (int y = 0; y < MAP_HEIGHT; y++)
+            {
+                tiledata_t *tiledata = &mapdata->tiledata[x][y];
+                tile_t *tile = &map->tiles[x][y];
+
+                tile->type = tiledata->type;
+                tile->seen = tiledata->seen;
+            }
+        }
+
+        map->rooms = TCOD_list_new();
+        for (int j = 0; j < mapdata->room_count; j++)
+        {
+            roomdata_t *roomdata = &mapdata->roomdata[j];
+
+            room_t *room = (room_t *)malloc(sizeof(room_t));
+
+            room->x = roomdata->x;
+            room->y = roomdata->y;
+            room->w = roomdata->w;
+            room->h = roomdata->h;
+
+            TCOD_list_push(map->rooms, room);
+        }
+
+        map->actors = TCOD_list_new();
+        for (int j = 0; j < mapdata->actor_count; j++)
+        {
+            actordata_t *actordata = &mapdata->actordata[j];
+
+            actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
+
+            actor->type = actordata->type;
+            actor->x = actordata->x;
+            actor->y = actordata->y;
+            actor->target_x = -1;
+            actor->target_y = -1;
+
+            TCOD_list_push(map->actors, actor);
+
+            if (actordata->type == ACTORTYPE_PLAYER)
+            {
+                player = actor;
+            }
+        }
+
+        TCOD_list_push(maps, map);
+    }
+
+    current_map = TCOD_list_get(maps, current_map_index);
 }

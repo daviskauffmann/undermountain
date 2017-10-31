@@ -3,9 +3,8 @@
 
 #include "input.h"
 #include "config.h"
-#include "game.h"
 #include "world.h"
-#include "view.h"
+#include "game.h"
 
 input_t input_handle(void)
 {

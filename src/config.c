@@ -7,25 +7,21 @@
 // TODO: get all this information from external config file
 void config_init(void)
 {
-    // Window
     screen_width = 40;
     screen_height = 25;
     fullscreen = false;
     renderer = TCOD_RENDERER_SDL;
 
-    // Graphics
     font_file = "Anikki_square_16x16.png";
     font_flags = TCOD_FONT_LAYOUT_ASCII_INROW;
     font_char_horiz = 16;
     font_char_vertic = 16;
 
-    // Colors
     sfx = true;
     default_background_color = TCOD_black;
     default_foreground_color = TCOD_white;
     torch_color = TCOD_light_amber;
 
-    // Tiles
     tileinfo[TILETYPE_EMPTY].glyph = ' ';
     tileinfo[TILETYPE_EMPTY].light_color = TCOD_white;
     tileinfo[TILETYPE_EMPTY].dark_color = TCOD_darkest_gray;
@@ -56,7 +52,6 @@ void config_init(void)
     tileinfo[TILETYPE_STAIR_UP].is_transparent = true;
     tileinfo[TILETYPE_STAIR_UP].is_walkable = true;
 
-    // Actors
     actorinfo[ACTORTYPE_PLAYER].glyph = '@';
     actorinfo[ACTORTYPE_PLAYER].color = TCOD_white;
     actorinfo[ACTORTYPE_PLAYER].sight_radius = 5;

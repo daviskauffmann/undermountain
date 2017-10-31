@@ -6,7 +6,6 @@
 #include "config.h"
 #include "world.h"
 #include "game.h"
-#include "view.h"
 #include "input.h"
 
 int main(int argc, char *argv[])
@@ -46,7 +45,7 @@ int main(int argc, char *argv[])
 
     draw:
         TCOD_console_clear(NULL);
-        view_update();
+        game_update();
         world_draw_turn();
 
     tick:

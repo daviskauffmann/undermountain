@@ -5,7 +5,6 @@
 #include "world.h"
 #include "config.h"
 #include "game.h"
-#include "view.h"
 
 void world_init(void)
 {

@@ -126,6 +126,7 @@ void console_turn_draw(void)
 
                 float d = pow(x - player->x, 2) + pow(y - player->y, 2);
                 float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+
                 if (torch)
                 {
                     color = TCOD_color_lerp(tileinfo[tile->type].dark_color, TCOD_color_lerp(tileinfo[tile->type].light_color, torch_color, l), l);

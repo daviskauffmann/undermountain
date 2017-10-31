@@ -56,7 +56,6 @@ typedef struct actor_info_s
     unsigned char glyph;
     TCOD_color_t color;
     int sight_radius;
-    TCOD_color_t torch_color;
 } actorinfo_t;
 
 typedef struct actor_s

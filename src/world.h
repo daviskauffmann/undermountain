@@ -3,12 +3,12 @@
 
 #include <libtcod.h>
 
-#define MAP_WIDTH 100
-#define MAP_HEIGHT 100
+#define MAP_WIDTH 50
+#define MAP_HEIGHT 50
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 0
-#define NUM_ACTORS 100
+#define NUM_ACTORS 50
 #define LIT_ROOMS 0
 #define SIMULATE_ALL_MAPS 1
 
@@ -61,10 +61,10 @@ typedef struct actor_info_s
 typedef struct actor_s
 {
     actortype_t type;
+    struct map_s *map;
     int x;
     int y;
-    int target_x;
-    int target_y;
+    TCOD_map_t fov_map;
     bool mark_for_delete;
 } actor_t;
 
@@ -97,18 +97,14 @@ void hline_right(map_t *map, int x, int y);
 void map_update(map_t *map);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
-TCOD_map_t map_calc_fov(map_t *map, int x, int y, int radius);
-TCOD_path_t map_calc_path(map_t *map, int ox, int oy, int dx, int dy);
-void map_destroy(map_t *map);
 
 void room_get_random_pos(room_t *room, int *x, int *y);
 bool room_is_inside(room_t *room, int x, int y);
 
 actor_t *actor_create(map_t *map, actortype_t type, int x, int y);
-void actor_update(map_t *map, actor_t *actor);
-void actor_move(map_t *map, actor_t *actor, int x, int y);
-void actor_target_set(actor_t *actor, int x, int y);
-bool actor_target_moveto(map_t *map, actor_t *actor);
-void actor_destroy(map_t *map, actor_t *actor);
+void actor_update(actor_t *actor);
+void actor_calc_fov(actor_t *actor);
+bool actor_move_towards(actor_t *actor, int x, int y);
+bool actor_move(actor_t *actor, int x, int y);
 
 #endif

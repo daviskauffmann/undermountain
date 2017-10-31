@@ -48,7 +48,6 @@ typedef struct gamedata_s
 } gamedata_t;
 
 int current_map_index;
-map_t *current_map;
 actor_t *player;
 bool torch;
 

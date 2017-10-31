@@ -22,7 +22,7 @@ void world_turn(void)
         map_update(map);
     }
 #else
-    map_update(current_map);
+    map_update(player->map);
 #endif
 }
 
@@ -39,6 +39,19 @@ void world_destroy(void)
         map_t *map = *iterator;
 
         TCOD_list_clear_and_delete(map->rooms);
+
+        for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+             iterator != (actor_t **)TCOD_list_end(map->actors);
+             iterator++)
+        {
+            actor_t *actor = *iterator;
+
+            if (actor->fov_map != NULL)
+            {
+                TCOD_map_delete(actor->fov_map);
+            }
+        }
+
         TCOD_list_clear_and_delete(map->actors);
     }
 
@@ -291,7 +304,7 @@ void map_update(map_t *map)
     {
         actor_t *actor = *iterator;
 
-        actor_update(map, actor);
+        actor_update(actor);
     }
 
     for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
@@ -340,68 +353,6 @@ room_t *map_get_random_room(map_t *map)
     return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
 }
 
-TCOD_map_t map_calc_fov(map_t *map, int x, int y, int radius)
-{
-    TCOD_map_t fov_map = map_to_TCOD_map(map);
-
-    TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_DIAMOND);
-
-#if LIT_ROOMS
-    for (room_t **iterator = (room_t **)TCOD_list_begin(map->rooms);
-         iterator != (room_t **)TCOD_list_end(map->rooms);
-         iterator++)
-    {
-        room_t *room = *iterator;
-
-        if (!room_is_inside(room, x, y))
-        {
-            continue;
-        }
-
-        for (int x = room->x - 1; x <= room->x + room->w; x++)
-        {
-            for (int y = room->y - 1; y <= room->y + room->h; y++)
-            {
-                TCOD_map_set_in_fov(fov_map, x, y, true);
-            }
-        }
-    }
-#endif
-
-    return fov_map;
-}
-
-TCOD_path_t map_calc_path(map_t *map, int ox, int oy, int dx, int dy)
-{
-    TCOD_map_t path_map = map_to_TCOD_map(map);
-
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-         iterator != (actor_t **)TCOD_list_end(map->actors);
-         iterator++)
-    {
-        actor_t *actor = *iterator;
-
-        if (actor->x == ox && actor->y == oy)
-        {
-            TCOD_map_set_properties(path_map, dx, dy, TCOD_map_is_transparent(path_map, dx, dy), true);
-        }
-    }
-
-    TCOD_path_t path = TCOD_path_new_using_map(path_map, 1.0f);
-    TCOD_path_compute(path, ox, oy, dx, dy);
-
-    TCOD_map_delete(path_map);
-
-    return path;
-}
-
-void map_destroy(map_t *map)
-{
-    TCOD_list_remove(maps, map);
-
-    free(map);
-}
-
 void room_get_random_pos(room_t *room, int *x, int *y)
 {
     *x = TCOD_random_get_int(NULL, room->x, room->x + room->w - 1);
@@ -418,19 +369,23 @@ actor_t *actor_create(map_t *map, actortype_t type, int x, int y)
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
     actor->type = type;
+    actor->map = map;
     actor->x = x;
     actor->y = y;
-    actor->target_x = -1;
-    actor->target_y = -1;
+    actor->fov_map = NULL;
     actor->mark_for_delete = false;
+
+    actor_calc_fov(actor);
 
     TCOD_list_push(map->actors, actor);
 
     return actor;
 }
 
-void actor_update(map_t *map, actor_t *actor)
+void actor_update(actor_t *actor)
 {
+    actor_calc_fov(actor);
+
     if (actor == player)
     {
         return;
@@ -438,10 +393,8 @@ void actor_update(map_t *map, actor_t *actor)
 
     if (TCOD_random_get_int(NULL, 0, 1) == 0)
     {
-        TCOD_map_t fov_map = map_calc_fov(map, actor->x, actor->y, actorinfo[actor->type].sight_radius);
-
-        for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-             iterator != (actor_t **)TCOD_list_end(map->actors);
+        for (actor_t **iterator = (actor_t **)TCOD_list_begin(actor->map->actors);
+             iterator != (actor_t **)TCOD_list_end(actor->map->actors);
              iterator++)
         {
             actor_t *other = *iterator;
@@ -451,51 +404,111 @@ void actor_update(map_t *map, actor_t *actor)
                 continue;
             }
 
-            if (TCOD_map_is_in_fov(fov_map, other->x, other->y))
+            if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
-                actor_target_set(actor, other->x, other->y);
-                actor_target_moveto(map, actor);
+                actor_move_towards(actor, other->x, other->y);
             }
         }
-
-        TCOD_map_delete(fov_map);
     }
     else
     {
-        int dir = TCOD_random_get_int(NULL, 0, 8);
-        switch (dir)
+        switch (TCOD_random_get_int(NULL, 0, 8))
         {
         case 0:
-            actor_move(map, actor, actor->x, actor->y - 1);
+            actor_move(actor, actor->x, actor->y - 1);
+
             break;
+
         case 1:
-            actor_move(map, actor, actor->x, actor->y + 1);
+            actor_move(actor, actor->x, actor->y + 1);
+
             break;
+
         case 2:
-            actor_move(map, actor, actor->x - 1, actor->y);
+            actor_move(actor, actor->x - 1, actor->y);
+
             break;
+
         case 3:
-            actor_move(map, actor, actor->x + 1, actor->y);
+            actor_move(actor, actor->x + 1, actor->y);
+
             break;
         }
     }
 }
 
-void actor_move(map_t *map, actor_t *actor, int x, int y)
+void actor_calc_fov(actor_t *actor)
+{
+    if (actor->fov_map != NULL)
+    {
+        TCOD_map_delete(actor->fov_map);
+    }
+
+    actor->fov_map = map_to_TCOD_map(actor->map);
+
+    TCOD_map_compute_fov(actor->fov_map, actor->x, actor->y, actorinfo[actor->type].sight_radius, true, FOV_DIAMOND);
+
+#if LIT_ROOMS
+    for (room_t **iterator = (room_t **)TCOD_list_begin(actor->map->rooms);
+         iterator != (room_t **)TCOD_list_end(actor->map->rooms);
+         iterator++)
+    {
+        room_t *room = *iterator;
+
+        if (!room_is_inside(room, x, y))
+        {
+            continue;
+        }
+
+        for (int x = room->x - 1; x <= room->x + room->w; x++)
+        {
+            for (int y = room->y - 1; y <= room->y + room->h; y++)
+            {
+                TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+            }
+        }
+    }
+#endif
+}
+
+bool actor_move_towards(actor_t *actor, int x, int y)
+{
+    TCOD_map_set_properties(actor->fov_map, x, y, TCOD_map_is_transparent(actor->fov_map, x, y), true);
+
+    TCOD_path_t path = TCOD_path_new_using_map(actor->fov_map, 1.0f);
+    TCOD_path_compute(path, actor->x, actor->y, x, y);
+
+    bool success = false;
+
+    if (!TCOD_path_is_empty(path))
+    {
+        int x, y;
+        if (TCOD_path_walk(path, &x, &y, false))
+        {
+            success = actor_move(actor, x, y);
+        }
+    }
+
+    TCOD_path_delete(path);
+
+    return success;
+}
+
+bool actor_move(actor_t *actor, int x, int y)
 {
     if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
     {
-        return;
+        return false;
     }
 
-    tile_t *tile = &map->tiles[x][y];
+    tile_t *tile = &actor->map->tiles[x][y];
     if (!tileinfo[tile->type].is_walkable)
     {
-        return;
+        return false;
     }
 
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-         iterator != (actor_t **)TCOD_list_end(map->actors);
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(actor->map->actors);
+         iterator != (actor_t **)TCOD_list_end(actor->map->actors);
          iterator++)
     {
         actor_t *other = *iterator;
@@ -515,51 +528,11 @@ void actor_move(map_t *map, actor_t *actor, int x, int y)
             other->mark_for_delete = true;
         }
 
-        return;
+        return true;
     }
 
     actor->x = x;
     actor->y = y;
-}
 
-void actor_target_set(actor_t *actor, int x, int y)
-{
-    actor->target_x = x;
-    actor->target_y = y;
-}
-
-// TODO: optimize this
-// it currently calculates a path each time and moves the actor one tile on that path,
-// and then destroys the path
-bool actor_target_moveto(map_t *map, actor_t *actor)
-{
-    if (actor->target_x == -1 || actor->target_y == -1)
-    {
-        return false;
-    }
-
-    TCOD_path_t path = map_calc_path(map, actor->x, actor->y, actor->target_x, actor->target_y);
-
-    int x, y;
-    bool valid_path = !TCOD_path_is_empty(path) && TCOD_path_walk(path, &x, &y, false);
-
-    if (valid_path)
-    {
-        actor_move(map, actor, x, y);
-    }
-    else
-    {
-        actor_target_set(actor, -1, -1);
-    }
-
-    TCOD_path_delete(path);
-
-    return valid_path;
-}
-
-void actor_destroy(map_t *map, actor_t *actor)
-{
-    TCOD_list_remove(map->actors, actor);
-
-    free(actor);
+    return true;
 }

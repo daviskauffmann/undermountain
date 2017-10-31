@@ -87,8 +87,6 @@ void console_turn_draw(void)
     TCOD_console_set_default_foreground(bottom_panel, default_foreground_color);
     TCOD_console_clear(bottom_panel);
 
-    TCOD_map_t fov_map = map_calc_fov(current_map, player->x, player->y, actorinfo[player->type].sight_radius);
-
     float r2 = pow(actorinfo[player->type].sight_radius, 2);
 
     for (int x = view_left; x < view_left + view_right; x++)
@@ -100,13 +98,13 @@ void console_turn_draw(void)
                 continue;
             }
 
-            for (actor_t **iterator = (actor_t **)TCOD_list_begin(current_map->actors);
-                 iterator != (actor_t **)TCOD_list_end(current_map->actors);
+            for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
+                 iterator != (actor_t **)TCOD_list_end(player->map->actors);
                  iterator++)
             {
                 actor_t *actor = *iterator;
 
-                if (!TCOD_map_is_in_fov(fov_map, actor->x, actor->y))
+                if (!TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
                 {
                     continue;
                 }
@@ -117,10 +115,10 @@ void console_turn_draw(void)
                 }
             }
 
-            tile_t *tile = &current_map->tiles[x][y];
+            tile_t *tile = &player->map->tiles[x][y];
 
             TCOD_color_t color;
-            if (TCOD_map_is_in_fov(fov_map, x, y))
+            if (TCOD_map_is_in_fov(player->fov_map, x, y))
             {
                 tile->seen = true;
 
@@ -155,13 +153,13 @@ void console_turn_draw(void)
         }
     }
 
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(current_map->actors);
-         iterator != (actor_t **)TCOD_list_end(current_map->actors);
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
+         iterator != (actor_t **)TCOD_list_end(player->map->actors);
          iterator++)
     {
         actor_t *actor = *iterator;
 
-        if (!TCOD_map_is_in_fov(fov_map, actor->x, actor->y))
+        if (!TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
         {
             continue;
         }
@@ -169,8 +167,6 @@ void console_turn_draw(void)
         TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].color);
         TCOD_console_set_char(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].glyph);
     }
-
-    TCOD_map_delete(fov_map);
 
     if (bottom_panel_visible)
     {
@@ -214,8 +210,6 @@ void console_tick_draw(void)
     {
         if (torch)
         {
-            TCOD_map_t fov_map = map_calc_fov(current_map, player->x, player->y, actorinfo[player->type].sight_radius);
-
             static TCOD_noise_t noise = NULL;
             if (noise == NULL)
             {
@@ -246,18 +240,18 @@ void console_tick_draw(void)
                         continue;
                     }
 
-                    if (!TCOD_map_is_in_fov(fov_map, x, y))
+                    if (!TCOD_map_is_in_fov(player->fov_map, x, y))
                     {
                         continue;
                     }
 
-                    for (actor_t **iterator = (actor_t **)TCOD_list_begin(current_map->actors);
-                         iterator != (actor_t **)TCOD_list_end(current_map->actors);
+                    for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
+                         iterator != (actor_t **)TCOD_list_end(player->map->actors);
                          iterator++)
                     {
                         actor_t *actor = *iterator;
 
-                        if (!TCOD_map_is_in_fov(fov_map, actor->x, actor->y))
+                        if (!TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
                         {
                             continue;
                         }
@@ -268,7 +262,7 @@ void console_tick_draw(void)
                         }
                     }
 
-                    tile_t *tile = &current_map->tiles[x][y];
+                    tile_t *tile = &player->map->tiles[x][y];
 
                     float d = pow(x - player->x + dx, 2) + pow(y - player->y + dy, 2);
                     float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
@@ -279,8 +273,6 @@ void console_tick_draw(void)
                 out:;
                 }
             }
-
-            TCOD_map_delete(fov_map);
         }
     }
 

@@ -69,6 +69,7 @@ map_t *map_create(void)
             tile_t *tile = &map->tiles[x][y];
             tile->type = TILETYPE_WALL;
             tile->seen = false;
+            tile->actor = NULL;
         }
     }
 
@@ -98,6 +99,8 @@ map_t *map_create(void)
 
         actor_t *actor = actor_create(map, ACTORTYPE_MONSTER, 0, 0);
         room_get_random_pos(actor_room, &actor->x, &actor->y);
+
+        map->tiles[actor->x][actor->y].actor = actor;
     }
 
     TCOD_list_push(maps, map);
@@ -317,6 +320,8 @@ void map_update(map_t *map)
         {
             iterator = (actor_t **)TCOD_list_remove_iterator_fast(map->actors, (void **)iterator);
 
+            map->tiles[actor->x][actor->y].actor = NULL;
+
             free(actor);
         }
     }
@@ -331,18 +336,10 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             tile_t *tile = &map->tiles[x][y];
+            actor_t *actor = tile->actor;
 
-            TCOD_map_set_properties(TCOD_map, x, y, tileinfo[tile->type].is_transparent, tileinfo[tile->type].is_walkable);
+            TCOD_map_set_properties(TCOD_map, x, y, tileinfo[tile->type].is_transparent, actor == NULL ? tileinfo[tile->type].is_walkable : false);
         }
-    }
-
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-         iterator != (actor_t **)TCOD_list_end(map->actors);
-         iterator++)
-    {
-        actor_t *actor = *iterator;
-
-        TCOD_map_set_properties(TCOD_map, actor->x, actor->y, TCOD_map_is_transparent(TCOD_map, actor->x, actor->y), false);
     }
 
     return TCOD_map;
@@ -502,22 +499,15 @@ bool actor_move(actor_t *actor, int x, int y)
     }
 
     tile_t *tile = &actor->map->tiles[x][y];
+    actor_t *other = tile->actor;
+
     if (!tileinfo[tile->type].is_walkable)
     {
         return false;
     }
 
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(actor->map->actors);
-         iterator != (actor_t **)TCOD_list_end(actor->map->actors);
-         iterator++)
+    if (other != NULL)
     {
-        actor_t *other = *iterator;
-
-        if (other->x != x || other->y != y)
-        {
-            continue;
-        }
-
         // TODO: damage and health
         // TODO: player death
         // TODO: dealing with corpses, is_dead flag or separate object altogether?
@@ -530,6 +520,9 @@ bool actor_move(actor_t *actor, int x, int y)
 
         return true;
     }
+
+    actor->map->tiles[actor->x][actor->y].actor = NULL;
+    actor->map->tiles[x][y].actor = actor;
 
     actor->x = x;
     actor->y = y;

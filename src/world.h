@@ -34,6 +34,7 @@ typedef struct tile_s
 {
     tiletype_t type;
     bool seen;
+    struct actor_s *actor;
 } tile_t;
 
 typedef struct room_s

@@ -17,7 +17,7 @@ void console_init(void)
 
     bottom_panel_x = 0;
     bottom_panel_width = screen_width;
-    bottom_panel_height = 5;
+    bottom_panel_height = screen_height / 4;
     bottom_panel_y = screen_height - bottom_panel_height;
     bottom_panel_visible = true;
 
@@ -55,10 +55,16 @@ void console_log(const char *message)
 
 void console_turn_draw(void)
 {
-    right_panel_height = screen_height - (bottom_panel_visible ? bottom_panel_height : 0);
+    bottom_panel_width = screen_width - (right_panel_visible
+                                             ? right_panel_width
+                                             : 0);
 
-    view_right = screen_width - (right_panel_visible ? right_panel_width : 0);
-    view_bottom = screen_height - (bottom_panel_visible ? bottom_panel_height : 0);
+    view_right = screen_width - (right_panel_visible
+                                     ? right_panel_width
+                                     : 0);
+    view_bottom = screen_height - (bottom_panel_visible
+                                       ? bottom_panel_height
+                                       : 0);
     view_left = player->x - view_right / 2;
     view_top = player->y - view_bottom / 2;
 
@@ -98,24 +104,16 @@ void console_turn_draw(void)
                 continue;
             }
 
-            for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
-                 iterator != (actor_t **)TCOD_list_end(player->map->actors);
-                 iterator++)
-            {
-                actor_t *actor = *iterator;
-
-                if (!TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
-                {
-                    continue;
-                }
-
-                if (actor->x == x && actor->y == y)
-                {
-                    goto out;
-                }
-            }
-
             tile_t *tile = &player->map->tiles[x][y];
+            actor_t *actor = tile->actor;
+
+            if (actor != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
+            {
+                TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].color);
+                TCOD_console_set_char(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].glyph);
+
+                continue;
+            }
 
             TCOD_color_t color;
             if (TCOD_map_is_in_fov(player->fov_map, x, y))
@@ -148,24 +146,7 @@ void console_turn_draw(void)
 
             TCOD_console_set_char_foreground(NULL, x - view_left, y - view_top, color);
             TCOD_console_set_char(NULL, x - view_left, y - view_top, tileinfo[tile->type].glyph);
-
-        out:;
         }
-    }
-
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
-         iterator != (actor_t **)TCOD_list_end(player->map->actors);
-         iterator++)
-    {
-        actor_t *actor = *iterator;
-
-        if (!TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
-        {
-            continue;
-        }
-
-        TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].color);
-        TCOD_console_set_char(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].glyph);
     }
 
     if (bottom_panel_visible)
@@ -245,32 +226,19 @@ void console_tick_draw(void)
                         continue;
                     }
 
-                    for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
-                         iterator != (actor_t **)TCOD_list_end(player->map->actors);
-                         iterator++)
-                    {
-                        actor_t *actor = *iterator;
-
-                        if (!TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
-                        {
-                            continue;
-                        }
-
-                        if (actor->x == x && actor->y == y)
-                        {
-                            goto out;
-                        }
-                    }
-
                     tile_t *tile = &player->map->tiles[x][y];
+                    actor_t *actor = tile->actor;
+
+                    if (actor != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
+                    {
+                        continue;
+                    }
 
                     float d = pow(x - player->x + dx, 2) + pow(y - player->y + dy, 2);
                     float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
                     TCOD_color_t color = TCOD_color_lerp(tileinfo[tile->type].dark_color, TCOD_color_lerp(tileinfo[tile->type].light_color, torch_color, l), l);
 
                     TCOD_console_set_char_foreground(NULL, x - view_left, y - view_top, color);
-
-                out:;
                 }
             }
         }

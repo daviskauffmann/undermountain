@@ -32,19 +32,27 @@ input_t input_handle(void)
         tile_t *tile_n = player->y - 1 > 0
                              ? &player->map->tiles[player->x][player->y - 1]
                              : NULL;
-        bool walkable_n = tile_n == NULL ? false : tileinfo[tile_n->type].is_walkable;
+        bool walkable_n = tile_n == NULL
+                              ? false
+                              : tileinfo[tile_n->type].is_walkable;
         tile_t *tile_e = player->x + 1 < MAP_WIDTH
                              ? &player->map->tiles[player->x + 1][player->y]
                              : NULL;
-        bool walkable_e = tile_e == NULL ? false : tileinfo[tile_e->type].is_walkable;
+        bool walkable_e = tile_e == NULL
+                              ? false
+                              : tileinfo[tile_e->type].is_walkable;
         tile_t *tile_s = player->y + 1 < MAP_HEIGHT
                              ? &player->map->tiles[player->x][player->y + 1]
                              : NULL;
-        bool walkable_s = tile_s == NULL ? false : tileinfo[tile_s->type].is_walkable;
+        bool walkable_s = tile_s == NULL
+                              ? false
+                              : tileinfo[tile_s->type].is_walkable;
         tile_t *tile_w = player->x - 1 > 0
                              ? &player->map->tiles[player->x - 1][player->y]
                              : NULL;
-        bool walkable_w = tile_w == NULL ? false : tileinfo[tile_w->type].is_walkable;
+        bool walkable_w = tile_w == NULL
+                              ? false
+                              : tileinfo[tile_w->type].is_walkable;
 
         switch (key.vk)
         {
@@ -85,6 +93,9 @@ input_t input_handle(void)
                     TCOD_list_remove(player->map->actors, player);
                     TCOD_list_push(new_map->actors, player);
 
+                    player->map->tiles[player->x][player->y].actor = NULL;
+                    new_map->tiles[new_map->stair_down_x][new_map->stair_down_y].actor = player;
+
                     player->x = new_map->stair_down_x;
                     player->y = new_map->stair_down_y;
 
@@ -112,6 +123,9 @@ input_t input_handle(void)
 
                     TCOD_list_remove(player->map->actors, player);
                     TCOD_list_push(new_map->actors, player);
+
+                    player->map->tiles[player->x][player->y].actor = NULL;
+                    new_map->tiles[new_map->stair_up_x][new_map->stair_up_y].actor = player;
 
                     player->x = new_map->stair_up_x;
                     player->y = new_map->stair_up_y;

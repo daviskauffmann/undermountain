@@ -41,8 +41,18 @@ void console_init(void)
     }
 }
 
-void console_log(const char *message)
+void console_log(const char *message, map_t *map, int x, int y)
 {
+    if (map != player->map)
+    {
+        return;
+    }
+
+    if (!TCOD_map_is_in_fov(player->fov_map, x, y))
+    {
+        return;
+    }
+
     TCOD_list_push(messages, message);
 
     if (TCOD_list_size(messages) == bottom_panel_height - 1)

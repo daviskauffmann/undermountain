@@ -14,9 +14,9 @@ void game_init(void)
     player = actor_create(map, ACTORTYPE_PLAYER, map->stair_up_x, map->stair_up_y);
     torch = false;
 
-    map->tiles[player->x][player->y].actor = player;
+    player->map->tiles[player->x][player->y].actor = player;
 
-    console_log("Hail, Player!");
+    console_log("Hail, Player!", player->map, player->x, player->y);
 }
 
 void game_save(void)

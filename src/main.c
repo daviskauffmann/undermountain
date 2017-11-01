@@ -39,21 +39,6 @@ int main(int argc, char *argv[])
     turn:
         world_turn();
 
-        switch (TCOD_random_get_int(NULL, 0, 2))
-        {
-        case 0:
-            console_log("Hello, World!");
-            break;
-
-        case 1:
-            console_log("Greetings, World!");
-            break;
-
-        case 2:
-            console_log("Saluations, World!");
-            break;
-        }
-
     draw:
         console_turn_draw();
 

@@ -463,6 +463,8 @@ void actor_turn(actor_t *actor)
 
             if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
+                console_log("{name} spots {name}", actor->map, actor->x, actor->y);
+
                 actor_move_towards(actor, other->x, other->y);
             }
         }
@@ -579,6 +581,8 @@ bool actor_move(actor_t *actor, int x, int y)
         // if corpses can be picked up, they will need to act like items
         if (other != player)
         {
+            console_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
+
             other->mark_for_delete = true;
         }
 

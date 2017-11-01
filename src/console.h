@@ -3,6 +3,8 @@
 
 #include <libtcod.h>
 
+#include "world.h"
+
 #define CONSTRAIN_VIEW 1
 
 TCOD_console_t bottom_panel;
@@ -27,7 +29,7 @@ int view_bottom;
 TCOD_list_t messages;
 
 void console_init(void);
-void console_log(const char *message);
+void console_log(const char *message, map_t *map, int x, int y);
 void console_turn_draw(void);
 void console_tick_draw(void);
 

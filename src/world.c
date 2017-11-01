@@ -66,27 +66,38 @@ map_t *map_create(void)
         }
     }
 
+    map->stair_down_x = -1;
+    map->stair_down_y = -1;
+    map->stair_up_x = -1;
+    map->stair_up_y = -1;
     map->rooms = TCOD_list_new();
+    map->actors = TCOD_list_new();
+
     TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
+
     TCOD_bsp_split_recursive(bsp, NULL, BSP_DEPTH, MIN_ROOM_SIZE + 1, MIN_ROOM_SIZE + 1, 1.5f, 1.5f);
     TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
+
     TCOD_bsp_delete(bsp);
 
     room_t *stair_down_room = map_get_random_room(map);
+
     room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
     map->tiles[map->stair_down_x][map->stair_down_y].type = TILETYPE_STAIR_DOWN;
 
     room_t *stair_up_room = map_get_random_room(map);
+
     room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
     map->tiles[map->stair_up_x][map->stair_up_y].type = TILETYPE_STAIR_UP;
 
-    map->actors = TCOD_list_new();
     for (int i = 0; i < NUM_ACTORS; i++)
     {
         room_t *actor_room = map_get_random_room(map);
 
         if (actor_room == stair_up_room)
         {
+            i--;
+
             continue;
         }
 
@@ -119,7 +130,7 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             max_y--;
         }
 
-#if FULL_ROOMS
+#if !FULL_ROOMS
         min_x = TCOD_random_get_int(NULL, min_x, max_x - MIN_ROOM_SIZE + 1);
         min_y = TCOD_random_get_int(NULL, min_y, max_y - MIN_ROOM_SIZE + 1);
         max_x = TCOD_random_get_int(NULL, min_x + MIN_ROOM_SIZE - 2, max_x);
@@ -136,6 +147,7 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             for (int y = min_y; y < max_y + 1; y++)
             {
                 tile_t *tile = &map->tiles[x][y];
+
                 tile->type = TILETYPE_FLOOR;
             }
         }
@@ -272,6 +284,7 @@ static void hline(map_t *map, int x1, int y, int x2)
 static void hline_left(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
+
     while (x >= 0 && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
@@ -283,6 +296,7 @@ static void hline_left(map_t *map, int x, int y)
 static void hline_right(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
+
     while (x < MAP_WIDTH && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;

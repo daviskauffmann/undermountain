@@ -7,7 +7,7 @@
 #define MAP_HEIGHT 50
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
-#define FULL_ROOMS 0
+#define FULL_ROOMS 1
 #define NUM_ACTORS 50
 #define LIT_ROOMS 0
 #define SIMULATE_ALL_MAPS 1

@@ -12,8 +12,8 @@
 int main(int argc, char *argv[])
 {
     config_init();
-    console_init();
 
+    console_init();
     world_init();
     game_init();
 

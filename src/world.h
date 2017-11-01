@@ -13,13 +13,13 @@
 #define SIMULATE_ALL_MAPS 1
 
 typedef enum tile_type_e {
-    TILETYPE_EMPTY = 0,
-    TILETYPE_FLOOR,
-    TILETYPE_WALL,
-    TILETYPE_STAIR_DOWN,
-    TILETYPE_STAIR_UP,
-    NUM_TILETYPES
-} tiletype_t;
+    TILE_EMPTY = 0,
+    TILE_FLOOR,
+    TILE_WALL,
+    TILE_STAIR_DOWN,
+    TILE_STAIR_UP,
+    NUM_TILE_TYPES
+} tile_type_t;
 
 typedef struct tile_info_s
 {
@@ -28,11 +28,11 @@ typedef struct tile_info_s
     TCOD_color_t dark_color;
     bool is_transparent;
     bool is_walkable;
-} tileinfo_t;
+} tile_info_t;
 
 typedef struct tile_s
 {
-    tiletype_t type;
+    tile_type_t type;
     bool seen;
     struct actor_s *actor;
 } tile_t;
@@ -46,22 +46,22 @@ typedef struct room_s
 } room_t;
 
 typedef enum actor_type_e {
-    ACTORTYPE_NONE = 0,
-    ACTORTYPE_PLAYER,
-    ACTORTYPE_MONSTER,
-    NUM_ACTORTYPES
-} actortype_t;
+    ACTOR_NONE = 0,
+    ACTOR_PLAYER,
+    ACTOR_MONSTER,
+    NUM_ACTOR_TYPES
+} actor_type_t;
 
 typedef struct actor_info_s
 {
     unsigned char glyph;
     TCOD_color_t color;
     int sight_radius;
-} actorinfo_t;
+} actor_info_t;
 
 typedef struct actor_s
 {
-    actortype_t type;
+    actor_type_t type;
     struct map_s *map;
     int x;
     int y;
@@ -82,10 +82,10 @@ typedef struct map_s
 
 TCOD_list_t maps;
 
-void world_init(void);
+void world_initialize(void);
 void world_turn(void);
 void world_tick(void);
-void world_destroy(void);
+void world_finalize(void);
 
 map_t *map_create(void);
 void map_turn(map_t *map);
@@ -94,15 +94,15 @@ room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
 void map_destroy(map_t *map);
 
-void tile_init(tile_t *tile, tiletype_t type, bool seen, actor_t *actor);
-void tile_fini(tile_t *tile);
+void tile_initialize(tile_t *tile, tile_type_t type, bool seen, actor_t *actor);
+void tile_finalize(tile_t *tile);
 
 room_t *room_create(map_t *map, int x, int y, int w, int h);
 void room_get_random_pos(room_t *room, int *x, int *y);
 bool room_is_inside(room_t *room, int x, int y);
 void room_destroy(room_t *room);
 
-actor_t *actor_create(map_t *map, actortype_t type, int x, int y);
+actor_t *actor_create(map_t *map, actor_type_t type, int x, int y);
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);

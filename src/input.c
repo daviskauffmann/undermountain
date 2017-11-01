@@ -22,22 +22,45 @@ input_t input_handle(void)
     switch (ev)
     {
     case TCOD_EVENT_MOUSE_PRESS:
-        automove_cancel();
-
-        int mouse_x = mouse.cx + view_left;
-        int mouse_y = mouse.cy + view_top;
-
-        tile_t *tile = &player->map->tiles[mouse_x][mouse_y];
-        actor_t *actor = tile->actor;
-
-        if (actor != NULL)
+        if (mouse.lbutton)
         {
-            automove_actor = actor;
+            automove_cancel();
+
+            int mouse_x = mouse.cx + view_left;
+            int mouse_y = mouse.cy + view_top;
+
+            tile_t *tile = &player->map->tiles[mouse_x][mouse_y];
+            actor_t *actor = tile->actor;
+            if (actor != NULL)
+            {
+                automove_actor = actor;
+            }
+            else
+            {
+                automove_x = mouse_x;
+                automove_y = mouse_y;
+            }
         }
-        else
+        else if (mouse.rbutton)
         {
-            automove_x = mouse_x;
-            automove_y = mouse_y;
+        }
+        else if (mouse.wheel_down)
+        {
+            if (right_panel_content[right_panel_content_type].scroll + right_panel_height < right_panel_content[right_panel_content_type].height)
+            {
+                right_panel_content[right_panel_content_type].scroll++;
+            }
+
+            return INPUT_DRAW;
+        }
+        else if (mouse.wheel_up)
+        {
+            if (right_panel_content[right_panel_content_type].scroll > 0)
+            {
+                right_panel_content[right_panel_content_type].scroll--;
+            }
+
+            return INPUT_DRAW;
         }
 
         return INPUT_TICK;
@@ -51,38 +74,44 @@ input_t input_handle(void)
                              : NULL;
         bool walkable_n = tile_n == NULL
                               ? false
-                              : tileinfo[tile_n->type].is_walkable;
+                              : tile_info[tile_n->type].is_walkable;
         tile_t *tile_e = player->x + 1 < MAP_WIDTH
                              ? &player->map->tiles[player->x + 1][player->y]
                              : NULL;
         bool walkable_e = tile_e == NULL
                               ? false
-                              : tileinfo[tile_e->type].is_walkable;
+                              : tile_info[tile_e->type].is_walkable;
         tile_t *tile_s = player->y + 1 < MAP_HEIGHT
                              ? &player->map->tiles[player->x][player->y + 1]
                              : NULL;
         bool walkable_s = tile_s == NULL
                               ? false
-                              : tileinfo[tile_s->type].is_walkable;
+                              : tile_info[tile_s->type].is_walkable;
         tile_t *tile_w = player->x - 1 > 0
                              ? &player->map->tiles[player->x - 1][player->y]
                              : NULL;
         bool walkable_w = tile_w == NULL
                               ? false
-                              : tileinfo[tile_w->type].is_walkable;
+                              : tile_info[tile_w->type].is_walkable;
 
         switch (key.vk)
         {
         case TCODK_ESCAPE:
             return INPUT_QUIT;
 
-        case TCODK_F1:
-            right_panel_visible = !right_panel_visible;
+        case TCODK_PAGEDOWN:
+            if (right_panel_content[right_panel_content_type].scroll + right_panel_height < right_panel_content[right_panel_content_type].height)
+            {
+                right_panel_content[right_panel_content_type].scroll++;
+            }
 
             return INPUT_DRAW;
 
-        case TCODK_F2:
-            bottom_panel_visible = !bottom_panel_visible;
+        case TCODK_PAGEUP:
+            if (right_panel_content[right_panel_content_type].scroll > 0)
+            {
+                right_panel_content[right_panel_content_type].scroll--;
+            }
 
             return INPUT_DRAW;
 
@@ -93,7 +122,7 @@ input_t input_handle(void)
                 if (key.shift)
                 {
                     tile_t *tile = &player->map->tiles[player->x][player->y];
-                    if (tile->type != TILETYPE_STAIR_UP)
+                    if (tile->type != TILE_STAIR_UP)
                     {
                         // return INPUT_TICK;
                     }
@@ -127,7 +156,7 @@ input_t input_handle(void)
                 if (key.shift)
                 {
                     tile_t *tile = &player->map->tiles[player->x][player->y];
-                    if (tile->type != TILETYPE_STAIR_DOWN)
+                    if (tile->type != TILE_STAIR_DOWN)
                     {
                         // return INPUT_TICK;
                     }
@@ -163,7 +192,18 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 'c':
-                return INPUT_TICK;
+                if (right_panel_visible && right_panel_content_type == CONTENT_CHARACTER)
+                {
+                    right_panel_visible = false;
+                }
+                else
+                {
+                    right_panel_content_type = CONTENT_CHARACTER;
+
+                    right_panel_visible = true;
+                }
+
+                return INPUT_DRAW;
 
             case 'd':
                 return INPUT_TICK;
@@ -181,7 +221,18 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 'i':
-                return INPUT_TICK;
+                if (right_panel_visible && right_panel_content_type == CONTENT_INVENTORY)
+                {
+                    right_panel_visible = false;
+                }
+                else
+                {
+                    right_panel_content_type = CONTENT_INVENTORY;
+
+                    right_panel_visible = true;
+                }
+
+                return INPUT_DRAW;
 
             case 'j':
                 return INPUT_TICK;
@@ -192,15 +243,18 @@ input_t input_handle(void)
             case 'l':
                 if (key.lctrl)
                 {
-                    world_destroy();
+                    console_finalize();
+                    world_finalize();
+                    game_finalize();
 
-                    console_init();
                     game_load();
 
                     return INPUT_DRAW;
                 }
 
-                return INPUT_TICK;
+                message_log_visible = !message_log_visible;
+
+                return INPUT_DRAW;
 
             case 'm':
                 return INPUT_TICK;
@@ -218,11 +272,13 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 'r':
-                world_destroy();
+                console_finalize();
+                world_finalize();
+                game_finalize();
 
-                console_init();
-                world_init();
-                game_init();
+                console_initialize();
+                world_initialize();
+                game_initialize();
 
                 return INPUT_DRAW;
 
@@ -239,11 +295,11 @@ input_t input_handle(void)
 
                 if (torch)
                 {
-                    actorinfo[player->type].sight_radius *= 2;
+                    actor_info[player->type].sight_radius *= 2;
                 }
                 else
                 {
-                    actorinfo[player->type].sight_radius /= 2;
+                    actor_info[player->type].sight_radius /= 2;
                 }
 
                 actor_calc_fov(player);

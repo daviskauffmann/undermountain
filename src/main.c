@@ -11,11 +11,11 @@
 
 int main(int argc, char *argv[])
 {
-    config_init();
+    config_initialize();
 
-    console_init();
-    world_init();
-    game_init();
+    console_initialize();
+    world_initialize();
+    game_initialize();
 
     goto draw;
 
@@ -48,6 +48,10 @@ int main(int argc, char *argv[])
     }
 
 quit:
+    game_finalize();
+    world_finalize();
+    console_finalize();
+
     SDL_Quit();
 
     return 0;

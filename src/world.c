@@ -13,7 +13,7 @@ static void hline(map_t *map, int x1, int y, int x2);
 static void hline_left(map_t *map, int x, int y);
 static void hline_right(map_t *map, int x, int y);
 
-void world_init(void)
+void world_initialize(void)
 {
     maps = TCOD_list_new();
 }
@@ -38,7 +38,7 @@ void world_tick(void)
 {
 }
 
-void world_destroy(void)
+void world_finalize(void)
 {
     for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
          iterator != (map_t **)TCOD_list_end(maps);
@@ -62,7 +62,7 @@ map_t *map_create(void)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            tile_init(tile, TILETYPE_WALL, false, NULL);
+            tile_initialize(tile, TILE_WALL, false, NULL);
         }
     }
 
@@ -83,12 +83,12 @@ map_t *map_create(void)
     room_t *stair_down_room = map_get_random_room(map);
 
     room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
-    map->tiles[map->stair_down_x][map->stair_down_y].type = TILETYPE_STAIR_DOWN;
+    map->tiles[map->stair_down_x][map->stair_down_y].type = TILE_STAIR_DOWN;
 
     room_t *stair_up_room = map_get_random_room(map);
 
     room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
-    map->tiles[map->stair_up_x][map->stair_up_y].type = TILETYPE_STAIR_UP;
+    map->tiles[map->stair_up_x][map->stair_up_y].type = TILE_STAIR_UP;
 
     for (int i = 0; i < NUM_ACTORS; i++)
     {
@@ -101,7 +101,7 @@ map_t *map_create(void)
             continue;
         }
 
-        actor_t *actor = actor_create(map, ACTORTYPE_MONSTER, 0, 0);
+        actor_t *actor = actor_create(map, ACTOR_MONSTER, 0, 0);
         room_get_random_pos(actor_room, &actor->x, &actor->y);
 
         map->tiles[actor->x][actor->y].actor = actor;
@@ -148,7 +148,7 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             {
                 tile_t *tile = &map->tiles[x][y];
 
-                tile->type = TILETYPE_FLOOR;
+                tile->type = TILE_FLOOR;
             }
         }
 
@@ -236,7 +236,7 @@ static void vline(map_t *map, int x, int y1, int y2)
     {
         tile_t *tile = &map->tiles[x][y];
 
-        tile->type = TILETYPE_FLOOR;
+        tile->type = TILE_FLOOR;
     }
 }
 
@@ -244,9 +244,9 @@ static void vline_up(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (y >= 0 && tile->type != TILETYPE_FLOOR)
+    while (y >= 0 && tile->type != TILE_FLOOR)
     {
-        tile->type = TILETYPE_FLOOR;
+        tile->type = TILE_FLOOR;
 
         y--;
     }
@@ -256,9 +256,9 @@ static void vline_down(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (y < MAP_HEIGHT && tile->type != TILETYPE_FLOOR)
+    while (y < MAP_HEIGHT && tile->type != TILE_FLOOR)
     {
-        tile->type = TILETYPE_FLOOR;
+        tile->type = TILE_FLOOR;
 
         y++;
     }
@@ -277,7 +277,7 @@ static void hline(map_t *map, int x1, int y, int x2)
     {
         tile_t *tile = &map->tiles[x][y];
 
-        tile->type = TILETYPE_FLOOR;
+        tile->type = TILE_FLOOR;
     }
 }
 
@@ -285,9 +285,9 @@ static void hline_left(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (x >= 0 && tile->type != TILETYPE_FLOOR)
+    while (x >= 0 && tile->type != TILE_FLOOR)
     {
-        tile->type = TILETYPE_FLOOR;
+        tile->type = TILE_FLOOR;
 
         x--;
     }
@@ -297,9 +297,9 @@ static void hline_right(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (x < MAP_WIDTH && tile->type != TILETYPE_FLOOR)
+    while (x < MAP_WIDTH && tile->type != TILE_FLOOR)
     {
-        tile->type = TILETYPE_FLOOR;
+        tile->type = TILE_FLOOR;
 
         x++;
     }
@@ -348,7 +348,7 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
             tile_t *tile = &map->tiles[x][y];
             actor_t *actor = tile->actor;
 
-            TCOD_map_set_properties(TCOD_map, x, y, tileinfo[tile->type].is_transparent, actor == NULL ? tileinfo[tile->type].is_walkable : false);
+            TCOD_map_set_properties(TCOD_map, x, y, tile_info[tile->type].is_transparent, actor == NULL ? tile_info[tile->type].is_walkable : false);
         }
     }
 
@@ -363,7 +363,7 @@ void map_destroy(map_t *map)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            tile_fini(tile);
+            tile_finalize(tile);
         }
     }
 
@@ -390,14 +390,14 @@ void map_destroy(map_t *map)
     TCOD_list_clear_and_delete(map->actors);
 }
 
-void tile_init(tile_t *tile, tiletype_t type, bool seen, actor_t *actor)
+void tile_initialize(tile_t *tile, tile_type_t type, bool seen, actor_t *actor)
 {
-    tile->type = TILETYPE_WALL;
+    tile->type = TILE_WALL;
     tile->seen = false;
     tile->actor = NULL;
 }
 
-void tile_fini(tile_t *tile)
+void tile_finalize(tile_t *tile)
 {
 }
 
@@ -435,7 +435,7 @@ bool room_is_inside(room_t *room, int x, int y)
     return min(room->x, room->x + room->w) <= x && x < max(room->x, room->x + room->w) && min(room->y, room->y + room->h) <= y && y < max(room->y, room->y + room->h);
 }
 
-actor_t *actor_create(map_t *map, actortype_t type, int x, int y)
+actor_t *actor_create(map_t *map, actor_type_t type, int x, int y)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
@@ -523,7 +523,7 @@ void actor_calc_fov(actor_t *actor)
 
     actor->fov_map = map_to_TCOD_map(actor->map);
 
-    TCOD_map_compute_fov(actor->fov_map, actor->x, actor->y, actorinfo[actor->type].sight_radius, true, FOV_DIAMOND);
+    TCOD_map_compute_fov(actor->fov_map, actor->x, actor->y, actor_info[actor->type].sight_radius, true, FOV_DIAMOND);
 
 #if LIT_ROOMS
     for (room_t **iterator = (room_t **)TCOD_list_begin(actor->map->rooms);
@@ -581,7 +581,7 @@ bool actor_move(actor_t *actor, int x, int y)
     tile_t *tile = &actor->map->tiles[x][y];
     actor_t *other = tile->actor;
 
-    if (!tileinfo[tile->type].is_walkable)
+    if (!tile_info[tile->type].is_walkable)
     {
         return false;
     }

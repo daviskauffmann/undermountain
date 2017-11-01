@@ -23,9 +23,9 @@ TCOD_color_t default_background_color;
 TCOD_color_t default_foreground_color;
 TCOD_color_t torch_color;
 
-tileinfo_t tileinfo[NUM_TILETYPES];
-actorinfo_t actorinfo[NUM_ACTORTYPES];
+tile_info_t tile_info[NUM_TILE_TYPES];
+actor_info_t actor_info[NUM_ACTOR_TYPES];
 
-void config_init(void);
+void config_initialize(void);
 
 #endif

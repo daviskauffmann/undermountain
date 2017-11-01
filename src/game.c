@@ -6,12 +6,12 @@
 #include "console.h"
 #include "world.h"
 
-void game_init(void)
+void game_initialize(void)
 {
     map_t *map = map_create();
 
     current_map_index = 0;
-    player = actor_create(map, ACTORTYPE_PLAYER, map->stair_up_x, map->stair_up_y);
+    player = actor_create(map, ACTOR_PLAYER, map->stair_up_x, map->stair_up_y);
     torch = false;
 
     player->map->tiles[player->x][player->y].actor = player;
@@ -172,4 +172,9 @@ void game_load(void)
     // }
 
     // current_map = TCOD_list_get(maps, current_map_index);
+}
+
+void game_finalize(void)
+{
+    
 }

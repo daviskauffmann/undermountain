@@ -5,6 +5,14 @@
 #include "config.h"
 #include "game.h"
 
+static bool traverse_node(TCOD_bsp_t *node, map_t *map);
+static void vline(map_t *map, int x, int y1, int y2);
+static void vline_up(map_t *map, int x, int y);
+static void vline_down(map_t *map, int x, int y);
+static void hline(map_t *map, int x1, int y, int x2);
+static void hline_left(map_t *map, int x, int y);
+static void hline_right(map_t *map, int x, int y);
+
 void world_init(void)
 {
     maps = TCOD_list_new();
@@ -19,10 +27,10 @@ void world_turn(void)
     {
         map_t *map = *iterator;
 
-        map_update(map);
+        map_turn(map);
     }
 #else
-    map_update(player->map);
+    map_turn(player->map);
 #endif
 }
 
@@ -38,21 +46,7 @@ void world_destroy(void)
     {
         map_t *map = *iterator;
 
-        TCOD_list_clear_and_delete(map->rooms);
-
-        for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-             iterator != (actor_t **)TCOD_list_end(map->actors);
-             iterator++)
-        {
-            actor_t *actor = *iterator;
-
-            if (actor->fov_map != NULL)
-            {
-                TCOD_map_delete(actor->fov_map);
-            }
-        }
-
-        TCOD_list_clear_and_delete(map->actors);
+        map_destroy(map);
     }
 
     TCOD_list_clear_and_delete(maps);
@@ -67,9 +61,8 @@ map_t *map_create(void)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             tile_t *tile = &map->tiles[x][y];
-            tile->type = TILETYPE_WALL;
-            tile->seen = false;
-            tile->actor = NULL;
+
+            tile_init(tile, TILETYPE_WALL, false, NULL);
         }
     }
 
@@ -108,7 +101,7 @@ map_t *map_create(void)
     return map;
 }
 
-bool traverse_node(TCOD_bsp_t *node, map_t *map)
+static bool traverse_node(TCOD_bsp_t *node, map_t *map)
 {
     if (TCOD_bsp_is_leaf(node))
     {
@@ -147,14 +140,7 @@ bool traverse_node(TCOD_bsp_t *node, map_t *map)
             }
         }
 
-        room_t *room = (room_t *)malloc(sizeof(room_t));
-
-        room->x = node->x;
-        room->y = node->y;
-        room->w = node->w;
-        room->h = node->h;
-
-        TCOD_list_push(map->rooms, room);
+        room_create(map, node->x, node->y, node->w, node->h);
     }
     else
     {
@@ -225,7 +211,7 @@ bool traverse_node(TCOD_bsp_t *node, map_t *map)
     return true;
 }
 
-void vline(map_t *map, int x, int y1, int y2)
+static void vline(map_t *map, int x, int y1, int y2)
 {
     if (y1 > y2)
     {
@@ -237,33 +223,36 @@ void vline(map_t *map, int x, int y1, int y2)
     for (int y = y1; y < y2 + 1; y++)
     {
         tile_t *tile = &map->tiles[x][y];
+
         tile->type = TILETYPE_FLOOR;
     }
 }
 
-void vline_up(map_t *map, int x, int y)
+static void vline_up(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
     while (y >= 0 && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
+
         y--;
     }
 }
 
-void vline_down(map_t *map, int x, int y)
+static void vline_down(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
     while (y < MAP_HEIGHT && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
+
         y++;
     }
 }
 
-void hline(map_t *map, int x1, int y, int x2)
+static void hline(map_t *map, int x1, int y, int x2)
 {
     if (x1 > x2)
     {
@@ -275,31 +264,34 @@ void hline(map_t *map, int x1, int y, int x2)
     for (int x = x1; x < x2 + 1; x++)
     {
         tile_t *tile = &map->tiles[x][y];
+
         tile->type = TILETYPE_FLOOR;
     }
 }
 
-void hline_left(map_t *map, int x, int y)
+static void hline_left(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
     while (x >= 0 && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
+
         x--;
     }
 }
 
-void hline_right(map_t *map, int x, int y)
+static void hline_right(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
     while (x < MAP_WIDTH && tile->type != TILETYPE_FLOOR)
     {
         tile->type = TILETYPE_FLOOR;
+
         x++;
     }
 }
 
-void map_update(map_t *map)
+void map_turn(map_t *map)
 {
     for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
          iterator != (actor_t **)TCOD_list_end(map->actors);
@@ -307,7 +299,7 @@ void map_update(map_t *map)
     {
         actor_t *actor = *iterator;
 
-        actor_update(actor);
+        actor_turn(actor);
     }
 
     for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
@@ -325,6 +317,10 @@ void map_update(map_t *map)
             free(actor);
         }
     }
+}
+
+void map_tick(map_t *map)
+{
 }
 
 TCOD_map_t map_to_TCOD_map(map_t *map)
@@ -345,6 +341,66 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
     return TCOD_map;
 }
 
+void map_destroy(map_t *map)
+{
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            tile_t *tile = &map->tiles[x][y];
+
+            tile_fini(tile);
+        }
+    }
+
+    for (room_t **iterator = (room_t **)TCOD_list_begin(map->rooms);
+         iterator != (room_t **)TCOD_list_end(map->rooms);
+         iterator++)
+    {
+        room_t *room = *iterator;
+
+        room_destroy(room);
+    }
+
+    TCOD_list_clear_and_delete(map->rooms);
+
+    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
+         iterator != (actor_t **)TCOD_list_end(map->actors);
+         iterator++)
+    {
+        actor_t *actor = *iterator;
+
+        actor_destroy(actor);
+    }
+
+    TCOD_list_clear_and_delete(map->actors);
+}
+
+void tile_init(tile_t *tile, tiletype_t type, bool seen, actor_t *actor)
+{
+    tile->type = TILETYPE_WALL;
+    tile->seen = false;
+    tile->actor = NULL;
+}
+
+void tile_fini(tile_t *tile)
+{
+}
+
+room_t *room_create(map_t *map, int x, int y, int w, int h)
+{
+    room_t *room = (room_t *)malloc(sizeof(room_t));
+
+    room->x = x;
+    room->y = y;
+    room->w = w;
+    room->h = h;
+
+    TCOD_list_push(map->rooms, room);
+
+    return room;
+}
+
 room_t *map_get_random_room(map_t *map)
 {
     return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
@@ -354,6 +410,10 @@ void room_get_random_pos(room_t *room, int *x, int *y)
 {
     *x = TCOD_random_get_int(NULL, room->x, room->x + room->w - 1);
     *y = TCOD_random_get_int(NULL, room->y, room->y + room->h - 1);
+}
+
+void room_destroy(room_t *room)
+{
 }
 
 bool room_is_inside(room_t *room, int x, int y)
@@ -379,7 +439,7 @@ actor_t *actor_create(map_t *map, actortype_t type, int x, int y)
     return actor;
 }
 
-void actor_update(actor_t *actor)
+void actor_turn(actor_t *actor)
 {
     actor_calc_fov(actor);
 
@@ -432,6 +492,10 @@ void actor_update(actor_t *actor)
             break;
         }
     }
+}
+
+void actor_tick(actor_t *actor)
+{
 }
 
 void actor_calc_fov(actor_t *actor)
@@ -528,4 +592,12 @@ bool actor_move(actor_t *actor, int x, int y)
     actor->y = y;
 
     return true;
+}
+
+void actor_destroy(actor_t *actor)
+{
+    if (actor->fov_map != NULL)
+    {
+        TCOD_map_delete(actor->fov_map);
+    }
 }

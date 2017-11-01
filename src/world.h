@@ -88,24 +88,26 @@ void world_tick(void);
 void world_destroy(void);
 
 map_t *map_create(void);
-bool traverse_node(TCOD_bsp_t *node, map_t *map);
-void vline(map_t *map, int x, int y1, int y2);
-void vline_up(map_t *map, int x, int y);
-void vline_down(map_t *map, int x, int y);
-void hline(map_t *map, int x1, int y, int x2);
-void hline_left(map_t *map, int x, int y);
-void hline_right(map_t *map, int x, int y);
-void map_update(map_t *map);
+void map_turn(map_t *map);
+void map_tick(map_t *map);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
+void map_destroy(map_t *map);
 
+void tile_init(tile_t *tile, tiletype_t type, bool seen, actor_t *actor);
+void tile_fini(tile_t *tile);
+
+room_t *room_create(map_t *map, int x, int y, int w, int h);
 void room_get_random_pos(room_t *room, int *x, int *y);
 bool room_is_inside(room_t *room, int x, int y);
+void room_destroy(room_t *room);
 
 actor_t *actor_create(map_t *map, actortype_t type, int x, int y);
-void actor_update(actor_t *actor);
+void actor_turn(actor_t *actor);
+void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
 bool actor_move_towards(actor_t *actor, int x, int y);
 bool actor_move(actor_t *actor, int x, int y);
+void actor_destroy(actor_t *actor);
 
 #endif

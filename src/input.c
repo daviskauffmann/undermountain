@@ -7,26 +7,43 @@
 #include "world.h"
 #include "game.h"
 
+static void automove_cancel(void);
+
+static int automove_x = -1;
+static int automove_y = -1;
+static actor_t *automove_actor = NULL;
+
 input_t input_handle(void)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;
     TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
 
-    static int automove_x = -1;
-    static int automove_y = -1;
-
     switch (ev)
     {
     case TCOD_EVENT_MOUSE_PRESS:
-        automove_x = mouse.cx + view_left;
-        automove_y = mouse.cy + view_top;
+        automove_cancel();
+
+        int mouse_x = mouse.cx + view_left;
+        int mouse_y = mouse.cy + view_top;
+
+        tile_t *tile = &player->map->tiles[mouse_x][mouse_y];
+        actor_t *actor = tile->actor;
+
+        if (actor != NULL)
+        {
+            automove_actor = actor;
+        }
+        else
+        {
+            automove_x = mouse_x;
+            automove_y = mouse_y;
+        }
 
         return INPUT_TICK;
 
     case TCOD_EVENT_KEY_PRESS:
-        automove_x = -1;
-        automove_y = -1;
+        automove_cancel();
 
         // TODO: find a place for this
         tile_t *tile_n = player->y - 1 > 0
@@ -330,9 +347,16 @@ input_t input_handle(void)
     static float automove_timer = 0.0f;
     static bool automove_ready = true;
 
-    if (automove_x != -1 && automove_y != -1 && automove_ready)
+    if (automove_ready)
     {
-        if (actor_move_towards(player, automove_x, automove_y))
+        int x = automove_actor == NULL
+                    ? automove_x
+                    : automove_actor->x;
+        int y = automove_actor == NULL
+                    ? automove_y
+                    : automove_actor->y;
+
+        if (actor_move_towards(player, x, y))
         {
             automove_ready = false;
 
@@ -340,8 +364,7 @@ input_t input_handle(void)
         }
         else
         {
-            automove_x = -1;
-            automove_y = -1;
+            automove_cancel();
         }
     }
     else
@@ -357,4 +380,11 @@ input_t input_handle(void)
     }
 
     return INPUT_TICK;
+}
+
+static void automove_cancel(void)
+{
+    automove_x = -1;
+    automove_y = -1;
+    automove_actor = NULL;
 }

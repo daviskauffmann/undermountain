@@ -107,6 +107,11 @@ void console_turn_draw(void)
             tile_t *tile = &player->map->tiles[x][y];
             actor_t *actor = tile->actor;
 
+            if (TCOD_map_is_in_fov(player->fov_map, x, y))
+            {
+                tile->seen = true;
+            }
+
             if (actor != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
             {
                 TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actorinfo[actor->type].color);
@@ -118,8 +123,6 @@ void console_turn_draw(void)
             TCOD_color_t color;
             if (TCOD_map_is_in_fov(player->fov_map, x, y))
             {
-                tile->seen = true;
-
                 float d = pow(x - player->x, 2) + pow(y - player->y, 2);
                 float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 

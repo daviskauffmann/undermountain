@@ -11,27 +11,15 @@
 
 void console_initialize(void)
 {
-    right_panel_visible = false;
-    right_panel_width = screen_width / 2;
-    right_panel_x = screen_width - right_panel_width;
-    right_panel_y = 0;
-    right_panel_height = screen_height;
-    right_panel = TCOD_console_new(right_panel_width, right_panel_height);
-    right_panel_content_type = CONTENT_NONE;
-    right_panel_content[CONTENT_CHARACTER].type = CONTENT_CHARACTER;
-    right_panel_content[CONTENT_CHARACTER].height = 18;
-    right_panel_content[CONTENT_CHARACTER].scroll = 0;
-    right_panel_content[CONTENT_INVENTORY].type = CONTENT_INVENTORY;
-    right_panel_content[CONTENT_INVENTORY].height = 28;
-    right_panel_content[CONTENT_INVENTORY].scroll = 0;
-
-    message_log_visible = true;
-    message_log_x = 0;
-    message_log_width = screen_width;
-    message_log_height = screen_height / 4;
-    message_log_y = screen_height - message_log_height;
-    message_log = TCOD_console_new(message_log_width, message_log_height);
+    message_log = TCOD_console_new(screen_width, screen_height);
     messages = TCOD_list_new();
+    message_log_visible = true;
+
+    menu = TCOD_console_new(screen_width, screen_height);
+    menu_visible = false;
+    menu_content[CONTENT_CHARACTER].scroll = 0;
+    menu_content[CONTENT_INVENTORY].scroll = 0;
+    menu_content_type = CONTENT_NONE;
 }
 
 void console_log(const char *message, map_t *map, int x, int y)
@@ -60,57 +48,49 @@ void console_turn_draw(void)
     TCOD_console_set_default_foreground(NULL, default_foreground_color);
     TCOD_console_clear(NULL);
 
-    TCOD_console_set_default_background(right_panel, default_background_color);
-    TCOD_console_set_default_foreground(right_panel, default_foreground_color);
-    TCOD_console_clear(right_panel);
+    TCOD_console_set_default_background(menu, default_background_color);
+    TCOD_console_set_default_foreground(menu, default_foreground_color);
+    TCOD_console_clear(menu);
 
     TCOD_console_set_default_background(message_log, default_background_color);
     TCOD_console_set_default_foreground(message_log, default_foreground_color);
     TCOD_console_clear(message_log);
 
-    // TODO: calc lines
-    // current HP & MP
-    // + # of stats
-    // + equipment items * lines each item needs
-    // + 2 padding
-    right_panel_content[CONTENT_CHARACTER].height = 18;
+    menu_width = screen_width / 2;
+    menu_x = screen_width - menu_width;
+    menu_y = 0;
+    menu_height = screen_height;
+    menu_content[CONTENT_CHARACTER].height = 18;
+    menu_content[CONTENT_INVENTORY].height = 28;
 
-    // TODO: calc lines
-    // inventory items * lines each item needs
-    // + 2 padding
-    right_panel_content[CONTENT_INVENTORY].height = 28;
+    message_log_x = 0;
+    message_log_width = screen_width - (menu_visible ? menu_width : 0);
+    message_log_height = screen_height / 4;
+    message_log_y = screen_height - message_log_height;
 
-    message_log_width = screen_width - (right_panel_visible
-                                            ? right_panel_width
-                                            : 0);
-
-    view_right = screen_width - (right_panel_visible
-                                     ? right_panel_width
-                                     : 0);
-    view_bottom = screen_height - (message_log_visible
-                                       ? message_log_height
-                                       : 0);
-    view_left = player->x - view_right / 2;
-    view_top = player->y - view_bottom / 2;
+    view_width = screen_width - (menu_visible ? menu_width : 0);
+    view_height = screen_height - (message_log_visible ? message_log_height : 0);
+    view_x = player->x - view_width / 2;
+    view_y = player->y - view_height / 2;
 
 #if CONSTRAIN_VIEW
-    view_left = view_left < 0
-                    ? 0
-                    : view_left + view_right > MAP_WIDTH
-                          ? MAP_WIDTH - view_right
-                          : view_left;
-    view_top = view_top < 0
-                   ? 0
-                   : view_top + view_bottom > MAP_HEIGHT
-                         ? MAP_HEIGHT - view_bottom
-                         : view_top;
+    view_x = view_x < 0
+                 ? 0
+                 : view_x + view_width > MAP_WIDTH
+                       ? MAP_WIDTH - view_width
+                       : view_x;
+    view_y = view_y < 0
+                 ? 0
+                 : view_y + view_height > MAP_HEIGHT
+                       ? MAP_HEIGHT - view_height
+                       : view_y;
 #endif
 
     float r2 = pow(actor_info[player->type].sight_radius, 2);
 
-    for (int x = view_left; x < view_left + view_right; x++)
+    for (int x = view_x; x < view_x + view_width; x++)
     {
-        for (int y = view_top; y < view_top + view_bottom; y++)
+        for (int y = view_y; y < view_y + view_height; y++)
         {
             if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
             {
@@ -127,13 +107,14 @@ void console_turn_draw(void)
 
             if (actor != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
             {
-                TCOD_console_set_char_foreground(NULL, actor->x - view_left, actor->y - view_top, actor_info[actor->type].color);
-                TCOD_console_set_char(NULL, actor->x - view_left, actor->y - view_top, actor_info[actor->type].glyph);
+                TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor_info[actor->type].color);
+                TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor_info[actor->type].glyph);
 
                 continue;
             }
 
             TCOD_color_t color;
+
             if (TCOD_map_is_in_fov(player->fov_map, x, y))
             {
                 float d = pow(x - player->x, 2) + pow(y - player->y, 2);
@@ -160,8 +141,8 @@ void console_turn_draw(void)
                 }
             }
 
-            TCOD_console_set_char_foreground(NULL, x - view_left, y - view_top, color);
-            TCOD_console_set_char(NULL, x - view_left, y - view_top, tile_info[tile->type].glyph);
+            TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
+            TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info[tile->type].glyph);
         }
     }
 
@@ -219,68 +200,66 @@ void console_turn_draw(void)
         TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
     }
 
-    if (right_panel_visible)
+    if (menu_visible)
     {
-        content_t *content = &right_panel_content[right_panel_content_type];
-
-        switch (content->type)
+        switch (menu_content_type)
         {
         case CONTENT_CHARACTER:
-            TCOD_console_print_ex(right_panel, 1, 1 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "HP: 15 / 20");
-            TCOD_console_print_ex(right_panel, 1, 2 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "MP:  7 / 16");
+            TCOD_console_print_ex(menu, 1, 1 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "HP: 15 / 20");
+            TCOD_console_print_ex(menu, 1, 2 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "MP:  7 / 16");
 
-            TCOD_console_print_ex(right_panel, 1, 4 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "STR: 16");
-            TCOD_console_print_ex(right_panel, 1, 5 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "DEX: 14");
-            TCOD_console_print_ex(right_panel, 1, 6 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "CON: 12");
-            TCOD_console_print_ex(right_panel, 1, 7 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "INT: 10");
-            TCOD_console_print_ex(right_panel, 1, 8 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "WIS: 8");
-            TCOD_console_print_ex(right_panel, 1, 9 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "CHA: 10");
+            TCOD_console_print_ex(menu, 1, 4 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "STR: 16");
+            TCOD_console_print_ex(menu, 1, 5 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "DEX: 14");
+            TCOD_console_print_ex(menu, 1, 6 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "CON: 12");
+            TCOD_console_print_ex(menu, 1, 7 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "INT: 10");
+            TCOD_console_print_ex(menu, 1, 8 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "WIS: 8");
+            TCOD_console_print_ex(menu, 1, 9 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "CHA: 10");
 
-            TCOD_console_print_ex(right_panel, 1, 11 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "R-Hand: Sword");
-            TCOD_console_print_ex(right_panel, 1, 12 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "L-Hand: Shield");
-            TCOD_console_print_ex(right_panel, 1, 13 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Head  : Helm");
-            TCOD_console_print_ex(right_panel, 1, 14 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Chest : Cuirass");
-            TCOD_console_print_ex(right_panel, 1, 15 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Legs  : Greaves");
-            TCOD_console_print_ex(right_panel, 1, 16 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Feet  : Boots");
+            TCOD_console_print_ex(menu, 1, 11 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "R-Hand: Sword");
+            TCOD_console_print_ex(menu, 1, 12 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "L-Hand: Shield");
+            TCOD_console_print_ex(menu, 1, 13 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Head  : Helm");
+            TCOD_console_print_ex(menu, 1, 14 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Chest : Cuirass");
+            TCOD_console_print_ex(menu, 1, 15 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Legs  : Greaves");
+            TCOD_console_print_ex(menu, 1, 16 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Feet  : Boots");
 
-            TCOD_console_print_frame(right_panel, 0, 0, right_panel_width, right_panel_height, false, TCOD_BKGND_SET, "Character");
+            TCOD_console_print_frame(menu, 0, 0, menu_width, menu_height, false, TCOD_BKGND_SET, "Character");
 
             break;
 
         case CONTENT_INVENTORY:
-            TCOD_console_print_ex(right_panel, 1, 1 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "a) Sword");
-            TCOD_console_print_ex(right_panel, 1, 2 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "b) Sword");
-            TCOD_console_print_ex(right_panel, 1, 3 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "c) Sword");
-            TCOD_console_print_ex(right_panel, 1, 4 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "d) Sword");
-            TCOD_console_print_ex(right_panel, 1, 5 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "e) Sword");
-            TCOD_console_print_ex(right_panel, 1, 6 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "f) Sword");
-            TCOD_console_print_ex(right_panel, 1, 7 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "g) Sword");
-            TCOD_console_print_ex(right_panel, 1, 8 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "h) Sword");
-            TCOD_console_print_ex(right_panel, 1, 9 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "i) Sword");
-            TCOD_console_print_ex(right_panel, 1, 10 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "j) Sword");
-            TCOD_console_print_ex(right_panel, 1, 11 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "k) Sword");
-            TCOD_console_print_ex(right_panel, 1, 12 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "l) Sword");
-            TCOD_console_print_ex(right_panel, 1, 13 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "m) Sword");
-            TCOD_console_print_ex(right_panel, 1, 14 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "n) Sword");
-            TCOD_console_print_ex(right_panel, 1, 15 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "o) Sword");
-            TCOD_console_print_ex(right_panel, 1, 16 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "p) Sword");
-            TCOD_console_print_ex(right_panel, 1, 17 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "q) Sword");
-            TCOD_console_print_ex(right_panel, 1, 18 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "r) Sword");
-            TCOD_console_print_ex(right_panel, 1, 19 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "s) Sword");
-            TCOD_console_print_ex(right_panel, 1, 20 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "t) Sword");
-            TCOD_console_print_ex(right_panel, 1, 21 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "u) Sword");
-            TCOD_console_print_ex(right_panel, 1, 22 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "v) Sword");
-            TCOD_console_print_ex(right_panel, 1, 23 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "w) Sword");
-            TCOD_console_print_ex(right_panel, 1, 24 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "x) Sword");
-            TCOD_console_print_ex(right_panel, 1, 25 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "y) Sword");
-            TCOD_console_print_ex(right_panel, 1, 26 - content->scroll, TCOD_BKGND_NONE, TCOD_LEFT, "z) Sword");
+            TCOD_console_print_ex(menu, 1, 1 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "a) Sword");
+            TCOD_console_print_ex(menu, 1, 2 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "b) Sword");
+            TCOD_console_print_ex(menu, 1, 3 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "c) Sword");
+            TCOD_console_print_ex(menu, 1, 4 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "d) Sword");
+            TCOD_console_print_ex(menu, 1, 5 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "e) Sword");
+            TCOD_console_print_ex(menu, 1, 6 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "f) Sword");
+            TCOD_console_print_ex(menu, 1, 7 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "g) Sword");
+            TCOD_console_print_ex(menu, 1, 8 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "h) Sword");
+            TCOD_console_print_ex(menu, 1, 9 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "i) Sword");
+            TCOD_console_print_ex(menu, 1, 10 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "j) Sword");
+            TCOD_console_print_ex(menu, 1, 11 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "k) Sword");
+            TCOD_console_print_ex(menu, 1, 12 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "l) Sword");
+            TCOD_console_print_ex(menu, 1, 13 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "m) Sword");
+            TCOD_console_print_ex(menu, 1, 14 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "n) Sword");
+            TCOD_console_print_ex(menu, 1, 15 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "o) Sword");
+            TCOD_console_print_ex(menu, 1, 16 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "p) Sword");
+            TCOD_console_print_ex(menu, 1, 17 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "q) Sword");
+            TCOD_console_print_ex(menu, 1, 18 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "r) Sword");
+            TCOD_console_print_ex(menu, 1, 19 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "s) Sword");
+            TCOD_console_print_ex(menu, 1, 20 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "t) Sword");
+            TCOD_console_print_ex(menu, 1, 21 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "u) Sword");
+            TCOD_console_print_ex(menu, 1, 22 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "v) Sword");
+            TCOD_console_print_ex(menu, 1, 23 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "w) Sword");
+            TCOD_console_print_ex(menu, 1, 24 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "x) Sword");
+            TCOD_console_print_ex(menu, 1, 25 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "y) Sword");
+            TCOD_console_print_ex(menu, 1, 26 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "z) Sword");
 
-            TCOD_console_print_frame(right_panel, 0, 0, right_panel_width, right_panel_height, false, TCOD_BKGND_SET, "Inventory");
+            TCOD_console_print_frame(menu, 0, 0, menu_width, menu_height, false, TCOD_BKGND_SET, "Inventory");
 
             break;
         }
 
-        TCOD_console_blit(right_panel, 0, 0, right_panel_width, right_panel_height, NULL, right_panel_x, right_panel_y, 1, 1);
+        TCOD_console_blit(menu, 0, 0, menu_width, menu_height, NULL, menu_x, menu_y, 1, 1);
     }
 }
 
@@ -311,9 +290,9 @@ void console_tick_draw(void)
 
             float r2 = pow(actor_info[player->type].sight_radius, 2);
 
-            for (int x = view_left; x < view_left + view_right; x++)
+            for (int x = view_x; x < view_x + view_width; x++)
             {
-                for (int y = view_top; y < view_top + view_bottom; y++)
+                for (int y = view_y; y < view_y + view_height; y++)
                 {
                     if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
                     {
@@ -337,7 +316,7 @@ void console_tick_draw(void)
                     float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
                     TCOD_color_t color = TCOD_color_lerp(tile_info[tile->type].dark_color, TCOD_color_lerp(tile_info[tile->type].light_color, torch_color, l), l);
 
-                    TCOD_console_set_char_foreground(NULL, x - view_left, y - view_top, color);
+                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
                 }
             }
         }
@@ -348,7 +327,7 @@ void console_tick_draw(void)
 
 void console_finalize(void)
 {
-    TCOD_console_delete(right_panel);
+    TCOD_console_delete(menu);
 
     TCOD_console_delete(message_log);
 

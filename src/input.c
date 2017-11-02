@@ -25,8 +25,8 @@ input_t input_handle(void)
         {
             automove_cancel();
 
-            int mouse_x = mouse.cx + view_left;
-            int mouse_y = mouse.cy + view_top;
+            int mouse_x = mouse.cx + view_x;
+            int mouse_y = mouse.cy + view_y;
 
             tile_t *tile = &player->map->tiles[mouse_x][mouse_y];
             actor_t *actor = tile->actor;
@@ -45,18 +45,18 @@ input_t input_handle(void)
         }
         else if (mouse.wheel_down)
         {
-            if (right_panel_content[right_panel_content_type].scroll + right_panel_height < right_panel_content[right_panel_content_type].height)
+            if (menu_content[menu_content_type].scroll + menu_height < menu_content[menu_content_type].height)
             {
-                right_panel_content[right_panel_content_type].scroll++;
+                menu_content[menu_content_type].scroll++;
             }
 
             return INPUT_DRAW;
         }
         else if (mouse.wheel_up)
         {
-            if (right_panel_content[right_panel_content_type].scroll > 0)
+            if (menu_content[menu_content_type].scroll > 0)
             {
-                right_panel_content[right_panel_content_type].scroll--;
+                menu_content[menu_content_type].scroll--;
             }
 
             return INPUT_DRAW;
@@ -99,17 +99,17 @@ input_t input_handle(void)
             return INPUT_QUIT;
 
         case TCODK_PAGEDOWN:
-            if (right_panel_content[right_panel_content_type].scroll + right_panel_height < right_panel_content[right_panel_content_type].height)
+            if (menu_content[menu_content_type].scroll + menu_height < menu_content[menu_content_type].height)
             {
-                right_panel_content[right_panel_content_type].scroll++;
+                menu_content[menu_content_type].scroll++;
             }
 
             return INPUT_DRAW;
 
         case TCODK_PAGEUP:
-            if (right_panel_content[right_panel_content_type].scroll > 0)
+            if (menu_content[menu_content_type].scroll > 0)
             {
-                right_panel_content[right_panel_content_type].scroll--;
+                menu_content[menu_content_type].scroll--;
             }
 
             return INPUT_DRAW;
@@ -191,15 +191,15 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 'c':
-                if (right_panel_visible && right_panel_content_type == CONTENT_CHARACTER)
+                if (menu_visible && menu_content_type == CONTENT_CHARACTER)
                 {
-                    right_panel_visible = false;
+                    menu_visible = false;
                 }
                 else
                 {
-                    right_panel_content_type = CONTENT_CHARACTER;
+                    menu_content_type = CONTENT_CHARACTER;
 
-                    right_panel_visible = true;
+                    menu_visible = true;
                 }
 
                 return INPUT_DRAW;
@@ -220,15 +220,15 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 'i':
-                if (right_panel_visible && right_panel_content_type == CONTENT_INVENTORY)
+                if (menu_visible && menu_content_type == CONTENT_INVENTORY)
                 {
-                    right_panel_visible = false;
+                    menu_visible = false;
                 }
                 else
                 {
-                    right_panel_content_type = CONTENT_INVENTORY;
+                    menu_content_type = CONTENT_INVENTORY;
 
-                    right_panel_visible = true;
+                    menu_visible = true;
                 }
 
                 return INPUT_DRAW;

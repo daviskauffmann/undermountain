@@ -18,19 +18,14 @@ typedef enum content_type_e {
 
 typedef struct content_s
 {
-    content_type_t type;
     int height;
     int scroll;
 } content_t;
 
-TCOD_console_t right_panel;
-bool right_panel_visible;
-int right_panel_x;
-int right_panel_y;
-int right_panel_width;
-int right_panel_height;
-content_t right_panel_content[NUM_CONTENT_TYPES];
-content_type_t right_panel_content_type;
+int view_x;
+int view_y;
+int view_width;
+int view_height;
 
 TCOD_console_t message_log;
 bool message_log_visible;
@@ -40,10 +35,14 @@ int message_log_width;
 int message_log_height;
 TCOD_list_t messages;
 
-int view_left;
-int view_top;
-int view_right;
-int view_bottom;
+TCOD_console_t menu;
+bool menu_visible;
+int menu_x;
+int menu_y;
+int menu_width;
+int menu_height;
+content_t menu_content[NUM_CONTENT_TYPES];
+content_type_t menu_content_type;
 
 void console_initialize(void);
 void console_log(const char *message, map_t *map, int x, int y);

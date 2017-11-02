@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <libtcod.h>
 
@@ -74,19 +75,15 @@ map_t *map_create(void)
     map->actors = TCOD_list_new();
 
     TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
-
     TCOD_bsp_split_recursive(bsp, NULL, BSP_DEPTH, MIN_ROOM_SIZE + 1, MIN_ROOM_SIZE + 1, 1.5f, 1.5f);
     TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
-
     TCOD_bsp_delete(bsp);
 
     room_t *stair_down_room = map_get_random_room(map);
-
     room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
     map->tiles[map->stair_down_x][map->stair_down_y].type = TILE_STAIR_DOWN;
 
     room_t *stair_up_room = map_get_random_room(map);
-
     room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
     map->tiles[map->stair_up_x][map->stair_up_y].type = TILE_STAIR_UP;
 
@@ -445,6 +442,10 @@ actor_t *actor_create(map_t *map, actor_type_t type, int x, int y)
     actor->y = y;
     actor->fov_map = NULL;
     actor->mark_for_delete = false;
+
+    // TCOD_namegen_parse("names.txt", NULL);
+    // actor->name = TCOD_namegen_generate("king", false);
+    // TCOD_namegen_destroy();
 
     actor_calc_fov(actor);
 

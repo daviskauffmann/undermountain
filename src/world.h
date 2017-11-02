@@ -65,6 +65,7 @@ typedef struct actor_s
     struct map_s *map;
     int x;
     int y;
+    char *name;
     TCOD_map_t fov_map;
     bool mark_for_delete;
 } actor_t;

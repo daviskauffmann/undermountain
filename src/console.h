@@ -5,6 +5,7 @@
 
 #include "world.h"
 
+#define MAX_MESSAGES 20
 #define CONSTRAIN_VIEW 1
 
 typedef enum content_type_e {

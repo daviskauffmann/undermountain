@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <libtcod.h>
@@ -16,13 +17,13 @@ void console_initialize(void)
     right_panel_y = 0;
     right_panel_height = screen_height;
     right_panel = TCOD_console_new(right_panel_width, right_panel_height);
+    right_panel_content_type = CONTENT_NONE;
     right_panel_content[CONTENT_CHARACTER].type = CONTENT_CHARACTER;
     right_panel_content[CONTENT_CHARACTER].height = 18;
     right_panel_content[CONTENT_CHARACTER].scroll = 0;
     right_panel_content[CONTENT_INVENTORY].type = CONTENT_INVENTORY;
     right_panel_content[CONTENT_INVENTORY].height = 28;
     right_panel_content[CONTENT_INVENTORY].scroll = 0;
-    right_panel_content_type = CONTENT_NONE;
 
     message_log_visible = true;
     message_log_x = 0;
@@ -47,16 +48,38 @@ void console_log(const char *message, map_t *map, int x, int y)
 
     TCOD_list_push(messages, message);
 
-    if (TCOD_list_size(messages) >= message_log_height)
+    if (TCOD_list_size(messages) >= MAX_MESSAGES)
     {
-        TCOD_list_reverse(messages);
-        TCOD_list_pop(messages);
-        TCOD_list_reverse(messages);
+        TCOD_list_remove(messages, *TCOD_list_begin(messages));
     }
 }
 
 void console_turn_draw(void)
 {
+    TCOD_console_set_default_background(NULL, default_background_color);
+    TCOD_console_set_default_foreground(NULL, default_foreground_color);
+    TCOD_console_clear(NULL);
+
+    TCOD_console_set_default_background(right_panel, default_background_color);
+    TCOD_console_set_default_foreground(right_panel, default_foreground_color);
+    TCOD_console_clear(right_panel);
+
+    TCOD_console_set_default_background(message_log, default_background_color);
+    TCOD_console_set_default_foreground(message_log, default_foreground_color);
+    TCOD_console_clear(message_log);
+
+    // TODO: calc lines
+    // current HP & MP
+    // + # of stats
+    // + equipment items * lines each item needs
+    // + 2 padding
+    right_panel_content[CONTENT_CHARACTER].height = 18;
+
+    // TODO: calc lines
+    // inventory items * lines each item needs
+    // + 2 padding
+    right_panel_content[CONTENT_INVENTORY].height = 28;
+
     message_log_width = screen_width - (right_panel_visible
                                             ? right_panel_width
                                             : 0);
@@ -82,18 +105,6 @@ void console_turn_draw(void)
                          ? MAP_HEIGHT - view_bottom
                          : view_top;
 #endif
-
-    TCOD_console_set_default_background(NULL, default_background_color);
-    TCOD_console_set_default_foreground(NULL, default_foreground_color);
-    TCOD_console_clear(NULL);
-
-    TCOD_console_set_default_background(right_panel, default_background_color);
-    TCOD_console_set_default_foreground(right_panel, default_foreground_color);
-    TCOD_console_clear(right_panel);
-
-    TCOD_console_set_default_background(message_log, default_background_color);
-    TCOD_console_set_default_foreground(message_log, default_foreground_color);
-    TCOD_console_clear(message_log);
 
     float r2 = pow(actor_info[player->type].sight_radius, 2);
 
@@ -156,7 +167,7 @@ void console_turn_draw(void)
 
     if (message_log_visible)
     {
-        TCOD_list_t new_messages = TCOD_list_new();
+        TCOD_list_t new_messages = TCOD_list_duplicate(messages);
 
         int total_lines = 0;
         for (const char **iterator = (const char **)TCOD_list_begin(messages);
@@ -166,28 +177,46 @@ void console_turn_draw(void)
             const char *message = *iterator;
 
             total_lines += (int)ceil((float)strlen(message) / (float)(message_log_width - 2));
-
-            if (total_lines >= message_log_height - 1)
-            {
-                break;
-            }
-
-            TCOD_list_push(new_messages, message);
         }
 
+        while (total_lines > message_log_height - 2)
+        {
+            const char *message = *TCOD_list_begin(new_messages);
+
+            TCOD_list_remove(new_messages, message);
+
+            total_lines -= (int)ceil((float)strlen(message) / (float)(message_log_width - 2));
+        }
+
+        int i = 0;
+        int len = TCOD_list_size(new_messages);
         int y = 1;
         for (const char **iterator = (const char **)TCOD_list_begin(new_messages);
              iterator != (const char **)TCOD_list_end(new_messages);
              iterator++)
         {
+            i++;
+
             const char *message = *iterator;
 
+            TCOD_color_t color = i == len
+                                     ? TCOD_white
+                                     : i == len - 1
+                                           ? TCOD_light_gray
+                                           : i == len - 2
+                                                 ? TCOD_gray
+                                                 : TCOD_dark_gray;
+
+            TCOD_console_set_default_foreground(message_log, color);
             y += TCOD_console_print_rect(message_log, 1, y, message_log_width - 2, message_log_height - 1, message);
         }
 
+        TCOD_list_delete(new_messages);
+
+        TCOD_console_set_default_foreground(message_log, default_foreground_color);
         TCOD_console_print_frame(message_log, 0, 0, message_log_width, message_log_height, false, TCOD_BKGND_SET, "Log");
 
-        TCOD_list_delete(new_messages);
+        TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
     }
 
     if (right_panel_visible)
@@ -250,6 +279,8 @@ void console_turn_draw(void)
 
             break;
         }
+
+        TCOD_console_blit(right_panel, 0, 0, right_panel_width, right_panel_height, NULL, right_panel_x, right_panel_y, 1, 1);
     }
 }
 
@@ -310,16 +341,6 @@ void console_tick_draw(void)
                 }
             }
         }
-    }
-
-    if (right_panel_visible)
-    {
-        TCOD_console_blit(right_panel, 0, 0, right_panel_width, right_panel_height, NULL, right_panel_x, right_panel_y, 1, 1);
-    }
-
-    if (message_log_visible)
-    {
-        TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
     }
 
     TCOD_console_flush();

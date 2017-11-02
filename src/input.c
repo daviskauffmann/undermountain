@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <libtcod.h>
 
 #include "input.h"

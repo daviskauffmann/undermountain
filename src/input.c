@@ -214,7 +214,9 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 'g':
-                return INPUT_TICK;
+                actor_pick_item(player, &player->map->tiles[player->x][player->y]);
+
+                return INPUT_DRAW;
 
             case 'h':
                 return INPUT_TICK;
@@ -294,11 +296,11 @@ input_t input_handle(void)
 
                 if (player->torch)
                 {
-                    actor_info[player->type].sight_radius *= 2;
+                    player->fov_radius *= 2;
                 }
                 else
                 {
-                    actor_info[player->type].sight_radius /= 2;
+                    player->fov_radius /= 2;
                 }
 
                 actor_calc_fov(player);

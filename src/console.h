@@ -3,13 +3,12 @@
 
 #include <libtcod.h>
 
-#include "world.h"
+#include "map.h"
 
 #define MAX_MESSAGES 20
 #define CONSTRAIN_VIEW 1
 
 typedef enum content_type_e {
-    CONTENT_NONE = 0,
     CONTENT_CHARACTER,
     CONTENT_INVENTORY,
 

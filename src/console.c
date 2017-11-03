@@ -6,6 +6,10 @@
 
 #include "console.h"
 #include "config.h"
+#include "tile.h"
+#include "light.h"
+#include "actor.h"
+#include "item.h"
 #include "world.h"
 #include "game.h"
 
@@ -19,7 +23,7 @@ void console_initialize(void)
     menu_visible = false;
     menu_content[CONTENT_CHARACTER].scroll = 0;
     menu_content[CONTENT_INVENTORY].scroll = 0;
-    menu_content_type = CONTENT_NONE;
+    menu_content_type = CONTENT_CHARACTER;
 }
 
 void console_log(const char *message, map_t *map, int x, int y)
@@ -61,7 +65,7 @@ void console_turn_draw(void)
     menu_y = 0;
     menu_height = screen_height;
     menu_content[CONTENT_CHARACTER].height = 18;
-    menu_content[CONTENT_INVENTORY].height = 28;
+    menu_content[CONTENT_INVENTORY].height = TCOD_list_size(player->items) + 2;
 
     message_log_x = 0;
     message_log_width = screen_width - (menu_visible ? menu_width : 0);
@@ -98,6 +102,7 @@ void console_turn_draw(void)
             tile_t *tile = &player->map->tiles[x][y];
             light_t *light = tile->light;
             actor_t *actor = tile->actor;
+            item_t *item = TCOD_list_peek(tile->items);
 
             if (TCOD_map_is_in_fov(player->fov_map, x, y))
             {
@@ -105,16 +110,24 @@ void console_turn_draw(void)
 
                 if (actor != NULL)
                 {
-                    TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor_info[actor->type].color);
-                    TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor_info[actor->type].glyph);
+                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, actor->color);
+                    TCOD_console_set_char(NULL, x - view_x, y - view_y, actor->glyph);
+
+                    continue;
+                }
+
+                if (item != NULL)
+                {
+                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, item->color);
+                    TCOD_console_set_char(NULL, x - view_x, y - view_y, item->glyph);
 
                     continue;
                 }
 
                 if (light != NULL)
                 {
-                    TCOD_console_set_char_foreground(NULL, light->x - view_x, light->y - view_y, light->color);
-                    TCOD_console_set_char(NULL, light->x - view_x, light->y - view_y, '!');
+                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, light->color);
+                    TCOD_console_set_char(NULL, x - view_x, y - view_y, '!');
 
                     continue;
                 }
@@ -124,11 +137,11 @@ void console_turn_draw(void)
 
             if (TCOD_map_is_in_fov(player->fov_map, x, y))
             {
-                float r2 = pow(actor_info[player->type].sight_radius, 2);
+                float r2 = pow(player->fov_radius, 2);
                 float d = pow(x - player->x, 2) + pow(y - player->y, 2);
                 float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 
-                color = TCOD_color_lerp(tile_info[tile->type].dark_color, tile_info[tile->type].light_color, l);
+                color = TCOD_color_lerp(tile_color_dark, tile_color_light, l);
 
                 for (light_t **iterator = (light_t **)TCOD_list_begin(player->map->lights);
                      iterator != (light_t **)TCOD_list_end(player->map->lights);
@@ -154,7 +167,7 @@ void console_turn_draw(void)
 
                     if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
                     {
-                        float torch_r2 = pow(actor_info[actor->type].sight_radius, 2);
+                        float torch_r2 = pow(actor->fov_radius, 2);
                         float torch_d = pow(x - actor->x, 2) + pow(y - actor->y, 2);
                         float torch_l = CLAMP(0.0f, 1.0f, (torch_r2 - torch_d) / torch_r2);
 
@@ -166,7 +179,7 @@ void console_turn_draw(void)
             {
                 if (tile->seen)
                 {
-                    color = tile_info[tile->type].dark_color;
+                    color = tile_color_dark;
                 }
                 else
                 {
@@ -260,32 +273,32 @@ void console_turn_draw(void)
             break;
 
         case CONTENT_INVENTORY:
-            TCOD_console_print_ex(menu, 1, 1 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "a) Sword");
-            TCOD_console_print_ex(menu, 1, 2 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "b) Sword");
-            TCOD_console_print_ex(menu, 1, 3 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "c) Sword");
-            TCOD_console_print_ex(menu, 1, 4 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "d) Sword");
-            TCOD_console_print_ex(menu, 1, 5 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "e) Sword");
-            TCOD_console_print_ex(menu, 1, 6 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "f) Sword");
-            TCOD_console_print_ex(menu, 1, 7 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "g) Sword");
-            TCOD_console_print_ex(menu, 1, 8 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "h) Sword");
-            TCOD_console_print_ex(menu, 1, 9 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "i) Sword");
-            TCOD_console_print_ex(menu, 1, 10 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "j) Sword");
-            TCOD_console_print_ex(menu, 1, 11 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "k) Sword");
-            TCOD_console_print_ex(menu, 1, 12 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "l) Sword");
-            TCOD_console_print_ex(menu, 1, 13 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "m) Sword");
-            TCOD_console_print_ex(menu, 1, 14 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "n) Sword");
-            TCOD_console_print_ex(menu, 1, 15 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "o) Sword");
-            TCOD_console_print_ex(menu, 1, 16 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "p) Sword");
-            TCOD_console_print_ex(menu, 1, 17 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "q) Sword");
-            TCOD_console_print_ex(menu, 1, 18 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "r) Sword");
-            TCOD_console_print_ex(menu, 1, 19 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "s) Sword");
-            TCOD_console_print_ex(menu, 1, 20 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "t) Sword");
-            TCOD_console_print_ex(menu, 1, 21 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "u) Sword");
-            TCOD_console_print_ex(menu, 1, 22 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "v) Sword");
-            TCOD_console_print_ex(menu, 1, 23 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "w) Sword");
-            TCOD_console_print_ex(menu, 1, 24 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "x) Sword");
-            TCOD_console_print_ex(menu, 1, 25 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "y) Sword");
-            TCOD_console_print_ex(menu, 1, 26 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "z) Sword");
+            int y = 1;
+            for (item_t **iterator = (item_t **)TCOD_list_begin(player->items);
+                 iterator != (item_t **)TCOD_list_end(player->items);
+                 iterator++)
+            {
+                item_t *item = *iterator;
+
+                switch (item->type)
+                {
+                case ITEM_ARMOR:
+                    armor_t *armor = (armor_t *)item;
+                    printf("%d\n", armor->ac);
+
+                    break;
+
+                case ITEM_WEAPON:
+                    weapon_t *weapon = (weapon_t *)item;
+                    printf("%dd%d+%d\n", weapon->a, weapon->x, weapon->b);
+
+                    break;
+                }
+
+                TCOD_console_print_ex(menu, 1, y - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, item->name);
+
+                y++;
+            }
 
             TCOD_console_print_frame(menu, 0, 0, menu_width, menu_height, false, TCOD_BKGND_SET, "Inventory");
 
@@ -345,11 +358,11 @@ void console_tick_draw(void)
 
                 if (TCOD_map_is_in_fov(player->fov_map, x, y))
                 {
-                    float r2 = pow(actor_info[player->type].sight_radius, 2);
+                    float r2 = pow(player->fov_radius, 2);
                     float d = pow(x - player->x, 2) + pow(y - player->y, 2);
                     float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 
-                    color = TCOD_color_lerp(tile_info[tile->type].dark_color, tile_info[tile->type].light_color, l);
+                    color = TCOD_color_lerp(tile_color_dark, tile_color_light, l);
 
                     for (light_t **iterator = (light_t **)TCOD_list_begin(player->map->lights);
                          iterator != (light_t **)TCOD_list_end(player->map->lights);
@@ -375,7 +388,7 @@ void console_tick_draw(void)
 
                         if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
                         {
-                            float torch_r2 = pow(actor_info[actor->type].sight_radius, 2);
+                            float torch_r2 = pow(actor->fov_radius, 2);
                             float torch_d = pow(x - actor->x + dx, 2) + pow(y - actor->y + dy, 2);
                             float torch_l = CLAMP(0.0f, 1.0f, (torch_r2 - torch_d) / torch_r2 + di);
 

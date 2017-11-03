@@ -8,7 +8,7 @@
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
-#define NUM_LIGHTS 20
+#define NUM_LIGHTS 0
 #define NUM_ACTORS 50
 #define LIT_ROOMS 0
 #define SIMULATE_ALL_MAPS 1
@@ -109,7 +109,7 @@ room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
 void map_destroy(map_t *map);
 
-void tile_initialize(tile_t *tile, tile_type_t type, bool seen, actor_t *actor);
+void tile_initialize(tile_t *tile, tile_type_t type);
 void tile_finalize(tile_t *tile);
 
 room_t *room_create(map_t *map, int x, int y, int w, int h);

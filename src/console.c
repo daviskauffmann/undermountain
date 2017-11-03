@@ -96,6 +96,7 @@ void console_turn_draw(void)
             }
 
             tile_t *tile = &player->map->tiles[x][y];
+            light_t *light = tile->light;
             actor_t *actor = tile->actor;
 
             if (TCOD_map_is_in_fov(player->fov_map, x, y))
@@ -106,6 +107,14 @@ void console_turn_draw(void)
                 {
                     TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor_info[actor->type].color);
                     TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor_info[actor->type].glyph);
+
+                    continue;
+                }
+
+                if (light != NULL)
+                {
+                    TCOD_console_set_char_foreground(NULL, light->x - view_x, light->y - view_y, light->color);
+                    TCOD_console_set_char(NULL, light->x - view_x, light->y - view_y, '!');
 
                     continue;
                 }
@@ -121,44 +130,36 @@ void console_turn_draw(void)
 
                 color = TCOD_color_lerp(tile_info[tile->type].dark_color, tile_info[tile->type].light_color, l);
 
-                // for (light_t **iterator = (light_t **)TCOD_list_begin(player->map->lights);
-                //      iterator != (light_t **)TCOD_list_end(player->map->lights);
-                //      iterator++)
-                // {
-                //     light_t *light = *iterator;
-
-                //     if (TCOD_map_is_in_fov(light->fov_map, x, y))
-                //     {
-                //         float r2 = pow(light->radius, 2);
-                //         float d = pow(x - light->x, 2) + pow(y - light->y, 2);
-                //         float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
-
-                //         color = TCOD_color_lerp(color, light->color, l);
-                //     }
-                // }
-
-                // for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
-                //      iterator != (actor_t **)TCOD_list_end(player->map->actors);
-                //      iterator++)
-                // {
-                //     actor_t *actor = *iterator;
-
-                //     if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
-                //     {
-                //         float r2 = pow(actor_info[actor->type].sight_radius, 2);
-                //         float d = pow(x - actor->x, 2) + pow(y - actor->y, 2);
-                //         float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
-
-                //         color = TCOD_color_lerp(color, torch_color, l);
-                //     }
-                // }
-
-                if (player->torch)
+                for (light_t **iterator = (light_t **)TCOD_list_begin(player->map->lights);
+                     iterator != (light_t **)TCOD_list_end(player->map->lights);
+                     iterator++)
                 {
-                    float d = pow(x - player->x, 2) + pow(y - player->y, 2);
-                    float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+                    light_t *light = *iterator;
 
-                    color = TCOD_color_lerp(color, torch_color, l);
+                    if (TCOD_map_is_in_fov(light->fov_map, x, y))
+                    {
+                        float light_r2 = pow(light->radius, 2);
+                        float light_d = pow(x - light->x, 2) + pow(y - light->y, 2);
+                        float light_l = CLAMP(0.0f, 1.0f, (light_r2 - light_d) / light_r2);
+
+                        color = color = TCOD_color_lerp(color, TCOD_color_lerp(color, light->color, light_l), l);
+                    }
+                }
+
+                for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
+                     iterator != (actor_t **)TCOD_list_end(player->map->actors);
+                     iterator++)
+                {
+                    actor_t *actor = *iterator;
+
+                    if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
+                    {
+                        float torch_r2 = pow(actor_info[actor->type].sight_radius, 2);
+                        float torch_d = pow(x - actor->x, 2) + pow(y - actor->y, 2);
+                        float torch_l = CLAMP(0.0f, 1.0f, (torch_r2 - torch_d) / torch_r2);
+
+                        color = TCOD_color_lerp(color, torch_color, torch_l);
+                    }
                 }
             }
             else
@@ -350,44 +351,36 @@ void console_tick_draw(void)
 
                     color = TCOD_color_lerp(tile_info[tile->type].dark_color, tile_info[tile->type].light_color, l);
 
-                    // for (light_t **iterator = (light_t **)TCOD_list_begin(player->map->lights);
-                    //      iterator != (light_t **)TCOD_list_end(player->map->lights);
-                    //      iterator++)
-                    // {
-                    //     light_t *light = *iterator;
-
-                    //     if (TCOD_map_is_in_fov(light->fov_map, x, y))
-                    //     {
-                    //         float r2 = pow(light->radius, 2);
-                    //         float d = pow(x - light->x + dx, 2) + pow(y - light->y + dy, 2);
-                    //         float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
-
-                    //         color = TCOD_color_lerp(color, light->color, l);
-                    //     }
-                    // }
-
-                    // for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
-                    //      iterator != (actor_t **)TCOD_list_end(player->map->actors);
-                    //      iterator++)
-                    // {
-                    //     actor_t *actor = *iterator;
-
-                    //     if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
-                    //     {
-                    //         float r2 = pow(actor_info[actor->type].sight_radius, 2);
-                    //         float d = pow(x - actor->x + dx, 2) + pow(y - actor->y + dy, 2);
-                    //         float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
-
-                    //         color = TCOD_color_lerp(color, torch_color, l);
-                    //     }
-                    // }
-
-                    if (player->torch)
+                    for (light_t **iterator = (light_t **)TCOD_list_begin(player->map->lights);
+                         iterator != (light_t **)TCOD_list_end(player->map->lights);
+                         iterator++)
                     {
-                        float d = pow(x - player->x + dx, 2) + pow(y - player->y + dy, 2);
-                        float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
+                        light_t *light = *iterator;
 
-                        color = TCOD_color_lerp(color, torch_color, l);
+                        if (TCOD_map_is_in_fov(light->fov_map, x, y))
+                        {
+                            float light_r2 = pow(light->radius, 2);
+                            float light_d = pow(x - light->x + dx, 2) + pow(y - light->y + dy, 2);
+                            float light_l = CLAMP(0.0f, 1.0f, (light_r2 - light_d) / light_r2 + di);
+
+                            color = TCOD_color_lerp(color, TCOD_color_lerp(color, light->color, light_l), l);
+                        }
+                    }
+
+                    for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
+                         iterator != (actor_t **)TCOD_list_end(player->map->actors);
+                         iterator++)
+                    {
+                        actor_t *actor = *iterator;
+
+                        if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
+                        {
+                            float torch_r2 = pow(actor_info[actor->type].sight_radius, 2);
+                            float torch_d = pow(x - actor->x + dx, 2) + pow(y - actor->y + dy, 2);
+                            float torch_l = CLAMP(0.0f, 1.0f, (torch_r2 - torch_d) / torch_r2 + di);
+
+                            color = (TCOD_color_lerp(color, torch_color, torch_l));
+                        }
                     }
 
                     TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);

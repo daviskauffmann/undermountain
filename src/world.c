@@ -63,7 +63,7 @@ map_t *map_create(void)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            tile_initialize(tile, TILE_WALL, false, NULL);
+            tile_initialize(tile, TILE_WALL);
         }
     }
 
@@ -112,9 +112,7 @@ map_t *map_create(void)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        actor_t *actor = actor_create(map, ACTOR_MONSTER, x, y);
-
-        actor->torch = TCOD_random_get_int(NULL, 0, 1);
+        actor_create(map, ACTOR_MONSTER, x, y);
     }
 
     TCOD_list_push(maps, map);
@@ -416,10 +414,11 @@ void map_destroy(map_t *map)
     TCOD_list_clear_and_delete(map->actors);
 }
 
-void tile_initialize(tile_t *tile, tile_type_t type, bool seen, actor_t *actor)
+void tile_initialize(tile_t *tile, tile_type_t type)
 {
     tile->type = TILE_WALL;
     tile->seen = false;
+    tile->light = NULL;
     tile->actor = NULL;
 }
 

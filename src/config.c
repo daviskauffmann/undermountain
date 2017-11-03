@@ -58,7 +58,7 @@ void config_initialize(void)
 
     actor_info[ACTOR_MONSTER].glyph = '@';
     actor_info[ACTOR_MONSTER].color = TCOD_red;
-    actor_info[ACTOR_MONSTER].sight_radius = 5;
+    actor_info[ACTOR_MONSTER].sight_radius = 10;
 
     TCOD_sys_set_fps(FPS);
 

@@ -13,9 +13,6 @@ void game_initialize(void)
 
     current_map_index = 0;
     player = actor_create(map, ACTOR_PLAYER, map->stair_up_x, map->stair_up_y);
-    torch = false;
-
-    player->map->tiles[player->x][player->y].actor = player;
 
     console_log("Hail, Player!", player->map, player->x, player->y);
 }
@@ -177,5 +174,4 @@ void game_load(void)
 
 void game_finalize(void)
 {
-    
 }

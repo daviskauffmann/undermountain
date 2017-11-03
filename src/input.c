@@ -290,9 +290,9 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 't':
-                torch = !torch;
+                player->torch = !player->torch;
 
-                if (torch)
+                if (player->torch)
                 {
                     actor_info[player->type].sight_radius *= 2;
                 }

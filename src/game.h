@@ -49,7 +49,6 @@
 
 int current_map_index;
 actor_t *player;
-bool torch;
 
 void game_initialize(void);
 void game_save(void);

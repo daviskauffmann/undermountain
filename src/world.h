@@ -8,6 +8,7 @@
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
+#define NUM_LIGHTS 20
 #define NUM_ACTORS 50
 #define LIT_ROOMS 0
 #define SIMULATE_ALL_MAPS 1
@@ -34,6 +35,7 @@ typedef struct tile_s
 {
     tile_type_t type;
     bool seen;
+    struct light_s *light;
     struct actor_s *actor;
 } tile_t;
 
@@ -44,6 +46,16 @@ typedef struct room_s
     int w;
     int h;
 } room_t;
+
+typedef struct light_s
+{
+    struct map_s *map;
+    int x;
+    int y;
+    int radius;
+    TCOD_color_t color;
+    TCOD_map_t fov_map;
+} light_t;
 
 typedef enum actor_type_e {
     ACTOR_NONE = 0,
@@ -66,6 +78,7 @@ typedef struct actor_s
     int x;
     int y;
     char *name;
+    bool torch;
     TCOD_map_t fov_map;
     bool mark_for_delete;
 } actor_t;
@@ -78,6 +91,7 @@ typedef struct map_s
     int stair_up_y;
     tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
     TCOD_list_t rooms;
+    TCOD_list_t lights;
     TCOD_list_t actors;
 } map_t;
 
@@ -102,6 +116,10 @@ room_t *room_create(map_t *map, int x, int y, int w, int h);
 void room_get_random_pos(room_t *room, int *x, int *y);
 bool room_is_inside(room_t *room, int x, int y);
 void room_destroy(room_t *room);
+
+light_t *light_create(map_t *map, int x, int y, int radius, TCOD_color_t color);
+void light_calc_fov(light_t *light);
+void light_destroy(light_t *light);
 
 actor_t *actor_create(map_t *map, actor_type_t type, int x, int y);
 void actor_turn(actor_t *actor);

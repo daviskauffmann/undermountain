@@ -72,6 +72,7 @@ map_t *map_create(void)
     map->stair_up_x = -1;
     map->stair_up_y = -1;
     map->rooms = TCOD_list_new();
+    map->lights = TCOD_list_new();
     map->actors = TCOD_list_new();
 
     TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -87,21 +88,33 @@ map_t *map_create(void)
     room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
     map->tiles[map->stair_up_x][map->stair_up_y].type = TILE_STAIR_UP;
 
+    for (int i = 0; i < NUM_LIGHTS; i++)
+    {
+        room_t *room = map_get_random_room(map);
+
+        int x, y;
+        room_get_random_pos(room, &x, &y);
+
+        light_create(map, x, y, 10, TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255)));
+    }
+
     for (int i = 0; i < NUM_ACTORS; i++)
     {
-        room_t *actor_room = map_get_random_room(map);
+        room_t *room = map_get_random_room(map);
 
-        if (actor_room == stair_up_room)
+        if (room == stair_up_room)
         {
             i--;
 
             continue;
         }
 
-        actor_t *actor = actor_create(map, ACTOR_MONSTER, 0, 0);
-        room_get_random_pos(actor_room, &actor->x, &actor->y);
+        int x, y;
+        room_get_random_pos(room, &x, &y);
 
-        map->tiles[actor->x][actor->y].actor = actor;
+        actor_t *actor = actor_create(map, ACTOR_MONSTER, x, y);
+
+        actor->torch = TCOD_random_get_int(NULL, 0, 1);
     }
 
     TCOD_list_push(maps, map);
@@ -334,6 +347,11 @@ void map_tick(map_t *map)
 {
 }
 
+room_t *map_get_random_room(map_t *map)
+{
+    return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
+}
+
 TCOD_map_t map_to_TCOD_map(map_t *map)
 {
     TCOD_map_t TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
@@ -375,6 +393,17 @@ void map_destroy(map_t *map)
 
     TCOD_list_clear_and_delete(map->rooms);
 
+    for (light_t **iterator = (light_t **)TCOD_list_begin(map->lights);
+         iterator != (light_t **)TCOD_list_end(map->lights);
+         iterator++)
+    {
+        light_t *light = *iterator;
+
+        light_destroy(light);
+    }
+
+    TCOD_list_clear_and_delete(map->lights);
+
     for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
          iterator != (actor_t **)TCOD_list_end(map->actors);
          iterator++)
@@ -412,24 +441,59 @@ room_t *room_create(map_t *map, int x, int y, int w, int h)
     return room;
 }
 
-room_t *map_get_random_room(map_t *map)
-{
-    return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
-}
-
 void room_get_random_pos(room_t *room, int *x, int *y)
 {
     *x = TCOD_random_get_int(NULL, room->x, room->x + room->w - 1);
     *y = TCOD_random_get_int(NULL, room->y, room->y + room->h - 1);
 }
 
+bool room_is_inside(room_t *room, int x, int y)
+{
+    return min(room->x, room->x + room->w) <= x && x < max(room->x, room->x + room->w) && min(room->y, room->y + room->h) <= y && y < max(room->y, room->y + room->h);
+}
+
 void room_destroy(room_t *room)
 {
 }
 
-bool room_is_inside(room_t *room, int x, int y)
+light_t *light_create(map_t *map, int x, int y, int radius, TCOD_color_t color)
 {
-    return min(room->x, room->x + room->w) <= x && x < max(room->x, room->x + room->w) && min(room->y, room->y + room->h) <= y && y < max(room->y, room->y + room->h);
+    light_t *light = (light_t *)malloc(sizeof(light_t));
+
+    light->map = map;
+    light->x = x;
+    light->y = y;
+    light->radius = radius;
+    light->color = color;
+    light->fov_map = NULL;
+
+    map->tiles[x][y].light = light;
+
+    TCOD_list_push(map->lights, light);
+
+    light_calc_fov(light);
+
+    return light;
+}
+
+void light_calc_fov(light_t *light)
+{
+    if (light->fov_map != NULL)
+    {
+        TCOD_map_delete(light->fov_map);
+    }
+
+    light->fov_map = map_to_TCOD_map(light->map);
+
+    TCOD_map_compute_fov(light->fov_map, light->x, light->y, light->radius, true, FOV_DIAMOND);
+}
+
+void light_destroy(light_t *light)
+{
+    if (light->fov_map != NULL)
+    {
+        TCOD_map_delete(light->fov_map);
+    }
 }
 
 actor_t *actor_create(map_t *map, actor_type_t type, int x, int y)
@@ -440,16 +504,19 @@ actor_t *actor_create(map_t *map, actor_type_t type, int x, int y)
     actor->map = map;
     actor->x = x;
     actor->y = y;
+    actor->torch = false;
     actor->fov_map = NULL;
     actor->mark_for_delete = false;
+
+    map->tiles[x][y].actor = actor;
 
     // TCOD_namegen_parse("names.txt", NULL);
     // actor->name = TCOD_namegen_generate("king", false);
     // TCOD_namegen_destroy();
 
-    actor_calc_fov(actor);
-
     TCOD_list_push(map->actors, actor);
+
+    actor_calc_fov(actor);
 
     return actor;
 }

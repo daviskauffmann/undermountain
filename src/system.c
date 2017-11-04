@@ -1,9 +1,9 @@
 #include <libtcod.h>
 
-#include "config.h"
+#include "system.h"
 
 // TODO: get all this information from external config file
-void config_initialize(void)
+void system_init(void)
 {
     screen_width = 40;
     screen_height = 25;

@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <libtcod.h>
 
-#include "room.h"
-#include "map.h"
+#include "game.h"
 
 room_t *room_create(map_t *map, int x, int y, int w, int h)
 {

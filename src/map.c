@@ -1,12 +1,7 @@
 #include <stdlib.h>
 #include <libtcod.h>
 
-#include "map.h"
-#include "config.h"
-#include "world.h"
-#include "light.h"
-#include "actor.h"
-#include "item.h"
+#include "game.h"
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);
 static void vline(map_t *map, int x, int y1, int y2);
@@ -312,11 +307,14 @@ static void hline_right(map_t *map, int x, int y)
 
 void map_turn(map_t *map)
 {
-    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
+    for (int x = 0; x < MAP_WIDTH; x++)
     {
-        actor_t *actor = *i;
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            tile_t *tile = &map->tiles[x][y];
 
-        actor_turn(actor);
+            tile_turn(tile);
+        }
     }
 
     for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
@@ -336,6 +334,15 @@ void map_turn(map_t *map)
 
 void map_tick(map_t *map)
 {
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            tile_t *tile = &map->tiles[x][y];
+
+            tile_tick(tile);
+        }
+    }
 }
 
 room_t *map_get_random_room(map_t *map)
@@ -359,6 +366,65 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
     }
 
     return TCOD_map;
+}
+
+void map_draw_turn(map_t *map)
+{
+    for (int x = view_x; x < view_x + view_width; x++)
+    {
+        for (int y = view_y; y < view_y + view_height; y++)
+        {
+            if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
+            {
+                continue;
+            }
+
+            tile_t *tile = &map->tiles[x][y];
+
+            tile_draw_turn(tile, x, y);
+        }
+    }
+}
+
+void map_draw_tick(map_t *map)
+{
+    if (sfx)
+    {
+        static TCOD_noise_t noise = NULL;
+        if (noise == NULL)
+        {
+            noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
+        }
+
+        static float noise_x = 0.0f;
+
+        noise_x += 0.2f;
+        float noise_dx = noise_x + 20.0f;
+        float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+        noise_dx += 30.0f;
+        float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+        float di = 0.2f * TCOD_noise_get(noise, &noise_x);
+
+        for (int x = view_x; x < view_x + view_width; x++)
+        {
+            for (int y = view_y; y < view_y + view_height; y++)
+            {
+                if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
+                {
+                    continue;
+                }
+
+                if (!TCOD_map_is_in_fov(player->fov_map, x, y))
+                {
+                    continue;
+                }
+
+                tile_t *tile = &map->tiles[x][y];
+
+                tile_draw_tick(tile, x, y, dx, dy, di);
+            }
+        }
+    }
 }
 
 void map_destroy(map_t *map)

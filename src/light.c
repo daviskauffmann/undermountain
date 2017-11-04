@@ -1,5 +1,6 @@
-#include "light.h"
-#include "map.h"
+#include <libtcod.h>
+
+#include "game.h"
 
 light_t *light_create(map_t *map, int x, int y, int radius, TCOD_color_t color)
 {
@@ -30,6 +31,24 @@ void light_calc_fov(light_t *light)
     light->fov_map = map_to_TCOD_map(light->map);
 
     TCOD_map_compute_fov(light->fov_map, light->x, light->y, light->radius, true, FOV_DIAMOND);
+}
+
+void light_turn(light_t *light)
+{
+}
+
+void light_tick(light_t *light)
+{
+}
+
+void light_draw_turn(light_t *light)
+{
+    TCOD_console_set_char_foreground(NULL, light->x - view_x, light->y - view_y, light->color);
+    TCOD_console_set_char(NULL, light->x - view_x, light->y - view_y, '*');
+}
+
+void light_draw_tick(light_t *light)
+{
 }
 
 void light_destroy(light_t *light)

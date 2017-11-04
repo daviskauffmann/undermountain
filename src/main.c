@@ -3,40 +3,40 @@
 #include <time.h>
 #include <libtcod.h>
 
-#include "config.h"
-#include "console.h"
-#include "world.h"
+#include "system.h"
+#include "menu.h"
 #include "game.h"
-#include "input.h"
 
 int main(int argc, char *argv[])
 {
-    config_initialize();
+    system_init();
 
-    // TODO: main menu
-    while (!TCOD_console_is_window_closed())
-    {
-        TCOD_key_t key;
-        TCOD_mouse_t mouse;
-        TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
+    // while (!TCOD_console_is_window_closed())
+    // {
+    //     switch (menu_input())
+    //     {
+    //     case MENU_INPUT_START:
+    //         game_initialize();
 
-        if (key.vk == TCODK_SPACE)
-        {
-            break;
-        }
-    }
+    //         goto draw;
 
-    tiles_initialize();
+    //     case MENU_INPUT_LOAD:
+    //         game_load();
 
-    console_initialize();
-    world_initialize();
+    //         goto draw;
+
+    //     case MENU_INPUT_QUIT:
+    //         goto quit;
+    //     }
+    // }
+
     game_initialize();
 
     goto draw;
 
     while (!TCOD_console_is_window_closed())
     {
-        switch (input_handle())
+        switch (game_input())
         {
         case INPUT_TICK:
             goto tick;
@@ -52,14 +52,14 @@ int main(int argc, char *argv[])
         }
 
     turn:
-        world_turn();
+        game_turn();
 
     draw:
-        console_turn_draw();
+        game_draw_turn();
 
     tick:
-        world_tick();
-        console_tick_draw();
+        game_tick();
+        game_draw_tick();
     }
 
 quit:

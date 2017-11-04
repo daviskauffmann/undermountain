@@ -1,10 +1,5 @@
 #include <libtcod.h>
 
-#include "config.h"
-#include "world.h"
-#include "map.h"
-#include "actor.h"
-#include "item.h"
 #include "game.h"
 
 actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int fov_radius)
@@ -52,7 +47,7 @@ void actor_turn(actor_t *actor)
 
             if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
-                console_log("{name} spots {name}", actor->map, actor->x, actor->y);
+                msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
 
                 actor_move_towards(actor, other->x, other->y);
             }
@@ -168,7 +163,7 @@ bool actor_move(actor_t *actor, int x, int y)
         // if corpses can be picked up, they will need to act like items
         if (other != player)
         {
-            console_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
+            msg_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
 
             other->mark_for_delete = true;
         }
@@ -193,6 +188,16 @@ void actor_pick_item(actor_t *actor, tile_t *tile)
     }
 
     TCOD_list_push(actor->items, TCOD_list_pop(tile->items));
+}
+
+void actor_draw_turn(actor_t *actor)
+{
+    TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor->color);
+    TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor->glyph);
+}
+
+void actor_draw_tick(actor_t *actor)
+{
 }
 
 void actor_destroy(actor_t *actor)

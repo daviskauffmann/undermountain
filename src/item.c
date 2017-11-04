@@ -1,6 +1,6 @@
 #include <libtcod.h>
 
-#include "item.h"
+#include "game.h"
 
 armor_t *armor_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color, int ac)
 {
@@ -46,6 +46,24 @@ potion_t *potion_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t col
     TCOD_list_push(items, item);
 
     return potion;
+}
+
+void item_turn(item_t *item)
+{
+}
+
+void item_tick(item_t *item)
+{
+}
+
+void item_draw_turn(item_t *item, int x, int y)
+{
+    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, item->color);
+    TCOD_console_set_char(NULL, x - view_x, y - view_y, item->glyph);
+}
+
+void item_draw_tick(item_t *item, int x, int y)
+{
 }
 
 void item_destroy(item_t *item)

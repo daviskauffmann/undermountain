@@ -45,18 +45,18 @@ input_t input_handle(void)
         }
         else if (mouse.wheel_down)
         {
-            if (menu_content[menu_content_type].scroll + menu_height < menu_content[menu_content_type].height)
+            if (content_scroll[content] + menu_height < content_height[content])
             {
-                menu_content[menu_content_type].scroll++;
+                content_scroll[content]++;
             }
 
             return INPUT_DRAW;
         }
         else if (mouse.wheel_up)
         {
-            if (menu_content[menu_content_type].scroll > 0)
+            if (content_scroll[content] > 0)
             {
-                menu_content[menu_content_type].scroll--;
+                content_scroll[content]--;
             }
 
             return INPUT_DRAW;
@@ -73,25 +73,25 @@ input_t input_handle(void)
                              : NULL;
         bool walkable_n = tile_n == NULL
                               ? false
-                              : tile_info[tile_n->type].is_walkable;
+                              : tile_walkable[tile_n->type];
         tile_t *tile_e = player->x + 1 < MAP_WIDTH
                              ? &player->map->tiles[player->x + 1][player->y]
                              : NULL;
         bool walkable_e = tile_e == NULL
                               ? false
-                              : tile_info[tile_e->type].is_walkable;
+                              : tile_walkable[tile_e->type];
         tile_t *tile_s = player->y + 1 < MAP_HEIGHT
                              ? &player->map->tiles[player->x][player->y + 1]
                              : NULL;
         bool walkable_s = tile_s == NULL
                               ? false
-                              : tile_info[tile_s->type].is_walkable;
+                              : tile_walkable[tile_s->type];
         tile_t *tile_w = player->x - 1 > 0
                              ? &player->map->tiles[player->x - 1][player->y]
                              : NULL;
         bool walkable_w = tile_w == NULL
                               ? false
-                              : tile_info[tile_w->type].is_walkable;
+                              : tile_walkable[tile_w->type];
 
         switch (key.vk)
         {
@@ -99,17 +99,17 @@ input_t input_handle(void)
             return INPUT_QUIT;
 
         case TCODK_PAGEDOWN:
-            if (menu_content[menu_content_type].scroll + menu_height < menu_content[menu_content_type].height)
+            if (content_scroll[content] + menu_height < content_height[content])
             {
-                menu_content[menu_content_type].scroll++;
+                content_scroll[content]++;
             }
 
             return INPUT_DRAW;
 
         case TCODK_PAGEUP:
-            if (menu_content[menu_content_type].scroll > 0)
+            if (content_scroll[content] > 0)
             {
-                menu_content[menu_content_type].scroll--;
+                content_scroll[content]--;
             }
 
             return INPUT_DRAW;
@@ -191,13 +191,13 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 'c':
-                if (menu_visible && menu_content_type == CONTENT_CHARACTER)
+                if (menu_visible && content == CONTENT_CHARACTER)
                 {
                     menu_visible = false;
                 }
                 else
                 {
-                    menu_content_type = CONTENT_CHARACTER;
+                    content = CONTENT_CHARACTER;
 
                     menu_visible = true;
                 }
@@ -222,13 +222,13 @@ input_t input_handle(void)
                 return INPUT_TICK;
 
             case 'i':
-                if (menu_visible && menu_content_type == CONTENT_INVENTORY)
+                if (menu_visible && content == CONTENT_INVENTORY)
                 {
                     menu_visible = false;
                 }
                 else
                 {
-                    menu_content_type = CONTENT_INVENTORY;
+                    content = CONTENT_INVENTORY;
 
                     menu_visible = true;
                 }
@@ -248,6 +248,8 @@ input_t input_handle(void)
                     world_finalize();
                     game_finalize();
 
+                    console_initialize();
+                    world_initialize();
                     game_load();
 
                     return INPUT_DRAW;

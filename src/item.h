@@ -10,7 +10,6 @@ typedef enum item_type_e {
 
 typedef struct item_s
 {
-    char *name;
     unsigned char glyph;
     TCOD_color_t color;
     item_type_t type;
@@ -30,8 +29,8 @@ typedef struct weapon_s
     int b;
 } weapon_t;
 
-armor_t *armor_create(char *name, unsigned char glyph, TCOD_color_t color, int ac);
-weapon_t *weapon_create(char *name, unsigned char glyph, TCOD_color_t color, int a, int x, int b);
+armor_t *armor_create(unsigned char glyph, TCOD_color_t color, int ac);
+weapon_t *weapon_create(unsigned char glyph, TCOD_color_t color, int a, int x, int b);
 void item_destroy(item_t *item);
 
 #endif

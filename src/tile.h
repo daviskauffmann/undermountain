@@ -16,15 +16,6 @@ typedef enum tile_type_e {
     NUM_TILE_TYPES
 } tile_type_t;
 
-typedef struct tile_info_s
-{
-    unsigned char glyph;
-    TCOD_color_t light_color;
-    TCOD_color_t dark_color;
-    bool is_transparent;
-    bool is_walkable;
-} tile_info_t;
-
 typedef struct tile_s
 {
     tile_type_t type;
@@ -34,6 +25,11 @@ typedef struct tile_s
     TCOD_list_t items;
 } tile_t;
 
+unsigned char tile_glyph[NUM_TILE_TYPES];
+bool tile_transparent[NUM_TILE_TYPES];
+bool tile_walkable[NUM_TILE_TYPES];
+
+void tiles_initialize(void);
 void tile_initialize(tile_t *tile, tile_type_t type);
 void tile_finalize(tile_t *tile);
 

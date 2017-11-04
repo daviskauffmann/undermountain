@@ -15,15 +15,23 @@
 
 void console_initialize(void)
 {
+    background_color = TCOD_black;
+    foreground_color = TCOD_white;
+    tile_color_light = TCOD_white;
+    tile_color_dark = TCOD_darkest_gray;
+    torch_color = TCOD_light_amber;
+
+    sfx = true;
+
     message_log = TCOD_console_new(screen_width, screen_height);
     messages = TCOD_list_new();
     message_log_visible = true;
 
     menu = TCOD_console_new(screen_width, screen_height);
     menu_visible = false;
-    menu_content[CONTENT_CHARACTER].scroll = 0;
-    menu_content[CONTENT_INVENTORY].scroll = 0;
-    menu_content_type = CONTENT_CHARACTER;
+    content = CONTENT_CHARACTER;
+    content_scroll[CONTENT_CHARACTER] = 0;
+    content_scroll[CONTENT_INVENTORY] = 0;
 }
 
 void console_log(const char *message, map_t *map, int x, int y)
@@ -48,24 +56,24 @@ void console_log(const char *message, map_t *map, int x, int y)
 
 void console_turn_draw(void)
 {
-    TCOD_console_set_default_background(NULL, default_background_color);
-    TCOD_console_set_default_foreground(NULL, default_foreground_color);
+    TCOD_console_set_default_background(NULL, background_color);
+    TCOD_console_set_default_foreground(NULL, foreground_color);
     TCOD_console_clear(NULL);
 
-    TCOD_console_set_default_background(menu, default_background_color);
-    TCOD_console_set_default_foreground(menu, default_foreground_color);
+    TCOD_console_set_default_background(menu, background_color);
+    TCOD_console_set_default_foreground(menu, foreground_color);
     TCOD_console_clear(menu);
 
-    TCOD_console_set_default_background(message_log, default_background_color);
-    TCOD_console_set_default_foreground(message_log, default_foreground_color);
+    TCOD_console_set_default_background(message_log, background_color);
+    TCOD_console_set_default_foreground(message_log, foreground_color);
     TCOD_console_clear(message_log);
 
     menu_width = screen_width / 2;
     menu_x = screen_width - menu_width;
     menu_y = 0;
     menu_height = screen_height;
-    menu_content[CONTENT_CHARACTER].height = 18;
-    menu_content[CONTENT_INVENTORY].height = TCOD_list_size(player->items) + 2;
+    content_height[CONTENT_CHARACTER] = 18;
+    content_height[CONTENT_INVENTORY] = TCOD_list_size(player->items) + 2;
 
     message_log_x = 0;
     message_log_width = screen_width - (menu_visible ? menu_width : 0);
@@ -188,7 +196,7 @@ void console_turn_draw(void)
             }
 
             TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
-            TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info[tile->type].glyph);
+            TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_glyph[tile->type]);
         }
     }
 
@@ -240,7 +248,7 @@ void console_turn_draw(void)
 
         TCOD_list_delete(new_messages);
 
-        TCOD_console_set_default_foreground(message_log, default_foreground_color);
+        TCOD_console_set_default_foreground(message_log, foreground_color);
         TCOD_console_print_frame(message_log, 0, 0, message_log_width, message_log_height, false, TCOD_BKGND_SET, "Log");
 
         TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
@@ -248,25 +256,25 @@ void console_turn_draw(void)
 
     if (menu_visible)
     {
-        switch (menu_content_type)
+        switch (content)
         {
         case CONTENT_CHARACTER:
-            TCOD_console_print_ex(menu, 1, 1 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "HP: 15 / 20");
-            TCOD_console_print_ex(menu, 1, 2 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "MP:  7 / 16");
+            TCOD_console_print_ex(menu, 1, 1 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "HP: 15 / 20");
+            TCOD_console_print_ex(menu, 1, 2 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "MP:  7 / 16");
 
-            TCOD_console_print_ex(menu, 1, 4 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "STR: 16");
-            TCOD_console_print_ex(menu, 1, 5 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "DEX: 14");
-            TCOD_console_print_ex(menu, 1, 6 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "CON: 12");
-            TCOD_console_print_ex(menu, 1, 7 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "INT: 10");
-            TCOD_console_print_ex(menu, 1, 8 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "WIS: 8");
-            TCOD_console_print_ex(menu, 1, 9 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "CHA: 10");
+            TCOD_console_print_ex(menu, 1, 4 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "STR: 16");
+            TCOD_console_print_ex(menu, 1, 5 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "DEX: 14");
+            TCOD_console_print_ex(menu, 1, 6 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "CON: 12");
+            TCOD_console_print_ex(menu, 1, 7 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "INT: 10");
+            TCOD_console_print_ex(menu, 1, 8 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "WIS: 8");
+            TCOD_console_print_ex(menu, 1, 9 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "CHA: 10");
 
-            TCOD_console_print_ex(menu, 1, 11 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "R-Hand: Sword");
-            TCOD_console_print_ex(menu, 1, 12 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "L-Hand: Shield");
-            TCOD_console_print_ex(menu, 1, 13 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Head  : Helm");
-            TCOD_console_print_ex(menu, 1, 14 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Chest : Cuirass");
-            TCOD_console_print_ex(menu, 1, 15 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Legs  : Greaves");
-            TCOD_console_print_ex(menu, 1, 16 - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, "Feet  : Boots");
+            TCOD_console_print_ex(menu, 1, 11 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "R-Hand: Sword");
+            TCOD_console_print_ex(menu, 1, 12 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "L-Hand: Shield");
+            TCOD_console_print_ex(menu, 1, 13 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "Head  : Helm");
+            TCOD_console_print_ex(menu, 1, 14 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "Chest : Cuirass");
+            TCOD_console_print_ex(menu, 1, 15 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "Legs  : Greaves");
+            TCOD_console_print_ex(menu, 1, 16 - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "Feet  : Boots");
 
             TCOD_console_print_frame(menu, 0, 0, menu_width, menu_height, false, TCOD_BKGND_SET, "Character");
 
@@ -280,26 +288,13 @@ void console_turn_draw(void)
             {
                 item_t *item = *iterator;
 
-                switch (item->type)
-                {
-                case ITEM_ARMOR:
-                    armor_t *armor = (armor_t *)item;
-                    printf("%d\n", armor->ac);
-
-                    break;
-
-                case ITEM_WEAPON:
-                    weapon_t *weapon = (weapon_t *)item;
-                    printf("%dd%d+%d\n", weapon->a, weapon->x, weapon->b);
-
-                    break;
-                }
-
-                TCOD_console_print_ex(menu, 1, y - menu_content[menu_content_type].scroll, TCOD_BKGND_NONE, TCOD_LEFT, item->name);
+                TCOD_console_set_default_foreground(menu, item->color);
+                TCOD_console_print_ex(menu, 1, y - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "{name}");
 
                 y++;
             }
 
+            TCOD_console_set_default_foreground(menu, foreground_color);
             TCOD_console_print_frame(menu, 0, 0, menu_width, menu_height, false, TCOD_BKGND_SET, "Inventory");
 
             break;
@@ -408,8 +403,7 @@ void console_tick_draw(void)
 void console_finalize(void)
 {
     TCOD_console_delete(menu);
+    TCOD_list_delete(messages);
 
     TCOD_console_delete(message_log);
-
-    TCOD_list_delete(messages);
 }

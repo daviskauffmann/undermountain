@@ -5,21 +5,26 @@
 
 #include "map.h"
 
+#define WINDOW_TITLE "Roguelike v0.1"
+#define FPS 60
+
 #define MAX_MESSAGES 20
 #define CONSTRAIN_VIEW 1
 
-typedef enum content_type_e {
+typedef enum content_e {
     CONTENT_CHARACTER,
     CONTENT_INVENTORY,
 
-    NUM_CONTENT_TYPES
-} content_type_t;
-
-typedef struct content_s
-{
-    int height;
-    int scroll;
+    NUM_CONTENTS
 } content_t;
+
+TCOD_color_t background_color;
+TCOD_color_t foreground_color;
+TCOD_color_t tile_color_light;
+TCOD_color_t tile_color_dark;
+TCOD_color_t torch_color;
+
+bool sfx;
 
 int view_x;
 int view_y;
@@ -40,8 +45,9 @@ int menu_x;
 int menu_y;
 int menu_width;
 int menu_height;
-content_t menu_content[NUM_CONTENT_TYPES];
-content_type_t menu_content_type;
+content_t content;
+int content_scroll[NUM_CONTENTS];
+int content_height[NUM_CONTENTS];
 
 void console_initialize(void);
 void console_log(const char *message, map_t *map, int x, int y);

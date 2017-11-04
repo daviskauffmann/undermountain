@@ -12,6 +12,7 @@
 int main(int argc, char *argv[])
 {
     config_initialize();
+    tiles_initialize();
 
     console_initialize();
     world_initialize();

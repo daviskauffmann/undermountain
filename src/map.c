@@ -81,7 +81,7 @@ map_t *map_create(void)
             continue;
         }
 
-        actor_create(map, "Monster", '@', TCOD_red, x, y, 5);
+        actor_create(map, '@', TCOD_red, x, y, 5);
     }
 
     for (int i = 0; i < NUM_ITEMS; i++)
@@ -95,12 +95,12 @@ map_t *map_create(void)
         switch (TCOD_random_get_int(NULL, 0, 1))
         {
         case 0:
-            item = (item_t *)armor_create("Shield", ')', TCOD_white, 3);
+            item = (item_t *)armor_create(')', TCOD_white, 3);
 
             break;
 
         case 1:
-            item = (item_t *)weapon_create("Sword", '|', TCOD_white, 1, 8, 0);
+            item = (item_t *)weapon_create('|', TCOD_white, 1, 8, 0);
 
             break;
         }
@@ -354,7 +354,7 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
             tile_t *tile = &map->tiles[x][y];
             actor_t *actor = tile->actor;
 
-            TCOD_map_set_properties(TCOD_map, x, y, tile_info[tile->type].is_transparent, actor == NULL ? tile_info[tile->type].is_walkable : false);
+            TCOD_map_set_properties(TCOD_map, x, y, tile_transparent[tile->type], actor == NULL ? tile_walkable[tile->type] : false);
         }
     }
 

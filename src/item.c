@@ -1,11 +1,10 @@
 #include "item.h"
 
-armor_t *armor_create(char *name, unsigned char glyph, TCOD_color_t color, int ac)
+armor_t *armor_create(unsigned char glyph, TCOD_color_t color, int ac)
 {
     armor_t *armor = (armor_t *)malloc(sizeof(armor_t));
     item_t *item = (item_t *)armor;
 
-    item->name = name;
     item->glyph = glyph;
     item->color = color;
     item->type = ITEM_ARMOR;
@@ -14,12 +13,11 @@ armor_t *armor_create(char *name, unsigned char glyph, TCOD_color_t color, int a
     return armor;
 }
 
-weapon_t *weapon_create(char *name, unsigned char glyph, TCOD_color_t color, int a, int x, int b)
+weapon_t *weapon_create(unsigned char glyph, TCOD_color_t color, int a, int x, int b)
 {
     weapon_t *weapon = (weapon_t *)malloc(sizeof(weapon_t));
     item_t *item = (item_t *)weapon;
 
-    item->name = name;
     item->glyph = glyph;
     item->color = color;
     item->type = ITEM_WEAPON;

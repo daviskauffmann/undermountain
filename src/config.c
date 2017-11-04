@@ -1,10 +1,8 @@
-#include <stdio.h>
 #include <libtcod.h>
 
 #include "config.h"
-#include "tile.h"
-#include "actor.h"
-#include "item.h"
+#include "console.h"
+#include "world.h"
 
 // TODO: get all this information from external config file
 void config_initialize(void)
@@ -18,10 +16,6 @@ void config_initialize(void)
     font_flags = TCOD_FONT_LAYOUT_ASCII_INROW;
     font_char_horiz = 16;
     font_char_vertic = 16;
-
-    sfx = true;
-    default_background_color = TCOD_black;
-    default_foreground_color = TCOD_white;
 
     TCOD_sys_set_fps(FPS);
 

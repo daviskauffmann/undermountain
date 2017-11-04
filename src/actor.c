@@ -1,17 +1,17 @@
 #include <libtcod.h>
 
-#include "actor.h"
 #include "config.h"
-#include "map.h"
 #include "world.h"
+#include "map.h"
+#include "actor.h"
+#include "item.h"
 #include "game.h"
 
-actor_t *actor_create(map_t *map, char *name, unsigned char glyph, TCOD_color_t color, int x, int y, int fov_radius)
+actor_t *actor_create(map_t *map, unsigned char glyph, TCOD_color_t color, int x, int y, int fov_radius)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
     actor->map = map;
-    actor->name = name;
     actor->glyph = glyph;
     actor->color = color;
     actor->x = x;
@@ -159,7 +159,7 @@ bool actor_move(actor_t *actor, int x, int y)
     tile_t *tile = &actor->map->tiles[x][y];
     actor_t *other = tile->actor;
 
-    if (!tile_info[tile->type].is_walkable)
+    if (!tile_walkable[tile->type])
     {
         return false;
     }

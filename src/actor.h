@@ -9,7 +9,6 @@ typedef struct map_s map_t;
 
 typedef struct actor_s
 {
-    char *name;
     unsigned char glyph;
     TCOD_color_t color;
     map_t *map;
@@ -22,7 +21,7 @@ typedef struct actor_s
     bool mark_for_delete;
 } actor_t;
 
-actor_t *actor_create(map_t *map, char *name, unsigned char glyph, TCOD_color_t color, int x, int y, int fov_radius);
+actor_t *actor_create(map_t *map, unsigned char glyph, TCOD_color_t color, int x, int y, int fov_radius);
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);

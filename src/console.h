@@ -5,9 +5,6 @@
 
 #include "map.h"
 
-#define WINDOW_TITLE "Roguelike v0.1"
-#define FPS 60
-
 #define MAX_MESSAGES 20
 #define CONSTRAIN_VIEW 1
 

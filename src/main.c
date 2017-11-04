@@ -12,6 +12,20 @@
 int main(int argc, char *argv[])
 {
     config_initialize();
+
+    // TODO: main menu
+    while (!TCOD_console_is_window_closed())
+    {
+        TCOD_key_t key;
+        TCOD_mouse_t mouse;
+        TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
+
+        if (key.vk == TCODK_SPACE)
+        {
+            break;
+        }
+    }
+
     tiles_initialize();
 
     console_initialize();

@@ -1,6 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define WINDOW_TITLE "Roguelike v0.1"
+#define FPS 60
+
 int screen_width;
 int screen_height;
 bool fullscreen;

@@ -1,8 +1,6 @@
 #include <libtcod.h>
 
 #include "config.h"
-#include "console.h"
-#include "world.h"
 
 // TODO: get all this information from external config file
 void config_initialize(void)

@@ -34,6 +34,20 @@ weapon_t *weapon_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t col
     return weapon;
 }
 
+potion_t *potion_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color)
+{
+    potion_t *potion = (potion_t *)malloc(sizeof(potion_t));
+    item_t *item = (item_t *)potion;
+
+    item->glyph = glyph;
+    item->color = color;
+    item->type = ITEM_POTION;
+
+    TCOD_list_push(items, item);
+
+    return potion;
+}
+
 void item_destroy(item_t *item)
 {
 }

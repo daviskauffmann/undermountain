@@ -93,7 +93,7 @@ map_t *map_create(void)
         room_get_random_pos(room, &x, &y);
 
         item_t *item;
-        switch (TCOD_random_get_int(NULL, 0, 1))
+        switch (TCOD_random_get_int(NULL, 0, 2))
         {
         case 0:
             item = (item_t *)armor_create(map->tiles[x][y].items, ')', TCOD_white, 3);
@@ -102,6 +102,11 @@ map_t *map_create(void)
 
         case 1:
             item = (item_t *)weapon_create(map->tiles[x][y].items, '|', TCOD_white, 1, 8, 0);
+
+            break;
+
+        case 2:
+            item = (item_t *)potion_create(map->tiles[x][y].items, '!', TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255)));
 
             break;
         }

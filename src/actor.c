@@ -7,24 +7,23 @@
 #include "item.h"
 #include "game.h"
 
-actor_t *actor_create(map_t *map, unsigned char glyph, TCOD_color_t color, int x, int y, int fov_radius)
+actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int fov_radius)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
     actor->map = map;
-    actor->glyph = glyph;
-    actor->color = color;
     actor->x = x;
     actor->y = y;
+    actor->glyph = glyph;
+    actor->color = color;
     actor->torch = false;
     actor->items = TCOD_list_new();
     actor->fov_radius = fov_radius;
     actor->fov_map = NULL;
     actor->mark_for_delete = false;
 
-    map->tiles[x][y].actor = actor;
-
     TCOD_list_push(map->actors, actor);
+    map->tiles[x][y].actor = actor;
 
     actor_calc_fov(actor);
 
@@ -42,11 +41,9 @@ void actor_turn(actor_t *actor)
 
     if (TCOD_random_get_int(NULL, 0, 1) == 0)
     {
-        for (actor_t **iterator = (actor_t **)TCOD_list_begin(actor->map->actors);
-             iterator != (actor_t **)TCOD_list_end(actor->map->actors);
-             iterator++)
+        for (void **i = TCOD_list_begin(actor->map->actors); i != TCOD_list_end(actor->map->actors); i++)
         {
-            actor_t *other = *iterator;
+            actor_t *other = *i;
 
             if (other == actor)
             {
@@ -104,11 +101,9 @@ void actor_calc_fov(actor_t *actor)
     TCOD_map_compute_fov(actor->fov_map, actor->x, actor->y, actor->fov_radius, true, FOV_DIAMOND);
 
 #if LIT_ROOMS
-    for (room_t **iterator = (room_t **)TCOD_list_begin(actor->map->rooms);
-         iterator != (room_t **)TCOD_list_end(actor->map->rooms);
-         iterator++)
+    for (void **i = TCOD_list_begin(actor->map->rooms); i != TCOD_list_end(actor->map->rooms); i++)
     {
-        room_t *room = *iterator;
+        room_t *room = *i;
 
         if (!room_is_inside(room, x, y))
         {
@@ -202,13 +197,9 @@ void actor_pick_item(actor_t *actor, tile_t *tile)
 
 void actor_destroy(actor_t *actor)
 {
-    actor->map->tiles[actor->x][actor->y].actor = NULL;
-
-    for (item_t **iterator = (item_t **)TCOD_list_begin(actor->items);
-         iterator != (item_t **)TCOD_list_end(actor->items);
-         iterator++)
+    for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
     {
-        item_t *item = *iterator;
+        item_t *item = *i;
 
         item_destroy(item);
     }
@@ -219,4 +210,6 @@ void actor_destroy(actor_t *actor)
     {
         TCOD_map_delete(actor->fov_map);
     }
+
+    actor->map->tiles[actor->x][actor->y].actor = NULL;
 }

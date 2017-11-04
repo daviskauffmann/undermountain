@@ -151,11 +151,9 @@ void console_turn_draw(void)
 
                 color = TCOD_color_lerp(tile_color_dark, tile_color_light, l);
 
-                for (light_t **iterator = (light_t **)TCOD_list_begin(player->map->lights);
-                     iterator != (light_t **)TCOD_list_end(player->map->lights);
-                     iterator++)
+                for (void **i = TCOD_list_begin(player->map->lights); i != TCOD_list_end(player->map->lights); i++)
                 {
-                    light_t *light = *iterator;
+                    light_t *light = *i;
 
                     if (TCOD_map_is_in_fov(light->fov_map, x, y))
                     {
@@ -167,11 +165,9 @@ void console_turn_draw(void)
                     }
                 }
 
-                for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
-                     iterator != (actor_t **)TCOD_list_end(player->map->actors);
-                     iterator++)
+                for (void **i = TCOD_list_begin(player->map->actors); i != TCOD_list_end(player->map->actors); i++)
                 {
-                    actor_t *actor = *iterator;
+                    actor_t *actor = *i;
 
                     if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
                     {
@@ -205,11 +201,9 @@ void console_turn_draw(void)
         TCOD_list_t new_messages = TCOD_list_duplicate(messages);
 
         int total_lines = 0;
-        for (const char **iterator = (const char **)TCOD_list_begin(messages);
-             iterator != (const char **)TCOD_list_end(messages);
-             iterator++)
+        for (void **i = TCOD_list_begin(messages); i != TCOD_list_end(messages); i++)
         {
-            const char *message = *iterator;
+            const char *message = *i;
 
             total_lines += (int)ceil((float)strlen(message) / (float)(message_log_width - 2));
         }
@@ -223,22 +217,20 @@ void console_turn_draw(void)
             total_lines -= (int)ceil((float)strlen(message) / (float)(message_log_width - 2));
         }
 
-        int i = 0;
+        int pos = 0;
         int len = TCOD_list_size(new_messages);
         int y = 1;
-        for (const char **iterator = (const char **)TCOD_list_begin(new_messages);
-             iterator != (const char **)TCOD_list_end(new_messages);
-             iterator++)
+        for (void **i = TCOD_list_begin(new_messages); i != TCOD_list_end(new_messages); i++)
         {
-            i++;
+            pos++;
 
-            const char *message = *iterator;
+            const char *message = *i;
 
-            TCOD_color_t color = i == len
+            TCOD_color_t color = pos == len
                                      ? TCOD_white
-                                     : i == len - 1
+                                     : pos == len - 1
                                            ? TCOD_light_gray
-                                           : i == len - 2
+                                           : pos == len - 2
                                                  ? TCOD_gray
                                                  : TCOD_dark_gray;
 
@@ -282,11 +274,9 @@ void console_turn_draw(void)
 
         case CONTENT_INVENTORY:
             int y = 1;
-            for (item_t **iterator = (item_t **)TCOD_list_begin(player->items);
-                 iterator != (item_t **)TCOD_list_end(player->items);
-                 iterator++)
+            for (void **i = TCOD_list_begin(player->items); i != TCOD_list_end(player->items); i++)
             {
-                item_t *item = *iterator;
+                item_t *item = *i;
 
                 TCOD_console_set_default_foreground(menu, item->color);
                 TCOD_console_print_ex(menu, 1, y - content_scroll[content], TCOD_BKGND_NONE, TCOD_LEFT, "{name}");
@@ -343,8 +333,14 @@ void console_tick_draw(void)
 
                 tile_t *tile = &player->map->tiles[x][y];
                 actor_t *actor = tile->actor;
+                item_t *item = TCOD_list_peek(tile->items);
 
                 if (actor != NULL)
+                {
+                    continue;
+                }
+
+                if (item != NULL)
                 {
                     continue;
                 }
@@ -359,11 +355,9 @@ void console_tick_draw(void)
 
                     color = TCOD_color_lerp(tile_color_dark, tile_color_light, l);
 
-                    for (light_t **iterator = (light_t **)TCOD_list_begin(player->map->lights);
-                         iterator != (light_t **)TCOD_list_end(player->map->lights);
-                         iterator++)
+                    for (void **i = TCOD_list_begin(player->map->lights); i != TCOD_list_end(player->map->lights); i++)
                     {
-                        light_t *light = *iterator;
+                        light_t *light = *i;
 
                         if (TCOD_map_is_in_fov(light->fov_map, x, y))
                         {
@@ -375,11 +369,9 @@ void console_tick_draw(void)
                         }
                     }
 
-                    for (actor_t **iterator = (actor_t **)TCOD_list_begin(player->map->actors);
-                         iterator != (actor_t **)TCOD_list_end(player->map->actors);
-                         iterator++)
+                    for (void **i = TCOD_list_begin(player->map->actors); i != TCOD_list_end(player->map->actors); i++)
                     {
-                        actor_t *actor = *iterator;
+                        actor_t *actor = *i;
 
                         if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
                         {

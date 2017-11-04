@@ -49,10 +49,6 @@ int main(int argc, char *argv[])
     }
 
 quit:
-    game_finalize();
-    world_finalize();
-    console_finalize();
-
     SDL_Quit();
 
     return 0;

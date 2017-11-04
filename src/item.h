@@ -29,8 +29,8 @@ typedef struct weapon_s
     int b;
 } weapon_t;
 
-armor_t *armor_create(unsigned char glyph, TCOD_color_t color, int ac);
-weapon_t *weapon_create(unsigned char glyph, TCOD_color_t color, int a, int x, int b);
+armor_t *armor_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color, int ac);
+weapon_t *weapon_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color, int a, int x, int b);
 void item_destroy(item_t *item);
 
 #endif

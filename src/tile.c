@@ -35,11 +35,9 @@ void tile_initialize(tile_t *tile, tile_type_t type)
 
 void tile_finalize(tile_t *tile)
 {
-    for (item_t **iterator = (item_t **)TCOD_list_begin(tile->items);
-         iterator != (item_t **)TCOD_list_end(tile->items);
-         iterator++)
+    for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
     {
-        item_t *item = *iterator;
+        item_t *item = *i;
 
         item_destroy(item);
     }

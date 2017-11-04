@@ -4,6 +4,7 @@
 #include "map.h"
 #include "config.h"
 #include "world.h"
+#include "light.h"
 #include "actor.h"
 #include "item.h"
 
@@ -81,7 +82,7 @@ map_t *map_create(void)
             continue;
         }
 
-        actor_create(map, '@', TCOD_red, x, y, 5);
+        actor_create(map, x, y, '@', TCOD_red, 5);
     }
 
     for (int i = 0; i < NUM_ITEMS; i++)
@@ -95,17 +96,15 @@ map_t *map_create(void)
         switch (TCOD_random_get_int(NULL, 0, 1))
         {
         case 0:
-            item = (item_t *)armor_create(')', TCOD_white, 3);
+            item = (item_t *)armor_create(map->tiles[x][y].items, ')', TCOD_white, 3);
 
             break;
 
         case 1:
-            item = (item_t *)weapon_create('|', TCOD_white, 1, 8, 0);
+            item = (item_t *)weapon_create(map->tiles[x][y].items, '|', TCOD_white, 1, 8, 0);
 
             break;
         }
-
-        TCOD_list_push(map->tiles[x][y].items, item);
     }
 
     TCOD_list_push(maps, map);
@@ -308,26 +307,22 @@ static void hline_right(map_t *map, int x, int y)
 
 void map_turn(map_t *map)
 {
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-         iterator != (actor_t **)TCOD_list_end(map->actors);
-         iterator++)
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
     {
-        actor_t *actor = *iterator;
+        actor_t *actor = *i;
 
         actor_turn(actor);
     }
 
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-         iterator != (actor_t **)TCOD_list_end(map->actors);
-         iterator++)
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
     {
-        actor_t *actor = *iterator;
+        actor_t *actor = *i;
 
         if (actor->mark_for_delete)
         {
             actor_destroy(actor);
 
-            iterator = (actor_t **)TCOD_list_remove_iterator_fast(map->actors, (void **)iterator);
+            i = TCOD_list_remove_iterator_fast(map->actors, i);
 
             free(actor);
         }
@@ -373,33 +368,27 @@ void map_destroy(map_t *map)
         }
     }
 
-    for (room_t **iterator = (room_t **)TCOD_list_begin(map->rooms);
-         iterator != (room_t **)TCOD_list_end(map->rooms);
-         iterator++)
+    for (void **i = TCOD_list_begin(map->rooms); i != TCOD_list_end(map->rooms); i++)
     {
-        room_t *room = *iterator;
+        room_t *room = *i;
 
         room_destroy(room);
     }
 
     TCOD_list_clear_and_delete(map->rooms);
 
-    for (light_t **iterator = (light_t **)TCOD_list_begin(map->lights);
-         iterator != (light_t **)TCOD_list_end(map->lights);
-         iterator++)
+    for (void **i = TCOD_list_begin(map->lights); i != TCOD_list_end(map->lights); i++)
     {
-        light_t *light = *iterator;
+        light_t *light = *i;
 
         light_destroy(light);
     }
 
     TCOD_list_clear_and_delete(map->lights);
 
-    for (actor_t **iterator = (actor_t **)TCOD_list_begin(map->actors);
-         iterator != (actor_t **)TCOD_list_end(map->actors);
-         iterator++)
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
     {
-        actor_t *actor = *iterator;
+        actor_t *actor = *i;
 
         actor_destroy(actor);
     }

@@ -10,7 +10,7 @@ void game_initialize(void)
     map_t *map = map_create();
 
     current_map_index = 0;
-    player = actor_create(map, '@', TCOD_white, map->stair_up_x, map->stair_up_y, 5);
+    player = actor_create(map, map->stair_up_x, map->stair_up_y, '@', TCOD_white, 5);
 
     console_log("Hail, Player!", player->map, player->x, player->y);
 }

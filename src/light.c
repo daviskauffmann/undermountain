@@ -12,9 +12,8 @@ light_t *light_create(map_t *map, int x, int y, int radius, TCOD_color_t color)
     light->color = color;
     light->fov_map = NULL;
 
-    map->tiles[x][y].light = light;
-
     TCOD_list_push(map->lights, light);
+    map->tiles[x][y].light = light;
 
     light_calc_fov(light);
 
@@ -39,4 +38,6 @@ void light_destroy(light_t *light)
     {
         TCOD_map_delete(light->fov_map);
     }
+
+    light->map->tiles[light->x][light->y].light = NULL;
 }

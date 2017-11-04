@@ -11,11 +11,9 @@ void world_initialize(void)
 void world_turn(void)
 {
 #if SIMULATE_ALL_MAPS
-    for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
-         iterator != (map_t **)TCOD_list_end(maps);
-         iterator++)
+    for (void **i = TCOD_list_begin(maps); i != TCOD_list_end(maps); i++)
     {
-        map_t *map = *iterator;
+        map_t *map = *i;
 
         map_turn(map);
     }
@@ -30,11 +28,9 @@ void world_tick(void)
 
 void world_finalize(void)
 {
-    for (map_t **iterator = (map_t **)TCOD_list_begin(maps);
-         iterator != (map_t **)TCOD_list_end(maps);
-         iterator++)
+    for (void **i = TCOD_list_begin(maps); i != TCOD_list_end(maps); i++)
     {
-        map_t *map = *iterator;
+        map_t *map = *i;
 
         map_destroy(map);
     }

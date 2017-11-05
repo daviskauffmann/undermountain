@@ -2,6 +2,7 @@
 #include <math.h>
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "system.h"
 #include "game.h"
 

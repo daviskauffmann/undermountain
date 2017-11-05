@@ -1,5 +1,6 @@
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "game.h"
 #include "system.h"
 
@@ -593,7 +594,7 @@ void game_finalize(void)
         map_destroy(map);
     }
 
-    TCOD_list_clear_and_delete(maps);
+    TCOD_list_delete(maps);
 
     TCOD_console_delete(msg);
     TCOD_list_delete(messages);

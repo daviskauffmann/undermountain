@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "game.h"
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);
@@ -53,7 +54,7 @@ map_t *map_create(void)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        light_create(map, x, y, 10, TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255)));
+        light_create(map, x, y, 20, TCOD_color_RGB(TCOD_random_get_int(NULL, 128, 255), TCOD_random_get_int(NULL, 128, 255), TCOD_random_get_int(NULL, 128, 255)));
     }
 
     for (int i = 0; i < NUM_ACTORS; i++)
@@ -323,11 +324,9 @@ void map_turn(map_t *map)
 
         if (actor->mark_for_delete)
         {
-            actor_destroy(actor);
-
             i = TCOD_list_remove_iterator_fast(map->actors, i);
 
-            free(actor);
+            actor_destroy(actor);
         }
     }
 }
@@ -446,7 +445,7 @@ void map_destroy(map_t *map)
         room_destroy(room);
     }
 
-    TCOD_list_clear_and_delete(map->rooms);
+    TCOD_list_delete(map->rooms);
 
     for (void **i = TCOD_list_begin(map->lights); i != TCOD_list_end(map->lights); i++)
     {
@@ -455,7 +454,7 @@ void map_destroy(map_t *map)
         light_destroy(light);
     }
 
-    TCOD_list_clear_and_delete(map->lights);
+    TCOD_list_delete(map->lights);
 
     for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
     {
@@ -464,5 +463,7 @@ void map_destroy(map_t *map)
         actor_destroy(actor);
     }
 
-    TCOD_list_clear_and_delete(map->actors);
+    TCOD_list_delete(map->actors);
+
+    free(map);
 }

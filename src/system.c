@@ -1,5 +1,6 @@
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "system.h"
 
 // TODO: get all this information from external config file

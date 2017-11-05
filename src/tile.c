@@ -2,6 +2,7 @@
 #include <math.h>
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "game.h"
 
 void tile_initialize(tile_t *tile, tile_type_t type)
@@ -223,5 +224,5 @@ void tile_finalize(tile_t *tile)
         item_destroy(item);
     }
 
-    TCOD_list_clear_and_delete(tile->items);
+    TCOD_list_delete(tile->items);
 }

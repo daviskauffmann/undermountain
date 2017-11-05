@@ -1,3 +1,4 @@
+#include "CMemLeak.h"
 #include <libtcod.h>
 
 #include "game.h"
@@ -209,7 +210,7 @@ void actor_destroy(actor_t *actor)
         item_destroy(item);
     }
 
-    TCOD_list_clear_and_delete(actor->items);
+    TCOD_list_delete(actor->items);
 
     if (actor->fov_map != NULL)
     {
@@ -217,4 +218,6 @@ void actor_destroy(actor_t *actor)
     }
 
     actor->map->tiles[actor->x][actor->y].actor = NULL;
+
+    free(actor);
 }

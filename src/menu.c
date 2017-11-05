@@ -1,5 +1,6 @@
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "menu.h"
 
 menu_input_t menu_input(void)

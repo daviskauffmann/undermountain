@@ -3,11 +3,11 @@
 #include <time.h>
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "system.h"
 #include "menu.h"
 #include "game.h"
 
-// TODO: memory leak when restarting game
 int main(int argc, char *argv[])
 {
     system_init();

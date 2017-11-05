@@ -126,9 +126,9 @@ void actor_destroy(actor_t *actor);
 
 /* Items */
 typedef enum item_type_e {
-    ITEM_ARMOR,
-    ITEM_WEAPON,
-    ITEM_POTION
+    ITEM_TYPE_ARMOR,
+    ITEM_TYPE_WEAPON,
+    ITEM_TYPE_POTION
 } item_type_t;
 
 typedef struct item_s

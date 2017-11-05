@@ -1,3 +1,4 @@
+#include "CMemLeak.h"
 #include <libtcod.h>
 
 #include "game.h"
@@ -59,4 +60,6 @@ void light_destroy(light_t *light)
     }
 
     light->map->tiles[light->x][light->y].light = NULL;
+
+    free(light);
 }

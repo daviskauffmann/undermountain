@@ -1,3 +1,4 @@
+#include "CMemLeak.h"
 #include <libtcod.h>
 
 #include "game.h"
@@ -9,7 +10,7 @@ armor_t *armor_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color
 
     item->glyph = glyph;
     item->color = color;
-    item->type = ITEM_ARMOR;
+    item->type = ITEM_TYPE_ARMOR;
     armor->ac = ac;
 
     TCOD_list_push(items, item);
@@ -24,7 +25,7 @@ weapon_t *weapon_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t col
 
     item->glyph = glyph;
     item->color = color;
-    item->type = ITEM_WEAPON;
+    item->type = ITEM_TYPE_WEAPON;
     weapon->a = a;
     weapon->x = x;
     weapon->b = b;
@@ -41,7 +42,7 @@ potion_t *potion_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t col
 
     item->glyph = glyph;
     item->color = color;
-    item->type = ITEM_POTION;
+    item->type = ITEM_TYPE_POTION;
 
     TCOD_list_push(items, item);
 
@@ -68,4 +69,5 @@ void item_draw_tick(item_t *item, int x, int y)
 
 void item_destroy(item_t *item)
 {
+    free(item);
 }

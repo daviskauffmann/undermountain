@@ -5,25 +5,25 @@
 
 void game_initialize(void)
 {
-    tile_glyph[TILE_EMPTY] = ' ';
-    tile_glyph[TILE_FLOOR] = '.';
-    tile_glyph[TILE_WALL] = '#';
-    tile_glyph[TILE_STAIR_DOWN] = '>';
-    tile_glyph[TILE_STAIR_UP] = '<';
-
-    tile_transparent[TILE_EMPTY] = true;
-    tile_transparent[TILE_FLOOR] = true;
-    tile_transparent[TILE_WALL] = false;
-    tile_transparent[TILE_STAIR_DOWN] = true;
-    tile_transparent[TILE_STAIR_UP] = true;
-
-    tile_walkable[TILE_EMPTY] = true;
-    tile_walkable[TILE_FLOOR] = true;
-    tile_walkable[TILE_WALL] = false;
-    tile_walkable[TILE_STAIR_DOWN] = true;
-    tile_walkable[TILE_STAIR_UP] = true;
-
     maps = TCOD_list_new();
+
+    tile_glyph[TILE_TYPE_EMPTY] = ' ';
+    tile_glyph[TILE_TYPE_FLOOR] = '.';
+    tile_glyph[TILE_TYPE_WALL] = '#';
+    tile_glyph[TILE_TYPE_STAIR_DOWN] = '>';
+    tile_glyph[TILE_TYPE_STAIR_UP] = '<';
+
+    tile_transparent[TILE_TYPE_EMPTY] = true;
+    tile_transparent[TILE_TYPE_FLOOR] = true;
+    tile_transparent[TILE_TYPE_WALL] = false;
+    tile_transparent[TILE_TYPE_STAIR_DOWN] = true;
+    tile_transparent[TILE_TYPE_STAIR_UP] = true;
+
+    tile_walkable[TILE_TYPE_EMPTY] = true;
+    tile_walkable[TILE_TYPE_FLOOR] = true;
+    tile_walkable[TILE_TYPE_WALL] = false;
+    tile_walkable[TILE_TYPE_STAIR_DOWN] = true;
+    tile_walkable[TILE_TYPE_STAIR_UP] = true;
 
     background_color = TCOD_black;
     foreground_color = TCOD_white;
@@ -43,15 +43,16 @@ void game_initialize(void)
     content_scroll[CONTENT_CHARACTER] = 0;
     content_scroll[CONTENT_INVENTORY] = 0;
 
+    // TODO: the lights break if this is moved to the top of this function
+    // why?
     map_t *map = map_create();
-
-    current_map_index = 0;
     player = actor_create(map, map->stair_up_x, map->stair_up_y, '@', TCOD_white, 5);
+    current_map_index = 0;
 
     msg_log("Hail, Player!", player->map, player->x, player->y);
 }
 
-input_t game_input(void)
+game_input_t game_input(void)
 {
     static int automove_x = -1;
     static int automove_y = -1;
@@ -95,7 +96,7 @@ input_t game_input(void)
                 content_scroll[content]++;
             }
 
-            return INPUT_DRAW;
+            return GAME_INPUT_DRAW;
         }
         else if (mouse.wheel_up)
         {
@@ -104,10 +105,10 @@ input_t game_input(void)
                 content_scroll[content]--;
             }
 
-            return INPUT_DRAW;
+            return GAME_INPUT_DRAW;
         }
 
-        return INPUT_TICK;
+        return GAME_INPUT_TICK;
 
     case TCOD_EVENT_KEY_PRESS:
         automove_x = -1;
@@ -143,7 +144,7 @@ input_t game_input(void)
         switch (key.vk)
         {
         case TCODK_ESCAPE:
-            return INPUT_QUIT;
+            return GAME_INPUT_QUIT;
 
         case TCODK_PAGEDOWN:
             if (content_scroll[content] + panel_height < content_height[content])
@@ -151,7 +152,7 @@ input_t game_input(void)
                 content_scroll[content]++;
             }
 
-            return INPUT_DRAW;
+            return GAME_INPUT_DRAW;
 
         case TCODK_PAGEUP:
             if (content_scroll[content] > 0)
@@ -159,7 +160,7 @@ input_t game_input(void)
                 content_scroll[content]--;
             }
 
-            return INPUT_DRAW;
+            return GAME_INPUT_DRAW;
 
         case TCODK_CHAR:
             switch (key.c)
@@ -168,14 +169,14 @@ input_t game_input(void)
                 if (key.shift)
                 {
                     tile_t *tile = &player->map->tiles[player->x][player->y];
-                    if (tile->type != TILE_STAIR_UP)
+                    if (tile->type != TILE_TYPE_STAIR_UP)
                     {
-                        // return INPUT_TICK;
+                        // return GAME_INPUT_TICK;
                     }
 
                     if (current_map_index <= 0)
                     {
-                        return INPUT_QUIT;
+                        return GAME_INPUT_QUIT;
                     }
 
                     current_map_index--;
@@ -193,18 +194,18 @@ input_t game_input(void)
 
                     player->map = new_map;
 
-                    return INPUT_TURN;
+                    return GAME_INPUT_TURN;
                 }
 
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case '.':
                 if (key.shift)
                 {
                     tile_t *tile = &player->map->tiles[player->x][player->y];
-                    if (tile->type != TILE_STAIR_DOWN)
+                    if (tile->type != TILE_TYPE_STAIR_DOWN)
                     {
-                        // return INPUT_TICK;
+                        // return GAME_INPUT_TICK;
                     }
 
                     current_map_index++;
@@ -224,18 +225,18 @@ input_t game_input(void)
 
                     player->map = new_map;
 
-                    return INPUT_TURN;
+                    return GAME_INPUT_TURN;
                 }
 
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'a':
                 sfx = !sfx;
 
-                return INPUT_DRAW;
+                return GAME_INPUT_DRAW;
 
             case 'b':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'c':
                 if (panel_visible && content == CONTENT_CHARACTER)
@@ -249,24 +250,24 @@ input_t game_input(void)
                     panel_visible = true;
                 }
 
-                return INPUT_DRAW;
+                return GAME_INPUT_DRAW;
 
             case 'd':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'e':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'f':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'g':
                 actor_pick_item(player, &player->map->tiles[player->x][player->y]);
 
-                return INPUT_DRAW;
+                return GAME_INPUT_DRAW;
 
             case 'h':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'i':
                 if (panel_visible && content == CONTENT_INVENTORY)
@@ -280,13 +281,13 @@ input_t game_input(void)
                     panel_visible = true;
                 }
 
-                return INPUT_DRAW;
+                return GAME_INPUT_DRAW;
 
             case 'j':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'k':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'l':
                 if (key.lctrl)
@@ -295,34 +296,34 @@ input_t game_input(void)
 
                     game_load();
 
-                    return INPUT_DRAW;
+                    return GAME_INPUT_DRAW;
                 }
 
                 msg_visible = !msg_visible;
 
-                return INPUT_DRAW;
+                return GAME_INPUT_DRAW;
 
             case 'm':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'n':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'o':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'p':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'q':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'r':
                 game_finalize();
 
                 game_initialize();
 
-                return INPUT_DRAW;
+                return GAME_INPUT_DRAW;
 
             case 's':
                 if (key.lctrl)
@@ -330,7 +331,7 @@ input_t game_input(void)
                     game_save();
                 }
 
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 't':
                 player->torch = !player->torch;
@@ -346,100 +347,100 @@ input_t game_input(void)
 
                 actor_calc_fov(player);
 
-                return INPUT_DRAW;
+                return GAME_INPUT_DRAW;
 
             case 'u':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'v':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'w':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'x':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
 
             case 'y':
                 torch_color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
 
-                return INPUT_DRAW;
+                return GAME_INPUT_DRAW;
 
             case 'z':
-                return INPUT_TICK;
+                return GAME_INPUT_TICK;
             }
 
-            return INPUT_TICK;
+            return GAME_INPUT_TICK;
 
         case TCODK_KP1:
             if (walkable_s || walkable_w)
             {
                 return actor_move(player, player->x - 1, player->y + 1)
-                           ? INPUT_TURN
-                           : INPUT_DRAW;
+                           ? GAME_INPUT_TURN
+                           : GAME_INPUT_DRAW;
             }
 
-            return INPUT_TICK;
+            return GAME_INPUT_TICK;
 
         case TCODK_KP2:
         case TCODK_DOWN:
             return actor_move(player, player->x, player->y + 1)
-                       ? INPUT_TURN
-                       : INPUT_DRAW;
+                       ? GAME_INPUT_TURN
+                       : GAME_INPUT_DRAW;
 
         case TCODK_KP3:
             if (walkable_e || walkable_s)
             {
                 return actor_move(player, player->x + 1, player->y + 1)
-                           ? INPUT_TURN
-                           : INPUT_DRAW;
+                           ? GAME_INPUT_TURN
+                           : GAME_INPUT_DRAW;
             }
 
-            return INPUT_TICK;
+            return GAME_INPUT_TICK;
 
         case TCODK_KP4:
         case TCODK_LEFT:
             return actor_move(player, player->x - 1, player->y)
-                       ? INPUT_TURN
-                       : INPUT_DRAW;
+                       ? GAME_INPUT_TURN
+                       : GAME_INPUT_DRAW;
 
         case TCODK_KP5:
-            return INPUT_TURN;
+            return GAME_INPUT_TURN;
 
         case TCODK_KP6:
         case TCODK_RIGHT:
             return actor_move(player, player->x + 1, player->y)
-                       ? INPUT_TURN
-                       : INPUT_DRAW;
+                       ? GAME_INPUT_TURN
+                       : GAME_INPUT_DRAW;
 
         case TCODK_KP7:
             if (walkable_n || walkable_w)
             {
                 return actor_move(player, player->x - 1, player->y - 1)
-                           ? INPUT_TURN
-                           : INPUT_DRAW;
+                           ? GAME_INPUT_TURN
+                           : GAME_INPUT_DRAW;
             }
 
-            return INPUT_TICK;
+            return GAME_INPUT_TICK;
 
         case TCODK_KP8:
         case TCODK_UP:
             return actor_move(player, player->x, player->y - 1)
-                       ? INPUT_TURN
-                       : INPUT_DRAW;
+                       ? GAME_INPUT_TURN
+                       : GAME_INPUT_DRAW;
 
         case TCODK_KP9:
             if (walkable_n || walkable_e)
             {
                 return actor_move(player, player->x + 1, player->y - 1)
-                           ? INPUT_TURN
-                           : INPUT_DRAW;
+                           ? GAME_INPUT_TURN
+                           : GAME_INPUT_DRAW;
             }
 
-            return INPUT_TICK;
+            return GAME_INPUT_TICK;
         }
 
-        return INPUT_TICK;
+        return GAME_INPUT_TICK;
     }
 
     static float automove_timer = 0.0f;
@@ -458,7 +459,7 @@ input_t game_input(void)
         {
             automove_ready = false;
 
-            return INPUT_TURN;
+            return GAME_INPUT_TURN;
         }
         else
         {
@@ -479,7 +480,7 @@ input_t game_input(void)
         }
     }
 
-    return INPUT_TICK;
+    return GAME_INPUT_TICK;
 }
 
 void game_turn(void)

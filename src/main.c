@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "game.h"
 
+// TODO: memory leak when restarting game
 int main(int argc, char *argv[])
 {
     system_init();
@@ -38,16 +39,16 @@ int main(int argc, char *argv[])
     {
         switch (game_input())
         {
-        case INPUT_TICK:
+        case GAME_INPUT_TICK:
             goto tick;
 
-        case INPUT_TURN:
+        case GAME_INPUT_TURN:
             goto turn;
 
-        case INPUT_DRAW:
+        case GAME_INPUT_DRAW:
             goto draw;
 
-        case INPUT_QUIT:
+        case GAME_INPUT_QUIT:
             goto quit;
         }
 
@@ -63,6 +64,8 @@ int main(int argc, char *argv[])
     }
 
 quit:
+    game_finalize();
+
     SDL_Quit();
 
     return 0;

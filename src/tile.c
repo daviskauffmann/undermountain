@@ -6,7 +6,7 @@
 
 void tile_initialize(tile_t *tile, tile_type_t type)
 {
-    tile->type = TILE_WALL;
+    tile->type = type;
     tile->seen = false;
     tile->light = NULL;
     tile->actor = NULL;

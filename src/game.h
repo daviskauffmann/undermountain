@@ -4,16 +4,41 @@
 #include <libtcod.h>
 
 typedef struct map_s map_t;
+typedef struct tile_s tile_t;
+typedef struct room_s room_t;
 typedef struct light_s light_t;
 typedef struct actor_s actor_t;
+typedef struct item_s item_t;
+typedef struct armor_s armor_t;
+typedef struct weapon_s weapon_t;
+typedef struct potion_s potion_t;
+typedef enum game_input_e game_input_t;
+typedef enum content_e content_t;
+
+/* Game */
+#define SIMULATE_ALL_MAPS 1
+
+TCOD_list_t maps;
+actor_t *player;
+int current_map_index;
+
+void game_initialize(void);
+game_input_t game_input(void);
+void game_turn(void);
+void game_tick(void);
+void game_save(void);
+void game_load(void);
+void game_draw_turn(void);
+void game_draw_tick(void);
+void game_finalize(void);
 
 /* Tiles */
 typedef enum tile_type_e {
-    TILE_EMPTY = 0,
-    TILE_FLOOR,
-    TILE_WALL,
-    TILE_STAIR_DOWN,
-    TILE_STAIR_UP,
+    TILE_TYPE_EMPTY = 0,
+    TILE_TYPE_FLOOR,
+    TILE_TYPE_WALL,
+    TILE_TYPE_STAIR_DOWN,
+    TILE_TYPE_STAIR_UP,
 
     NUM_TILE_TYPES
 } tile_type_t;
@@ -172,34 +197,15 @@ void map_draw_turn(map_t *map);
 void map_draw_tick(map_t *map);
 void map_destroy(map_t *map);
 
-/* World */
-#define SIMULATE_ALL_MAPS 1
-
-TCOD_list_t maps;
-
 /* Input */
 #define AUTOMOVE_DELAY 0.1f
 
-typedef enum input_e {
-    INPUT_TICK,
-    INPUT_TURN,
-    INPUT_DRAW,
-    INPUT_QUIT
-} input_t;
-
-/* Game */
-int current_map_index;
-actor_t *player;
-
-void game_initialize(void);
-input_t game_input(void);
-void game_turn(void);
-void game_tick(void);
-void game_save(void);
-void game_load(void);
-void game_draw_turn(void);
-void game_draw_tick(void);
-void game_finalize(void);
+typedef enum game_input_e {
+    GAME_INPUT_TICK,
+    GAME_INPUT_TURN,
+    GAME_INPUT_DRAW,
+    GAME_INPUT_QUIT
+} game_input_t;
 
 /* Graphics */
 #define CONSTRAIN_VIEW 1

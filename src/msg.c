@@ -28,6 +28,10 @@ void msg_log(const char *message, map_t *map, int x, int y)
 
 void msg_draw(void)
 {
+    TCOD_console_set_default_background(msg, background_color);
+    TCOD_console_set_default_foreground(msg, foreground_color);
+    TCOD_console_clear(msg);
+
     TCOD_list_t new_messages = TCOD_list_duplicate(messages);
 
     int total_lines = 0;

@@ -6,6 +6,10 @@
 
 void panel_draw(void)
 {
+    TCOD_console_set_default_background(panel, background_color);
+    TCOD_console_set_default_foreground(panel, foreground_color);
+    TCOD_console_clear(panel);
+
     switch (content)
     {
     case CONTENT_CHARACTER:

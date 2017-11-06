@@ -78,7 +78,7 @@ map_t *map_create(void)
             continue;
         }
 
-        actor_create(map, x, y, '@', TCOD_red, 5);
+        actor_create(map, x, y, '@', TCOD_red, 10);
     }
 
     for (int i = 0; i < NUM_ITEMS; i++)

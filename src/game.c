@@ -50,6 +50,8 @@ void game_initialize(void)
     player = actor_create(map, map->stair_up_x, map->stair_up_y, '@', TCOD_white, 5);
     current_map_index = 0;
 
+    tooltip = TCOD_console_new(screen_width, screen_height);
+
     msg_log("Hail, Player!", player->map, player->x, player->y);
 }
 
@@ -66,15 +68,16 @@ game_input_t game_input(void)
     switch (ev)
     {
     case TCOD_EVENT_MOUSE_PRESS:
+        int mouse_x = mouse.cx + view_x;
+        int mouse_y = mouse.cy + view_y;
+
         if (mouse.lbutton)
         {
             automove_x = -1;
             automove_y = -1;
             automove_actor = NULL;
 
-            int mouse_x = mouse.cx + view_x;
-            int mouse_y = mouse.cy + view_y;
-
+            // TODO: check bounds and ignore if clicking in menus
             tile_t *tile = &player->map->tiles[mouse_x][mouse_y];
             actor_t *actor = tile->actor;
             if (actor != NULL)
@@ -89,6 +92,19 @@ game_input_t game_input(void)
         }
         else if (mouse.rbutton)
         {
+            if (tooltip_visible)
+            {
+                tooltip_visible = false;
+            }
+            else
+            {
+                tooltip_x = mouse_x;
+                tooltip_y = mouse_y;
+
+                tooltip_visible = true;
+            }
+
+            return GAME_INPUT_DRAW;
         }
         else if (mouse.wheel_down)
         {
@@ -115,32 +131,6 @@ game_input_t game_input(void)
         automove_x = -1;
         automove_y = -1;
         automove_actor = NULL;
-
-        // TODO: find a place for this
-        tile_t *tile_n = player->y - 1 > 0
-                             ? &player->map->tiles[player->x][player->y - 1]
-                             : NULL;
-        bool walkable_n = tile_n == NULL
-                              ? false
-                              : tile_walkable[tile_n->type];
-        tile_t *tile_e = player->x + 1 < MAP_WIDTH
-                             ? &player->map->tiles[player->x + 1][player->y]
-                             : NULL;
-        bool walkable_e = tile_e == NULL
-                              ? false
-                              : tile_walkable[tile_e->type];
-        tile_t *tile_s = player->y + 1 < MAP_HEIGHT
-                             ? &player->map->tiles[player->x][player->y + 1]
-                             : NULL;
-        bool walkable_s = tile_s == NULL
-                              ? false
-                              : tile_walkable[tile_s->type];
-        tile_t *tile_w = player->x - 1 > 0
-                             ? &player->map->tiles[player->x - 1][player->y]
-                             : NULL;
-        bool walkable_w = tile_w == NULL
-                              ? false
-                              : tile_walkable[tile_w->type];
 
         switch (key.vk)
         {
@@ -332,7 +322,7 @@ game_input_t game_input(void)
                     game_save();
                 }
 
-                return GAME_INPUT_TICK;
+                return GAME_INPUT_DRAW;
 
             case 't':
                 player->torch = !player->torch;
@@ -374,14 +364,9 @@ game_input_t game_input(void)
             return GAME_INPUT_TICK;
 
         case TCODK_KP1:
-            if (walkable_s || walkable_w)
-            {
-                return actor_move(player, player->x - 1, player->y + 1)
-                           ? GAME_INPUT_TURN
-                           : GAME_INPUT_DRAW;
-            }
-
-            return GAME_INPUT_TICK;
+            return actor_move(player, player->x - 1, player->y + 1)
+                       ? GAME_INPUT_TURN
+                       : GAME_INPUT_DRAW;
 
         case TCODK_KP2:
         case TCODK_DOWN:
@@ -390,14 +375,9 @@ game_input_t game_input(void)
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP3:
-            if (walkable_e || walkable_s)
-            {
-                return actor_move(player, player->x + 1, player->y + 1)
-                           ? GAME_INPUT_TURN
-                           : GAME_INPUT_DRAW;
-            }
-
-            return GAME_INPUT_TICK;
+            return actor_move(player, player->x + 1, player->y + 1)
+                       ? GAME_INPUT_TURN
+                       : GAME_INPUT_DRAW;
 
         case TCODK_KP4:
         case TCODK_LEFT:
@@ -415,14 +395,9 @@ game_input_t game_input(void)
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP7:
-            if (walkable_n || walkable_w)
-            {
-                return actor_move(player, player->x - 1, player->y - 1)
-                           ? GAME_INPUT_TURN
-                           : GAME_INPUT_DRAW;
-            }
-
-            return GAME_INPUT_TICK;
+            return actor_move(player, player->x - 1, player->y - 1)
+                       ? GAME_INPUT_TURN
+                       : GAME_INPUT_DRAW;
 
         case TCODK_KP8:
         case TCODK_UP:
@@ -431,14 +406,9 @@ game_input_t game_input(void)
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP9:
-            if (walkable_n || walkable_e)
-            {
-                return actor_move(player, player->x + 1, player->y - 1)
-                           ? GAME_INPUT_TURN
-                           : GAME_INPUT_DRAW;
-            }
-
-            return GAME_INPUT_TICK;
+            return actor_move(player, player->x + 1, player->y - 1)
+                       ? GAME_INPUT_TURN
+                       : GAME_INPUT_DRAW;
         }
 
         return GAME_INPUT_TICK;
@@ -526,13 +496,9 @@ void game_draw_turn(void)
     TCOD_console_set_default_foreground(NULL, foreground_color);
     TCOD_console_clear(NULL);
 
-    TCOD_console_set_default_background(panel, background_color);
-    TCOD_console_set_default_foreground(panel, foreground_color);
-    TCOD_console_clear(panel);
-
-    TCOD_console_set_default_background(msg, background_color);
-    TCOD_console_set_default_foreground(msg, foreground_color);
-    TCOD_console_clear(msg);
+    TCOD_console_set_default_background(tooltip, background_color);
+    TCOD_console_set_default_foreground(tooltip, foreground_color);
+    TCOD_console_clear(tooltip);
 
     panel_width = screen_width / 2;
     panel_x = screen_width - panel_width;
@@ -576,11 +542,25 @@ void game_draw_turn(void)
     {
         panel_draw();
     }
+
+    if (tooltip_visible)
+    {
+        tooltip_width = 8;
+        tooltip_height = 5;
+
+        TCOD_console_set_default_foreground(tooltip, foreground_color);
+        TCOD_console_print_frame(tooltip, 0, 0, tooltip_width, tooltip_height, false, TCOD_BKGND_SET, "");
+    }
 }
 
 void game_draw_tick(void)
 {
     map_draw_tick(player->map);
+
+    if (tooltip_visible)
+    {
+        TCOD_console_blit(tooltip, 0, 0, tooltip_width, tooltip_height, NULL, tooltip_x - view_x, tooltip_y - view_y, 1, 1);
+    }
 
     TCOD_console_flush();
 }
@@ -600,4 +580,6 @@ void game_finalize(void)
     TCOD_list_delete(messages);
 
     TCOD_console_delete(panel);
+
+    TCOD_console_delete(tooltip);
 }

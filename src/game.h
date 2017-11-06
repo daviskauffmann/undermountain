@@ -257,4 +257,12 @@ int content_height[NUM_CONTENTS];
 
 void panel_draw(void);
 
+/* Tooltip */
+TCOD_console_t tooltip;
+bool tooltip_visible;
+int tooltip_x;
+int tooltip_y;
+int tooltip_width;
+int tooltip_height;
+
 #endif

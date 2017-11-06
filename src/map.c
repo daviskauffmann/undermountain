@@ -54,7 +54,7 @@ map_t *map_create(void)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        light_create(map, x, y, 10, TCOD_color_RGB(TCOD_random_get_int(NULL, 128, 255), TCOD_random_get_int(NULL, 128, 255), TCOD_random_get_int(NULL, 128, 255)));
+        light_t *light = light_create(map, x, y, 10, TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255)));
     }
 
     for (int i = 0; i < NUM_ACTORS; i++)
@@ -78,7 +78,7 @@ map_t *map_create(void)
             continue;
         }
 
-        actor_create(map, x, y, '@', TCOD_red, 10);
+        actor_t *actor = actor_create(map, x, y, '@', TCOD_red, 10);
     }
 
     for (int i = 0; i < NUM_ITEMS; i++)
@@ -153,7 +153,7 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             }
         }
 
-        room_create(map, node->x, node->y, node->w, node->h);
+        room_t *room = room_create(map, node->x, node->y, node->w, node->h);
     }
     else
     {

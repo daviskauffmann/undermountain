@@ -92,17 +92,10 @@ game_input_t game_input(void)
         }
         else if (mouse.rbutton)
         {
-            if (tooltip_visible)
-            {
-                tooltip_visible = false;
-            }
-            else
-            {
-                tooltip_x = mouse_x;
-                tooltip_y = mouse_y;
+            tooltip_x = mouse_x;
+            tooltip_y = mouse_y;
 
-                tooltip_visible = true;
-            }
+            tooltip_visible = true;
 
             return GAME_INPUT_DRAW;
         }
@@ -556,6 +549,13 @@ void game_draw_turn(void)
 void game_draw_tick(void)
 {
     map_draw_tick(player->map);
+
+    int x = (tooltip_x + tooltip_width >= view_width)
+                ? view_width - tooltip_width
+                : tooltip_x;
+    int y = (tooltip_y + tooltip_height >= view_height)
+                ? view_height - tooltip_height
+                : tooltip_y;
 
     if (tooltip_visible)
     {

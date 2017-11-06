@@ -276,4 +276,17 @@ int tooltip_height;
 void tooltip_draw_turn(void);
 void tooltip_draw_tick(void);
 
+/* Alerts */
+TCOD_console_t alert;
+bool alert_visible;
+int alert_x;
+int alert_y;
+int alert_width;
+int alert_height;
+char *alert_text;
+
+void alert_show(char *message);
+void alert_draw_turn(void);
+void alert_draw_tick(void);
+
 #endif

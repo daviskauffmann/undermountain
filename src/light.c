@@ -33,6 +33,7 @@ void light_calc_fov(light_t *light)
 
 void light_turn(light_t *light)
 {
+    light_calc_fov(light);
 }
 
 void light_tick(light_t *light)

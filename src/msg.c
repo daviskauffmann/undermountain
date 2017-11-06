@@ -74,7 +74,7 @@ void msg_draw_turn(void)
                                              : TCOD_dark_gray;
 
         TCOD_console_set_default_foreground(msg, color);
-        message_y += TCOD_console_print_rect(msg, msg_x + 1, message_y, msg_width - 2, msg_height - 1, message);
+        message_y += TCOD_console_print_rect(msg, 1, message_y, msg_width - 2, msg_height - 2, message);
     }
 
     TCOD_list_delete(new_messages);

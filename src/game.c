@@ -7,6 +7,8 @@
 void game_initialize(void)
 {
     maps = TCOD_list_new();
+    player = NULL;
+    current_map_index = -1;
 
     tile_glyph[TILE_TYPE_EMPTY] = ' ';
     tile_glyph[TILE_TYPE_FLOOR] = '.';
@@ -45,9 +47,12 @@ void game_initialize(void)
     content_scroll[CONTENT_INVENTORY] = 0;
 
     tooltip = TCOD_console_new(screen_width, screen_height);
+    tooltip_visible = false;
 
-    // TODO: the lights break if this is moved to the top of this function
-    // why?
+    alert = TCOD_console_new(screen_width, screen_height);
+    alert_visible = false;
+    alert_text = "";
+
     map_t *map = map_create();
     current_map_index = 0;
 
@@ -132,6 +137,16 @@ game_input_t game_input(void)
         {
         case TCODK_ESCAPE:
             return GAME_INPUT_QUIT;
+
+        case TCODK_ENTER:
+            if (alert_visible)
+            {
+                alert_visible = false;
+
+                return GAME_INPUT_DRAW;
+            }
+
+            return GAME_INPUT_TICK;
 
         case TCODK_PAGEDOWN:
             if (content_scroll[content] + panel_height < content_height[content])
@@ -533,9 +548,6 @@ void game_draw_turn(void)
     TCOD_console_set_default_foreground(NULL, foreground_color);
     TCOD_console_clear(NULL);
 
-    tooltip_width = 8;
-    tooltip_height = 5;
-
     panel_width = screen_width / 2;
     panel_x = screen_width - panel_width;
     panel_y = 0;
@@ -553,6 +565,14 @@ void game_draw_turn(void)
     view_height = screen_height - (msg_visible ? msg_height : 0);
     view_x = player->x - view_width / 2;
     view_y = player->y - view_height / 2;
+
+    tooltip_width = 20;
+    tooltip_height = 6;
+
+    alert_width = 20;
+    alert_height = 20;
+    alert_x = (screen_width / 2) - (alert_width / 2);
+    alert_y = (screen_height / 2) - (alert_height / 2);
 
 #if CONSTRAIN_VIEW
     view_x = view_x < 0
@@ -574,6 +594,8 @@ void game_draw_turn(void)
     panel_draw_turn();
 
     tooltip_draw_turn();
+
+    alert_draw_turn();
 }
 
 void game_draw_tick(void)
@@ -585,6 +607,8 @@ void game_draw_tick(void)
     panel_draw_tick();
 
     tooltip_draw_tick();
+
+    alert_draw_tick();
 
     TCOD_console_flush();
 }
@@ -606,4 +630,6 @@ void game_finalize(void)
     TCOD_console_delete(panel);
 
     TCOD_console_delete(tooltip);
+
+    TCOD_console_delete(alert);
 }

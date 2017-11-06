@@ -371,9 +371,8 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             tile_t *tile = &map->tiles[x][y];
-            actor_t *actor = tile->actor;
 
-            TCOD_map_set_properties(TCOD_map, x, y, tile_transparent[tile->type], actor == NULL ? tile_walkable[tile->type] : false);
+            TCOD_map_set_properties(TCOD_map, x, y, tile_transparent[tile->type], tile->actor == NULL ? tile_walkable[tile->type] : false);
         }
     }
 

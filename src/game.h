@@ -72,7 +72,7 @@ typedef struct room_s
     int h;
 } room_t;
 
-room_t *room_create(map_t *map, int x, int y, int w, int h);
+room_t *room_create(int x, int y, int w, int h);
 void room_get_random_pos(room_t *room, int *x, int *y);
 bool room_is_inside(room_t *room, int x, int y);
 void room_destroy(room_t *room);
@@ -110,7 +110,6 @@ typedef struct actor_s
     TCOD_list_t items;
     int fov_radius;
     TCOD_map_t fov_map;
-    bool mark_for_delete;
 } actor_t;
 
 actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int fov_radius);
@@ -119,7 +118,6 @@ void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
 bool actor_move_towards(actor_t *actor, int x, int y);
 bool actor_move(actor_t *actor, int x, int y);
-void actor_pick_item(actor_t *actor, tile_t *tile);
 void actor_draw_turn(actor_t *actor);
 void actor_draw_tick(actor_t *actor);
 void actor_destroy(actor_t *actor);
@@ -128,7 +126,8 @@ void actor_destroy(actor_t *actor);
 typedef enum item_type_e {
     ITEM_TYPE_ARMOR,
     ITEM_TYPE_WEAPON,
-    ITEM_TYPE_POTION
+    ITEM_TYPE_POTION,
+    ITEM_TYPE_CORPSE
 } item_type_t;
 
 typedef struct item_s
@@ -157,9 +156,16 @@ typedef struct potion_s
     item_t item;
 } potion_t;
 
-armor_t *armor_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color, int ac);
-weapon_t *weapon_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color, int a, int x, int b);
-potion_t *potion_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color);
+typedef struct corpse_s
+{
+    item_t item;
+} corpse_t;
+
+item_t *item_create_random(void);
+armor_t *armor_create(unsigned char glyph, TCOD_color_t color, int ac);
+weapon_t *weapon_create(unsigned char glyph, TCOD_color_t color, int a, int x, int b);
+potion_t *potion_create(unsigned char glyph, TCOD_color_t color);
+corpse_t *corpse_create(actor_t *actor);
 void item_turn(item_t *item);
 void item_tick(item_t *item);
 void item_draw_turn(item_t *item, int x, int y);
@@ -198,7 +204,7 @@ void map_draw_tick(map_t *map);
 void map_destroy(map_t *map);
 
 /* Input */
-#define AUTOMOVE_DELAY 0.1f
+#define AUTOMOVE_DELAY 0.05f
 
 typedef enum game_input_e {
     GAME_INPUT_TICK,
@@ -235,7 +241,8 @@ int msg_height;
 TCOD_list_t messages;
 
 void msg_log(const char *message, map_t *map, int x, int y);
-void msg_draw(void);
+void msg_draw_turn(void);
+void msg_draw_tick(void);
 
 /* Side Menu */
 typedef enum content_e {
@@ -255,7 +262,8 @@ content_t content;
 int content_scroll[NUM_CONTENTS];
 int content_height[NUM_CONTENTS];
 
-void panel_draw(void);
+void panel_draw_turn(void);
+void panel_draw_tick(void);
 
 /* Tooltip */
 TCOD_console_t tooltip;
@@ -264,5 +272,8 @@ int tooltip_x;
 int tooltip_y;
 int tooltip_width;
 int tooltip_height;
+
+void tooltip_draw_turn(void);
+void tooltip_draw_tick(void);
 
 #endif

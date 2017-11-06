@@ -26,8 +26,13 @@ void msg_log(const char *message, map_t *map, int x, int y)
     }
 }
 
-void msg_draw(void)
+void msg_draw_turn(void)
 {
+    if (!msg_visible)
+    {
+        return;
+    }
+
     TCOD_console_set_default_background(msg, background_color);
     TCOD_console_set_default_foreground(msg, foreground_color);
     TCOD_console_clear(msg);
@@ -76,6 +81,14 @@ void msg_draw(void)
 
     TCOD_console_set_default_foreground(msg, foreground_color);
     TCOD_console_print_frame(msg, 0, 0, msg_width, msg_height, false, TCOD_BKGND_SET, "Log");
+}
+
+void msg_draw_tick(void)
+{
+    if (!msg_visible)
+    {
+        return;
+    }
 
     TCOD_console_blit(msg, 0, 0, msg_width, msg_height, NULL, msg_x, msg_y, 1, 1);
 }

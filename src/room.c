@@ -4,7 +4,7 @@
 #include "CMemLeak.h"
 #include "game.h"
 
-room_t *room_create(map_t *map, int x, int y, int w, int h)
+room_t *room_create(int x, int y, int w, int h)
 {
     room_t *room = (room_t *)malloc(sizeof(room_t));
 
@@ -12,8 +12,6 @@ room_t *room_create(map_t *map, int x, int y, int w, int h)
     room->y = y;
     room->w = w;
     room->h = h;
-
-    TCOD_list_push(map->rooms, room);
 
     return room;
 }

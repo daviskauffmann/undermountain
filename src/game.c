@@ -44,19 +44,28 @@ void game_initialize(void)
     content_scroll[CONTENT_CHARACTER] = 0;
     content_scroll[CONTENT_INVENTORY] = 0;
 
+    tooltip = TCOD_console_new(screen_width, screen_height);
+
     // TODO: the lights break if this is moved to the top of this function
     // why?
     map_t *map = map_create();
-    player = actor_create(map, map->stair_up_x, map->stair_up_y, '@', TCOD_white, 5);
     current_map_index = 0;
 
-    tooltip = TCOD_console_new(screen_width, screen_height);
+    player = actor_create(map, map->stair_up_x, map->stair_up_y, '@', TCOD_white, 5);
+
+    TCOD_list_push(map->actors, player);
+    map->tiles[player->x][player->y].actor = player;
+
+    item_t *item = item_create_random();
+
+    TCOD_list_push(player->items, item);
 
     msg_log("Hail, Player!", player->map, player->x, player->y);
 }
 
 game_input_t game_input(void)
 {
+    static bool automove = false;
     static int automove_x = -1;
     static int automove_y = -1;
     static actor_t *automove_actor = NULL;
@@ -73,22 +82,20 @@ game_input_t game_input(void)
 
         if (mouse.lbutton)
         {
-            automove_x = -1;
-            automove_y = -1;
-            automove_actor = NULL;
+            automove = false;
+
+            tooltip_visible = false;
 
             // TODO: check bounds and ignore if clicking in menus
             tile_t *tile = &player->map->tiles[mouse_x][mouse_y];
             actor_t *actor = tile->actor;
-            if (actor != NULL)
-            {
-                automove_actor = actor;
-            }
-            else
-            {
-                automove_x = mouse_x;
-                automove_y = mouse_y;
-            }
+
+            automove = true;
+            automove_actor = actor;
+            automove_x = mouse_x;
+            automove_y = mouse_y;
+
+            return GAME_INPUT_DRAW;
         }
         else if (mouse.rbutton)
         {
@@ -121,10 +128,6 @@ game_input_t game_input(void)
         return GAME_INPUT_TICK;
 
     case TCOD_EVENT_KEY_PRESS:
-        automove_x = -1;
-        automove_y = -1;
-        automove_actor = NULL;
-
         switch (key.vk)
         {
         case TCODK_ESCAPE:
@@ -246,7 +249,14 @@ game_input_t game_input(void)
                 return GAME_INPUT_TICK;
 
             case 'g':
-                actor_pick_item(player, &player->map->tiles[player->x][player->y]);
+                tile_t *tile = &player->map->tiles[player->x][player->y];
+
+                if (TCOD_list_size(tile->items) == 0)
+                {
+                    return GAME_INPUT_TICK;
+                }
+
+                TCOD_list_push(player->items, TCOD_list_pop(tile->items));
 
                 return GAME_INPUT_DRAW;
 
@@ -357,48 +367,84 @@ game_input_t game_input(void)
             return GAME_INPUT_TICK;
 
         case TCODK_KP1:
+            automove = false;
+
+            tooltip_visible = false;
+
             return actor_move(player, player->x - 1, player->y + 1)
                        ? GAME_INPUT_TURN
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP2:
         case TCODK_DOWN:
+            automove = false;
+
+            tooltip_visible = false;
+
             return actor_move(player, player->x, player->y + 1)
                        ? GAME_INPUT_TURN
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP3:
+            automove = false;
+
+            tooltip_visible = false;
+
             return actor_move(player, player->x + 1, player->y + 1)
                        ? GAME_INPUT_TURN
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP4:
         case TCODK_LEFT:
+            automove = false;
+
+            tooltip_visible = false;
+
             return actor_move(player, player->x - 1, player->y)
                        ? GAME_INPUT_TURN
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP5:
+            automove = false;
+
+            tooltip_visible = false;
+
             return GAME_INPUT_TURN;
 
         case TCODK_KP6:
         case TCODK_RIGHT:
+            automove = false;
+
+            tooltip_visible = false;
+
             return actor_move(player, player->x + 1, player->y)
                        ? GAME_INPUT_TURN
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP7:
+            automove = false;
+
+            tooltip_visible = false;
+
             return actor_move(player, player->x - 1, player->y - 1)
                        ? GAME_INPUT_TURN
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP8:
         case TCODK_UP:
+            automove = false;
+
+            tooltip_visible = false;
+
             return actor_move(player, player->x, player->y - 1)
                        ? GAME_INPUT_TURN
                        : GAME_INPUT_DRAW;
 
         case TCODK_KP9:
+            automove = false;
+
+            tooltip_visible = false;
+
             return actor_move(player, player->x + 1, player->y - 1)
                        ? GAME_INPUT_TURN
                        : GAME_INPUT_DRAW;
@@ -410,7 +456,7 @@ game_input_t game_input(void)
     static float automove_timer = 0.0f;
     static bool automove_ready = true;
 
-    if (automove_ready)
+    if (automove_ready && automove)
     {
         int x = automove_actor == NULL
                     ? automove_x
@@ -427,9 +473,7 @@ game_input_t game_input(void)
         }
         else
         {
-            automove_x = -1;
-            automove_y = -1;
-            automove_actor = NULL;
+            automove = false;
         }
     }
     else
@@ -489,9 +533,8 @@ void game_draw_turn(void)
     TCOD_console_set_default_foreground(NULL, foreground_color);
     TCOD_console_clear(NULL);
 
-    TCOD_console_set_default_background(tooltip, background_color);
-    TCOD_console_set_default_foreground(tooltip, foreground_color);
-    TCOD_console_clear(tooltip);
+    tooltip_width = 8;
+    tooltip_height = 5;
 
     panel_width = screen_width / 2;
     panel_x = screen_width - panel_width;
@@ -526,41 +569,22 @@ void game_draw_turn(void)
 
     map_draw_turn(player->map);
 
-    if (msg_visible)
-    {
-        msg_draw();
-    }
+    msg_draw_turn();
 
-    if (panel_visible)
-    {
-        panel_draw();
-    }
+    panel_draw_turn();
 
-    if (tooltip_visible)
-    {
-        tooltip_width = 8;
-        tooltip_height = 5;
-
-        TCOD_console_set_default_foreground(tooltip, foreground_color);
-        TCOD_console_print_frame(tooltip, 0, 0, tooltip_width, tooltip_height, false, TCOD_BKGND_SET, "");
-    }
+    tooltip_draw_turn();
 }
 
 void game_draw_tick(void)
 {
     map_draw_tick(player->map);
 
-    int x = (tooltip_x + tooltip_width >= view_width)
-                ? view_width - tooltip_width
-                : tooltip_x;
-    int y = (tooltip_y + tooltip_height >= view_height)
-                ? view_height - tooltip_height
-                : tooltip_y;
+    msg_draw_tick();
 
-    if (tooltip_visible)
-    {
-        TCOD_console_blit(tooltip, 0, 0, tooltip_width, tooltip_height, NULL, tooltip_x - view_x, tooltip_y - view_y, 1, 1);
-    }
+    panel_draw_tick();
+
+    tooltip_draw_tick();
 
     TCOD_console_flush();
 }

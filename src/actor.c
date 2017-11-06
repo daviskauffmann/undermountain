@@ -16,10 +16,6 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
     actor->items = TCOD_list_new();
     actor->fov_radius = fov_radius;
     actor->fov_map = NULL;
-    actor->mark_for_delete = false;
-
-    TCOD_list_push(map->actors, actor);
-    map->tiles[x][y].actor = actor;
 
     actor_calc_fov(actor);
 
@@ -29,6 +25,13 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
 void actor_turn(actor_t *actor)
 {
     actor_calc_fov(actor);
+
+    for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+    {
+        item_t *item = *i;
+
+        item_turn(item);
+    }
 
     if (actor == player)
     {
@@ -83,6 +86,12 @@ void actor_turn(actor_t *actor)
 
 void actor_tick(actor_t *actor)
 {
+    for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+    {
+        item_t *item = *i;
+
+        item_tick(item);
+    }
 }
 
 void actor_calc_fov(actor_t *actor)
@@ -166,7 +175,22 @@ bool actor_move(actor_t *actor, int x, int y)
         {
             msg_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
 
-            other->mark_for_delete = true;
+            corpse_t *corpse = corpse_create(other);
+
+            TCOD_list_push(other->map->tiles[other->x][other->y].items, corpse);
+
+            for (void **i = TCOD_list_begin(other->items); i != TCOD_list_end(other->items); i++)
+            {
+                item_t *item = *i;
+
+                i = TCOD_list_remove_iterator(other->items, i);
+                TCOD_list_push(other->map->tiles[other->x][other->y].items, item);
+            }
+
+            other->map->tiles[other->x][other->y].actor = NULL;
+            TCOD_list_remove(other->map->actors, other);
+
+            actor_destroy(other);
         }
 
         return true;
@@ -181,18 +205,13 @@ bool actor_move(actor_t *actor, int x, int y)
     return true;
 }
 
-void actor_pick_item(actor_t *actor, tile_t *tile)
+void actor_draw_turn(actor_t *actor)
 {
-    if (TCOD_list_size(tile->items) == 0)
+    if (!TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
     {
         return;
     }
 
-    TCOD_list_push(actor->items, TCOD_list_pop(tile->items));
-}
-
-void actor_draw_turn(actor_t *actor)
-{
     TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor->color);
     TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor->glyph);
 }
@@ -216,8 +235,6 @@ void actor_destroy(actor_t *actor)
     {
         TCOD_map_delete(actor->fov_map);
     }
-
-    actor->map->tiles[actor->x][actor->y].actor = NULL;
 
     free(actor);
 }

@@ -55,6 +55,9 @@ map_t *map_create(void)
         room_get_random_pos(room, &x, &y);
 
         light_t *light = light_create(map, x, y, 10, TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255)));
+
+        TCOD_list_push(map->lights, light);
+        map->tiles[x][y].light = light;
     }
 
     for (int i = 0; i < NUM_ACTORS; i++)
@@ -79,6 +82,13 @@ map_t *map_create(void)
         }
 
         actor_t *actor = actor_create(map, x, y, '@', TCOD_red, 10);
+
+        TCOD_list_push(map->actors, actor);
+        map->tiles[x][y].actor = actor;
+
+        item_t *item = item_create_random();
+
+        TCOD_list_push(actor->items, item);
     }
 
     for (int i = 0; i < NUM_ITEMS; i++)
@@ -88,24 +98,9 @@ map_t *map_create(void)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        item_t *item;
-        switch (TCOD_random_get_int(NULL, 0, 2))
-        {
-        case 0:
-            item = (item_t *)armor_create(map->tiles[x][y].items, ')', TCOD_white, 3);
+        item_t *item = item_create_random();
 
-            break;
-
-        case 1:
-            item = (item_t *)weapon_create(map->tiles[x][y].items, '|', TCOD_white, 1, 8, 0);
-
-            break;
-
-        case 2:
-            item = (item_t *)potion_create(map->tiles[x][y].items, '!', TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255)));
-
-            break;
-        }
+        TCOD_list_push(map->tiles[x][y].items, item);
     }
 
     TCOD_list_push(maps, map);
@@ -153,7 +148,9 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             }
         }
 
-        room_t *room = room_create(map, node->x, node->y, node->w, node->h);
+        room_t *room = room_create(node->x, node->y, node->w, node->h);
+
+        TCOD_list_push(map->rooms, room);
     }
     else
     {
@@ -318,16 +315,18 @@ void map_turn(map_t *map)
         }
     }
 
+    for (void **i = TCOD_list_begin(map->lights); i != TCOD_list_end(map->lights); i++)
+    {
+        light_t *light = *i;
+
+        light_turn(light);
+    }
+
     for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
     {
         actor_t *actor = *i;
 
-        if (actor->mark_for_delete)
-        {
-            i = TCOD_list_remove_iterator_fast(map->actors, i);
-
-            actor_destroy(actor);
-        }
+        actor_turn(actor);
     }
 }
 
@@ -341,6 +340,20 @@ void map_tick(map_t *map)
 
             tile_tick(tile);
         }
+    }
+
+    for (void **i = TCOD_list_begin(map->lights); i != TCOD_list_end(map->lights); i++)
+    {
+        light_t *light = *i;
+
+        light_tick(light);
+    }
+
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
+    {
+        actor_t *actor = *i;
+
+        actor_tick(actor);
     }
 }
 
@@ -383,6 +396,20 @@ void map_draw_turn(map_t *map)
             tile_draw_turn(tile, x, y);
         }
     }
+
+    for (void **i = TCOD_list_begin(map->lights); i != TCOD_list_end(map->lights); i++)
+    {
+        light_t *light = *i;
+
+        light_draw_turn(light);
+    }
+
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
+    {
+        actor_t *actor = *i;
+
+        actor_draw_turn(actor);
+    }
 }
 
 void map_draw_tick(map_t *map)
@@ -418,6 +445,20 @@ void map_draw_tick(map_t *map)
                 tile_draw_tick(tile, x, y, dx, dy, di);
             }
         }
+    }
+
+    for (void **i = TCOD_list_begin(map->lights); i != TCOD_list_end(map->lights); i++)
+    {
+        light_t *light = *i;
+
+        light_draw_tick(light);
+    }
+
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
+    {
+        actor_t *actor = *i;
+
+        actor_draw_tick(actor);
     }
 }
 

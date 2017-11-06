@@ -3,7 +3,33 @@
 
 #include "game.h"
 
-armor_t *armor_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color, int ac)
+item_t *item_create_random(void)
+{
+    item_t *item;
+
+    // TODO: item database
+    switch (TCOD_random_get_int(NULL, 0, 2))
+    {
+    case 0:
+        item = (item_t *)armor_create(')', TCOD_white, 3);
+
+        break;
+
+    case 1:
+        item = (item_t *)weapon_create('|', TCOD_white, 1, 8, 0);
+
+        break;
+
+    case 2:
+        item = (item_t *)potion_create('!', TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255)));
+
+        break;
+    }
+
+    return item;
+}
+
+armor_t *armor_create(unsigned char glyph, TCOD_color_t color, int ac)
 {
     armor_t *armor = (armor_t *)malloc(sizeof(armor_t));
     item_t *item = (item_t *)armor;
@@ -13,12 +39,10 @@ armor_t *armor_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color
     item->type = ITEM_TYPE_ARMOR;
     armor->ac = ac;
 
-    TCOD_list_push(items, item);
-
     return armor;
 }
 
-weapon_t *weapon_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color, int a, int x, int b)
+weapon_t *weapon_create(unsigned char glyph, TCOD_color_t color, int a, int x, int b)
 {
     weapon_t *weapon = (weapon_t *)malloc(sizeof(weapon_t));
     item_t *item = (item_t *)weapon;
@@ -30,12 +54,10 @@ weapon_t *weapon_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t col
     weapon->x = x;
     weapon->b = b;
 
-    TCOD_list_push(items, item);
-
     return weapon;
 }
 
-potion_t *potion_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t color)
+potion_t *potion_create(unsigned char glyph, TCOD_color_t color)
 {
     potion_t *potion = (potion_t *)malloc(sizeof(potion_t));
     item_t *item = (item_t *)potion;
@@ -44,9 +66,19 @@ potion_t *potion_create(TCOD_list_t items, unsigned char glyph, TCOD_color_t col
     item->color = color;
     item->type = ITEM_TYPE_POTION;
 
-    TCOD_list_push(items, item);
-
     return potion;
+}
+
+corpse_t *corpse_create(actor_t *actor)
+{
+    corpse_t *corpse = (corpse_t *)malloc(sizeof(corpse_t));
+    item_t *item = (item_t *)corpse;
+
+    item->glyph = '%';
+    item->color = actor->color;
+    item->type = ITEM_TYPE_CORPSE;
+
+    return corpse;
 }
 
 void item_turn(item_t *item)

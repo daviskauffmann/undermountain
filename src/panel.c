@@ -4,8 +4,13 @@
 #include "system.h"
 #include "game.h"
 
-void panel_draw(void)
+void panel_draw_turn(void)
 {
+    if (!panel_visible)
+    {
+        return;
+    }
+
     TCOD_console_set_default_background(panel, background_color);
     TCOD_console_set_default_foreground(panel, foreground_color);
     TCOD_console_clear(panel);
@@ -50,6 +55,14 @@ void panel_draw(void)
         TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
 
         break;
+    }
+}
+
+void panel_draw_tick(void)
+{
+    if (!panel_visible)
+    {
+        return;
     }
 
     TCOD_console_blit(panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);

@@ -16,19 +16,6 @@ void tile_initialize(tile_t *tile, tile_type_t type)
 
 void tile_turn(tile_t *tile)
 {
-    light_t *light = tile->light;
-    actor_t *actor = tile->actor;
-
-    if (light != NULL)
-    {
-        light_turn(light);
-    }
-
-    if (actor != NULL)
-    {
-        actor_turn(actor);
-    }
-
     for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
     {
         item_t *item = *i;
@@ -39,19 +26,6 @@ void tile_turn(tile_t *tile)
 
 void tile_tick(tile_t *tile)
 {
-    light_t *light = tile->light;
-    actor_t *actor = tile->actor;
-
-    if (light != NULL)
-    {
-        light_tick(light);
-    }
-
-    if (actor != NULL)
-    {
-        actor_tick(actor);
-    }
-
     for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
     {
         item_t *item = *i;
@@ -62,10 +36,6 @@ void tile_tick(tile_t *tile)
 
 void tile_draw_turn(tile_t *tile, int x, int y)
 {
-    light_t *light = tile->light;
-    actor_t *actor = tile->actor;
-    item_t *item = TCOD_list_peek(tile->items);
-
     if (TCOD_map_is_in_fov(player->fov_map, x, y))
     {
         tile->seen = true;
@@ -91,23 +61,20 @@ void tile_draw_turn(tile_t *tile, int x, int y)
         }
     }
 
-    if (actor != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
+    if (tile->light != NULL)
     {
-        actor_draw_turn(actor);
-
         return;
     }
 
+    if (tile->actor != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
+    {
+        return;
+    }
+
+    item_t *item = TCOD_list_peek(tile->items);
     if (item != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
         item_draw_turn(item, x, y);
-
-        return;
-    }
-
-    if (light != NULL)
-    {
-        light_draw_turn(light);
 
         return;
     }
@@ -168,27 +135,20 @@ void tile_draw_turn(tile_t *tile, int x, int y)
 
 void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
 {
-    light_t *light = tile->light;
-    actor_t *actor = tile->actor;
-    item_t *item = TCOD_list_peek(tile->items);
-
-    if (actor != NULL)
+    if (tile->light != NULL)
     {
-        actor_draw_tick(actor);
-
         return;
     }
 
+    if (tile->actor != NULL)
+    {
+        return;
+    }
+
+    item_t *item = TCOD_list_peek(tile->items);
     if (item != NULL)
     {
         item_draw_tick(item, x, y);
-
-        return;
-    }
-
-    if (light != NULL)
-    {
-        light_draw_tick(light);
 
         return;
     }

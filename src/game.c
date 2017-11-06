@@ -29,7 +29,7 @@ void game_initialize(void)
     background_color = TCOD_black;
     foreground_color = TCOD_white;
     tile_color_light = TCOD_white;
-    tile_color_dark = TCOD_darkest_gray;
+    tile_color_dark = TCOD_color_RGB(16, 16, 16);
     torch_color = TCOD_light_amber;
 
     sfx = true;

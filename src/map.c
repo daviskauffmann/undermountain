@@ -54,7 +54,7 @@ map_t *map_create(void)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        light_create(map, x, y, 20, TCOD_color_RGB(TCOD_random_get_int(NULL, 128, 255), TCOD_random_get_int(NULL, 128, 255), TCOD_random_get_int(NULL, 128, 255)));
+        light_create(map, x, y, 10, TCOD_color_RGB(TCOD_random_get_int(NULL, 128, 255), TCOD_random_get_int(NULL, 128, 255), TCOD_random_get_int(NULL, 128, 255)));
     }
 
     for (int i = 0; i < NUM_ACTORS; i++)
@@ -409,11 +409,6 @@ void map_draw_tick(map_t *map)
             for (int y = view_y; y < view_y + view_height; y++)
             {
                 if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
-                {
-                    continue;
-                }
-
-                if (!TCOD_map_is_in_fov(player->fov_map, x, y))
                 {
                     continue;
                 }

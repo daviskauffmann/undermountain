@@ -59,6 +59,11 @@ void item_tick(item_t *item)
 
 void item_draw_turn(item_t *item, int x, int y)
 {
+    if (!TCOD_map_is_in_fov(player->fov_map, x, y))
+    {
+        return;
+    }
+
     TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, item->color);
     TCOD_console_set_char(NULL, x - view_x, y - view_y, item->glyph);
 }

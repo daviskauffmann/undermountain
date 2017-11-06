@@ -172,7 +172,7 @@ void item_destroy(item_t *item);
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
-#define NUM_LIGHTS 10
+#define NUM_LIGHTS 5
 #define NUM_ACTORS 50
 #define NUM_ITEMS 100
 

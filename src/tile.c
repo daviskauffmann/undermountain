@@ -91,21 +91,18 @@ void tile_draw_turn(tile_t *tile, int x, int y)
         }
     }
 
-    if (TCOD_map_is_in_fov(player->fov_map, x, y))
+    if (actor != NULL && TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
     {
-        if (actor != NULL)
-        {
-            actor_draw_turn(actor);
+        actor_draw_turn(actor);
 
-            return;
-        }
+        return;
+    }
 
-        if (item != NULL)
-        {
-            item_draw_turn(item, x, y);
+    if (item != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
+    {
+        item_draw_turn(item, x, y);
 
-            return;
-        }
+        return;
     }
 
     if (light != NULL)
@@ -147,7 +144,7 @@ void tile_draw_turn(tile_t *tile, int x, int y)
             float light_d = pow(x - light->x, 2) + pow(y - light->y, 2);
             float light_l = CLAMP(0.0f, 1.0f, (light_r2 - light_d) / light_r2);
 
-            color = TCOD_color_lerp(tile_color_dark, light->color, light_l);
+            color = TCOD_color_lerp(color, light->color, light_l);
         }
     }
 
@@ -228,7 +225,7 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
             float light_d = pow(x - light->x + dx, 2) + pow(y - light->y + dy, 2);
             float light_l = CLAMP(0.0f, 1.0f, (light_r2 - light_d) / light_r2 + di);
 
-            color = TCOD_color_lerp(tile_color_dark, light->color, light_l);
+            color = TCOD_color_lerp(color, light->color, light_l);
         }
     }
 

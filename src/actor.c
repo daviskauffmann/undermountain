@@ -16,6 +16,7 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
     actor->items = TCOD_list_new();
     actor->fov_radius = fov_radius;
     actor->fov_map = NULL;
+    actor->mark_for_delete = false;
 
     actor_calc_fov(actor);
 
@@ -175,22 +176,7 @@ bool actor_move(actor_t *actor, int x, int y)
         {
             msg_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
 
-            corpse_t *corpse = corpse_create(other);
-
-            TCOD_list_push(other->map->tiles[other->x][other->y].items, corpse);
-
-            for (void **i = TCOD_list_begin(other->items); i != TCOD_list_end(other->items); i++)
-            {
-                item_t *item = *i;
-
-                i = TCOD_list_remove_iterator(other->items, i);
-                TCOD_list_push(other->map->tiles[other->x][other->y].items, item);
-            }
-
-            other->map->tiles[other->x][other->y].actor = NULL;
-            TCOD_list_remove(other->map->actors, other);
-
-            actor_destroy(other);
+            other->mark_for_delete = true;
         }
 
         return true;

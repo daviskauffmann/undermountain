@@ -16,6 +16,11 @@ void tile_initialize(tile_t *tile, tile_type_t type)
 
 void tile_turn(tile_t *tile)
 {
+    // if (tile->actor != NULL)
+    // {
+    //     actor_turn(tile->actor);
+    // }
+
     for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
     {
         item_t *item = *i;

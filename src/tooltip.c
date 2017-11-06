@@ -29,5 +29,5 @@ void tooltip_draw_tick(void)
         return;
     }
 
-    TCOD_console_blit(tooltip, 0, 0, tooltip_width, tooltip_height, NULL, tooltip_x - view_x, tooltip_y - view_y, 1, 1);
+    TCOD_console_blit(tooltip, 0, 0, tooltip_width, tooltip_height, NULL, tooltip_x, tooltip_y, 1, 1);
 }

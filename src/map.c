@@ -86,9 +86,12 @@ map_t *map_create(void)
         TCOD_list_push(map->actors, actor);
         map->tiles[x][y].actor = actor;
 
-        item_t *item = item_create_random();
+        if (TCOD_random_get_int(NULL, 0, 4) == 0)
+        {
+            item_t *item = item_create_random();
 
-        TCOD_list_push(actor->items, item);
+            TCOD_list_push(actor->items, item);
+        }
     }
 
     for (int i = 0; i < NUM_ITEMS; i++)
@@ -327,6 +330,34 @@ void map_turn(map_t *map)
         actor_t *actor = *i;
 
         actor_turn(actor);
+    }
+
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
+    {
+        actor_t *actor = *i;
+        tile_t *tile = &actor->map->tiles[actor->x][actor->y];
+
+        if (!actor->mark_for_delete)
+        {
+            continue;
+        }
+
+        corpse_t *corpse = corpse_create(actor);
+
+        TCOD_list_push(tile->items, corpse);
+
+        for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+        {
+            item_t *item = *i;
+
+            i = TCOD_list_remove_iterator(actor->items, i);
+            TCOD_list_push(tile->items, item);
+        }
+
+        tile->actor = NULL;
+        i = TCOD_list_remove_iterator(actor->map->actors, i);
+
+        actor_destroy(actor);
     }
 }
 

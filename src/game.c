@@ -51,7 +51,6 @@ void game_initialize(void)
 
     alert = TCOD_console_new(screen_width, screen_height);
     alert_visible = false;
-    alert_text = "";
 
     map_t *map = map_create();
     current_map_index = 0;
@@ -87,27 +86,44 @@ game_input_t game_input(void)
 
         if (mouse.lbutton)
         {
-            automove = false;
+            if (mouse_x >= view_x && mouse_x < view_x + view_width && mouse_y >= view_y && mouse_y < view_y + view_height)
+            {
+                if (tooltip_visible)
+                {
+                    if (mouse_x >= tooltip_tile_x && mouse_x < tooltip_tile_x + tooltip_width && mouse_y >= tooltip_tile_y && mouse_y < tooltip_tile_y + tooltip_height)
+                    {
+                        // we are inside the tooltip
+                        return GAME_INPUT_DRAW;
+                    }
+                }
 
-            tooltip_visible = false;
+                tooltip_visible = false;
 
-            // TODO: check bounds and ignore if clicking in menus
-            tile_t *tile = &player->map->tiles[mouse_x][mouse_y];
-            actor_t *actor = tile->actor;
+                tile_t *tile = &player->map->tiles[mouse_x][mouse_y];
+                actor_t *actor = tile->actor;
 
-            automove = true;
-            automove_actor = actor;
-            automove_x = mouse_x;
-            automove_y = mouse_y;
+                automove = true;
+                automove_actor = actor;
+                automove_x = mouse_x;
+                automove_y = mouse_y;
 
-            return GAME_INPUT_DRAW;
+                return GAME_INPUT_DRAW;
+            }
+
+            return GAME_INPUT_TICK;
         }
         else if (mouse.rbutton)
         {
-            tooltip_x = mouse_x;
-            tooltip_y = mouse_y;
-
-            tooltip_visible = true;
+            if (tooltip_visible)
+            {
+                tooltip_visible = false;
+            }
+            else
+            {
+                tooltip_visible = true;
+                tooltip_tile_x = mouse_x;
+                tooltip_tile_y = mouse_y;
+            }
 
             return GAME_INPUT_DRAW;
         }
@@ -191,10 +207,9 @@ game_input_t game_input(void)
                     player->map->tiles[player->x][player->y].actor = NULL;
                     new_map->tiles[new_map->stair_down_x][new_map->stair_down_y].actor = player;
 
+                    player->map = new_map;
                     player->x = new_map->stair_down_x;
                     player->y = new_map->stair_down_y;
-
-                    player->map = new_map;
 
                     return GAME_INPUT_TURN;
                 }
@@ -222,10 +237,9 @@ game_input_t game_input(void)
                     player->map->tiles[player->x][player->y].actor = NULL;
                     new_map->tiles[new_map->stair_up_x][new_map->stair_up_y].actor = player;
 
+                    player->map = new_map;
                     player->x = new_map->stair_up_x;
                     player->y = new_map->stair_up_y;
-
-                    player->map = new_map;
 
                     return GAME_INPUT_TURN;
                 }
@@ -566,14 +580,6 @@ void game_draw_turn(void)
     view_x = player->x - view_width / 2;
     view_y = player->y - view_height / 2;
 
-    tooltip_width = 20;
-    tooltip_height = 6;
-
-    alert_width = 20;
-    alert_height = 20;
-    alert_x = (screen_width / 2) - (alert_width / 2);
-    alert_y = (screen_height / 2) - (alert_height / 2);
-
 #if CONSTRAIN_VIEW
     view_x = view_x < 0
                  ? 0
@@ -586,6 +592,17 @@ void game_draw_turn(void)
                        ? MAP_HEIGHT - view_height
                        : view_y;
 #endif
+
+    // TODO: keep this in the view
+    tooltip_width = 20;
+    tooltip_height = 6;
+    tooltip_x = tooltip_tile_x - view_x;
+    tooltip_y = tooltip_tile_y - view_y;
+
+    alert_width = 20;
+    alert_height = 20;
+    alert_x = (screen_width / 2) - (alert_width / 2);
+    alert_y = (screen_height / 2) - (alert_height / 2);
 
     map_draw_turn(player->map);
 

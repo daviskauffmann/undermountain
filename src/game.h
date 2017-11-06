@@ -110,6 +110,7 @@ typedef struct actor_s
     TCOD_list_t items;
     int fov_radius;
     TCOD_map_t fov_map;
+    bool mark_for_delete;
 } actor_t;
 
 actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int fov_radius);
@@ -272,6 +273,8 @@ int tooltip_x;
 int tooltip_y;
 int tooltip_width;
 int tooltip_height;
+int tooltip_tile_x;
+int tooltip_tile_y;
 
 void tooltip_draw_turn(void);
 void tooltip_draw_tick(void);

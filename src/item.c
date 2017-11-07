@@ -1,6 +1,6 @@
-#include "CMemLeak.h"
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "game.h"
 
 item_t *item_create_random(void)

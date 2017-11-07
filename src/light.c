@@ -1,6 +1,6 @@
-#include "CMemLeak.h"
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "game.h"
 
 light_t *light_create(map_t *map, int x, int y, int radius, TCOD_color_t color)

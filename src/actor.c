@@ -1,7 +1,9 @@
-#include "CMemLeak.h"
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "game.h"
+
+#define LIT_ROOMS 0
 
 actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int fov_radius)
 {
@@ -54,7 +56,7 @@ void actor_turn(actor_t *actor)
             {
                 msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
 
-                actor_move_towards(actor, other->x, other->y);
+                actor_move_towards(actor, other->x, other->y, true, false);
             }
         }
     }
@@ -63,22 +65,22 @@ void actor_turn(actor_t *actor)
         switch (TCOD_random_get_int(NULL, 0, 8))
         {
         case 0:
-            actor_move(actor, actor->x, actor->y - 1);
+            actor_move(actor, actor->x, actor->y - 1, false, false);
 
             break;
 
         case 1:
-            actor_move(actor, actor->x, actor->y + 1);
+            actor_move(actor, actor->x, actor->y + 1, false, false);
 
             break;
 
         case 2:
-            actor_move(actor, actor->x - 1, actor->y);
+            actor_move(actor, actor->x - 1, actor->y, false, false);
 
             break;
 
         case 3:
-            actor_move(actor, actor->x + 1, actor->y);
+            actor_move(actor, actor->x + 1, actor->y, false, false);
 
             break;
         }
@@ -127,7 +129,7 @@ void actor_calc_fov(actor_t *actor)
 #endif
 }
 
-bool actor_move_towards(actor_t *actor, int x, int y)
+bool actor_move_towards(actor_t *actor, int x, int y, bool attack, bool take_items)
 {
     TCOD_map_set_properties(actor->fov_map, x, y, TCOD_map_is_transparent(actor->fov_map, x, y), true);
 
@@ -138,10 +140,16 @@ bool actor_move_towards(actor_t *actor, int x, int y)
 
     if (!TCOD_path_is_empty(path))
     {
-        int x, y;
-        if (TCOD_path_walk(path, &x, &y, false))
+        int next_x, next_y;
+        if (TCOD_path_walk(path, &next_x, &next_y, false))
         {
-            success = actor_move(actor, x, y);
+            if (next_x != x || next_y != y)
+            {
+                attack = false;
+                take_items = false;
+            }
+
+            success = actor_move(actor, next_x, next_y, attack, take_items);
         }
     }
 
@@ -150,7 +158,7 @@ bool actor_move_towards(actor_t *actor, int x, int y)
     return success;
 }
 
-bool actor_move(actor_t *actor, int x, int y)
+bool actor_move(actor_t *actor, int x, int y, bool attack, bool take_items)
 {
     if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
     {
@@ -172,7 +180,7 @@ bool actor_move(actor_t *actor, int x, int y)
         // TODO: dealing with corpses, is_dead flag or separate object altogether?
         // if corpses can be resurrected, they will need to store information about the actor
         // if corpses can be picked up, they will need to act like items
-        if (other != player)
+        if (attack && other != player)
         {
             msg_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
 
@@ -180,6 +188,18 @@ bool actor_move(actor_t *actor, int x, int y)
         }
 
         return true;
+    }
+
+    if (take_items && TCOD_list_size(tile->items) > 0)
+    {
+        for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
+        {
+            item_t *item = *i;
+
+            i = TCOD_list_remove_iterator(tile->items, i);
+
+            TCOD_list_push(actor->items, item);
+        }
     }
 
     actor->map->tiles[actor->x][actor->y].actor = NULL;

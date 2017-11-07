@@ -16,6 +16,8 @@ void system_init(void)
     font_char_horiz = 16;
     font_char_vertic = 16;
 
+    sfx = true;
+
     TCOD_sys_set_fps(FPS);
 
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);

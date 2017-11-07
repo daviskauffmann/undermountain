@@ -31,13 +31,14 @@ int main(int argc, char *argv[])
     //     }
     // }
 
-    game_initialize();
+    game_init();
+    game_new();
 
     goto draw;
 
     while (!TCOD_console_is_window_closed())
     {
-        switch (game_input())
+        switch (input_handle())
         {
         case GAME_INPUT_TICK:
             goto tick;
@@ -64,7 +65,7 @@ int main(int argc, char *argv[])
     }
 
 quit:
-    game_finalize();
+    game_uninit();
 
     SDL_Quit();
 

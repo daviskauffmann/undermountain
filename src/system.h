@@ -16,6 +16,9 @@ int font_flags;
 int font_char_horiz;
 int font_char_vertic;
 
+/* Graphics */
+bool sfx;
+
 void system_init(void);
 
 #endif

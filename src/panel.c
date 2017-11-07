@@ -4,6 +4,50 @@
 #include "system.h"
 #include "game.h"
 
+static TCOD_console_t panel;
+
+static content_t content;
+static int content_scroll[NUM_CONTENTS];
+
+void panel_init(void)
+{
+    panel = TCOD_console_new(screen_width, screen_height);
+    panel_visible = false;
+    content = CONTENT_CHARACTER;
+    content_scroll[CONTENT_CHARACTER] = 0;
+    content_scroll[CONTENT_INVENTORY] = 0;
+}
+
+void panel_toggle(content_t new_content)
+{
+    if (panel_visible && content == new_content)
+    {
+        panel_visible = false;
+    }
+    else
+    {
+        content = new_content;
+
+        panel_visible = true;
+    }
+}
+
+void panel_content_scroll_down(void)
+{
+    if (content_scroll[content] + panel_height < content_height[content])
+    {
+        content_scroll[content]++;
+    }
+}
+
+void panel_content_scroll_up(void)
+{
+    if (content_scroll[content] > 0)
+    {
+        content_scroll[content]--;
+    }
+}
+
 void panel_draw_turn(void)
 {
     if (!panel_visible)
@@ -66,4 +110,9 @@ void panel_draw_tick(void)
     }
 
     TCOD_console_blit(panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
+}
+
+void panel_uninit(void)
+{
+    TCOD_console_delete(panel);
 }

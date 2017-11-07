@@ -16,13 +16,10 @@ typedef enum game_input_e game_input_t;
 typedef enum content_e content_t;
 
 /* Game */
-#define SIMULATE_ALL_MAPS 1
-
-TCOD_list_t maps;
 actor_t *player;
 int current_map_index;
 
-void game_initialize(void);
+void game_init(void);
 game_input_t game_input(void);
 void game_turn(void);
 void game_tick(void);
@@ -30,7 +27,7 @@ void game_save(void);
 void game_load(void);
 void game_draw_turn(void);
 void game_draw_tick(void);
-void game_finalize(void);
+void game_uninit(void);
 
 /* Tiles */
 typedef enum tile_type_e {
@@ -56,12 +53,12 @@ unsigned char tile_glyph[NUM_TILE_TYPES];
 bool tile_transparent[NUM_TILE_TYPES];
 bool tile_walkable[NUM_TILE_TYPES];
 
-void tile_initialize(tile_t *tile, tile_type_t type);
+void tile_init(tile_t *tile, tile_type_t type);
 void tile_turn(tile_t *tile);
 void tile_tick(tile_t *tile);
 void tile_draw_turn(tile_t *tile, int x, int y);
 void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di);
-void tile_finalize(tile_t *tile);
+void tile_uninit(tile_t *tile);
 
 /* Rooms */
 typedef struct room_s
@@ -97,8 +94,6 @@ void light_draw_tick(light_t *light);
 void light_destroy(light_t *light);
 
 /* Actors */
-#define LIT_ROOMS 0
-
 typedef struct actor_s
 {
     map_t *map;
@@ -117,8 +112,8 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
-bool actor_move_towards(actor_t *actor, int x, int y);
-bool actor_move(actor_t *actor, int x, int y);
+bool actor_move_towards(actor_t *actor, int x, int y, bool attack, bool take_items);
+bool actor_move(actor_t *actor, int x, int y, bool attack, bool take_items);
 void actor_draw_turn(actor_t *actor);
 void actor_draw_tick(actor_t *actor);
 void actor_destroy(actor_t *actor);
@@ -176,12 +171,6 @@ void item_destroy(item_t *item);
 /* Maps */
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
-#define BSP_DEPTH 10
-#define MIN_ROOM_SIZE 5
-#define FULL_ROOMS 1
-#define NUM_LIGHTS 5
-#define NUM_ACTORS 50
-#define NUM_ITEMS 100
 
 typedef struct map_s
 {
@@ -204,9 +193,17 @@ void map_draw_turn(map_t *map);
 void map_draw_tick(map_t *map);
 void map_destroy(map_t *map);
 
-/* Input */
-#define AUTOMOVE_DELAY 0.05f
+/* World */
+TCOD_list_t maps;
 
+void world_init(void);
+void world_turn(void);
+void world_tick(void);
+void world_draw_turn(void);
+void world_draw_tick(void);
+void world_uninit(void);
+
+/* Input */
 typedef enum game_input_e {
     GAME_INPUT_TICK,
     GAME_INPUT_TURN,
@@ -214,8 +211,16 @@ typedef enum game_input_e {
     GAME_INPUT_QUIT
 } game_input_t;
 
+int mouse_x;
+int mouse_y;
+int mouse_tile_x;
+int mouse_tile_y;
+
 /* Graphics */
-#define CONSTRAIN_VIEW 1
+int view_x;
+int view_y;
+int view_width;
+int view_height;
 
 TCOD_color_t background_color;
 TCOD_color_t foreground_color;
@@ -223,27 +228,18 @@ TCOD_color_t tile_color_light;
 TCOD_color_t tile_color_dark;
 TCOD_color_t torch_color;
 
-bool sfx;
-
-int view_x;
-int view_y;
-int view_width;
-int view_height;
-
 /* Message Log */
-#define MAX_MESSAGES 20
-
-TCOD_console_t msg;
 bool msg_visible;
 int msg_x;
 int msg_y;
 int msg_width;
 int msg_height;
-TCOD_list_t messages;
 
+void msg_init(void);
 void msg_log(const char *message, map_t *map, int x, int y);
 void msg_draw_turn(void);
 void msg_draw_tick(void);
+void msg_uninit(void);
 
 /* Side Menu */
 typedef enum content_e {
@@ -253,21 +249,34 @@ typedef enum content_e {
     NUM_CONTENTS
 } content_t;
 
-TCOD_console_t panel;
 bool panel_visible;
 int panel_x;
 int panel_y;
 int panel_width;
 int panel_height;
-content_t content;
-int content_scroll[NUM_CONTENTS];
 int content_height[NUM_CONTENTS];
 
+void panel_init(void);
+void panel_toggle(content_t new_content);
+void panel_content_scroll_down(void);
+void panel_content_scroll_up(void);
 void panel_draw_turn(void);
 void panel_draw_tick(void);
+void panel_uninit(void);
 
 /* Tooltip */
-TCOD_console_t tooltip;
+typedef enum tooltip_opt_type_e {
+    TOOLTIP_OPT_MOVE,
+    TOOLTIP_OPT_ATTACK,
+    TOOLTIP_OPT_TAKE
+} tooltip_opt_type_t;
+
+typedef struct tooltip_opts_s
+{
+    char *text;
+    tooltip_opt_type_t type;
+} tooltip_opts_t;
+
 bool tooltip_visible;
 int tooltip_x;
 int tooltip_y;
@@ -276,7 +285,14 @@ int tooltip_height;
 int tooltip_tile_x;
 int tooltip_tile_y;
 
+void tooltip_init(void);
+void tooltip_opts_add(char *text, tooltip_opt_type_t type);
+tooltip_opts_t *tooltip_opts_select(void);
+void tooltip_opts_clear(void);
+void tooltip_show(int x, int y);
+void tooltip_hide(void);
 void tooltip_draw_turn(void);
 void tooltip_draw_tick(void);
+void tooltip_uninit(void);
 
 #endif

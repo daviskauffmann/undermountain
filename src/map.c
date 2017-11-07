@@ -2,7 +2,15 @@
 #include <libtcod.h>
 
 #include "CMemLeak.h"
+#include "system.h"
 #include "game.h"
+
+#define BSP_DEPTH 10
+#define MIN_ROOM_SIZE 5
+#define FULL_ROOMS 1
+#define NUM_LIGHTS 5
+#define NUM_ACTORS 50
+#define NUM_ITEMS 100
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);
 static void vline(map_t *map, int x, int y1, int y2);
@@ -30,7 +38,7 @@ map_t *map_create(void)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            tile_initialize(tile, TILE_TYPE_WALL);
+            tile_init(tile, TILE_TYPE_WALL);
         }
     }
 
@@ -110,8 +118,6 @@ map_t *map_create(void)
 
         TCOD_list_push(map->tiles[x][y].items, item);
     }
-
-    TCOD_list_push(maps, map);
 
     return map;
 }
@@ -505,7 +511,7 @@ void map_destroy(map_t *map)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            tile_finalize(tile);
+            tile_uninit(tile);
         }
     }
 

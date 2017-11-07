@@ -6,6 +6,18 @@
 #include "system.h"
 #include "game.h"
 
+#define MAX_MESSAGES 20
+
+static TCOD_console_t msg;
+static TCOD_list_t messages;
+
+void msg_init(void)
+{
+    msg = TCOD_console_new(screen_width, screen_height);
+    msg_visible = true;
+    messages = TCOD_list_new();
+}
+
 void msg_log(const char *message, map_t *map, int x, int y)
 {
     if (map != player->map)
@@ -91,4 +103,10 @@ void msg_draw_tick(void)
     }
 
     TCOD_console_blit(msg, 0, 0, msg_width, msg_height, NULL, msg_x, msg_y, 1, 1);
+}
+
+void msg_uninit(void)
+{
+    TCOD_console_delete(msg);
+    TCOD_list_delete(messages);
 }

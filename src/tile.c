@@ -5,7 +5,7 @@
 #include "CMemLeak.h"
 #include "game.h"
 
-void tile_initialize(tile_t *tile, tile_type_t type)
+void tile_init(tile_t *tile, tile_type_t type)
 {
     tile->type = type;
     tile->seen = false;
@@ -211,7 +211,7 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
     TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
 }
 
-void tile_finalize(tile_t *tile)
+void tile_uninit(tile_t *tile)
 {
     for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
     {

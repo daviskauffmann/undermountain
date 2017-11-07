@@ -49,9 +49,6 @@ void game_initialize(void)
     tooltip = TCOD_console_new(screen_width, screen_height);
     tooltip_visible = false;
 
-    alert = TCOD_console_new(screen_width, screen_height);
-    alert_visible = false;
-
     map_t *map = map_create();
     current_map_index = 0;
 
@@ -153,16 +150,6 @@ game_input_t game_input(void)
         {
         case TCODK_ESCAPE:
             return GAME_INPUT_QUIT;
-
-        case TCODK_ENTER:
-            if (alert_visible)
-            {
-                alert_visible = false;
-
-                return GAME_INPUT_DRAW;
-            }
-
-            return GAME_INPUT_TICK;
 
         case TCODK_PAGEDOWN:
             if (content_scroll[content] + panel_height < content_height[content])
@@ -599,11 +586,6 @@ void game_draw_turn(void)
     tooltip_x = tooltip_tile_x - view_x;
     tooltip_y = tooltip_tile_y - view_y;
 
-    alert_width = 20;
-    alert_height = 20;
-    alert_x = (screen_width / 2) - (alert_width / 2);
-    alert_y = (screen_height / 2) - (alert_height / 2);
-
     map_draw_turn(player->map);
 
     msg_draw_turn();
@@ -611,8 +593,6 @@ void game_draw_turn(void)
     panel_draw_turn();
 
     tooltip_draw_turn();
-
-    alert_draw_turn();
 }
 
 void game_draw_tick(void)
@@ -624,8 +604,6 @@ void game_draw_tick(void)
     panel_draw_tick();
 
     tooltip_draw_tick();
-
-    alert_draw_tick();
 
     TCOD_console_flush();
 }
@@ -647,6 +625,4 @@ void game_finalize(void)
     TCOD_console_delete(panel);
 
     TCOD_console_delete(tooltip);
-
-    TCOD_console_delete(alert);
 }

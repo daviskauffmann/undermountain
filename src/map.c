@@ -83,6 +83,11 @@ map_t *map_create(void)
 
         actor_t *actor = actor_create(map, x, y, '@', TCOD_red, 10);
 
+        if (TCOD_random_get_int(NULL, 0, 1) == 0)
+        {
+            actor->torch = true;
+        }
+
         TCOD_list_push(map->actors, actor);
         map->tiles[x][y].actor = actor;
 

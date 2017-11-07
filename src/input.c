@@ -67,17 +67,11 @@ game_input_t input_handle(void)
                         break;
 
                     case TOOLTIP_OPT_ATTACK:
-                        automove_attack = true;
-                        automove_take_items = false;
-
                         automove_set(tooltip_tile_x, tooltip_tile_y, true, false);
 
                         break;
 
                     case TOOLTIP_OPT_TAKE:
-                        automove_attack = false;
-                        automove_take_items = true;
-
                         automove_set(tooltip_tile_x, tooltip_tile_y, false, true);
 
                         break;
@@ -93,7 +87,14 @@ game_input_t input_handle(void)
                 return GAME_INPUT_DRAW;
             }
 
-            automove_set(mouse_tile_x, mouse_tile_y, true, true);
+            if (TCOD_map_is_in_fov(player->fov_map, mouse_tile_x, mouse_tile_y))
+            {
+                automove_set(mouse_tile_x, mouse_tile_y, true, true);
+            }
+            else
+            {
+                automove_set(mouse_tile_x, mouse_tile_y, false, false);
+            }
 
             return GAME_INPUT_DRAW;
         }
@@ -101,22 +102,34 @@ game_input_t input_handle(void)
         {
             if (mouse_tile_x >= view_x && mouse_tile_x < view_x + view_width && mouse_tile_y >= view_y && mouse_tile_y < view_y + view_height)
             {
-                tooltip_hide();
-
-                tooltip_show(mouse_tile_x, mouse_tile_y);
-
-                tooltip_opts_clear();
-
-                tile_t *tile = &player->map->tiles[tooltip_tile_x][tooltip_tile_y];
-
-                tooltip_opts_add(tile->actor == NULL ? "Move" : "Follow", TOOLTIP_OPT_MOVE);
-                if (tile->actor != NULL)
+                if (tooltip_visible)
                 {
-                    tooltip_opts_add("Attack", TOOLTIP_OPT_ATTACK);
+                    tooltip_hide();
                 }
-                if (TCOD_list_peek(tile->items))
+                else
                 {
-                    tooltip_opts_add("Take", TOOLTIP_OPT_TAKE);
+                    tooltip_show(mouse_tile_x, mouse_tile_y);
+
+                    tooltip_opts_clear();
+
+                    tile_t *tile = &player->map->tiles[tooltip_tile_x][tooltip_tile_y];
+
+                    if (TCOD_map_is_in_fov(player->fov_map, tooltip_tile_x, tooltip_tile_y))
+                    {
+                        tooltip_opts_add(tile->actor == NULL ? "Move" : "Follow", TOOLTIP_OPT_MOVE);
+                        if (tile->actor != NULL)
+                        {
+                            tooltip_opts_add("Attack", TOOLTIP_OPT_ATTACK);
+                        }
+                        if (TCOD_list_peek(tile->items))
+                        {
+                            tooltip_opts_add("Take", TOOLTIP_OPT_TAKE);
+                        }
+                    }
+                    else
+                    {
+                        tooltip_opts_add("Move", TOOLTIP_OPT_MOVE);
+                    }
                 }
 
                 return GAME_INPUT_DRAW;

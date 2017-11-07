@@ -65,22 +65,22 @@ void actor_turn(actor_t *actor)
         switch (TCOD_random_get_int(NULL, 0, 8))
         {
         case 0:
-            actor_move(actor, actor->x, actor->y - 1, false, false);
+            actor_move(actor, actor->x, actor->y - 1, false, true);
 
             break;
 
         case 1:
-            actor_move(actor, actor->x, actor->y + 1, false, false);
+            actor_move(actor, actor->x, actor->y + 1, false, true);
 
             break;
 
         case 2:
-            actor_move(actor, actor->x - 1, actor->y, false, false);
+            actor_move(actor, actor->x - 1, actor->y, false, true);
 
             break;
 
         case 3:
-            actor_move(actor, actor->x + 1, actor->y, false, false);
+            actor_move(actor, actor->x + 1, actor->y, false, true);
 
             break;
         }

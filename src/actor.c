@@ -1,4 +1,5 @@
 #include <libtcod.h>
+#include <stdio.h>
 
 #include "CMemLeak.h"
 #include "game.h"
@@ -56,31 +57,41 @@ void actor_turn(actor_t *actor)
             {
                 msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
 
-                actor_move_towards(actor, other->x, other->y, true, false);
+                move_actions_t actions = {
+                    .attack = true,
+                    .take_item = false,
+                    .take_items = false};
+
+                actor_move(actor, other->x, other->y, actions);
             }
         }
     }
     else
     {
+        move_actions_t actions = {
+            .attack = true,
+            .take_item = true,
+            .take_items = true};
+
         switch (TCOD_random_get_int(NULL, 0, 8))
         {
         case 0:
-            actor_move(actor, actor->x, actor->y - 1, false, true);
+            actor_move(actor, actor->x, actor->y - 1, actions);
 
             break;
 
         case 1:
-            actor_move(actor, actor->x, actor->y + 1, false, true);
+            actor_move(actor, actor->x, actor->y + 1, actions);
 
             break;
 
         case 2:
-            actor_move(actor, actor->x - 1, actor->y, false, true);
+            actor_move(actor, actor->x - 1, actor->y, actions);
 
             break;
 
         case 3:
-            actor_move(actor, actor->x + 1, actor->y, false, true);
+            actor_move(actor, actor->x + 1, actor->y, actions);
 
             break;
         }
@@ -129,86 +140,76 @@ void actor_calc_fov(actor_t *actor)
 #endif
 }
 
-bool actor_move_towards(actor_t *actor, int x, int y, bool attack, bool take_items)
+bool actor_move(actor_t *actor, int x, int y, move_actions_t actions)
 {
-    TCOD_map_set_properties(actor->fov_map, x, y, TCOD_map_is_transparent(actor->fov_map, x, y), true);
-
-    TCOD_path_t path = TCOD_path_new_using_map(actor->fov_map, 1.0f);
-    TCOD_path_compute(path, actor->x, actor->y, x, y);
-
     bool success = false;
 
-    if (!TCOD_path_is_empty(path))
+    if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT)
     {
-        int next_x, next_y;
-        if (TCOD_path_walk(path, &next_x, &next_y, false))
+        TCOD_map_set_properties(actor->fov_map, x, y, TCOD_map_is_transparent(actor->fov_map, x, y), true);
+
+        TCOD_path_t path = TCOD_path_new_using_map(actor->fov_map, 1.0f);
+        TCOD_path_compute(path, actor->x, actor->y, x, y);
+
+        if (!TCOD_path_is_empty(path))
         {
-            if (next_x != x || next_y != y)
+            int next_x, next_y;
+            while (TCOD_path_walk(path, &next_x, &next_y, false))
             {
-                attack = false;
-                take_items = false;
+                tile_t *tile = &actor->map->tiles[next_x][next_y];
+
+                if (!tile_walkable[tile->type])
+                {
+                    break;
+                }
+
+                if (tile->actor != NULL)
+                {
+                    if (next_x == x && next_y == y && actions.attack && tile->actor != player)
+                    {
+                        msg_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
+
+                        tile->actor->mark_for_delete = true;
+                    }
+
+                    success = true;
+
+                    break;
+                }
+
+                if (next_x == x && next_y == y && actions.take_item && TCOD_list_peek(tile->items) != NULL)
+                {
+                    TCOD_list_push(actor->items, TCOD_list_pop(tile->items));
+                }
+
+                if (next_x == x && next_y == y && actions.take_items && TCOD_list_size(tile->items) > 0)
+                {
+                    for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
+                    {
+                        item_t *item = *i;
+
+                        i = TCOD_list_remove_iterator(tile->items, i);
+
+                        TCOD_list_push(actor->items, item);
+                    }
+                }
+
+                actor->map->tiles[actor->x][actor->y].actor = NULL;
+                actor->map->tiles[next_x][next_y].actor = actor;
+
+                actor->x = next_x;
+                actor->y = next_y;
+
+                success = true;
+
+                break;
             }
-
-            success = actor_move(actor, next_x, next_y, attack, take_items);
         }
-    }
 
-    TCOD_path_delete(path);
+        TCOD_path_delete(path);
+    }
 
     return success;
-}
-
-bool actor_move(actor_t *actor, int x, int y, bool attack, bool take_items)
-{
-    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
-    {
-        return false;
-    }
-
-    tile_t *tile = &actor->map->tiles[x][y];
-    actor_t *other = tile->actor;
-
-    if (!tile_walkable[tile->type])
-    {
-        return false;
-    }
-
-    if (other != NULL)
-    {
-        // TODO: damage and health
-        // TODO: player death
-        // TODO: dealing with corpses, is_dead flag or separate object altogether?
-        // if corpses can be resurrected, they will need to store information about the actor
-        // if corpses can be picked up, they will need to act like items
-        if (attack && other != player)
-        {
-            msg_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
-
-            other->mark_for_delete = true;
-        }
-
-        return true;
-    }
-
-    if (take_items && TCOD_list_size(tile->items) > 0)
-    {
-        for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
-        {
-            item_t *item = *i;
-
-            i = TCOD_list_remove_iterator(tile->items, i);
-
-            TCOD_list_push(actor->items, item);
-        }
-    }
-
-    actor->map->tiles[actor->x][actor->y].actor = NULL;
-    actor->map->tiles[x][y].actor = actor;
-
-    actor->x = x;
-    actor->y = y;
-
-    return true;
 }
 
 void actor_draw_turn(actor_t *actor)

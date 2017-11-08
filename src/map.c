@@ -370,6 +370,13 @@ void map_turn(map_t *map)
 
         actor_destroy(actor);
     }
+
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
+    {
+        actor_t *actor = *i;
+
+        actor_calc_fov(actor);
+    }
 }
 
 void map_tick(map_t *map)

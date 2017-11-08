@@ -62,11 +62,8 @@ void gfx_draw_turn(void)
                        : view_y;
 #endif
 
-    // TODO: calculate width an height based on content
-    // we want each option to only take one line
     tooltip_width = 15;
-    tooltip_height = 6;
-    // TODO: keep this in the view
+    tooltip_height = TCOD_list_size(tooltip_opts) + 2;
     tooltip_x = tooltip_tile_x - view_x;
     tooltip_y = tooltip_tile_y - view_y;
 

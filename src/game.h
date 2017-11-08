@@ -108,12 +108,18 @@ typedef struct actor_s
     bool mark_for_delete;
 } actor_t;
 
+typedef struct move_actions_s
+{
+    bool attack;
+    bool take_item;
+    bool take_items;
+} move_actions_t;
+
 actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int fov_radius);
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
-bool actor_move_towards(actor_t *actor, int x, int y, bool attack, bool take_items);
-bool actor_move(actor_t *actor, int x, int y, bool attack, bool take_items);
+bool actor_move(actor_t *actor, int x, int y, move_actions_t actions);
 void actor_draw_turn(actor_t *actor);
 void actor_draw_tick(actor_t *actor);
 void actor_destroy(actor_t *actor);
@@ -254,6 +260,7 @@ int panel_x;
 int panel_y;
 int panel_width;
 int panel_height;
+content_t content;
 int content_height[NUM_CONTENTS];
 
 void panel_init(void);
@@ -268,7 +275,9 @@ void panel_uninit(void);
 typedef enum tooltip_opt_type_e {
     TOOLTIP_OPT_MOVE,
     TOOLTIP_OPT_ATTACK,
-    TOOLTIP_OPT_TAKE
+    TOOLTIP_OPT_TAKE_ITEM,
+    TOOLTIP_OPT_TAKE_ITEMS,
+    TOOLTIP_OPT_DROP_ITEM
 } tooltip_opt_type_t;
 
 typedef struct tooltip_opts_s
@@ -284,13 +293,14 @@ int tooltip_width;
 int tooltip_height;
 int tooltip_tile_x;
 int tooltip_tile_y;
+item_t *tooltip_selected_item;
+TCOD_list_t tooltip_opts;
 
 void tooltip_init(void);
-void tooltip_opts_add(char *text, tooltip_opt_type_t type);
-tooltip_opts_t *tooltip_opts_select(void);
-void tooltip_opts_clear(void);
 void tooltip_show(int x, int y);
 void tooltip_hide(void);
+void tooltip_opts_add(char *text, tooltip_opt_type_t type);
+void tooltip_opts_clear(void);
 void tooltip_draw_turn(void);
 void tooltip_draw_tick(void);
 void tooltip_uninit(void);

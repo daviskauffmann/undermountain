@@ -121,7 +121,7 @@ typedef struct move_actions_s
     bool take_items;
 } move_actions_t;
 
-actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int fov_radius);
+actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color);
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);

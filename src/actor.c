@@ -6,7 +6,7 @@
 
 #define LIT_ROOMS 0
 
-actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, int fov_radius)
+actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
@@ -16,20 +16,41 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
     actor->glyph = glyph;
     actor->color = color;
     actor->items = TCOD_list_new();
-    actor->light = true;
+    actor->light = false;
     actor->light_color = TCOD_white;
     actor->torch = false;
     actor->torch_color = TCOD_light_amber;
-    actor->fov_radius = fov_radius;
+    actor->fov_radius = 1;
     actor->fov_map = NULL;
     actor->mark_for_delete = false;
 
-    if (TCOD_random_get_int(NULL, 0, 1) == 0)
+    switch (TCOD_random_get_int(NULL, 0, 2))
     {
-        actor->torch = true;
-        actor->fov_radius *= 2;
-    }
+    case 0:
+    {
+        actor->light = false;
+        actor->torch = false;
+        actor->fov_radius = 1;
 
+        break;
+    }
+    case 1:
+    {
+        actor->light = true;
+        actor->torch = false;
+        actor->fov_radius = 5;
+
+        break;
+    }
+    case 2:
+    {
+        actor->light = false;
+        actor->torch = true;
+        actor->fov_radius = 10;
+
+        break;
+    }
+    }
     actor_calc_fov(actor);
 
     return actor;
@@ -51,33 +72,37 @@ void actor_turn(actor_t *actor)
         return;
     }
 
-    if (TCOD_random_get_int(NULL, 0, 1) == 0)
+    bool chasing = false;
+
+    for (void **i = TCOD_list_begin(actor->map->actors); i != TCOD_list_end(actor->map->actors); i++)
     {
-        for (void **i = TCOD_list_begin(actor->map->actors); i != TCOD_list_end(actor->map->actors); i++)
+        actor_t *other = *i;
+
+        if (other == actor)
         {
-            actor_t *other = *i;
+            continue;
+        }
 
-            if (other == actor)
-            {
-                continue;
-            }
+        if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
+        {
+            msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
 
-            if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
-            {
-                msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
+            move_actions_t actions = {
+                .light_on = false,
+                .light_off = false,
+                .attack = true,
+                .take_item = false,
+                .take_items = false};
 
-                move_actions_t actions = {
-                    .light_on = false,
-                    .light_off = false,
-                    .attack = true,
-                    .take_item = false,
-                    .take_items = false};
+            actor_move(actor, other->x, other->y, actions);
 
-                actor_move(actor, other->x, other->y, actions);
-            }
+            chasing = true;
+
+            break;
         }
     }
-    else
+
+    if (!chasing)
     {
         move_actions_t actions = {
             .light_on = true,
@@ -159,33 +184,36 @@ void actor_calc_fov(actor_t *actor)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
-            tile_t *tile = &actor->map->tiles[x][y];
-
-            for (void **i = TCOD_list_begin(actor->map->lights); i != TCOD_list_end(actor->map->lights); i++)
+            if (TCOD_map_is_in_fov(los_map, x, y))
             {
-                light_t *light = *i;
+                tile_t *tile = &actor->map->tiles[x][y];
 
-                if (TCOD_map_is_in_fov(light->fov_map, x, y) && TCOD_map_is_in_fov(los_map, x, y))
+                for (void **i = TCOD_list_begin(actor->map->lights); i != TCOD_list_end(actor->map->lights); i++)
                 {
-                    TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                    light_t *light = *i;
+
+                    if (light->on && TCOD_map_is_in_fov(light->fov_map, x, y))
+                    {
+                        TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                    }
                 }
-            }
 
-            for (void **i = TCOD_list_begin(actor->map->actors); i != TCOD_list_end(actor->map->actors); i++)
-            {
-                actor_t *other = *i;
-
-                if ((other->torch || other->light) && TCOD_map_is_in_fov(other->fov_map, x, y) && TCOD_map_is_in_fov(los_map, x, y))
+                for (void **i = TCOD_list_begin(actor->map->actors); i != TCOD_list_end(actor->map->actors); i++)
                 {
-                    TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                    actor_t *other = *i;
+
+                    if ((other->light || other->torch) && TCOD_map_is_in_fov(other->fov_map, x, y))
+                    {
+                        TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                    }
                 }
-            }
 
-            if (tile->actor != NULL)
-            {
-                if ((tile->actor->light || tile->actor->torch) && TCOD_map_is_in_fov(los_map, x, y))
+                if (tile->actor != NULL)
                 {
-                    TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                    if ((tile->actor->light || tile->actor->torch))
+                    {
+                        TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                    }
                 }
             }
         }

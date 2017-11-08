@@ -18,7 +18,7 @@ void game_new()
     TCOD_list_push(maps, map);
 
     current_map_index = 0;
-    player = actor_create(map, map->stair_up_x, map->stair_up_y, '@', TCOD_white, 5);
+    player = actor_create(map, map->stair_up_x, map->stair_up_y, '@', TCOD_white);
 
     TCOD_list_push(map->actors, player);
     map->tiles[player->x][player->y].actor = player;

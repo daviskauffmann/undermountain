@@ -34,7 +34,10 @@ void light_calc_fov(light_t *light)
 
     light->fov_map = map_to_TCOD_map(light->map);
 
-    TCOD_map_compute_fov(light->fov_map, light->x, light->y, light->radius, true, FOV_DIAMOND);
+    if (light->on)
+    {
+        TCOD_map_compute_fov(light->fov_map, light->x, light->y, light->radius, true, FOV_DIAMOND);
+    }
 }
 
 void light_turn(light_t *light)
@@ -48,8 +51,11 @@ void light_tick(light_t *light)
 
 void light_draw_turn(light_t *light)
 {
-    TCOD_console_set_char_foreground(NULL, light->x - view_x, light->y - view_y, light->color);
-    TCOD_console_set_char(NULL, light->x - view_x, light->y - view_y, '*');
+    if (TCOD_map_is_in_fov(player->fov_map, light->x, light->y))
+    {
+        TCOD_console_set_char_foreground(NULL, light->x - view_x, light->y - view_y, light->color);
+        TCOD_console_set_char(NULL, light->x - view_x, light->y - view_y, '*');
+    }
 }
 
 void light_draw_tick(light_t *light)

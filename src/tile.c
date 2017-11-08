@@ -66,7 +66,7 @@ void tile_draw_turn(tile_t *tile, int x, int y)
         return;
     }
 
-    if (tile->light != NULL)
+    if (tile->light != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
         return;
     }
@@ -139,7 +139,7 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
         return;
     }
 
-    if (tile->light != NULL)
+    if (tile->light != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
         return;
     }

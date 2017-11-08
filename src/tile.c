@@ -55,10 +55,15 @@ void tile_draw_turn(tile_t *tile, int x, int y)
     {
         actor_t *actor = *i;
 
-        if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
+        if (TCOD_map_is_in_fov(actor->fov_map, x, y))
         {
             tile->seen = true;
         }
+    }
+
+    if (!TCOD_map_is_in_fov(player->fov_map, x, y) && !tile->seen)
+    {
+        return;
     }
 
     if (tile->light != NULL)
@@ -79,25 +84,19 @@ void tile_draw_turn(tile_t *tile, int x, int y)
         return;
     }
 
-    TCOD_color_t color;
+    TCOD_color_t color = tile_color_dark;
 
-    if (TCOD_map_is_in_fov(player->fov_map, x, y))
+    for (void **i = TCOD_list_begin(player->map->actors); i != TCOD_list_end(player->map->actors); i++)
     {
-        float r2 = pow(player->fov_radius, 2);
-        float d = pow(x - player->x, 2) + pow(y - player->y, 2);
-        float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+        actor_t *actor = *i;
 
-        color = TCOD_color_lerp(tile_color_dark, tile_color_light, l);
-    }
-    else
-    {
-        if (tile->seen)
+        if (actor->light && TCOD_map_is_in_fov(actor->fov_map, x, y))
         {
-            color = tile_color_dark;
-        }
-        else
-        {
-            return;
+            float r2 = pow(actor->fov_radius, 2);
+            float d = pow(x - actor->x, 2) + pow(y - actor->y, 2);
+            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+
+            color = TCOD_color_lerp(color, actor->light_color, l);
         }
     }
 
@@ -105,13 +104,13 @@ void tile_draw_turn(tile_t *tile, int x, int y)
     {
         light_t *light = *i;
 
-        if (TCOD_map_is_in_fov(light->fov_map, x, y))
+        if (light->on && TCOD_map_is_in_fov(light->fov_map, x, y))
         {
-            float light_r2 = pow(light->radius, 2);
-            float light_d = pow(x - light->x, 2) + pow(y - light->y, 2);
-            float light_l = CLAMP(0.0f, 1.0f, (light_r2 - light_d) / light_r2);
+            float r2 = pow(light->radius, 2);
+            float d = pow(x - light->x, 2) + pow(y - light->y, 2);
+            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 
-            color = TCOD_color_lerp(color, light->color, light_l);
+            color = TCOD_color_lerp(color, light->color, l);
         }
     }
 
@@ -121,11 +120,11 @@ void tile_draw_turn(tile_t *tile, int x, int y)
 
         if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
         {
-            float torch_r2 = pow(actor->fov_radius, 2);
-            float torch_d = pow(x - actor->x, 2) + pow(y - actor->y, 2);
-            float torch_l = CLAMP(0.0f, 1.0f, (torch_r2 - torch_d) / torch_r2);
+            float r2 = pow(actor->fov_radius, 2);
+            float d = pow(x - actor->x, 2) + pow(y - actor->y, 2);
+            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 
-            color = TCOD_color_lerp(color, torch_color, torch_l);
+            color = TCOD_color_lerp(color, actor->torch_color, l);
         }
     }
 
@@ -135,43 +134,42 @@ void tile_draw_turn(tile_t *tile, int x, int y)
 
 void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
 {
+    if (!TCOD_map_is_in_fov(player->fov_map, x, y) && !tile->seen)
+    {
+        return;
+    }
+
     if (tile->light != NULL)
     {
         return;
     }
 
-    if (tile->actor != NULL)
+    if (tile->actor != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
         return;
     }
 
     item_t *item = TCOD_list_peek(tile->items);
-    if (item != NULL)
+    if (item != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
         item_draw_tick(item, x, y);
 
         return;
     }
 
-    TCOD_color_t color;
+    TCOD_color_t color = tile_color_dark;
 
-    if (TCOD_map_is_in_fov(player->fov_map, x, y))
+    for (void **i = TCOD_list_begin(player->map->actors); i != TCOD_list_end(player->map->actors); i++)
     {
-        float r2 = pow(player->fov_radius, 2);
-        float d = pow(x - player->x, 2) + pow(y - player->y, 2);
-        float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+        actor_t *actor = *i;
 
-        color = TCOD_color_lerp(tile_color_dark, tile_color_light, l);
-    }
-    else
-    {
-        if (tile->seen)
+        if (actor->light && TCOD_map_is_in_fov(actor->fov_map, x, y))
         {
-            color = tile_color_dark;
-        }
-        else
-        {
-            return;
+            float r2 = pow(actor->fov_radius, 2);
+            float d = pow(x - actor->x, 2) + pow(y - actor->y, 2);
+            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+
+            color = TCOD_color_lerp(color, actor->light_color, l);
         }
     }
 
@@ -179,13 +177,13 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
     {
         light_t *light = *i;
 
-        if (TCOD_map_is_in_fov(light->fov_map, x, y))
+        if (light->on && TCOD_map_is_in_fov(light->fov_map, x, y))
         {
-            float light_r2 = pow(light->radius, 2);
-            float light_d = pow(x - light->x + dx, 2) + pow(y - light->y + dy, 2);
-            float light_l = CLAMP(0.0f, 1.0f, (light_r2 - light_d) / light_r2 + di);
+            float r2 = pow(light->radius, 2);
+            float d = pow(x - light->x + dx, 2) + pow(y - light->y + dy, 2);
+            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
 
-            color = TCOD_color_lerp(color, light->color, light_l);
+            color = TCOD_color_lerp(color, light->color, l);
         }
     }
 
@@ -195,11 +193,11 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
 
         if (actor->torch && TCOD_map_is_in_fov(actor->fov_map, x, y))
         {
-            float torch_r2 = pow(actor->fov_radius, 2);
-            float torch_d = pow(x - actor->x + dx, 2) + pow(y - actor->y + dy, 2);
-            float torch_l = CLAMP(0.0f, 1.0f, (torch_r2 - torch_d) / torch_r2 + di);
+            float r2 = pow(actor->fov_radius, 2);
+            float d = pow(x - actor->x + dx, 2) + pow(y - actor->y + dy, 2);
+            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
 
-            color = TCOD_color_lerp(color, torch_color, torch_l);
+            color = TCOD_color_lerp(color, actor->torch_color, l);
         }
     }
 

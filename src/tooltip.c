@@ -11,42 +11,43 @@ void tooltip_init(void)
 {
     tooltip = TCOD_console_new(screen_width, screen_height);
     tooltip_visible = false;
-    tooltip_opts = TCOD_list_new();
+    tooltip_options = TCOD_list_new();
 }
 
 void tooltip_show(int x, int y)
 {
-    tooltip_opts_clear();
+    tooltip_options_clear();
 
     tooltip_visible = true;
     tooltip_tile_x = x;
     tooltip_tile_y = y;
+    tooltip_item = NULL;
 }
 
 void tooltip_hide()
 {
-    tooltip_opts_clear();
+    tooltip_options_clear();
 
     tooltip_visible = false;
 }
 
-void tooltip_opts_add(char *text, tooltip_opt_type_t type)
+void tooltip_options_add(char *text, tooltip_option_type_t type)
 {
-    tooltip_opts_t *option = (tooltip_opts_t *)malloc(sizeof(tooltip_opts_t));
+    tooltip_option_t *option = (tooltip_option_t *)malloc(sizeof(tooltip_option_t));
 
     option->text = text;
     option->type = type;
 
-    TCOD_list_push(tooltip_opts, option);
+    TCOD_list_push(tooltip_options, option);
 }
 
-void tooltip_opts_clear()
+void tooltip_options_clear()
 {
-    for (void **i = TCOD_list_begin(tooltip_opts); i != TCOD_list_end(tooltip_opts); i++)
+    for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
     {
-        tooltip_opts_t *option = *i;
+        tooltip_option_t *option = *i;
 
-        i = TCOD_list_remove_iterator(tooltip_opts, i);
+        i = TCOD_list_remove_iterator(tooltip_options, i);
 
         free(option);
     }
@@ -75,9 +76,9 @@ void tooltip_draw_tick(void)
     }
 
     int y = 1;
-    for (void **i = TCOD_list_begin(tooltip_opts); i != TCOD_list_end(tooltip_opts); i++)
+    for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
     {
-        tooltip_opts_t *option = *i;
+        tooltip_option_t *option = *i;
 
         TCOD_color_t color = TCOD_white;
 
@@ -100,12 +101,12 @@ void tooltip_uninit(void)
 {
     TCOD_console_delete(tooltip);
 
-    for (void **i = TCOD_list_begin(tooltip_opts); i != TCOD_list_end(tooltip_opts); i++)
+    for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
     {
-        tooltip_opts_t *option = *i;
+        tooltip_option_t *option = *i;
 
         free(option);
     }
 
-    TCOD_list_delete(tooltip_opts);
+    TCOD_list_delete(tooltip_options);
 }

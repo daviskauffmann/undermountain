@@ -82,6 +82,7 @@ typedef struct light_s
     int y;
     int radius;
     TCOD_color_t color;
+    bool on;
     TCOD_map_t fov_map;
 } light_t;
 
@@ -101,15 +102,21 @@ typedef struct actor_s
     int y;
     unsigned char glyph;
     TCOD_color_t color;
-    bool torch;
     TCOD_list_t items;
+    bool light;
+    TCOD_color_t light_color;
+    bool torch;
+    TCOD_color_t torch_color;
     int fov_radius;
     TCOD_map_t fov_map;
+    TCOD_map_t los_map;
     bool mark_for_delete;
 } actor_t;
 
 typedef struct move_actions_s
 {
+    bool light_on;
+    bool light_off;
     bool attack;
     bool take_item;
     bool take_items;
@@ -272,19 +279,21 @@ void panel_draw_tick(void);
 void panel_uninit(void);
 
 /* Tooltip */
-typedef enum tooltip_opt_type_e {
-    TOOLTIP_OPT_MOVE,
-    TOOLTIP_OPT_ATTACK,
-    TOOLTIP_OPT_TAKE_ITEM,
-    TOOLTIP_OPT_TAKE_ITEMS,
-    TOOLTIP_OPT_DROP_ITEM
-} tooltip_opt_type_t;
+typedef enum tooltip_option_type_e {
+    TOOLTIP_OPTION_TYPE_MOVE,
+    TOOLTIP_OPTION_TYPE_LIGHT_OFF,
+    TOOLTIP_OPTION_TYPE_LIGHT_ON,
+    TOOLTIP_OPTION_TYPE_ATTACK,
+    TOOLTIP_OPTION_TYPE_TAKE_ITEM,
+    TOOLTIP_OPTION_TYPE_TAKE_ITEMS,
+    TOOLTIP_OPTION_TYPE_DROP_ITEM
+} tooltip_option_type_t;
 
-typedef struct tooltip_opts_s
+typedef struct tooltip_option_s
 {
     char *text;
-    tooltip_opt_type_t type;
-} tooltip_opts_t;
+    tooltip_option_type_t type;
+} tooltip_option_t;
 
 bool tooltip_visible;
 int tooltip_x;
@@ -293,14 +302,14 @@ int tooltip_width;
 int tooltip_height;
 int tooltip_tile_x;
 int tooltip_tile_y;
-item_t *tooltip_selected_item;
-TCOD_list_t tooltip_opts;
+item_t *tooltip_item;
+TCOD_list_t tooltip_options;
 
 void tooltip_init(void);
 void tooltip_show(int x, int y);
 void tooltip_hide(void);
-void tooltip_opts_add(char *text, tooltip_opt_type_t type);
-void tooltip_opts_clear(void);
+void tooltip_options_add(char *text, tooltip_option_type_t type);
+void tooltip_options_clear(void);
 void tooltip_draw_turn(void);
 void tooltip_draw_tick(void);
 void tooltip_uninit(void);

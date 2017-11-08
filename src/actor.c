@@ -15,11 +15,21 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
     actor->y = y;
     actor->glyph = glyph;
     actor->color = color;
-    actor->torch = false;
     actor->items = TCOD_list_new();
+    actor->light = true;
+    actor->light_color = TCOD_white;
+    actor->torch = false;
+    actor->torch_color = TCOD_light_amber;
     actor->fov_radius = fov_radius;
     actor->fov_map = NULL;
+    actor->los_map = NULL;
     actor->mark_for_delete = false;
+
+    if (TCOD_random_get_int(NULL, 0, 1) == 0)
+    {
+        actor->torch = true;
+        actor->fov_radius *= 2;
+    }
 
     actor_calc_fov(actor);
 
@@ -58,6 +68,8 @@ void actor_turn(actor_t *actor)
                 msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
 
                 move_actions_t actions = {
+                    .light_on = false,
+                    .light_off = false,
                     .attack = true,
                     .take_item = false,
                     .take_items = false};
@@ -69,6 +81,8 @@ void actor_turn(actor_t *actor)
     else
     {
         move_actions_t actions = {
+            .light_on = true,
+            .light_off = true,
             .attack = true,
             .take_item = true,
             .take_items = true};
@@ -115,9 +129,16 @@ void actor_calc_fov(actor_t *actor)
         TCOD_map_delete(actor->fov_map);
     }
 
+    if (actor->los_map != NULL)
+    {
+        TCOD_map_delete(actor->los_map);
+    }
+
     actor->fov_map = map_to_TCOD_map(actor->map);
+    actor->los_map = map_to_TCOD_map(actor->map);
 
     TCOD_map_compute_fov(actor->fov_map, actor->x, actor->y, actor->fov_radius, true, FOV_DIAMOND);
+    TCOD_map_compute_fov(actor->los_map, actor->x, actor->y, 0, true, FOV_DIAMOND);
 
 #if LIT_ROOMS
     for (void **i = TCOD_list_begin(actor->map->rooms); i != TCOD_list_end(actor->map->rooms); i++)
@@ -134,6 +155,7 @@ void actor_calc_fov(actor_t *actor)
             for (int y = room->y - 1; y <= room->y + room->h; y++)
             {
                 TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                TCOD_map_set_in_fov(actor->los_map, x, y, true);
             }
         }
     }
@@ -153,6 +175,7 @@ bool actor_move(actor_t *actor, int x, int y, move_actions_t actions)
 
         if (!TCOD_path_is_empty(path))
         {
+            // TODO: all all this stuff on the tile the actor is on as well
             int next_x, next_y;
             while (TCOD_path_walk(path, &next_x, &next_y, false))
             {
@@ -163,7 +186,22 @@ bool actor_move(actor_t *actor, int x, int y, move_actions_t actions)
                     break;
                 }
 
-                if (tile->actor != NULL)
+                if (tile->light != NULL)
+                {
+                    if (next_x == x && next_y == y)
+                    {
+                        if (tile->light->on && actions.light_off)
+                        {
+                            tile->light->on = false;
+                        }
+                        else if (!tile->light->on && actions.light_on)
+                        {
+                            tile->light->on = true;
+                        }
+                    }
+                }
+
+                if (tile->actor != NULL && tile->actor != actor)
                 {
                     if (next_x == x && next_y == y && actions.attack && tile->actor != player)
                     {
@@ -214,13 +252,11 @@ bool actor_move(actor_t *actor, int x, int y, move_actions_t actions)
 
 void actor_draw_turn(actor_t *actor)
 {
-    if (!TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
+    if (TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
     {
-        return;
+        TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor->color);
+        TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor->glyph);
     }
-
-    TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor->color);
-    TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor->glyph);
 }
 
 void actor_draw_tick(actor_t *actor)
@@ -241,6 +277,11 @@ void actor_destroy(actor_t *actor)
     if (actor->fov_map != NULL)
     {
         TCOD_map_delete(actor->fov_map);
+    }
+
+    if (actor->los_map != NULL)
+    {
+        TCOD_map_delete(actor->los_map);
     }
 
     free(actor);

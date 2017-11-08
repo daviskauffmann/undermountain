@@ -57,7 +57,7 @@ void world_draw_turn(void)
 
 void world_draw_tick(void)
 {
-    map_draw_turn(player->map);
+    map_draw_tick(player->map);
 }
 
 void world_uninit(void)

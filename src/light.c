@@ -12,7 +12,13 @@ light_t *light_create(map_t *map, int x, int y, int radius, TCOD_color_t color)
     light->y = y;
     light->radius = radius;
     light->color = color;
+    light->on = false;
     light->fov_map = NULL;
+
+    if (TCOD_random_get_int(NULL, 0, 1) == 0)
+    {
+        light->on = true;
+    }
 
     light_calc_fov(light);
 

@@ -170,9 +170,9 @@ bool actor_move(actor_t *actor, int x, int y, move_actions_t actions)
                         msg_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
 
                         tile->actor->mark_for_delete = true;
-                    }
 
-                    success = true;
+                        success = true;
+                    }
 
                     break;
                 }

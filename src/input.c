@@ -249,20 +249,20 @@ game_input_t input_handle(void)
 
                     tooltip_options_add("Move", TOOLTIP_OPTION_TYPE_MOVE);
 
+                    if (tile->light != NULL)
+                    {
+                        if (tile->light->on)
+                        {
+                            tooltip_options_add("Turn Off", TOOLTIP_OPTION_TYPE_LIGHT_OFF);
+                        }
+                        else
+                        {
+                            tooltip_options_add("Turn On", TOOLTIP_OPTION_TYPE_LIGHT_ON);
+                        }
+                    }
+
                     if (TCOD_map_is_in_fov(player->fov_map, tooltip_tile_x, tooltip_tile_y))
                     {
-                        if (tile->light != NULL)
-                        {
-                            if (tile->light->on)
-                            {
-                                tooltip_options_add("Turn Off", TOOLTIP_OPTION_TYPE_LIGHT_OFF);
-                            }
-                            else
-                            {
-                                tooltip_options_add("Turn On", TOOLTIP_OPTION_TYPE_LIGHT_ON);
-                            }
-                        }
-
                         if (tile->actor != NULL)
                         {
                             if (tile->actor == player)

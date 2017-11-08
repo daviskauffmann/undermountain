@@ -9,8 +9,8 @@
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
 #define NUM_LIGHTS 5
-#define NUM_ACTORS 50
-#define NUM_ITEMS 100
+#define NUM_ACTORS 20
+#define NUM_ITEMS 20
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);
 static void vline(map_t *map, int x, int y1, int y2);

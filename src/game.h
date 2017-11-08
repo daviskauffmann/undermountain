@@ -109,7 +109,6 @@ typedef struct actor_s
     TCOD_color_t torch_color;
     int fov_radius;
     TCOD_map_t fov_map;
-    TCOD_map_t los_map;
     bool mark_for_delete;
 } actor_t;
 

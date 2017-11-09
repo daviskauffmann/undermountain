@@ -94,7 +94,7 @@ void actor_turn(actor_t *actor)
                 .take_item = false,
                 .take_items = false};
 
-            actor_move(actor, other->x, other->y, actions, NULL, NULL);
+            actor_move(actor, other->x, other->y, actions);
 
             chasing = true;
 
@@ -114,22 +114,22 @@ void actor_turn(actor_t *actor)
         switch (TCOD_random_get_int(NULL, 0, 8))
         {
         case 0:
-            actor_move(actor, actor->x, actor->y - 1, actions, NULL, NULL);
+            actor_move(actor, actor->x, actor->y - 1, actions);
 
             break;
 
         case 1:
-            actor_move(actor, actor->x, actor->y + 1, actions, NULL, NULL);
+            actor_move(actor, actor->x, actor->y + 1, actions);
 
             break;
 
         case 2:
-            actor_move(actor, actor->x - 1, actor->y, actions, NULL, NULL);
+            actor_move(actor, actor->x - 1, actor->y, actions);
 
             break;
 
         case 3:
-            actor_move(actor, actor->x + 1, actor->y, actions, NULL, NULL);
+            actor_move(actor, actor->x + 1, actor->y, actions);
 
             break;
         }
@@ -208,13 +208,13 @@ void actor_calc_fov(actor_t *actor)
                     }
                 }
 
-                if (tile->actor != NULL)
-                {
-                    if ((tile->actor->light || tile->actor->torch))
-                    {
-                        TCOD_map_set_in_fov(actor->fov_map, x, y, true);
-                    }
-                }
+                // if (tile->actor != NULL)
+                // {
+                //     if ((tile->actor->light || tile->actor->torch))
+                //     {
+                //         TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                //     }
+                // }
             }
         }
     }
@@ -222,8 +222,12 @@ void actor_calc_fov(actor_t *actor)
     TCOD_map_delete(los_map);
 }
 
-void actor_move(actor_t *actor, int x, int y, move_actions_t actions, bool *cost_turn, bool *arrived)
+move_results_t actor_move(actor_t *actor, int x, int y, move_actions_t actions)
 {
+    move_results_t results = {
+        .cost_turn = false,
+        .arrived = false};
+
     if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT)
     {
         TCOD_map_set_properties(actor->fov_map, x, y, TCOD_map_is_transparent(actor->fov_map, x, y), true);
@@ -257,10 +261,7 @@ void actor_move(actor_t *actor, int x, int y, move_actions_t actions, bool *cost
                     item->y = actor->y;
                 }
 
-                if (cost_turn != NULL)
-                {
-                    *cost_turn = true;
-                }
+                results.cost_turn = true;
             }
         }
 
@@ -272,19 +273,13 @@ void actor_move(actor_t *actor, int x, int y, move_actions_t actions, bool *cost
                 {
                     tile->light->on = false;
 
-                    if (cost_turn != NULL)
-                    {
-                        *cost_turn = true;
-                    }
+                    results.cost_turn = true;
                 }
                 else if (!tile->light->on && actions.light_on)
                 {
                     tile->light->on = true;
 
-                    if (cost_turn != NULL)
-                    {
-                        *cost_turn = true;
-                    }
+                    results.cost_turn = true;
                 }
             }
 
@@ -292,20 +287,14 @@ void actor_move(actor_t *actor, int x, int y, move_actions_t actions, bool *cost
             {
                 tile->actor->mark_for_delete = true;
 
-                if (cost_turn != NULL)
-                {
-                    *cost_turn = true;
-                }
+                results.cost_turn = true;
             }
 
             if (TCOD_list_peek(tile->items) != NULL && actions.take_item)
             {
                 TCOD_list_push(actor->items, TCOD_list_pop(tile->items));
 
-                if (cost_turn != NULL)
-                {
-                    *cost_turn = true;
-                }
+                results.cost_turn = true;
             }
 
             if (TCOD_list_size(tile->items) > 0 && actions.take_items)
@@ -318,21 +307,17 @@ void actor_move(actor_t *actor, int x, int y, move_actions_t actions, bool *cost
 
                     TCOD_list_push(actor->items, item);
 
-                    if (cost_turn != NULL)
-                    {
-                        *cost_turn = true;
-                    }
+                    results.cost_turn = true;
                 }
             }
 
-            if (arrived != NULL)
-            {
-                *arrived = true;
-            }
+            results.arrived = true;
         }
 
         TCOD_path_delete(path);
     }
+
+    return results;
 }
 
 void actor_draw_turn(actor_t *actor)

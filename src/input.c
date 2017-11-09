@@ -521,13 +521,13 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            bool cost_turn;
-            actor_move(player, player->x - 1, player->y + 1, default_actions, &cost_turn, NULL);
+            move_results_t results = actor_move(player, player->x - 1, player->y + 1, default_actions);
 
-            if (cost_turn)
+            if (results.cost_turn)
             {
                 input = GAME_INPUT_TURN;
             }
+
 
             break;
         }
@@ -538,10 +538,9 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            bool cost_turn;
-            actor_move(player, player->x, player->y + 1, default_actions, &cost_turn, NULL);
+            move_results_t results = actor_move(player, player->x, player->y + 1, default_actions);
 
-            if (cost_turn)
+            if (results.cost_turn)
             {
                 input = GAME_INPUT_TURN;
             }
@@ -554,10 +553,9 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            bool cost_turn;
-            actor_move(player, player->x + 1, player->y + 1, default_actions, &cost_turn, NULL);
+            move_results_t results = actor_move(player, player->x + 1, player->y + 1, default_actions);
 
-            if (cost_turn)
+            if (results.cost_turn)
             {
                 input = GAME_INPUT_TURN;
             }
@@ -571,10 +569,9 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            bool cost_turn;
-            actor_move(player, player->x - 1, player->y, default_actions, &cost_turn, NULL);
+            move_results_t results = actor_move(player, player->x - 1, player->y, default_actions);
 
-            if (cost_turn)
+            if (results.cost_turn)
             {
                 input = GAME_INPUT_TURN;
             }
@@ -598,10 +595,9 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            bool cost_turn;
-            actor_move(player, player->x + 1, player->y, default_actions, &cost_turn, NULL);
+            move_results_t results = actor_move(player, player->x + 1, player->y, default_actions);
 
-            if (cost_turn)
+            if (results.cost_turn)
             {
                 input = GAME_INPUT_TURN;
             }
@@ -614,10 +610,9 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            bool cost_turn;
-            actor_move(player, player->x - 1, player->y - 1, default_actions, &cost_turn, NULL);
+            move_results_t results = actor_move(player, player->x - 1, player->y - 1, default_actions);
 
-            if (cost_turn)
+            if (results.cost_turn)
             {
                 input = GAME_INPUT_TURN;
             }
@@ -631,10 +626,9 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            bool cost_turn;
-            actor_move(player, player->x, player->y - 1, default_actions, &cost_turn, NULL);
+            move_results_t results = actor_move(player, player->x, player->y - 1, default_actions);
 
-            if (cost_turn)
+            if (results.cost_turn)
             {
                 input = GAME_INPUT_TURN;
             }
@@ -647,10 +641,9 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            bool cost_turn;
-            actor_move(player, player->x + 1, player->y + 1, default_actions, &cost_turn, NULL);
+            move_results_t results = actor_move(player, player->x + 1, player->y + 1, default_actions);
 
-            if (cost_turn)
+            if (results.cost_turn)
             {
                 input = GAME_INPUT_TURN;
             }
@@ -675,11 +668,9 @@ game_input_t input_handle(void)
                     ? automove_y
                     : automove_actor->y;
 
-        bool cost_turn = false;
-        bool arrived = false;
-        actor_move(player, x, y, automove_actions, &cost_turn, &arrived);
+        move_results_t results = actor_move(player, x, y, automove_actions);
 
-        if (cost_turn)
+        if (results.cost_turn)
         {
             if (automove_actor != NULL && automove_actor->mark_for_delete)
             {
@@ -691,7 +682,7 @@ game_input_t input_handle(void)
             input = GAME_INPUT_TURN;
         }
 
-        if (arrived)
+        if (results.arrived)
         {
             automove_clear();
         }

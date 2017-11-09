@@ -45,7 +45,7 @@ void tile_draw_turn(tile_t *tile, int x, int y)
     {
         light_t *light = *i;
 
-        if (TCOD_map_is_in_fov(light->fov_map, x, y))
+        if (light->on && TCOD_map_is_in_fov(light->fov_map, x, y))
         {
             tile->seen = true;
         }
@@ -55,7 +55,7 @@ void tile_draw_turn(tile_t *tile, int x, int y)
     {
         actor_t *actor = *i;
 
-        if (TCOD_map_is_in_fov(actor->fov_map, x, y))
+        if ((actor->light || actor->torch) && TCOD_map_is_in_fov(actor->fov_map, x, y))
         {
             tile->seen = true;
         }

@@ -122,11 +122,17 @@ typedef struct move_actions_s
     bool take_items;
 } move_actions_t;
 
+typedef struct move_results_s
+{
+    bool cost_turn;
+    bool arrived;
+} move_results_t;
+
 actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color);
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
-void actor_move(actor_t *actor, int x, int y, move_actions_t actions, bool *cost_turn, bool *arrived);
+move_results_t actor_move(actor_t *actor, int x, int y, move_actions_t actions);
 void actor_draw_turn(actor_t *actor);
 void actor_draw_tick(actor_t *actor);
 void actor_destroy(actor_t *actor);

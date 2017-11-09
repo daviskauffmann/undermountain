@@ -80,6 +80,8 @@ void gfx_draw_tick(void)
     panel_draw_tick();
     tooltip_draw_tick();
 
+    TCOD_console_print_ex(NULL, 0, 0, TCOD_BKGND_SET, TCOD_LEFT, "Turn: %d", turn);
+
     TCOD_console_flush();
 }
 

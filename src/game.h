@@ -18,6 +18,7 @@ typedef enum content_e content_t;
 /* Game */
 actor_t *player;
 int current_map_index;
+int turn;
 
 void game_init(void);
 game_input_t game_input(void);
@@ -125,7 +126,7 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
-bool actor_move(actor_t *actor, int x, int y, move_actions_t actions);
+void actor_move(actor_t *actor, int x, int y, move_actions_t actions, bool *cost_turn, bool *arrived);
 void actor_draw_turn(actor_t *actor);
 void actor_draw_tick(actor_t *actor);
 void actor_destroy(actor_t *actor);

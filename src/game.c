@@ -27,12 +27,16 @@ void game_new()
 
     TCOD_list_push(player->items, item);
 
+    turn = 0;
+
     msg_log("Hail, Player!", player->map, player->x, player->y);
 }
 
 void game_turn(void)
 {
     world_turn();
+
+    turn++;
 }
 
 void game_tick(void)

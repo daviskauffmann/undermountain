@@ -96,7 +96,7 @@ map_t *map_create(void)
 
         if (TCOD_random_get_int(NULL, 0, 4) == 0)
         {
-            item_t *item = item_create_random();
+            item_t *item = item_create_random(x, y);
 
             TCOD_list_push(actor->items, item);
         }
@@ -109,7 +109,7 @@ map_t *map_create(void)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        item_t *item = item_create_random();
+        item_t *item = item_create_random(x, y);
 
         TCOD_list_push(map->tiles[x][y].items, item);
     }
@@ -348,7 +348,7 @@ void map_turn(map_t *map)
             continue;
         }
 
-        corpse_t *corpse = corpse_create(actor);
+        corpse_t *corpse = corpse_create(actor->x, actor->y, actor);
 
         TCOD_list_push(tile->items, corpse);
 

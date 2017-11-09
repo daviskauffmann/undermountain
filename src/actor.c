@@ -233,77 +233,88 @@ bool actor_move(actor_t *actor, int x, int y, move_actions_t actions)
         TCOD_path_t path = TCOD_path_new_using_map(actor->fov_map, 1.0f);
         TCOD_path_compute(path, actor->x, actor->y, x, y);
 
-        if (!TCOD_path_is_empty(path))
+        int next_x = actor->x;
+        int next_y = actor->y;
+        TCOD_path_walk(path, &next_x, &next_y, false);
+
+        tile_t *tile = &actor->map->tiles[next_x][next_y];
+
+        if (!tile_walkable[tile->type])
         {
-            // TODO: all all this stuff on the tile the actor is on as well
-            int next_x, next_y;
-            while (TCOD_path_walk(path, &next_x, &next_y, false))
+            goto end;
+        }
+
+        if (next_x == actor->x && next_y == actor->y)
+        {
+            goto end;
+        }
+
+        if (next_x == x && next_y == y)
+        {
+            success = true;
+        }
+
+        if (tile->light != NULL)
+        {
+            if (next_x == x && next_y == y)
             {
-                tile_t *tile = &actor->map->tiles[next_x][next_y];
-
-                if (!tile_walkable[tile->type])
+                if (tile->light->on && actions.light_off)
                 {
-                    break;
+                    tile->light->on = false;
                 }
-
-                if (tile->light != NULL)
+                else if (!tile->light->on && actions.light_on)
                 {
-                    if (next_x == x && next_y == y)
-                    {
-                        if (tile->light->on && actions.light_off)
-                        {
-                            tile->light->on = false;
-                        }
-                        else if (!tile->light->on && actions.light_on)
-                        {
-                            tile->light->on = true;
-                        }
-                    }
+                    tile->light->on = true;
                 }
+            }
 
-                if (tile->actor != NULL && tile->actor != actor)
-                {
-                    if (next_x == x && next_y == y && actions.attack && tile->actor != player)
-                    {
-                        msg_log("{name} hits {name} for {damage}", actor->map, actor->x, actor->y);
+            goto end;
+        }
 
-                        tile->actor->mark_for_delete = true;
+        if (tile->actor != NULL)
+        {
+            if (next_x == x && next_y == y && actions.attack && tile->actor != player)
+            {
+                tile->actor->mark_for_delete = true;
+            }
 
-                        success = true;
-                    }
+            goto end;
+        }
 
-                    break;
-                }
+        if (next_x == x && next_y == y && actions.take_item && TCOD_list_peek(tile->items) != NULL)
+        {
+            TCOD_list_push(actor->items, TCOD_list_pop(tile->items));
+        }
 
-                if (next_x == x && next_y == y && actions.take_item && TCOD_list_peek(tile->items) != NULL)
-                {
-                    TCOD_list_push(actor->items, TCOD_list_pop(tile->items));
-                }
+        if (next_x == x && next_y == y && actions.take_items && TCOD_list_size(tile->items) > 0)
+        {
+            for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
+            {
+                item_t *item = *i;
 
-                if (next_x == x && next_y == y && actions.take_items && TCOD_list_size(tile->items) > 0)
-                {
-                    for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
-                    {
-                        item_t *item = *i;
+                i = TCOD_list_remove_iterator(tile->items, i);
 
-                        i = TCOD_list_remove_iterator(tile->items, i);
-
-                        TCOD_list_push(actor->items, item);
-                    }
-                }
-
-                actor->map->tiles[actor->x][actor->y].actor = NULL;
-                actor->map->tiles[next_x][next_y].actor = actor;
-
-                actor->x = next_x;
-                actor->y = next_y;
-
-                success = true;
-
-                break;
+                TCOD_list_push(actor->items, item);
             }
         }
 
+        actor->map->tiles[actor->x][actor->y].actor = NULL;
+        actor->map->tiles[next_x][next_y].actor = actor;
+
+        actor->x = next_x;
+        actor->y = next_y;
+
+        for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+        {
+            item_t *item = *i;
+
+            item->x = actor->x;
+            item->y = actor->y;
+        }
+
+        success = true;
+
+    end:
         TCOD_path_delete(path);
     }
 

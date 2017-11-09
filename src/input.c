@@ -293,6 +293,8 @@ game_input_t input_handle(void)
         }
         else if (mouse.wheel_down)
         {
+            // TODO: only scroll when mouse is in the panel
+            // scroll message log as well, if mouse is in there
             panel_content_scroll_down();
 
             input = GAME_INPUT_DRAW;
@@ -649,13 +651,13 @@ game_input_t input_handle(void)
             }
 
             automove_ready = false;
-
-            input = GAME_INPUT_TURN;
         }
         else
         {
             automove_clear();
         }
+        
+        input = GAME_INPUT_TURN;
     }
     else
     {

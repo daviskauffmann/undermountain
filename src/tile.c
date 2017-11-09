@@ -79,7 +79,7 @@ void tile_draw_turn(tile_t *tile, int x, int y)
     item_t *item = TCOD_list_peek(tile->items);
     if (item != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
-        item_draw_turn(item, x, y);
+        item_draw_turn(item);
 
         return;
     }
@@ -152,7 +152,7 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
     item_t *item = TCOD_list_peek(tile->items);
     if (item != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
-        item_draw_tick(item, x, y);
+        item_draw_tick(item);
 
         return;
     }

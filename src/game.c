@@ -23,7 +23,7 @@ void game_new()
     TCOD_list_push(map->actors, player);
     map->tiles[player->x][player->y].actor = player;
 
-    item_t *item = item_create_random();
+    item_t *item = item_create_random(player->x, player->y);
 
     TCOD_list_push(player->items, item);
 

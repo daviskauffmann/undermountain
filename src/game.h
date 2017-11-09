@@ -140,6 +140,8 @@ typedef enum item_type_e {
 
 typedef struct item_s
 {
+    int x;
+    int y;
     unsigned char glyph;
     TCOD_color_t color;
     item_type_t type;
@@ -155,8 +157,8 @@ typedef struct weapon_s
 {
     item_t item;
     int a;
-    int x;
     int b;
+    int c;
 } weapon_t;
 
 typedef struct potion_s
@@ -169,15 +171,15 @@ typedef struct corpse_s
     item_t item;
 } corpse_t;
 
-item_t *item_create_random(void);
-armor_t *armor_create(unsigned char glyph, TCOD_color_t color, int ac);
-weapon_t *weapon_create(unsigned char glyph, TCOD_color_t color, int a, int x, int b);
-potion_t *potion_create(unsigned char glyph, TCOD_color_t color);
-corpse_t *corpse_create(actor_t *actor);
+item_t *item_create_random(int x, int y);
+armor_t *armor_create(int x, int y, unsigned char glyph, TCOD_color_t color, int ac);
+weapon_t *weapon_create(int x, int y, unsigned char glyph, TCOD_color_t color, int a, int b, int c);
+potion_t *potion_create(int x, int y, unsigned char glyph, TCOD_color_t color);
+corpse_t *corpse_create(int x, int y, actor_t *actor);
 void item_turn(item_t *item);
 void item_tick(item_t *item);
-void item_draw_turn(item_t *item, int x, int y);
-void item_draw_tick(item_t *item, int x, int y);
+void item_draw_turn(item_t *item);
+void item_draw_tick(item_t *item);
 void item_destroy(item_t *item);
 
 /* Maps */

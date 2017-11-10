@@ -94,110 +94,101 @@ game_input_t input_handle(void)
                         actor_target_set(player, mouse_tile_x, mouse_tile_y, interactions);
                     }
                 }
-                else if (panel_is_inside(mouse_x, mouse_y))
-                {
-                    switch (content)
-                    {
-                    case CONTENT_INVENTORY:
-                    {
-                        item_t *selected = NULL;
-
-                        int y = 1;
-                        for (void **i = TCOD_list_begin(player->items); i != TCOD_list_end(player->items); i++)
-                        {
-                            item_t *item = *i;
-
-                            if (mouse_y == y + panel_y - content_scroll[content])
-                            {
-                                selected = item;
-
-                                break;
-                            }
-                            else
-                            {
-                                y++;
-                            }
-                        }
-
-                        if (selected != NULL)
-                        {
-                            input = GAME_INPUT_DRAW;
-
-                            tooltip_show(panel_x + 1, y);
-
-                            tooltip_data_t data = {
-                                .item = selected};
-
-                            tooltip_options_add("Drop", &tooltip_drop_item, data);
-                        }
-
-                        break;
-                    }
-                    }
-                }
             }
         }
         else if (mouse.rbutton)
         {
             if (view_is_inside(mouse_x, mouse_y))
             {
-                if (tooltip_visible)
+                input = GAME_INPUT_DRAW;
+
+                tooltip_show(mouse_x, mouse_y);
+
+                tooltip_data_t data = {
+                    .tile_x = mouse_tile_x,
+                    .tile_y = mouse_tile_y};
+
+                tile_t *tile = &player->map->tiles[data.tile_x][data.tile_y];
+
+                tooltip_options_add("Move", &tooltip_move, data);
+
+                if (TCOD_map_is_in_fov(player->fov_map, data.tile_x, data.tile_y))
                 {
-                    input = GAME_INPUT_DRAW;
-
-                    tooltip_hide();
-                }
-                else
-                {
-                    input = GAME_INPUT_DRAW;
-
-                    tooltip_show(mouse_x, mouse_y);
-
-                    tooltip_data_t data = {
-                        .tile_x = mouse_tile_x,
-                        .tile_y = mouse_tile_y};
-
-                    tile_t *tile = &player->map->tiles[data.tile_x][data.tile_y];
-
-                    tooltip_options_add("Move", &tooltip_move, data);
-
-                    if (TCOD_map_is_in_fov(player->fov_map, data.tile_x, data.tile_y))
+                    if (tile->light != NULL)
                     {
-                        if (tile->light != NULL)
+                        if (tile->light->on)
                         {
-                            if (tile->light->on)
-                            {
-                                tooltip_options_add("Turn Off", &tooltip_light_off, data);
-                            }
-                            else
-                            {
-                                tooltip_options_add("Turn On", &tooltip_light_on, data);
-                            }
+                            tooltip_options_add("Turn Off", &tooltip_light_off, data);
                         }
-
-                        if (tile->actor != NULL)
+                        else
                         {
-                            if (tile->actor == player)
-                            {
-                                tooltip_options_add("Character", &tooltip_move, data);
-                                tooltip_options_add("Inventory", &tooltip_move, data);
-                            }
-                            else
-                            {
-                                tooltip_options_add("Attack", &tooltip_attack, data);
-                            }
-                        }
-
-                        if (TCOD_list_peek(tile->items))
-                        {
-                            tooltip_options_add("Take Item", &tooltip_take_item, data);
-                        }
-
-                        if (TCOD_list_size(tile->items) > 1)
-                        {
-                            tooltip_options_add("Take All", &tooltip_take_items, data);
+                            tooltip_options_add("Turn On", &tooltip_light_on, data);
                         }
                     }
+
+                    if (tile->actor != NULL)
+                    {
+                        if (tile->actor == player)
+                        {
+                            tooltip_options_add("Character", &tooltip_move, data);
+                            tooltip_options_add("Inventory", &tooltip_move, data);
+                        }
+                        else
+                        {
+                            tooltip_options_add("Attack", &tooltip_attack, data);
+                        }
+                    }
+
+                    if (TCOD_list_peek(tile->items))
+                    {
+                        tooltip_options_add("Take Item", &tooltip_take_item, data);
+                    }
+
+                    if (TCOD_list_size(tile->items) > 1)
+                    {
+                        tooltip_options_add("Take All", &tooltip_take_items, data);
+                    }
+                }
+            }
+            else if (panel_is_inside(mouse_x, mouse_y))
+            {
+                switch (content)
+                {
+                case CONTENT_INVENTORY:
+                {
+                    item_t *selected = NULL;
+
+                    int y = 1;
+                    for (void **i = TCOD_list_begin(player->items); i != TCOD_list_end(player->items); i++)
+                    {
+                        item_t *item = *i;
+
+                        if (mouse_y == y + panel_y - content_scroll[content])
+                        {
+                            selected = item;
+
+                            break;
+                        }
+                        else
+                        {
+                            y++;
+                        }
+                    }
+
+                    if (selected != NULL)
+                    {
+                        input = GAME_INPUT_DRAW;
+
+                        tooltip_show(panel_x + 1, y - content_scroll[content]);
+
+                        tooltip_data_t data = {
+                            .item = selected};
+
+                        tooltip_options_add("Drop", &tooltip_drop_item, data);
+                    }
+
+                    break;
+                }
                 }
             }
         }

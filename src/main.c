@@ -12,8 +12,6 @@ int main(int argc, char *argv[])
 {
     system_init();
 
-    printf("%d\n", sizeof(tile_t));
-
     // while (!TCOD_console_is_window_closed())
     // {
     //     switch (menu_input())

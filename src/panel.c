@@ -5,7 +5,6 @@
 #include "game.h"
 
 static TCOD_console_t panel;
-static int content_scroll[NUM_CONTENTS];
 
 void panel_init(void)
 {
@@ -44,6 +43,11 @@ void panel_content_scroll_up(void)
     {
         content_scroll[content]--;
     }
+}
+
+bool panel_is_inside(int x, int y)
+{
+    return x >= panel_x && x < panel_x + panel_width && y >= panel_y && y < panel_y + panel_height;
 }
 
 void panel_draw_turn(void)
@@ -100,7 +104,7 @@ void panel_draw_tick(void)
 
                 if (mouse_x >= panel_x && mouse_x < panel_x + panel_width && mouse_y >= panel_y && mouse_y < panel_y + panel_height)
                 {
-                    if (mouse_y == y + panel_y)
+                    if (mouse_y == y + panel_y - content_scroll[content])
                     {
                         color = TCOD_yellow;
                     }

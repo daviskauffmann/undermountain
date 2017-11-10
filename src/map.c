@@ -31,6 +31,7 @@ map_t *map_create(void)
     map->rooms = TCOD_list_new();
     map->lights = TCOD_list_new();
     map->actors = TCOD_list_new();
+    map->items = TCOD_list_new();
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -98,6 +99,7 @@ map_t *map_create(void)
         {
             item_t *item = item_create_random(x, y);
 
+            TCOD_list_push(map->items, item);
             TCOD_list_push(actor->items, item);
         }
     }
@@ -111,6 +113,7 @@ map_t *map_create(void)
 
         item_t *item = item_create_random(x, y);
 
+        TCOD_list_push(map->items, item);
         TCOD_list_push(map->tiles[x][y].items, item);
     }
 
@@ -343,27 +346,27 @@ void map_turn(map_t *map)
         actor_t *actor = *i;
         tile_t *tile = &actor->map->tiles[actor->x][actor->y];
 
-        if (!actor->mark_for_delete)
+        if (actor->mark_for_delete)
         {
-            continue;
+            corpse_t *corpse = corpse_create(actor->x, actor->y, actor);
+
+            TCOD_list_push(map->items, corpse);
+            TCOD_list_push(tile->items, corpse);
+
+            for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+            {
+                item_t *item = *i;
+
+                i = TCOD_list_remove_iterator(actor->items, i);
+
+                TCOD_list_push(tile->items, item);
+            }
+
+            tile->actor = NULL;
+            i = TCOD_list_remove_iterator(actor->map->actors, i);
+
+            actor_destroy(actor);
         }
-
-        corpse_t *corpse = corpse_create(actor->x, actor->y, actor);
-
-        TCOD_list_push(tile->items, corpse);
-
-        for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
-        {
-            item_t *item = *i;
-
-            i = TCOD_list_remove_iterator(actor->items, i);
-            TCOD_list_push(tile->items, item);
-        }
-
-        tile->actor = NULL;
-        i = TCOD_list_remove_iterator(actor->map->actors, i);
-
-        actor_destroy(actor);
     }
 
     for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
@@ -371,6 +374,13 @@ void map_turn(map_t *map)
         actor_t *actor = *i;
 
         actor_calc_fov(actor);
+    }
+
+    for (void **i = TCOD_list_begin(map->items); i != TCOD_list_end(map->items); i++)
+    {
+        item_t *item = *i;
+
+        item_turn(item);
     }
 }
 
@@ -399,6 +409,18 @@ void map_tick(map_t *map)
 
         actor_tick(actor);
     }
+
+    for (void **i = TCOD_list_begin(map->items); i != TCOD_list_end(map->items); i++)
+    {
+        item_t *item = *i;
+
+        item_tick(item);
+    }
+}
+
+bool map_is_inside(int x, int y)
+{
+    return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
 }
 
 room_t *map_get_random_room(map_t *map)
@@ -429,14 +451,12 @@ void map_draw_turn(map_t *map)
     {
         for (int y = view_y; y < view_y + view_height; y++)
         {
-            if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
+            if (map_is_inside(x, y))
             {
-                continue;
+                tile_t *tile = &map->tiles[x][y];
+
+                tile_draw_turn(tile, x, y);
             }
-
-            tile_t *tile = &map->tiles[x][y];
-
-            tile_draw_turn(tile, x, y);
         }
     }
 
@@ -445,6 +465,13 @@ void map_draw_turn(map_t *map)
         light_t *light = *i;
 
         light_draw_turn(light);
+    }
+
+    for (void **i = TCOD_list_begin(map->items); i != TCOD_list_end(map->items); i++)
+    {
+        item_t *item = *i;
+
+        item_draw_turn(item);
     }
 
     for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
@@ -457,32 +484,27 @@ void map_draw_turn(map_t *map)
 
 void map_draw_tick(map_t *map)
 {
-    if (sfx)
+    static TCOD_noise_t noise = NULL;
+    if (noise == NULL)
     {
-        static TCOD_noise_t noise = NULL;
-        if (noise == NULL)
+        noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
+    }
+
+    static float noise_x = 0.0f;
+
+    noise_x += 0.2f;
+    float noise_dx = noise_x + 20.0f;
+    float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+    noise_dx += 30.0f;
+    float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+    float di = 0.2f * TCOD_noise_get(noise, &noise_x);
+
+    for (int x = view_x; x < view_x + view_width; x++)
+    {
+        for (int y = view_y; y < view_y + view_height; y++)
         {
-            noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
-        }
-
-        static float noise_x = 0.0f;
-
-        noise_x += 0.2f;
-        float noise_dx = noise_x + 20.0f;
-        float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-        noise_dx += 30.0f;
-        float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-        float di = 0.2f * TCOD_noise_get(noise, &noise_x);
-
-        for (int x = view_x; x < view_x + view_width; x++)
-        {
-            for (int y = view_y; y < view_y + view_height; y++)
+            if (map_is_inside(x, y))
             {
-                if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT)
-                {
-                    continue;
-                }
-
                 tile_t *tile = &map->tiles[x][y];
 
                 tile_draw_tick(tile, x, y, dx, dy, di);
@@ -495,6 +517,13 @@ void map_draw_tick(map_t *map)
         light_t *light = *i;
 
         light_draw_tick(light);
+    }
+
+    for (void **i = TCOD_list_begin(map->items); i != TCOD_list_end(map->items); i++)
+    {
+        item_t *item = *i;
+
+        item_draw_tick(item);
     }
 
     for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
@@ -543,6 +572,15 @@ void map_destroy(map_t *map)
     }
 
     TCOD_list_delete(map->actors);
+
+    for (void **i = TCOD_list_begin(map->items); i != TCOD_list_end(map->items); i++)
+    {
+        item_t *item = *i;
+
+        item_destroy(item);
+    }
+
+    TCOD_list_delete(map->items);
 
     free(map);
 }

@@ -38,6 +38,11 @@ void msg_log(const char *message, map_t *map, int x, int y)
     }
 }
 
+bool msg_is_inside(int x, int y)
+{
+    return x >= msg_x && x < msg_x + msg_width && y >= msg_y && y < msg_y + msg_height;
+}
+
 void msg_draw_turn(void)
 {
     if (!msg_visible)

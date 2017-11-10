@@ -6,7 +6,7 @@
 
 #define CONSTRAIN_VIEW 1
 
-void gfx_init()
+void gfx_init(void)
 {
     tile_glyph[TILE_TYPE_EMPTY] = ' ';
     tile_glyph[TILE_TYPE_FLOOR] = '.';
@@ -18,7 +18,6 @@ void gfx_init()
     foreground_color = TCOD_white;
     tile_color_light = TCOD_white;
     tile_color_dark = TCOD_color_RGB(16, 16, 16);
-    torch_color = TCOD_light_amber;
 
     msg_init();
     panel_init();
@@ -64,8 +63,6 @@ void gfx_draw_turn(void)
 
     tooltip_width = 15;
     tooltip_height = TCOD_list_size(tooltip_options) + 2;
-    tooltip_x = tooltip_tile_x - view_x;
-    tooltip_y = tooltip_tile_y - view_y;
 
     world_draw_turn();
     msg_draw_turn();

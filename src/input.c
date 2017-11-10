@@ -5,7 +5,7 @@
 #include "system.h"
 #include "game.h"
 
-#define AUTOMOVE_DELAY 0.05f
+#define AUTOMOVE_DELAY 0.0f
 
 static bool automove;
 static int automove_x;
@@ -49,7 +49,7 @@ game_input_t input_handle(void)
         {
             if (tooltip_visible)
             {
-                if (mouse_x >= tooltip_x && mouse_x < tooltip_x + tooltip_width && mouse_y >= tooltip_y && mouse_y < tooltip_y + tooltip_height)
+                if (tooltip_is_inside(mouse_x, mouse_y))
                 {
                     tooltip_option_t *selected = NULL;
 
@@ -85,6 +85,8 @@ game_input_t input_handle(void)
 
                             automove_set(tooltip_tile_x, tooltip_tile_y, actions);
 
+                            input = GAME_INPUT_DRAW;
+
                             break;
                         }
                         case TOOLTIP_OPTION_TYPE_ATTACK:
@@ -97,6 +99,8 @@ game_input_t input_handle(void)
                                 .take_items = false};
 
                             automove_set(tooltip_tile_x, tooltip_tile_y, actions);
+
+                            input = GAME_INPUT_DRAW;
 
                             break;
                         }
@@ -111,6 +115,8 @@ game_input_t input_handle(void)
 
                             automove_set(tooltip_tile_x, tooltip_tile_y, actions);
 
+                            input = GAME_INPUT_DRAW;
+
                             break;
                         }
                         case TOOLTIP_OPTION_TYPE_TAKE_ITEMS:
@@ -124,6 +130,8 @@ game_input_t input_handle(void)
 
                             automove_set(tooltip_tile_x, tooltip_tile_y, actions);
 
+                            input = GAME_INPUT_DRAW;
+
                             break;
                         }
                         case TOOLTIP_OPTION_TYPE_DROP_ITEM:
@@ -132,6 +140,8 @@ game_input_t input_handle(void)
 
                             TCOD_list_remove(player->items, tooltip_item);
                             TCOD_list_push(tile->items, tooltip_item);
+
+                            input = GAME_INPUT_TURN;
 
                             break;
                         }
@@ -146,6 +156,8 @@ game_input_t input_handle(void)
 
                             automove_set(tooltip_tile_x, tooltip_tile_y, actions);
 
+                            input = GAME_INPUT_DRAW;
+
                             break;
                         }
                         case TOOLTIP_OPTION_TYPE_LIGHT_ON:
@@ -159,6 +171,8 @@ game_input_t input_handle(void)
 
                             automove_set(tooltip_tile_x, tooltip_tile_y, actions);
 
+                            input = GAME_INPUT_DRAW;
+
                             break;
                         }
                         }
@@ -168,12 +182,14 @@ game_input_t input_handle(void)
                 }
                 else
                 {
+                    input = GAME_INPUT_DRAW;
+
                     tooltip_hide();
                 }
             }
             else
             {
-                if (mouse_tile_x >= view_x && mouse_tile_x < view_x + view_width && mouse_tile_y >= view_y && mouse_tile_y < view_y + view_height)
+                if (view_is_inside(mouse_x, mouse_y))
                 {
                     if (TCOD_map_is_in_fov(player->fov_map, mouse_tile_x, mouse_tile_y))
                     {
@@ -191,7 +207,7 @@ game_input_t input_handle(void)
                         automove_set(mouse_tile_x, mouse_tile_y, actions);
                     }
                 }
-                else if (mouse_x >= panel_x && mouse_x < panel_x + panel_width && mouse_y >= panel_y && mouse_y < panel_y + panel_height)
+                else if (panel_is_inside(mouse_x, mouse_y))
                 {
                     switch (content)
                     {
@@ -204,7 +220,7 @@ game_input_t input_handle(void)
                         {
                             item_t *item = *i;
 
-                            if (mouse_y == y + panel_y)
+                            if (mouse_y == y + panel_y - content_scroll[content])
                             {
                                 selected = item;
 
@@ -218,7 +234,9 @@ game_input_t input_handle(void)
 
                         if (selected != NULL)
                         {
-                            tooltip_show(mouse_tile_x, mouse_tile_y);
+                            input = GAME_INPUT_DRAW;
+
+                            tooltip_show(panel_x + 1, y);
 
                             tooltip_item = selected;
 
@@ -230,20 +248,25 @@ game_input_t input_handle(void)
                     }
                 }
             }
-
-            input = GAME_INPUT_DRAW;
         }
         else if (mouse.rbutton)
         {
-            if (mouse_tile_x >= view_x && mouse_tile_x < view_x + view_width && mouse_tile_y >= view_y && mouse_tile_y < view_y + view_height)
+            if (view_is_inside(mouse_x, mouse_y))
             {
                 if (tooltip_visible)
                 {
+                    input = GAME_INPUT_DRAW;
+
                     tooltip_hide();
                 }
                 else
                 {
-                    tooltip_show(mouse_tile_x, mouse_tile_y);
+                    input = GAME_INPUT_DRAW;
+
+                    tooltip_show(mouse_x, mouse_y);
+
+                    tooltip_tile_x = mouse_tile_x;
+                    tooltip_tile_y = mouse_tile_y;
 
                     tile_t *tile = &player->map->tiles[tooltip_tile_x][tooltip_tile_y];
 
@@ -287,23 +310,33 @@ game_input_t input_handle(void)
                         }
                     }
                 }
-
-                input = GAME_INPUT_DRAW;
             }
         }
         else if (mouse.wheel_down)
         {
-            // TODO: only scroll when mouse is in the panel
-            // scroll message log as well, if mouse is in there
-            panel_content_scroll_down();
+            if (msg_is_inside(mouse_x, mouse_y))
+            {
+                // scroll message log down
+            }
+            else if (panel_is_inside(mouse_x, mouse_y))
+            {
+                input = GAME_INPUT_DRAW;
 
-            input = GAME_INPUT_DRAW;
+                panel_content_scroll_down();
+            }
         }
         else if (mouse.wheel_up)
         {
-            panel_content_scroll_up();
+            if (msg_is_inside(mouse_x, mouse_y))
+            {
+                // scroll message log down
+            }
+            else if (panel_is_inside(mouse_x, mouse_y))
+            {
+                input = GAME_INPUT_DRAW;
 
-            input = GAME_INPUT_DRAW;
+                panel_content_scroll_up();
+            }
         }
 
         break;
@@ -315,22 +348,6 @@ game_input_t input_handle(void)
         case TCODK_ESCAPE:
         {
             input = GAME_INPUT_QUIT;
-
-            break;
-        }
-        case TCODK_PAGEDOWN:
-        {
-            panel_content_scroll_down();
-
-            input = GAME_INPUT_DRAW;
-
-            break;
-        }
-        case TCODK_PAGEUP:
-        {
-            panel_content_scroll_up();
-
-            input = GAME_INPUT_DRAW;
 
             break;
         }
@@ -348,6 +365,8 @@ game_input_t input_handle(void)
                     {
                         if (current_map_index > 0)
                         {
+                            input = GAME_INPUT_TURN;
+
                             current_map_index--;
 
                             map_t *new_map = TCOD_list_get(maps, current_map_index);
@@ -361,8 +380,6 @@ game_input_t input_handle(void)
                             player->map = new_map;
                             player->x = new_map->stair_down_x;
                             player->y = new_map->stair_down_y;
-
-                            input = GAME_INPUT_TURN;
                         }
                         else
                         {
@@ -381,6 +398,8 @@ game_input_t input_handle(void)
 
                     if (tile->type == TILE_TYPE_STAIR_DOWN)
                     {
+                        input = GAME_INPUT_TURN;
+
                         current_map_index++;
 
                         map_t *new_map;
@@ -405,40 +424,24 @@ game_input_t input_handle(void)
                         player->map = new_map;
                         player->x = new_map->stair_up_x;
                         player->y = new_map->stair_up_y;
-
-                        input = GAME_INPUT_TURN;
                     }
                 }
 
                 break;
             }
-            case 'a':
-            {
-                sfx = !sfx;
-
-                input = GAME_INPUT_DRAW;
-
-                break;
-            }
-            case 'b':
-            {
-                input = GAME_INPUT_TICK;
-
-                break;
-            }
             case 'c':
             {
-                panel_toggle(CONTENT_CHARACTER);
-
                 input = GAME_INPUT_DRAW;
+
+                panel_toggle(CONTENT_CHARACTER);
 
                 break;
             }
             case 'i':
             {
-                panel_toggle(CONTENT_INVENTORY);
-
                 input = GAME_INPUT_DRAW;
+
+                panel_toggle(CONTENT_INVENTORY);
 
                 break;
             }
@@ -446,28 +449,28 @@ game_input_t input_handle(void)
             {
                 if (key.lctrl)
                 {
+                    input = GAME_INPUT_DRAW;
+
                     game_uninit();
                     game_init();
                     game_load();
-
-                    input = GAME_INPUT_DRAW;
                 }
                 else
                 {
-                    msg_visible = !msg_visible;
-
                     input = GAME_INPUT_DRAW;
+
+                    msg_visible = !msg_visible;
                 }
 
                 break;
             }
             case 'r':
             {
+                input = GAME_INPUT_DRAW;
+
                 game_uninit();
                 game_init();
                 game_new();
-
-                input = GAME_INPUT_DRAW;
 
                 break;
             }
@@ -475,15 +478,17 @@ game_input_t input_handle(void)
             {
                 if (key.lctrl)
                 {
-                    game_save();
-
                     input = GAME_INPUT_DRAW;
+
+                    game_save();
                 }
 
                 break;
             }
             case 't':
             {
+                input = GAME_INPUT_DRAW;
+
                 if (player->torch)
                 {
                     player->light = true;
@@ -499,15 +504,13 @@ game_input_t input_handle(void)
 
                 actor_calc_fov(player);
 
-                input = GAME_INPUT_DRAW;
-
                 break;
             }
             case 'y':
             {
-                torch_color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
-
                 input = GAME_INPUT_DRAW;
+
+                player->torch_color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
 
                 break;
             }
@@ -527,7 +530,6 @@ game_input_t input_handle(void)
             {
                 input = GAME_INPUT_TURN;
             }
-
 
             break;
         }
@@ -580,11 +582,11 @@ game_input_t input_handle(void)
         }
         case TCODK_KP5:
         {
+            input = GAME_INPUT_TURN;
+
             automove_clear();
 
             tooltip_hide();
-
-            input = GAME_INPUT_TURN;
 
             break;
         }
@@ -641,7 +643,7 @@ game_input_t input_handle(void)
 
             tooltip_hide();
 
-            move_results_t results = actor_move(player, player->x + 1, player->y + 1, default_actions);
+            move_results_t results = actor_move(player, player->x + 1, player->y - 1, default_actions);
 
             if (results.cost_turn)
             {
@@ -672,14 +674,9 @@ game_input_t input_handle(void)
 
         if (results.cost_turn)
         {
-            if (automove_actor != NULL && automove_actor->mark_for_delete)
-            {
-                automove_clear();
-            }
+            input = GAME_INPUT_TURN;
 
             automove_ready = false;
-
-            input = GAME_INPUT_TURN;
         }
 
         if (results.arrived)

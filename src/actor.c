@@ -60,13 +60,6 @@ void actor_turn(actor_t *actor)
 {
     actor_calc_fov(actor);
 
-    for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
-    {
-        item_t *item = *i;
-
-        item_turn(item);
-    }
-
     if (actor == player)
     {
         return;
@@ -138,12 +131,6 @@ void actor_turn(actor_t *actor)
 
 void actor_tick(actor_t *actor)
 {
-    for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
-    {
-        item_t *item = *i;
-
-        item_tick(item);
-    }
 }
 
 void actor_calc_fov(actor_t *actor)
@@ -207,14 +194,6 @@ void actor_calc_fov(actor_t *actor)
                         TCOD_map_set_in_fov(actor->fov_map, x, y, true);
                     }
                 }
-
-                // if (tile->actor != NULL)
-                // {
-                //     if ((tile->actor->light || tile->actor->torch))
-                //     {
-                //         TCOD_map_set_in_fov(actor->fov_map, x, y, true);
-                //     }
-                // }
             }
         }
     }
@@ -228,7 +207,7 @@ move_results_t actor_move(actor_t *actor, int x, int y, move_actions_t actions)
         .cost_turn = false,
         .arrived = false};
 
-    if (x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT)
+    if (map_is_inside(x, y))
     {
         TCOD_map_set_properties(actor->fov_map, x, y, TCOD_map_is_transparent(actor->fov_map, x, y), true);
 
@@ -241,11 +220,79 @@ move_results_t actor_move(actor_t *actor, int x, int y, move_actions_t actions)
 
         tile_t *tile = &actor->map->tiles[next_x][next_y];
 
-        if (next_x != actor->x || next_y != actor->y)
+        bool move_into_dest = true;
+
+        if (next_x == x && next_y == y)
+        {
+            if (tile->light != NULL)
+            {
+                if (actions.light_off && tile->light->on)
+                {
+                    tile->light->on = false;
+
+                    results.cost_turn = true;
+
+                    move_into_dest = false;
+                }
+                else if (actions.light_on && !tile->light->on)
+                {
+                    tile->light->on = true;
+
+                    results.cost_turn = true;
+
+                    move_into_dest = false;
+                }
+            }
+
+            if (actions.attack && tile->actor != NULL && tile->actor != player)
+            {
+                tile->actor->mark_for_delete = true;
+
+                results.cost_turn = true;
+
+                move_into_dest = false;
+            }
+
+            if (actions.take_item && TCOD_list_peek(tile->items) != NULL)
+            {
+                item_t *item = TCOD_list_pop(tile->items);
+
+                item->x = actor->x;
+                item->y = actor->y;
+
+                TCOD_list_push(actor->items, item);
+
+                results.cost_turn = true;
+
+                move_into_dest = false;
+            }
+
+            if (actions.take_items && TCOD_list_size(tile->items) > 0)
+            {
+                for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
+                {
+                    item_t *item = *i;
+
+                    item->x = actor->x;
+                    item->y = actor->y;
+
+                    TCOD_list_push(actor->items, item);
+
+                    i = TCOD_list_remove_iterator(tile->items, i);
+
+                    results.cost_turn = true;
+
+                    move_into_dest = false;
+                }
+            }
+
+            results.arrived = true;
+        }
+
+        if (move_into_dest && (next_x != actor->x || next_y != actor->y))
         {
             if (tile_walkable[tile->type] &&
-                tile->actor == NULL &&
-                tile->light == NULL)
+                tile->actor == NULL)
             {
                 actor->map->tiles[actor->x][actor->y].actor = NULL;
                 actor->map->tiles[next_x][next_y].actor = actor;
@@ -263,55 +310,6 @@ move_results_t actor_move(actor_t *actor, int x, int y, move_actions_t actions)
 
                 results.cost_turn = true;
             }
-        }
-
-        if (next_x == x && next_y == y)
-        {
-            if (tile->light != NULL)
-            {
-                if (tile->light->on && actions.light_off)
-                {
-                    tile->light->on = false;
-
-                    results.cost_turn = true;
-                }
-                else if (!tile->light->on && actions.light_on)
-                {
-                    tile->light->on = true;
-
-                    results.cost_turn = true;
-                }
-            }
-
-            if (tile->actor != NULL && actions.attack && tile->actor != player)
-            {
-                tile->actor->mark_for_delete = true;
-
-                results.cost_turn = true;
-            }
-
-            if (TCOD_list_peek(tile->items) != NULL && actions.take_item)
-            {
-                TCOD_list_push(actor->items, TCOD_list_pop(tile->items));
-
-                results.cost_turn = true;
-            }
-
-            if (TCOD_list_size(tile->items) > 0 && actions.take_items)
-            {
-                for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
-                {
-                    item_t *item = *i;
-
-                    i = TCOD_list_remove_iterator(tile->items, i);
-
-                    TCOD_list_push(actor->items, item);
-
-                    results.cost_turn = true;
-                }
-            }
-
-            results.arrived = true;
         }
 
         TCOD_path_delete(path);
@@ -335,13 +333,6 @@ void actor_draw_tick(actor_t *actor)
 
 void actor_destroy(actor_t *actor)
 {
-    for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
-    {
-        item_t *item = *i;
-
-        item_destroy(item);
-    }
-
     TCOD_list_delete(actor->items);
 
     if (actor->fov_map != NULL)

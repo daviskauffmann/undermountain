@@ -19,9 +19,8 @@ void tooltip_show(int x, int y)
     tooltip_options_clear();
 
     tooltip_visible = true;
-    tooltip_tile_x = x;
-    tooltip_tile_y = y;
-    tooltip_item = NULL;
+    tooltip_x = x;
+    tooltip_y = y;
 }
 
 void tooltip_hide()
@@ -29,6 +28,9 @@ void tooltip_hide()
     tooltip_options_clear();
 
     tooltip_visible = false;
+    tooltip_tile_x = -1;
+    tooltip_tile_y = -1;
+    tooltip_item = NULL;
 }
 
 void tooltip_options_add(char *text, tooltip_option_type_t type)
@@ -51,6 +53,11 @@ void tooltip_options_clear()
 
         free(option);
     }
+}
+
+bool tooltip_is_inside(int x, int y)
+{
+    return x >= tooltip_x && x < tooltip_x + tooltip_width && y >= tooltip_y && y < tooltip_y + tooltip_height;
 }
 
 void tooltip_draw_turn(void)

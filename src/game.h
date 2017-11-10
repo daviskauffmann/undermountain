@@ -115,6 +115,8 @@ typedef struct actor_s
 
 typedef struct move_actions_s
 {
+    bool descend;
+    bool ascend;
     bool light_on;
     bool light_off;
     bool attack;
@@ -203,11 +205,13 @@ typedef struct map_s
     TCOD_list_t rooms;
     TCOD_list_t lights;
     TCOD_list_t actors;
+    TCOD_list_t items;
 } map_t;
 
 map_t *map_create(void);
 void map_turn(map_t *map);
 void map_tick(map_t *map);
+bool map_is_inside(int x, int y);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
 void map_draw_turn(map_t *map);
@@ -238,16 +242,23 @@ int mouse_tile_x;
 int mouse_tile_y;
 
 /* Graphics */
+TCOD_color_t background_color;
+TCOD_color_t foreground_color;
+TCOD_color_t tile_color_light;
+TCOD_color_t tile_color_dark;
+
+void gfx_init(void);
+void gfx_draw_turn(void);
+void gfx_draw_tick(void);
+void gfx_uninit(void);
+
+/* View */
 int view_x;
 int view_y;
 int view_width;
 int view_height;
 
-TCOD_color_t background_color;
-TCOD_color_t foreground_color;
-TCOD_color_t tile_color_light;
-TCOD_color_t tile_color_dark;
-TCOD_color_t torch_color;
+bool view_is_inside(int x, int y);
 
 /* Message Log */
 bool msg_visible;
@@ -258,6 +269,7 @@ int msg_height;
 
 void msg_init(void);
 void msg_log(const char *message, map_t *map, int x, int y);
+bool msg_is_inside(int x, int y);
 void msg_draw_turn(void);
 void msg_draw_tick(void);
 void msg_uninit(void);
@@ -275,13 +287,16 @@ int panel_x;
 int panel_y;
 int panel_width;
 int panel_height;
+
 content_t content;
 int content_height[NUM_CONTENTS];
+int content_scroll[NUM_CONTENTS];
 
 void panel_init(void);
 void panel_toggle(content_t new_content);
 void panel_content_scroll_down(void);
 void panel_content_scroll_up(void);
+bool panel_is_inside(int x, int y);
 void panel_draw_turn(void);
 void panel_draw_tick(void);
 void panel_uninit(void);
@@ -308,16 +323,19 @@ int tooltip_x;
 int tooltip_y;
 int tooltip_width;
 int tooltip_height;
+
+TCOD_list_t tooltip_options;
+
 int tooltip_tile_x;
 int tooltip_tile_y;
 item_t *tooltip_item;
-TCOD_list_t tooltip_options;
 
 void tooltip_init(void);
 void tooltip_show(int x, int y);
 void tooltip_hide(void);
 void tooltip_options_add(char *text, tooltip_option_type_t type);
 void tooltip_options_clear(void);
+bool tooltip_is_inside(int x, int y);
 void tooltip_draw_turn(void);
 void tooltip_draw_tick(void);
 void tooltip_uninit(void);

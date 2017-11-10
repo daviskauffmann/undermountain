@@ -23,9 +23,13 @@ void game_new()
     TCOD_list_push(map->actors, player);
     map->tiles[player->x][player->y].actor = player;
 
-    item_t *item = item_create_random(player->x, player->y);
+    for (int i = 0; i < 30; i++)
+    {
+        item_t *item = item_create_random(player->x, player->y);
 
-    TCOD_list_push(player->items, item);
+        TCOD_list_push(map->items, item);
+        TCOD_list_push(player->items, item);
+    }
 
     turn = 0;
 

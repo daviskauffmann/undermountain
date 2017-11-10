@@ -132,6 +132,8 @@ typedef struct actor_s
     bool mark_for_delete;
     bool target;
     target_data_t target_data;
+    int speed;
+    int turns_waited;
 } actor_t;
 
 actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color);

@@ -24,6 +24,8 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
     actor->fov_map = NULL;
     actor->mark_for_delete = false;
     actor->target = false;
+    actor->speed = 2;
+    actor->turns_waited = 0;
 
     switch (TCOD_random_get_int(NULL, 0, 2))
     {
@@ -64,68 +66,77 @@ void actor_turn(actor_t *actor)
 
     if (actor != player)
     {
-        bool chasing = false;
-
-        for (void **i = TCOD_list_begin(actor->map->actors); i != TCOD_list_end(actor->map->actors); i++)
+        actor->turns_waited++;
+        if (actor->turns_waited == actor->speed)
         {
-            actor_t *other = *i;
+            actor->turns_waited = 0;
+        }
 
-            if (other != actor && other == player)
+        if (actor->turns_waited == 0)
+        {
+            bool chasing = false;
+
+            for (void **i = TCOD_list_begin(actor->map->actors); i != TCOD_list_end(actor->map->actors); i++)
             {
-                if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
+                actor_t *other = *i;
+
+                if (other != actor)
                 {
-                    msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
+                    if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
+                    {
+                        msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
 
-                    interactions_t interactions = {
-                        .light_on = false,
-                        .light_off = false,
-                        .attack = true,
-                        .take_item = false,
-                        .take_items = false};
+                        interactions_t interactions = {
+                            .light_on = false,
+                            .light_off = false,
+                            .attack = true,
+                            .take_item = false,
+                            .take_items = false};
 
-                    actor_target_set(actor, other->x, other->y, interactions);
+                        actor_target_set(actor, other->x, other->y, interactions);
 
-                    chasing = true;
+                        chasing = true;
+
+                        break;
+                    }
+                }
+            }
+
+            if (!chasing)
+            {
+                interactions_t interactions = {
+                    .light_on = true,
+                    .light_off = true,
+                    .attack = true,
+                    .take_item = true,
+                    .take_items = true};
+
+                switch (TCOD_random_get_int(NULL, 0, 8))
+                {
+                case 0:
+                    actor_move(actor, actor->x, actor->y - 1, interactions);
+
+                    break;
+
+                case 1:
+                    actor_move(actor, actor->x, actor->y + 1, interactions);
+
+                    break;
+
+                case 2:
+                    actor_move(actor, actor->x - 1, actor->y, interactions);
+
+                    break;
+
+                case 3:
+                    actor_move(actor, actor->x + 1, actor->y, interactions);
 
                     break;
                 }
             }
+
+            actor_target_process(actor);
         }
-
-        if (!chasing)
-        {
-            interactions_t interactions = {
-                .light_on = true,
-                .light_off = true,
-                .attack = true,
-                .take_item = true,
-                .take_items = true};
-
-            switch (TCOD_random_get_int(NULL, 0, 8))
-            {
-            case 0:
-                actor_move(actor, actor->x, actor->y - 1, interactions);
-
-                break;
-
-            case 1:
-                actor_move(actor, actor->x, actor->y + 1, interactions);
-
-                break;
-
-            case 2:
-                actor_move(actor, actor->x - 1, actor->y, interactions);
-
-                break;
-
-            case 3:
-                actor_move(actor, actor->x + 1, actor->y, interactions);
-
-                break;
-            }
-        }
-
-        actor_target_process(actor);
     }
 }
 
@@ -301,9 +312,16 @@ bool actor_interact(actor_t *actor, int x, int y, interactions_t interactions)
 
     if (tile->actor != NULL)
     {
-        if (interactions.attack && tile->actor != player)
+        if (interactions.attack)
         {
-            tile->actor->mark_for_delete = true;
+            if (tile->actor == player)
+            {
+                msg_log("{name} cannot kill player", actor->map, actor->x, actor->y);
+            }
+            else
+            {
+                tile->actor->mark_for_delete = true;
+            }
         }
 
         return true;

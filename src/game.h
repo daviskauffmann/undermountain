@@ -96,6 +96,25 @@ void light_draw_tick(light_t *light);
 void light_destroy(light_t *light);
 
 /* Actors */
+typedef struct interactions_s
+{
+    bool descend;
+    bool ascend;
+    bool light_on;
+    bool light_off;
+    bool attack;
+    bool take_item;
+    bool take_items;
+} interactions_t;
+
+typedef struct target_data_s
+{
+    int x;
+    int y;
+    actor_t *actor;
+    interactions_t interactions;
+} target_data_t;
+
 typedef struct actor_s
 {
     map_t *map;
@@ -111,30 +130,18 @@ typedef struct actor_s
     int fov_radius;
     TCOD_map_t fov_map;
     bool mark_for_delete;
+    bool target;
+    target_data_t target_data;
 } actor_t;
-
-typedef struct move_actions_s
-{
-    bool descend;
-    bool ascend;
-    bool light_on;
-    bool light_off;
-    bool attack;
-    bool take_item;
-    bool take_items;
-} move_actions_t;
-
-typedef struct move_results_s
-{
-    bool cost_turn;
-    bool arrived;
-} move_results_t;
 
 actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color);
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
-move_results_t actor_move(actor_t *actor, int x, int y, move_actions_t actions);
+void actor_target_set(actor_t *actor, int x, int y, interactions_t interactions);
+void actor_target_process(actor_t *actor);
+bool actor_move(actor_t *actor, int x, int y, interactions_t interactions);
+bool actor_interact(actor_t *actor, int x, int y, interactions_t interactions);
 void actor_draw_turn(actor_t *actor);
 void actor_draw_tick(actor_t *actor);
 void actor_destroy(actor_t *actor);
@@ -302,42 +309,46 @@ void panel_draw_tick(void);
 void panel_uninit(void);
 
 /* Tooltip */
-typedef enum tooltip_option_type_e {
-    TOOLTIP_OPTION_TYPE_MOVE,
-    TOOLTIP_OPTION_TYPE_LIGHT_OFF,
-    TOOLTIP_OPTION_TYPE_LIGHT_ON,
-    TOOLTIP_OPTION_TYPE_ATTACK,
-    TOOLTIP_OPTION_TYPE_TAKE_ITEM,
-    TOOLTIP_OPTION_TYPE_TAKE_ITEMS,
-    TOOLTIP_OPTION_TYPE_DROP_ITEM
-} tooltip_option_type_t;
-
-typedef struct tooltip_option_s
-{
-    char *text;
-    tooltip_option_type_t type;
-} tooltip_option_t;
-
 bool tooltip_visible;
 int tooltip_x;
 int tooltip_y;
 int tooltip_width;
 int tooltip_height;
 
-TCOD_list_t tooltip_options;
-
-int tooltip_tile_x;
-int tooltip_tile_y;
-item_t *tooltip_item;
-
 void tooltip_init(void);
 void tooltip_show(int x, int y);
 void tooltip_hide(void);
-void tooltip_options_add(char *text, tooltip_option_type_t type);
-void tooltip_options_clear(void);
 bool tooltip_is_inside(int x, int y);
 void tooltip_draw_turn(void);
 void tooltip_draw_tick(void);
 void tooltip_uninit(void);
+
+/* Tooltip options */
+typedef struct tooltip_data_s
+{
+    int tile_x;
+    int tile_y;
+    item_t *item;
+} tooltip_data_t;
+
+typedef struct tooltip_option_s
+{
+    char *text;
+    void (*fn)(tooltip_data_t data);
+    tooltip_data_t data;
+} tooltip_option_t;
+
+TCOD_list_t tooltip_options;
+
+void tooltip_options_add(char *text, void (*fn)(tooltip_data_t data), tooltip_data_t data);
+void tooltip_options_clear(void);
+
+void tooltip_move(tooltip_data_t data);
+void tooltip_light_on(tooltip_data_t data);
+void tooltip_light_off(tooltip_data_t data);
+void tooltip_take_item(tooltip_data_t data);
+void tooltip_take_items(tooltip_data_t data);
+void tooltip_drop_item(tooltip_data_t data);
+void tooltip_attack(tooltip_data_t data);
 
 #endif

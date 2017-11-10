@@ -5,20 +5,8 @@
 #include "system.h"
 #include "game.h"
 
-#define AUTOMOVE_DELAY 0.0f
-
-static bool automove;
-static int automove_x;
-static int automove_y;
-static actor_t *automove_actor;
-static move_actions_t automove_actions;
-
-static void automove_set(int x, int y, move_actions_t actions);
-static void automove_clear();
-
 void input_init(void)
 {
-    automove_clear();
 }
 
 game_input_t input_handle(void)
@@ -34,7 +22,7 @@ game_input_t input_handle(void)
     mouse_tile_x = mouse.cx + view_x;
     mouse_tile_y = mouse.cy + view_y;
 
-    move_actions_t default_actions = {
+    interactions_t default_interactions = {
         .light_on = true,
         .light_off = true,
         .attack = true,
@@ -72,110 +60,9 @@ game_input_t input_handle(void)
 
                     if (selected != NULL)
                     {
-                        switch (selected->type)
-                        {
-                        case TOOLTIP_OPTION_TYPE_MOVE:
-                        {
-                            move_actions_t actions = {
-                                .light_on = false,
-                                .light_off = false,
-                                .attack = false,
-                                .take_item = false,
-                                .take_items = false};
+                        input = GAME_INPUT_TURN;
 
-                            automove_set(tooltip_tile_x, tooltip_tile_y, actions);
-
-                            input = GAME_INPUT_DRAW;
-
-                            break;
-                        }
-                        case TOOLTIP_OPTION_TYPE_ATTACK:
-                        {
-                            move_actions_t actions = {
-                                .light_on = false,
-                                .light_off = false,
-                                .attack = true,
-                                .take_item = false,
-                                .take_items = false};
-
-                            automove_set(tooltip_tile_x, tooltip_tile_y, actions);
-
-                            input = GAME_INPUT_DRAW;
-
-                            break;
-                        }
-                        case TOOLTIP_OPTION_TYPE_TAKE_ITEM:
-                        {
-                            move_actions_t actions = {
-                                .light_on = false,
-                                .light_off = false,
-                                .attack = false,
-                                .take_item = true,
-                                .take_items = false};
-
-                            automove_set(tooltip_tile_x, tooltip_tile_y, actions);
-
-                            input = GAME_INPUT_DRAW;
-
-                            break;
-                        }
-                        case TOOLTIP_OPTION_TYPE_TAKE_ITEMS:
-                        {
-                            move_actions_t actions = {
-                                .light_on = false,
-                                .light_off = false,
-                                .attack = false,
-                                .take_item = false,
-                                .take_items = true};
-
-                            automove_set(tooltip_tile_x, tooltip_tile_y, actions);
-
-                            input = GAME_INPUT_DRAW;
-
-                            break;
-                        }
-                        case TOOLTIP_OPTION_TYPE_DROP_ITEM:
-                        {
-                            tile_t *tile = &player->map->tiles[player->x][player->y];
-
-                            TCOD_list_remove(player->items, tooltip_item);
-                            TCOD_list_push(tile->items, tooltip_item);
-
-                            input = GAME_INPUT_TURN;
-
-                            break;
-                        }
-                        case TOOLTIP_OPTION_TYPE_LIGHT_OFF:
-                        {
-                            move_actions_t actions = {
-                                .light_on = false,
-                                .light_off = true,
-                                .attack = false,
-                                .take_item = false,
-                                .take_items = true};
-
-                            automove_set(tooltip_tile_x, tooltip_tile_y, actions);
-
-                            input = GAME_INPUT_DRAW;
-
-                            break;
-                        }
-                        case TOOLTIP_OPTION_TYPE_LIGHT_ON:
-                        {
-                            move_actions_t actions = {
-                                .light_on = true,
-                                .light_off = false,
-                                .attack = false,
-                                .take_item = false,
-                                .take_items = true};
-
-                            automove_set(tooltip_tile_x, tooltip_tile_y, actions);
-
-                            input = GAME_INPUT_DRAW;
-
-                            break;
-                        }
-                        }
+                        selected->fn(selected->data);
 
                         tooltip_hide();
                     }
@@ -193,18 +80,18 @@ game_input_t input_handle(void)
                 {
                     if (TCOD_map_is_in_fov(player->fov_map, mouse_tile_x, mouse_tile_y))
                     {
-                        automove_set(mouse_tile_x, mouse_tile_y, default_actions);
+                        actor_target_set(player, mouse_tile_x, mouse_tile_y, default_interactions);
                     }
                     else
                     {
-                        move_actions_t actions = {
+                        interactions_t interactions = {
                             .light_on = false,
                             .light_off = false,
                             .attack = false,
                             .take_item = false,
                             .take_items = false};
 
-                        automove_set(mouse_tile_x, mouse_tile_y, actions);
+                        actor_target_set(player, mouse_tile_x, mouse_tile_y, interactions);
                     }
                 }
                 else if (panel_is_inside(mouse_x, mouse_y))
@@ -238,9 +125,10 @@ game_input_t input_handle(void)
 
                             tooltip_show(panel_x + 1, y);
 
-                            tooltip_item = selected;
+                            tooltip_data_t data = {
+                                .item = selected};
 
-                            tooltip_options_add("Drop", TOOLTIP_OPTION_TYPE_DROP_ITEM);
+                            tooltip_options_add("Drop", &tooltip_drop_item, data);
                         }
 
                         break;
@@ -265,24 +153,25 @@ game_input_t input_handle(void)
 
                     tooltip_show(mouse_x, mouse_y);
 
-                    tooltip_tile_x = mouse_tile_x;
-                    tooltip_tile_y = mouse_tile_y;
+                    tooltip_data_t data = {
+                        .tile_x = mouse_tile_x,
+                        .tile_y = mouse_tile_y};
 
-                    tile_t *tile = &player->map->tiles[tooltip_tile_x][tooltip_tile_y];
+                    tile_t *tile = &player->map->tiles[data.tile_x][data.tile_y];
 
-                    tooltip_options_add("Move", TOOLTIP_OPTION_TYPE_MOVE);
+                    tooltip_options_add("Move", &tooltip_move, data);
 
-                    if (TCOD_map_is_in_fov(player->fov_map, tooltip_tile_x, tooltip_tile_y))
+                    if (TCOD_map_is_in_fov(player->fov_map, data.tile_x, data.tile_y))
                     {
                         if (tile->light != NULL)
                         {
                             if (tile->light->on)
                             {
-                                tooltip_options_add("Turn Off", TOOLTIP_OPTION_TYPE_LIGHT_OFF);
+                                tooltip_options_add("Turn Off", &tooltip_light_off, data);
                             }
                             else
                             {
-                                tooltip_options_add("Turn On", TOOLTIP_OPTION_TYPE_LIGHT_ON);
+                                tooltip_options_add("Turn On", &tooltip_light_on, data);
                             }
                         }
 
@@ -290,23 +179,23 @@ game_input_t input_handle(void)
                         {
                             if (tile->actor == player)
                             {
-                                tooltip_options_add("Character", TOOLTIP_OPTION_TYPE_MOVE);
-                                tooltip_options_add("Inventory", TOOLTIP_OPTION_TYPE_MOVE);
+                                tooltip_options_add("Character", &tooltip_move, data);
+                                tooltip_options_add("Inventory", &tooltip_move, data);
                             }
                             else
                             {
-                                tooltip_options_add("Attack", TOOLTIP_OPTION_TYPE_ATTACK);
+                                tooltip_options_add("Attack", &tooltip_attack, data);
                             }
                         }
 
                         if (TCOD_list_peek(tile->items))
                         {
-                            tooltip_options_add("Take Item", TOOLTIP_OPTION_TYPE_TAKE_ITEM);
+                            tooltip_options_add("Take Item", &tooltip_take_item, data);
                         }
 
                         if (TCOD_list_size(tile->items) > 1)
                         {
-                            tooltip_options_add("Take All", TOOLTIP_OPTION_TYPE_TAKE_ITEMS);
+                            tooltip_options_add("Take All", &tooltip_take_items, data);
                         }
                     }
                 }
@@ -520,71 +409,49 @@ game_input_t input_handle(void)
         }
         case TCODK_KP1:
         {
-            automove_clear();
+            input = GAME_INPUT_TURN;
+
+            actor_move(player, player->x - 1, player->y + 1, default_interactions);
 
             tooltip_hide();
-
-            move_results_t results = actor_move(player, player->x - 1, player->y + 1, default_actions);
-
-            if (results.cost_turn)
-            {
-                input = GAME_INPUT_TURN;
-            }
 
             break;
         }
         case TCODK_KP2:
         case TCODK_DOWN:
         {
-            automove_clear();
+            input = GAME_INPUT_TURN;
+
+            actor_move(player, player->x, player->y + 1, default_interactions);
 
             tooltip_hide();
-
-            move_results_t results = actor_move(player, player->x, player->y + 1, default_actions);
-
-            if (results.cost_turn)
-            {
-                input = GAME_INPUT_TURN;
-            }
 
             break;
         }
         case TCODK_KP3:
         {
-            automove_clear();
+            input = GAME_INPUT_TURN;
+
+            actor_move(player, player->x + 1, player->y + 1, default_interactions);
 
             tooltip_hide();
-
-            move_results_t results = actor_move(player, player->x + 1, player->y + 1, default_actions);
-
-            if (results.cost_turn)
-            {
-                input = GAME_INPUT_TURN;
-            }
 
             break;
         }
         case TCODK_KP4:
         case TCODK_LEFT:
         {
-            automove_clear();
+            input = GAME_INPUT_TURN;
+
+            actor_move(player, player->x - 1, player->y, default_interactions);
 
             tooltip_hide();
-
-            move_results_t results = actor_move(player, player->x - 1, player->y, default_actions);
-
-            if (results.cost_turn)
-            {
-                input = GAME_INPUT_TURN;
-            }
 
             break;
         }
         case TCODK_KP5:
         {
             input = GAME_INPUT_TURN;
-
-            automove_clear();
 
             tooltip_hide();
 
@@ -593,62 +460,42 @@ game_input_t input_handle(void)
         case TCODK_KP6:
         case TCODK_RIGHT:
         {
-            automove_clear();
+            input = GAME_INPUT_TURN;
+
+            actor_move(player, player->x + 1, player->y, default_interactions);
 
             tooltip_hide();
-
-            move_results_t results = actor_move(player, player->x + 1, player->y, default_actions);
-
-            if (results.cost_turn)
-            {
-                input = GAME_INPUT_TURN;
-            }
 
             break;
         }
         case TCODK_KP7:
         {
-            automove_clear();
+            input = GAME_INPUT_TURN;
+
+            actor_move(player, player->x - 1, player->y - 1, default_interactions);
 
             tooltip_hide();
-
-            move_results_t results = actor_move(player, player->x - 1, player->y - 1, default_actions);
-
-            if (results.cost_turn)
-            {
-                input = GAME_INPUT_TURN;
-            }
 
             break;
         }
         case TCODK_KP8:
         case TCODK_UP:
         {
-            automove_clear();
+            input = GAME_INPUT_TURN;
+
+            actor_move(player, player->x, player->y - 1, default_interactions);
 
             tooltip_hide();
-
-            move_results_t results = actor_move(player, player->x, player->y - 1, default_actions);
-
-            if (results.cost_turn)
-            {
-                input = GAME_INPUT_TURN;
-            }
 
             break;
         }
         case TCODK_KP9:
         {
-            automove_clear();
+            input = GAME_INPUT_TURN;
+
+            actor_move(player, player->x + 1, player->y - 1, default_interactions);
 
             tooltip_hide();
-
-            move_results_t results = actor_move(player, player->x + 1, player->y - 1, default_actions);
-
-            if (results.cost_turn)
-            {
-                input = GAME_INPUT_TURN;
-            }
 
             break;
         }
@@ -658,72 +505,14 @@ game_input_t input_handle(void)
     }
     }
 
-    static float automove_timer = 0.0f;
-    static bool automove_ready = true;
-
-    if (automove_ready && automove)
+    if (player->target)
     {
-        int x = automove_actor == NULL
-                    ? automove_x
-                    : automove_actor->x;
-        int y = automove_actor == NULL
-                    ? automove_y
-                    : automove_actor->y;
+        input = GAME_INPUT_TURN;
 
-        move_results_t results = actor_move(player, x, y, automove_actions);
-
-        if (results.cost_turn)
-        {
-            input = GAME_INPUT_TURN;
-
-            automove_ready = false;
-        }
-
-        if (results.arrived)
-        {
-            automove_clear();
-        }
-    }
-    else
-    {
-        automove_timer += TCOD_sys_get_last_frame_length();
-
-        if (automove_timer >= AUTOMOVE_DELAY)
-        {
-            automove_ready = true;
-
-            automove_timer = 0.0f;
-        }
+        actor_target_process(player);
     }
 
     return input;
-}
-
-static void automove_set(int x, int y, move_actions_t actions)
-{
-    tile_t *tile = &player->map->tiles[x][y];
-    actor_t *actor = tile->actor;
-
-    automove = true;
-    automove_actor = actor;
-    automove_x = x;
-    automove_y = y;
-    automove_actions = actions;
-}
-
-static void automove_clear()
-{
-    automove = false;
-    automove_actor = NULL;
-    automove_x = -1;
-    automove_y = -1;
-    move_actions_t actions = {
-        .light_on = false,
-        .light_off = false,
-        .attack = false,
-        .take_item = false,
-        .take_items = false};
-    automove_actions = actions;
 }
 
 void input_uninit(void)

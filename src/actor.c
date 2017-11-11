@@ -71,17 +71,15 @@ void actor_calc_fov(actor_t *actor)
     {
         room_t *room = *i;
 
-        if (!room_is_inside(room, x, y))
+        if (room_is_inside(room, x, y))
         {
-            continue;
-        }
-
-        for (int x = room->x - 1; x <= room->x + room->w; x++)
-        {
-            for (int y = room->y - 1; y <= room->y + room->h; y++)
+            for (int x = room->x - 1; x <= room->x + room->w; x++)
             {
-                TCOD_map_set_in_fov(actor->fov_map, x, y, true);
-                TCOD_map_set_in_fov(los_map, x, y, true);
+                for (int y = room->y - 1; y <= room->y + room->h; y++)
+                {
+                    TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                    TCOD_map_set_in_fov(los_map, x, y, true);
+                }
             }
         }
     }

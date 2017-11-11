@@ -20,21 +20,14 @@ void msg_init(void)
 
 void msg_log(const char *message, map_t *map, int x, int y)
 {
-    if (map != player->map)
+    if (map == player->map && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
-        return;
-    }
+        TCOD_list_push(messages, message);
 
-    if (!TCOD_map_is_in_fov(player->fov_map, x, y))
-    {
-        return;
-    }
-
-    TCOD_list_push(messages, message);
-
-    if (TCOD_list_size(messages) >= MAX_MESSAGES)
-    {
-        TCOD_list_remove(messages, *TCOD_list_begin(messages));
+        if (TCOD_list_size(messages) >= MAX_MESSAGES)
+        {
+            TCOD_list_remove(messages, *TCOD_list_begin(messages));
+        }
     }
 }
 

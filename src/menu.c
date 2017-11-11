@@ -14,9 +14,15 @@ menu_input_t menu_input(void)
     case TCODK_SPACE:
         return MENU_INPUT_START;
 
-    case TCODK_ESCAPE:
+    case TCODK_TAB:
         return MENU_INPUT_QUIT;
     }
 
     return MENU_INPUT_NONE;
+}
+
+void menu_draw(void)
+{
+    TCOD_console_clear(NULL);
+    TCOD_console_flush();
 }

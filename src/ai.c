@@ -1,6 +1,7 @@
 #include <libtcod.h>
 #include <stdio.h>
 
+#include "CMemLeak.h"
 #include "game.h"
 
 void ai_monster(actor_t *actor)

@@ -1,5 +1,6 @@
 #include <libtcod.h>
 
+#include "CMemLeak.h"
 #include "game.h"
 
 void tooltip_option_move(tooltip_data_t data)

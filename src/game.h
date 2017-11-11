@@ -190,7 +190,6 @@ typedef struct actor_s
     bool target;
     target_data_t target_data;
     bool mark_for_delete;
-
 } actor_t;
 
 int actor_light_radius[NUM_ACTOR_LIGHTS];

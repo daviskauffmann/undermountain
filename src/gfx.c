@@ -14,6 +14,10 @@ void gfx_init(void)
     tile_glyph[TILE_TYPE_STAIR_DOWN] = '>';
     tile_glyph[TILE_TYPE_STAIR_UP] = '<';
 
+    actor_light_color[ACTOR_LIGHT_NONE] = TCOD_white;
+    actor_light_color[ACTOR_LIGHT_DEFAULT] = TCOD_white;
+    actor_light_color[ACTOR_LIGHT_TORCH] = TCOD_light_amber;
+
     background_color = TCOD_black;
     foreground_color = TCOD_white;
     tile_color_light = TCOD_white;
@@ -78,6 +82,12 @@ void gfx_draw_tick(void)
     tooltip_draw_tick();
 
     TCOD_console_print_ex(NULL, 0, 0, TCOD_BKGND_SET, TCOD_LEFT, "Turn: %d", turn);
+    TCOD_console_print_ex(NULL, 0, 1, TCOD_BKGND_SET, TCOD_LEFT, "Lvl: %d", player->map->level);
+    TCOD_console_print_ex(NULL, 0, 2, TCOD_BKGND_SET, TCOD_LEFT, "Loc: (%d, %d)", player->x, player->y);
+    if (player->target)
+    {
+        TCOD_console_print_ex(NULL, 0, 3, TCOD_BKGND_SET, TCOD_LEFT, "Tgt: (%d, %d)", player->target_data.x, player->target_data.y);
+    }
 
     TCOD_console_flush();
 }

@@ -17,7 +17,6 @@ typedef enum content_e content_t;
 
 /* Game */
 actor_t *player;
-int current_map_index;
 int turn;
 
 void game_init(void);
@@ -95,59 +94,6 @@ void light_draw_turn(light_t *light);
 void light_draw_tick(light_t *light);
 void light_destroy(light_t *light);
 
-/* Actors */
-typedef struct interactions_s
-{
-    bool descend;
-    bool ascend;
-    bool light_on;
-    bool light_off;
-    bool attack;
-    bool take_item;
-    bool take_items;
-} interactions_t;
-
-typedef struct target_data_s
-{
-    int x;
-    int y;
-    actor_t *actor;
-    interactions_t interactions;
-} target_data_t;
-
-typedef struct actor_s
-{
-    map_t *map;
-    int x;
-    int y;
-    unsigned char glyph;
-    TCOD_color_t color;
-    TCOD_list_t items;
-    bool light;
-    TCOD_color_t light_color;
-    bool torch;
-    TCOD_color_t torch_color;
-    int fov_radius;
-    TCOD_map_t fov_map;
-    bool mark_for_delete;
-    bool target;
-    target_data_t target_data;
-    int speed;
-    int turns_waited;
-} actor_t;
-
-actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color);
-void actor_turn(actor_t *actor);
-void actor_tick(actor_t *actor);
-void actor_calc_fov(actor_t *actor);
-void actor_target_set(actor_t *actor, int x, int y, interactions_t interactions);
-void actor_target_process(actor_t *actor);
-bool actor_move(actor_t *actor, int x, int y, interactions_t interactions);
-bool actor_interact(actor_t *actor, int x, int y, interactions_t interactions);
-void actor_draw_turn(actor_t *actor);
-void actor_draw_tick(actor_t *actor);
-void actor_destroy(actor_t *actor);
-
 /* Items */
 typedef enum item_type_e {
     ITEM_TYPE_ARMOR,
@@ -200,12 +146,78 @@ void item_draw_turn(item_t *item);
 void item_draw_tick(item_t *item);
 void item_destroy(item_t *item);
 
+/* Actors */
+typedef enum actor_light_e {
+    ACTOR_LIGHT_NONE,
+    ACTOR_LIGHT_DEFAULT,
+    ACTOR_LIGHT_TORCH,
+
+    NUM_ACTOR_LIGHTS
+} actor_light_t;
+
+typedef struct interactions_s
+{
+    bool descend;
+    bool ascend;
+    bool light_on;
+    bool light_off;
+    bool attack;
+    bool take_item;
+    bool take_items;
+} interactions_t;
+
+typedef struct target_data_s
+{
+    int x;
+    int y;
+    actor_t *actor;
+    interactions_t interactions;
+} target_data_t;
+
+typedef struct actor_s
+{
+    map_t *map;
+    int x;
+    int y;
+    unsigned char glyph;
+    TCOD_color_t color;
+    TCOD_list_t items;
+    actor_light_t light;
+    TCOD_map_t fov_map;
+    int speed;
+    int turns_waited;
+    void (*ai)(actor_t *actor);
+    bool target;
+    target_data_t target_data;
+    bool mark_for_delete;
+
+} actor_t;
+
+int actor_light_radius[NUM_ACTOR_LIGHTS];
+TCOD_color_t actor_light_color[NUM_ACTOR_LIGHTS];
+
+actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, void (*ai)(actor_t *actor));
+void actor_turn(actor_t *actor);
+void actor_tick(actor_t *actor);
+void actor_calc_fov(actor_t *actor);
+void actor_target_set(actor_t *actor, int x, int y, interactions_t interactions);
+void actor_target_process(actor_t *actor);
+bool actor_move(actor_t *actor, int x, int y, interactions_t interactions);
+bool actor_interact(actor_t *actor, int x, int y, interactions_t interactions);
+void actor_draw_turn(actor_t *actor);
+void actor_draw_tick(actor_t *actor);
+void actor_destroy(actor_t *actor);
+
+void ai_monster(actor_t *actor);
+void ai_pet(actor_t *actor);
+
 /* Maps */
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
 
 typedef struct map_s
 {
+    int level;
     int stair_down_x;
     int stair_down_y;
     int stair_up_x;
@@ -217,7 +229,7 @@ typedef struct map_s
     TCOD_list_t items;
 } map_t;
 
-map_t *map_create(void);
+map_t *map_create(int level);
 void map_turn(map_t *map);
 void map_tick(map_t *map);
 bool map_is_inside(int x, int y);
@@ -345,12 +357,14 @@ TCOD_list_t tooltip_options;
 void tooltip_options_add(char *text, void (*fn)(tooltip_data_t data), tooltip_data_t data);
 void tooltip_options_clear(void);
 
-void tooltip_move(tooltip_data_t data);
-void tooltip_light_on(tooltip_data_t data);
-void tooltip_light_off(tooltip_data_t data);
-void tooltip_take_item(tooltip_data_t data);
-void tooltip_take_items(tooltip_data_t data);
-void tooltip_drop_item(tooltip_data_t data);
-void tooltip_attack(tooltip_data_t data);
+void tooltip_option_move(tooltip_data_t data);
+void tooltip_option_descend(tooltip_data_t data);
+void tooltip_option_ascend(tooltip_data_t data);
+void tooltip_option_light_on(tooltip_data_t data);
+void tooltip_option_light_off(tooltip_data_t data);
+void tooltip_option_take_item(tooltip_data_t data);
+void tooltip_option_take_items(tooltip_data_t data);
+void tooltip_option_drop_item(tooltip_data_t data);
+void tooltip_option_attack(tooltip_data_t data);
 
 #endif

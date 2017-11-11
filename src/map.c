@@ -20,10 +20,11 @@ static void hline(map_t *map, int x1, int y, int x2);
 static void hline_left(map_t *map, int x, int y);
 static void hline_right(map_t *map, int x, int y);
 
-map_t *map_create(void)
+map_t *map_create(int level)
 {
     map_t *map = (map_t *)malloc(sizeof(map_t));
 
+    map->level = level;
     map->stair_down_x = -1;
     map->stair_down_y = -1;
     map->stair_up_x = -1;
@@ -90,7 +91,29 @@ map_t *map_create(void)
             continue;
         }
 
-        actor_t *actor = actor_create(map, x, y, '@', TCOD_red);
+        actor_t *actor = actor_create(map, x, y, '@', TCOD_red, &ai_monster);
+
+        switch (TCOD_random_get_int(NULL, 0, 10))
+        {
+        case 0:
+        {
+            actor->light = ACTOR_LIGHT_DEFAULT;
+
+            break;
+        }
+        case 1:
+        {
+            actor->light = ACTOR_LIGHT_TORCH;
+
+            break;
+        }
+        default:
+        {
+            actor->light = ACTOR_LIGHT_NONE;
+
+            break;
+        }
+        }
 
         TCOD_list_push(map->actors, actor);
         map->tiles[x][y].actor = actor;

@@ -23,6 +23,8 @@ game_input_t input_handle(void)
     mouse_tile_y = mouse.cy + view_y;
 
     interactions_t default_interactions = {
+        .descend = true,
+        .ascend = true,
         .light_on = true,
         .light_off = true,
         .attack = true,
@@ -85,6 +87,8 @@ game_input_t input_handle(void)
                     else
                     {
                         interactions_t interactions = {
+                            .descend = false,
+                            .ascend = false,
                             .light_on = false,
                             .light_off = false,
                             .attack = false,
@@ -110,7 +114,17 @@ game_input_t input_handle(void)
 
                 tile_t *tile = &player->map->tiles[data.tile_x][data.tile_y];
 
-                tooltip_options_add("Move", &tooltip_move, data);
+                tooltip_options_add("Move", &tooltip_option_move, data);
+
+                if (tile->type == TILE_TYPE_STAIR_DOWN)
+                {
+                    tooltip_options_add("Descend", &tooltip_option_descend, data);
+                }
+
+                if (tile->type == TILE_TYPE_STAIR_UP)
+                {
+                    tooltip_options_add("Ascend", &tooltip_option_ascend, data);
+                }
 
                 if (TCOD_map_is_in_fov(player->fov_map, data.tile_x, data.tile_y))
                 {
@@ -118,11 +132,11 @@ game_input_t input_handle(void)
                     {
                         if (tile->light->on)
                         {
-                            tooltip_options_add("Turn Off", &tooltip_light_off, data);
+                            tooltip_options_add("Turn Off", &tooltip_option_light_off, data);
                         }
                         else
                         {
-                            tooltip_options_add("Turn On", &tooltip_light_on, data);
+                            tooltip_options_add("Turn On", &tooltip_option_light_on, data);
                         }
                     }
 
@@ -130,23 +144,23 @@ game_input_t input_handle(void)
                     {
                         if (tile->actor == player)
                         {
-                            tooltip_options_add("Character", &tooltip_move, data);
-                            tooltip_options_add("Inventory", &tooltip_move, data);
+                            tooltip_options_add("Character", &tooltip_option_move, data);
+                            tooltip_options_add("Inventory", &tooltip_option_move, data);
                         }
                         else
                         {
-                            tooltip_options_add("Attack", &tooltip_attack, data);
+                            tooltip_options_add("Attack", &tooltip_option_attack, data);
                         }
                     }
 
                     if (TCOD_list_peek(tile->items))
                     {
-                        tooltip_options_add("Take Item", &tooltip_take_item, data);
+                        tooltip_options_add("Take Item", &tooltip_option_take_item, data);
                     }
 
                     if (TCOD_list_size(tile->items) > 1)
                     {
-                        tooltip_options_add("Take All", &tooltip_take_items, data);
+                        tooltip_options_add("Take All", &tooltip_option_take_items, data);
                     }
                 }
             }
@@ -184,7 +198,7 @@ game_input_t input_handle(void)
                         tooltip_data_t data = {
                             .item = selected};
 
-                        tooltip_options_add("Drop", &tooltip_drop_item, data);
+                        tooltip_options_add("Drop", &tooltip_option_drop_item, data);
                     }
 
                     break;
@@ -235,80 +249,6 @@ game_input_t input_handle(void)
         {
             switch (key.c)
             {
-            case ',':
-            {
-                if (key.shift)
-                {
-                    tile_t *tile = &player->map->tiles[player->x][player->y];
-
-                    if (tile->type == TILE_TYPE_STAIR_UP)
-                    {
-                        if (current_map_index > 0)
-                        {
-                            input = GAME_INPUT_TURN;
-
-                            current_map_index--;
-
-                            map_t *new_map = TCOD_list_get(maps, current_map_index);
-
-                            TCOD_list_remove(player->map->actors, player);
-                            TCOD_list_push(new_map->actors, player);
-
-                            player->map->tiles[player->x][player->y].actor = NULL;
-                            new_map->tiles[new_map->stair_down_x][new_map->stair_down_y].actor = player;
-
-                            player->map = new_map;
-                            player->x = new_map->stair_down_x;
-                            player->y = new_map->stair_down_y;
-                        }
-                        else
-                        {
-                            input = GAME_INPUT_QUIT;
-                        }
-                    }
-                }
-
-                break;
-            }
-            case '.':
-            {
-                if (key.shift)
-                {
-                    tile_t *tile = &player->map->tiles[player->x][player->y];
-
-                    if (tile->type == TILE_TYPE_STAIR_DOWN)
-                    {
-                        input = GAME_INPUT_TURN;
-
-                        current_map_index++;
-
-                        map_t *new_map;
-
-                        if (TCOD_list_size(maps) == current_map_index)
-                        {
-                            new_map = map_create();
-
-                            TCOD_list_push(maps, new_map);
-                        }
-                        else
-                        {
-                            new_map = TCOD_list_get(maps, current_map_index);
-                        }
-
-                        TCOD_list_remove(player->map->actors, player);
-                        TCOD_list_push(new_map->actors, player);
-
-                        player->map->tiles[player->x][player->y].actor = NULL;
-                        new_map->tiles[new_map->stair_up_x][new_map->stair_up_y].actor = player;
-
-                        player->map = new_map;
-                        player->x = new_map->stair_up_x;
-                        player->y = new_map->stair_up_y;
-                    }
-                }
-
-                break;
-            }
             case 'c':
             {
                 input = GAME_INPUT_DRAW;
@@ -369,28 +309,16 @@ game_input_t input_handle(void)
             {
                 input = GAME_INPUT_DRAW;
 
-                if (player->torch)
+                if (player->light != ACTOR_LIGHT_TORCH)
                 {
-                    player->light = true;
-                    player->torch = false;
-                    player->fov_radius = 5;
+                    player->light = ACTOR_LIGHT_TORCH;
                 }
                 else
                 {
-                    player->light = false;
-                    player->torch = true;
-                    player->fov_radius = 10;
+                    player->light = ACTOR_LIGHT_DEFAULT;
                 }
 
                 actor_calc_fov(player);
-
-                break;
-            }
-            case 'y':
-            {
-                input = GAME_INPUT_DRAW;
-
-                player->torch_color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
 
                 break;
             }

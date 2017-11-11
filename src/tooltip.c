@@ -30,6 +30,29 @@ void tooltip_hide()
     tooltip_visible = false;
 }
 
+void tooltip_options_add(char *text, void (*fn)(tooltip_data_t data), tooltip_data_t data)
+{
+    tooltip_option_t *option = (tooltip_option_t *)malloc(sizeof(tooltip_option_t));
+
+    option->text = text;
+    option->fn = fn;
+    option->data = data;
+
+    TCOD_list_push(tooltip_options, option);
+}
+
+void tooltip_options_clear()
+{
+    for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
+    {
+        tooltip_option_t *option = *i;
+
+        i = TCOD_list_remove_iterator(tooltip_options, i);
+
+        free(option);
+    }
+}
+
 bool tooltip_is_inside(int x, int y)
 {
     return x >= tooltip_x && x < tooltip_x + tooltip_width && y >= tooltip_y && y < tooltip_y + tooltip_height;

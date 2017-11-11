@@ -56,6 +56,10 @@ void world_tick(void)
 
 void world_draw_turn(void)
 {
+    TCOD_console_set_default_background(NULL, background_color);
+    TCOD_console_set_default_foreground(NULL, foreground_color);
+    TCOD_console_clear(NULL);
+
     map_draw_turn(player->map);
 }
 

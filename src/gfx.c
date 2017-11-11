@@ -4,7 +4,7 @@
 #include "system.h"
 #include "game.h"
 
-#define CONSTRAIN_VIEW 1
+#define CONSTRAIN_VIEW 0
 
 void gfx_init(void)
 {
@@ -30,10 +30,6 @@ void gfx_init(void)
 
 void gfx_draw_turn(void)
 {
-    TCOD_console_set_default_background(NULL, background_color);
-    TCOD_console_set_default_foreground(NULL, foreground_color);
-    TCOD_console_clear(NULL);
-
     panel_width = screen_width / 2;
     panel_x = screen_width - panel_width;
     panel_y = 0;

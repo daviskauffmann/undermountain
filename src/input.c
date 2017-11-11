@@ -78,7 +78,7 @@ game_input_t input_handle(void)
             }
             else
             {
-                if (view_is_inside(mouse_x, mouse_y))
+                if (view_is_inside(mouse_x, mouse_y) && map_is_inside(mouse_tile_x, mouse_tile_y))
                 {
                     if (TCOD_map_is_in_fov(player->fov_map, mouse_tile_x, mouse_tile_y))
                     {
@@ -102,7 +102,7 @@ game_input_t input_handle(void)
         }
         else if (mouse.rbutton)
         {
-            if (view_is_inside(mouse_x, mouse_y))
+            if (view_is_inside(mouse_x, mouse_y) && map_is_inside(mouse_tile_x, mouse_tile_y))
             {
                 input = GAME_INPUT_DRAW;
 
@@ -177,7 +177,7 @@ game_input_t input_handle(void)
                     {
                         item_t *item = *i;
 
-                        if (mouse_y == y + panel_y - content_scroll[content])
+                        if (mouse_x > panel_x && mouse_x < panel_x + strlen("{name}") + 1 && mouse_y == y + panel_y - content_scroll[content])
                         {
                             selected = item;
 

@@ -16,7 +16,7 @@ void tooltip_option_move(tooltip_data_t data)
     actor_target_set(player, data.tile_x, data.tile_y, interactions);
 }
 
-void tooltip_option_descend(tooltip_data_t data)
+void tooltip_option_stair_descend(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = true,
@@ -30,7 +30,7 @@ void tooltip_option_descend(tooltip_data_t data)
     actor_target_set(player, data.tile_x, data.tile_y, interactions);
 }
 
-void tooltip_option_ascend(tooltip_data_t data)
+void tooltip_option_stair_ascend(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -72,7 +72,7 @@ void tooltip_option_light_off(tooltip_data_t data)
     actor_target_set(player, data.tile_x, data.tile_y, interactions);
 }
 
-void tooltip_option_take_item(tooltip_data_t data)
+void tooltip_option_item_take(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -86,7 +86,7 @@ void tooltip_option_take_item(tooltip_data_t data)
     actor_target_set(player, data.tile_x, data.tile_y, interactions);
 }
 
-void tooltip_option_take_items(tooltip_data_t data)
+void tooltip_option_item_take_all(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -100,7 +100,7 @@ void tooltip_option_take_items(tooltip_data_t data)
     actor_target_set(player, data.tile_x, data.tile_y, interactions);
 }
 
-void tooltip_option_drop_item(tooltip_data_t data)
+void tooltip_option_item_drop(tooltip_data_t data)
 {
     tile_t *tile = &player->map->tiles[player->x][player->y];
 
@@ -108,7 +108,7 @@ void tooltip_option_drop_item(tooltip_data_t data)
     TCOD_list_push(tile->items, data.item);
 }
 
-void tooltip_option_attack(tooltip_data_t data)
+void tooltip_option_actor_attack(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,

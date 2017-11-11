@@ -202,8 +202,6 @@ void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
 void actor_target_set(actor_t *actor, int x, int y, interactions_t interactions);
 void actor_target_process(actor_t *actor);
-bool actor_move(actor_t *actor, int x, int y, interactions_t interactions);
-bool actor_interact(actor_t *actor, int x, int y, interactions_t interactions);
 void actor_draw_turn(actor_t *actor);
 void actor_draw_tick(actor_t *actor);
 void actor_destroy(actor_t *actor);
@@ -358,13 +356,13 @@ void tooltip_options_add(char *text, void (*fn)(tooltip_data_t data), tooltip_da
 void tooltip_options_clear(void);
 
 void tooltip_option_move(tooltip_data_t data);
-void tooltip_option_descend(tooltip_data_t data);
-void tooltip_option_ascend(tooltip_data_t data);
+void tooltip_option_stair_descend(tooltip_data_t data);
+void tooltip_option_stair_ascend(tooltip_data_t data);
 void tooltip_option_light_on(tooltip_data_t data);
 void tooltip_option_light_off(tooltip_data_t data);
-void tooltip_option_take_item(tooltip_data_t data);
-void tooltip_option_take_items(tooltip_data_t data);
-void tooltip_option_drop_item(tooltip_data_t data);
-void tooltip_option_attack(tooltip_data_t data);
+void tooltip_option_item_take(tooltip_data_t data);
+void tooltip_option_item_take_all(tooltip_data_t data);
+void tooltip_option_item_drop(tooltip_data_t data);
+void tooltip_option_actor_attack(tooltip_data_t data);
 
 #endif

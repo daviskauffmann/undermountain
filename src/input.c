@@ -118,12 +118,12 @@ game_input_t input_handle(void)
 
                 if (tile->type == TILE_TYPE_STAIR_DOWN)
                 {
-                    tooltip_options_add("Descend", &tooltip_option_descend, data);
+                    tooltip_options_add("Descend", &tooltip_option_stair_descend, data);
                 }
 
                 if (tile->type == TILE_TYPE_STAIR_UP)
                 {
-                    tooltip_options_add("Ascend", &tooltip_option_ascend, data);
+                    tooltip_options_add("Ascend", &tooltip_option_stair_ascend, data);
                 }
 
                 if (TCOD_map_is_in_fov(player->fov_map, data.tile_x, data.tile_y))
@@ -147,20 +147,20 @@ game_input_t input_handle(void)
                             tooltip_options_add("Character", &tooltip_option_move, data);
                             tooltip_options_add("Inventory", &tooltip_option_move, data);
                         }
-                        else
+                        else if (tile->actor->ai == ai_monster)
                         {
-                            tooltip_options_add("Attack", &tooltip_option_attack, data);
+                            tooltip_options_add("Attack", &tooltip_option_actor_attack, data);
                         }
                     }
 
                     if (TCOD_list_peek(tile->items))
                     {
-                        tooltip_options_add("Take Item", &tooltip_option_take_item, data);
+                        tooltip_options_add("Take Item", &tooltip_option_item_take, data);
                     }
 
                     if (TCOD_list_size(tile->items) > 1)
                     {
-                        tooltip_options_add("Take All", &tooltip_option_take_items, data);
+                        tooltip_options_add("Take All", &tooltip_option_item_take_all, data);
                     }
                 }
             }
@@ -198,7 +198,7 @@ game_input_t input_handle(void)
                         tooltip_data_t data = {
                             .item = selected};
 
-                        tooltip_options_add("Drop", &tooltip_option_drop_item, data);
+                        tooltip_options_add("Drop", &tooltip_option_item_drop, data);
                     }
 
                     break;
@@ -330,7 +330,7 @@ game_input_t input_handle(void)
         {
             input = GAME_INPUT_TURN;
 
-            actor_move(player, player->x - 1, player->y + 1, default_interactions);
+            actor_target_set(player, player->x - 1, player->y + 1, default_interactions);
 
             tooltip_hide();
 
@@ -341,7 +341,7 @@ game_input_t input_handle(void)
         {
             input = GAME_INPUT_TURN;
 
-            actor_move(player, player->x, player->y + 1, default_interactions);
+            actor_target_set(player, player->x, player->y + 1, default_interactions);
 
             tooltip_hide();
 
@@ -351,7 +351,7 @@ game_input_t input_handle(void)
         {
             input = GAME_INPUT_TURN;
 
-            actor_move(player, player->x + 1, player->y + 1, default_interactions);
+            actor_target_set(player, player->x + 1, player->y + 1, default_interactions);
 
             tooltip_hide();
 
@@ -362,7 +362,7 @@ game_input_t input_handle(void)
         {
             input = GAME_INPUT_TURN;
 
-            actor_move(player, player->x - 1, player->y, default_interactions);
+            actor_target_set(player, player->x - 1, player->y, default_interactions);
 
             tooltip_hide();
 
@@ -381,7 +381,7 @@ game_input_t input_handle(void)
         {
             input = GAME_INPUT_TURN;
 
-            actor_move(player, player->x + 1, player->y, default_interactions);
+            actor_target_set(player, player->x + 1, player->y, default_interactions);
 
             tooltip_hide();
 
@@ -391,7 +391,7 @@ game_input_t input_handle(void)
         {
             input = GAME_INPUT_TURN;
 
-            actor_move(player, player->x - 1, player->y - 1, default_interactions);
+            actor_target_set(player, player->x - 1, player->y - 1, default_interactions);
 
             tooltip_hide();
 
@@ -402,7 +402,7 @@ game_input_t input_handle(void)
         {
             input = GAME_INPUT_TURN;
 
-            actor_move(player, player->x, player->y - 1, default_interactions);
+            actor_target_set(player, player->x, player->y - 1, default_interactions);
 
             tooltip_hide();
 
@@ -412,7 +412,7 @@ game_input_t input_handle(void)
         {
             input = GAME_INPUT_TURN;
 
-            actor_move(player, player->x + 1, player->y - 1, default_interactions);
+            actor_target_set(player, player->x + 1, player->y - 1, default_interactions);
 
             tooltip_hide();
 

@@ -37,7 +37,7 @@ void game_new()
     actor_t *pet = actor_create(map, player->x + 1, player->y, '@', TCOD_yellow, &ai_pet);
 
     TCOD_list_push(map->actors, pet);
-    map->tiles[pet->x][pet->y].actor = player;
+    map->tiles[pet->x][pet->y].actor = pet;
 }
 
 void game_turn(void)

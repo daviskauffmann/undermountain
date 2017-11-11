@@ -1,4 +1,5 @@
 #include <libtcod.h>
+#include <stdio.h>
 
 #include "game.h"
 
@@ -11,7 +12,7 @@ void ai_monster(actor_t *actor)
         actor_t *other = *i;
 
         // TODO: determine if other is hostile somehow
-        if (other == player)
+        if (other != actor && (other == player || other->ai == ai_pet))
         {
             if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
@@ -49,22 +50,22 @@ void ai_monster(actor_t *actor)
         switch (TCOD_random_get_int(NULL, 0, 8))
         {
         case 0:
-            actor_move(actor, actor->x, actor->y - 1, interactions);
+            actor_target_set(actor, actor->x, actor->y - 1, interactions);
 
             break;
 
         case 1:
-            actor_move(actor, actor->x, actor->y + 1, interactions);
+            actor_target_set(actor, actor->x, actor->y + 1, interactions);
 
             break;
 
         case 2:
-            actor_move(actor, actor->x - 1, actor->y, interactions);
+            actor_target_set(actor, actor->x - 1, actor->y, interactions);
 
             break;
 
         case 3:
-            actor_move(actor, actor->x + 1, actor->y, interactions);
+            actor_target_set(actor, actor->x + 1, actor->y, interactions);
 
             break;
         }
@@ -81,11 +82,11 @@ void ai_pet(actor_t *actor)
     {
         actor_t *other = *i;
 
-        if (other != player)
+        if (other != actor && other->ai == ai_monster)
         {
             if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
-                msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
+                msg_log("{pet} spots {name}", actor->map, actor->x, actor->y);
 
                 interactions_t interactions = {
                     .descend = false,

@@ -165,6 +165,8 @@ void actor_target_process(actor_t *actor)
 
             if (next_x == x && next_y == y)
             {
+                actor->target = false;
+
                 tile_t *tile = &actor->map->tiles[x][y];
 
                 if (!tile_walkable[tile->type])
@@ -172,18 +174,20 @@ void actor_target_process(actor_t *actor)
                     move_to_next = false;
                 }
 
-                if (interactions.attack && tile->actor != NULL && tile->actor != actor)
+                if (tile->actor != NULL && tile->actor != actor)
                 {
-                    if (tile->actor != player)
+                    move_to_next = false;
+
+                    if (interactions.attack && tile->actor != player)
                     {
                         tile->actor->mark_for_delete = true;
                     }
-
-                    move_to_next = false;
                 }
 
                 if (interactions.take_items && TCOD_list_size(tile->items) > 0)
                 {
+                    move_to_next = false;
+
                     for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
                     {
                         item_t *item = *i;
@@ -195,40 +199,40 @@ void actor_target_process(actor_t *actor)
 
                         i = TCOD_list_remove_iterator(tile->items, i);
                     }
-
-                    move_to_next = false;
                 }
 
                 if (interactions.take_item && TCOD_list_peek(tile->items) != NULL)
                 {
+                    move_to_next = false;
+
                     item_t *item = TCOD_list_pop(tile->items);
 
                     item->x = actor->x;
                     item->y = actor->y;
 
                     TCOD_list_push(actor->items, item);
-
-                    move_to_next = false;
                 }
 
                 if (tile->light != NULL)
                 {
                     if (interactions.light_off && tile->light->on)
                     {
-                        tile->light->on = false;
-
                         move_to_next = false;
+
+                        tile->light->on = false;
                     }
                     else if (interactions.light_on && !tile->light->on)
                     {
-                        tile->light->on = true;
-
                         move_to_next = false;
+
+                        tile->light->on = true;
                     }
                 }
 
                 if (interactions.descend && tile->type == TILE_TYPE_STAIR_DOWN)
                 {
+                    move_to_next = false;
+
                     map_t *new_map;
 
                     if (TCOD_list_size(maps) == actor->map->level + 1)
@@ -251,12 +255,12 @@ void actor_target_process(actor_t *actor)
                     actor->map = new_map;
                     actor->x = new_map->stair_up_x;
                     actor->y = new_map->stair_up_y;
-
-                    move_to_next = false;
                 }
 
                 if (interactions.ascend && tile->type == TILE_TYPE_STAIR_UP)
                 {
+                    move_to_next = false;
+
                     if (actor->map->level > 0)
                     {
                         map_t *new_map = TCOD_list_get(maps, actor->map->level - 1);
@@ -271,11 +275,7 @@ void actor_target_process(actor_t *actor)
                         actor->x = new_map->stair_down_x;
                         actor->y = new_map->stair_down_y;
                     }
-
-                    move_to_next = false;
                 }
-
-                actor->target = false;
             }
 
             if (move_to_next)

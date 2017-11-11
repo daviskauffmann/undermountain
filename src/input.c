@@ -5,6 +5,16 @@
 #include "system.h"
 #include "game.h"
 
+static void tooltip_option_move(tooltip_data_t data);
+static void tooltip_option_stair_descend(tooltip_data_t data);
+static void tooltip_option_stair_ascend(tooltip_data_t data);
+static void tooltip_option_light_on(tooltip_data_t data);
+static void tooltip_option_light_off(tooltip_data_t data);
+static void tooltip_option_item_take(tooltip_data_t data);
+static void tooltip_option_item_take_all(tooltip_data_t data);
+static void tooltip_option_item_drop(tooltip_data_t data);
+static void tooltip_option_actor_attack(tooltip_data_t data);
+
 void input_init(void)
 {
 }
@@ -41,24 +51,7 @@ game_input_t input_handle(void)
             {
                 if (tooltip_is_inside(mouse_x, mouse_y))
                 {
-                    tooltip_option_t *selected = NULL;
-
-                    int y = 1;
-                    for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
-                    {
-                        tooltip_option_t *option = *i;
-
-                        if (mouse_y == y + tooltip_y)
-                        {
-                            selected = option;
-
-                            break;
-                        }
-                        else
-                        {
-                            y++;
-                        }
-                    }
+                    tooltip_option_t *selected = tooltip_get_selected();
 
                     if (selected != NULL)
                     {
@@ -307,7 +300,7 @@ game_input_t input_handle(void)
             }
             case 't':
             {
-                input = GAME_INPUT_DRAW;
+                input = GAME_INPUT_TURN;
 
                 if (player->light != ACTOR_LIGHT_TORCH)
                 {
@@ -436,4 +429,124 @@ game_input_t input_handle(void)
 
 void input_uninit(void)
 {
+}
+
+static void tooltip_option_move(tooltip_data_t data)
+{
+    interactions_t interactions = {
+        .descend = false,
+        .ascend = false,
+        .light_on = false,
+        .light_off = false,
+        .attack = false,
+        .take_item = false,
+        .take_items = false};
+
+    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+}
+
+static void tooltip_option_stair_descend(tooltip_data_t data)
+{
+    interactions_t interactions = {
+        .descend = true,
+        .ascend = false,
+        .light_on = false,
+        .light_off = false,
+        .attack = false,
+        .take_item = false,
+        .take_items = false};
+
+    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+}
+
+static void tooltip_option_stair_ascend(tooltip_data_t data)
+{
+    interactions_t interactions = {
+        .descend = false,
+        .ascend = true,
+        .light_on = false,
+        .light_off = false,
+        .attack = false,
+        .take_item = false,
+        .take_items = false};
+
+    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+}
+
+static void tooltip_option_light_on(tooltip_data_t data)
+{
+    interactions_t interactions = {
+        .descend = false,
+        .ascend = false,
+        .light_on = true,
+        .light_off = false,
+        .attack = false,
+        .take_item = false,
+        .take_items = false};
+
+    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+}
+
+static void tooltip_option_light_off(tooltip_data_t data)
+{
+    interactions_t interactions = {
+        .descend = false,
+        .ascend = false,
+        .light_on = false,
+        .light_off = true,
+        .attack = false,
+        .take_item = false,
+        .take_items = false};
+
+    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+}
+
+static void tooltip_option_item_take(tooltip_data_t data)
+{
+    interactions_t interactions = {
+        .descend = false,
+        .ascend = false,
+        .light_on = false,
+        .light_off = false,
+        .attack = false,
+        .take_item = true,
+        .take_items = false};
+
+    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+}
+
+static void tooltip_option_item_take_all(tooltip_data_t data)
+{
+    interactions_t interactions = {
+        .descend = false,
+        .ascend = false,
+        .light_on = false,
+        .light_off = false,
+        .attack = false,
+        .take_item = false,
+        .take_items = true};
+
+    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+}
+
+static void tooltip_option_item_drop(tooltip_data_t data)
+{
+    tile_t *tile = &player->map->tiles[player->x][player->y];
+
+    TCOD_list_remove(player->items, data.item);
+    TCOD_list_push(tile->items, data.item);
+}
+
+static void tooltip_option_actor_attack(tooltip_data_t data)
+{
+    interactions_t interactions = {
+        .descend = false,
+        .ascend = false,
+        .light_on = false,
+        .light_off = false,
+        .attack = true,
+        .take_item = false,
+        .take_items = false};
+
+    actor_target_set(player, data.tile_x, data.tile_y, interactions);
 }

@@ -392,13 +392,6 @@ void map_turn(map_t *map)
         }
     }
 
-    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
-    {
-        actor_t *actor = *i;
-
-        actor_calc_fov(actor);
-    }
-
     for (void **i = TCOD_list_begin(map->items); i != TCOD_list_end(map->items); i++)
     {
         item_t *item = *i;

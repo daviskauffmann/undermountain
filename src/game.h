@@ -16,8 +16,8 @@ typedef enum game_input_e game_input_t;
 typedef enum content_e content_t;
 
 /* Game */
-actor_t *player;
 int turn;
+actor_t *player;
 
 void game_init(void);
 game_input_t game_input(void);
@@ -320,21 +320,6 @@ void panel_draw_tick(void);
 void panel_uninit(void);
 
 /* Tooltip */
-bool tooltip_visible;
-int tooltip_x;
-int tooltip_y;
-int tooltip_width;
-int tooltip_height;
-
-void tooltip_init(void);
-void tooltip_show(int x, int y);
-void tooltip_hide(void);
-bool tooltip_is_inside(int x, int y);
-void tooltip_draw_turn(void);
-void tooltip_draw_tick(void);
-void tooltip_uninit(void);
-
-/* Tooltip options */
 typedef struct tooltip_data_s
 {
     int tile_x;
@@ -349,19 +334,23 @@ typedef struct tooltip_option_s
     tooltip_data_t data;
 } tooltip_option_t;
 
+bool tooltip_visible;
+int tooltip_x;
+int tooltip_y;
+int tooltip_width;
+int tooltip_height;
+
 TCOD_list_t tooltip_options;
 
+void tooltip_init(void);
+void tooltip_show(int x, int y);
 void tooltip_options_add(char *text, void (*fn)(tooltip_data_t data), tooltip_data_t data);
 void tooltip_options_clear(void);
-
-void tooltip_option_move(tooltip_data_t data);
-void tooltip_option_stair_descend(tooltip_data_t data);
-void tooltip_option_stair_ascend(tooltip_data_t data);
-void tooltip_option_light_on(tooltip_data_t data);
-void tooltip_option_light_off(tooltip_data_t data);
-void tooltip_option_item_take(tooltip_data_t data);
-void tooltip_option_item_take_all(tooltip_data_t data);
-void tooltip_option_item_drop(tooltip_data_t data);
-void tooltip_option_actor_attack(tooltip_data_t data);
+void tooltip_hide(void);
+bool tooltip_is_inside(int x, int y);
+tooltip_option_t *tooltip_get_selected(void);
+void tooltip_draw_turn(void);
+void tooltip_draw_tick(void);
+void tooltip_uninit(void);
 
 #endif

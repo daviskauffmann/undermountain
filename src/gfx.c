@@ -77,6 +77,13 @@ void gfx_draw_tick(void)
     panel_draw_tick();
     tooltip_draw_tick();
 
+    TCOD_console_set_default_foreground(NULL, foreground_color);
+    TCOD_console_print_ex(NULL, 0, 0, TCOD_BKGND_SET, TCOD_LEFT, "Turn: %d", turn);
+    TCOD_console_print_ex(NULL, 0, 1, TCOD_BKGND_SET, TCOD_LEFT, "Lvl: %d", player->map->level);
+    TCOD_console_print_ex(NULL, 0, 2, TCOD_BKGND_SET, TCOD_LEFT, "Loc: (%d, %d)", player->x, player->y);
+    TCOD_console_print_ex(NULL, 0, 3, TCOD_BKGND_SET, TCOD_LEFT, "Tile: (%d, %d)", mouse_tile_x, mouse_tile_y);
+    TCOD_console_print_ex(NULL, 0, 4, TCOD_BKGND_SET, TCOD_LEFT, "Mouse: (%d, %d)", mouse_x, mouse_y);
+
     TCOD_console_flush();
 }
 

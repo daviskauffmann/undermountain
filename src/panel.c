@@ -104,12 +104,9 @@ void panel_draw_tick(void)
 
                 TCOD_color_t color = item->color;
 
-                if (panel_is_inside(mouse_x, mouse_y))
+                if (mouse_x > panel_x && mouse_x < panel_x + strlen("{name}") + 1 && mouse_y == y + panel_y - content_scroll[content])
                 {
-                    if (mouse_x > panel_x && mouse_x < panel_x + strlen("{name}") + 1 && mouse_y == y + panel_y - content_scroll[content])
-                    {
-                        color = TCOD_yellow;
-                    }
+                    color = TCOD_yellow;
                 }
 
                 TCOD_console_set_default_foreground(panel, color);

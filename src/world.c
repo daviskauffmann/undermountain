@@ -66,12 +66,6 @@ void world_draw_turn(void)
 void world_draw_tick(void)
 {
     map_draw_tick(player->map);
-
-    TCOD_console_set_default_foreground(NULL, foreground_color);
-    TCOD_console_print_ex(NULL, 0, 0, TCOD_BKGND_SET, TCOD_LEFT, "Turn: %d", turn);
-    TCOD_console_print_ex(NULL, 0, 1, TCOD_BKGND_SET, TCOD_LEFT, "Lvl: %d", player->map->level);
-    TCOD_console_print_ex(NULL, 0, 2, TCOD_BKGND_SET, TCOD_LEFT, "Loc: (%d, %d)", player->x, player->y);
-    TCOD_console_print_ex(NULL, 0, 3, TCOD_BKGND_SET, TCOD_LEFT, "Tgt: (%d, %d)", mouse_tile_x, mouse_tile_y);
 }
 
 void world_uninit(void)

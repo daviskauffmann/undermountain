@@ -13,6 +13,8 @@ void game_init(void)
 
 void game_new()
 {
+    turn = 0;
+
     map_t *map = map_create(0);
 
     TCOD_list_push(maps, map);
@@ -29,8 +31,6 @@ void game_new()
         TCOD_list_push(map->items, item);
         TCOD_list_push(player->items, item);
     }
-
-    turn = 0;
 
     msg_log("Hail, Player!", player->map, player->x, player->y);
 

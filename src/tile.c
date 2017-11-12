@@ -49,28 +49,10 @@ void tile_draw_turn(tile_t *tile, int x, int y)
         }
     }
 
-    if (!TCOD_map_is_in_fov(player->fov_map, x, y) && !tile->seen)
+    if (TCOD_map_is_in_fov(player->fov_map, x, y) || tile->seen)
     {
-        return;
+        TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_glyph[tile->type]);
     }
-
-    if (tile->light != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
-    {
-        return;
-    }
-
-    item_t *item = TCOD_list_peek(tile->items);
-    if (item != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
-    {
-        return;
-    }
-
-    if (tile->actor != NULL && TCOD_map_is_in_fov(player->fov_map, x, y))
-    {
-        return;
-    }
-
-    TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_glyph[tile->type]);
 }
 
 void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
@@ -108,7 +90,7 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
             float d = pow(x - actor->x, 2) + pow(y - actor->y, 2);
             float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 
-            color = TCOD_color_lerp(color, actor_light_color[actor->light], l);
+            color = TCOD_color_lerp(color, TCOD_color_lerp(tile_color_light, actor_light_color[actor->light], l), l);
         }
     }
 
@@ -122,7 +104,7 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
             float d = pow(x - light->x, 2) + pow(y - light->y, 2);
             float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 
-            color = TCOD_color_lerp(color, light->color, l);
+            color = TCOD_color_lerp(color, TCOD_color_lerp(tile_color_light, light->color, l), l);
         }
     }
 
@@ -136,7 +118,7 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
             float d = pow(x - actor->x + dx, 2) + pow(y - actor->y + dy, 2);
             float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
 
-            color = TCOD_color_lerp(color, actor_light_color[actor->light], l);
+            color = TCOD_color_lerp(color, TCOD_color_lerp(tile_color_light, actor_light_color[actor->light], l), l);
         }
     }
 

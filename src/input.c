@@ -36,13 +36,13 @@ game_input_t input_handle(void)
     mouse_tile_y = mouse.cy + view_y;
 
     const interactions_t default_interactions = {
-        .descend = false,
-        .ascend = false,
-        .light_on = false,
-        .light_off = false,
-        .attack = false,
-        .take_item = false,
-        .take_items = false};
+        .descend = true,
+        .ascend = true,
+        .light_on = true,
+        .light_off = true,
+        .attack = true,
+        .take_item = true,
+        .take_items = true};
 
     switch (ev)
     {
@@ -80,7 +80,16 @@ game_input_t input_handle(void)
                     }
                     else
                     {
-                        actor_target_set(player, mouse_tile_x, mouse_tile_y, default_interactions);
+                        interactions_t interactions = {
+                            .descend = false,
+                            .ascend = false,
+                            .light_on = false,
+                            .light_off = false,
+                            .attack = false,
+                            .take_item = false,
+                            .take_items = false};
+
+                        actor_target_set(player, mouse_tile_x, mouse_tile_y, interactions);
                     }
                 }
             }
@@ -445,10 +454,6 @@ game_input_t input_handle(void)
     return input;
 }
 
-void input_uninit(void)
-{
-}
-
 static game_input_t tooltip_option_examine_tile(tooltip_data_t data)
 {
     content_data_t content_data = {
@@ -615,4 +620,8 @@ static game_input_t tooltip_option_actor_attack(tooltip_data_t data)
     actor_target_set(player, data.x, data.y, interactions);
 
     return GAME_INPUT_TURN;
+}
+
+void input_uninit(void)
+{
 }

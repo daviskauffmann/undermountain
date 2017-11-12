@@ -21,7 +21,7 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
     actor->mark_for_delete = false;
     actor->target = false;
     actor->energy = 0;
-    actor->energy_per_turn = TCOD_random_get_int(NULL, 10, 20);
+    actor->energy_per_turn = TCOD_random_get_int(NULL, 5, 15);
     actor->energy_to_act = 20;
     actor->ai = ai;
 

@@ -21,7 +21,7 @@ void gfx_init(void)
     background_color = TCOD_black;
     foreground_color = TCOD_white;
     tile_color_light = TCOD_white;
-    tile_color_dark = TCOD_color_RGB(16, 16, 16);
+    tile_color_dark = TCOD_color_RGB(16, 16, 32);
 
     msg_init();
     panel_init();

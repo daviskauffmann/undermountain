@@ -260,6 +260,10 @@ int mouse_y;
 int mouse_tile_x;
 int mouse_tile_y;
 
+void input_init(void);
+game_input_t input_handle(void);
+void input_uninit(void);
+
 /* Graphics */
 TCOD_color_t background_color;
 TCOD_color_t foreground_color;

@@ -17,7 +17,7 @@ void ai_monster(actor_t *actor)
         {
             if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
-                msg_log("{name} spots {name}", actor->map, actor->x, actor->y);
+                msg_log("monster engages", actor->map, actor->x, actor->y);
 
                 interactions_t interactions = {
                     .descend = false,
@@ -87,7 +87,7 @@ void ai_pet(actor_t *actor)
         {
             if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
-                msg_log("{pet} spots {name}", actor->map, actor->x, actor->y);
+                msg_log("pet engages", actor->map, actor->x, actor->y);
 
                 interactions_t interactions = {
                     .descend = false,

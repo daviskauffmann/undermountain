@@ -45,6 +45,13 @@ void actor_turn(actor_t *actor)
             actor->ai(actor);
         }
     }
+
+    tile_t *tile = &actor->map->tiles[actor->x][actor->y];
+
+    if (TCOD_list_peek(tile->items) != NULL)
+    {
+        msg_log("actor sees items", actor->map, actor->x, actor->y);
+    }
 }
 
 void actor_tick(actor_t *actor)
@@ -176,12 +183,16 @@ void actor_target_process(actor_t *actor)
 
                     if (interactions.attack && tile->actor != player)
                     {
+                        msg_log("actor attacks actor", actor->map, actor->x, actor->y);
+
                         tile->actor->mark_for_delete = true;
                     }
                 }
 
                 if (interactions.take_items && TCOD_list_size(tile->items) > 0)
                 {
+                    msg_log("actor takes items", actor->map, actor->x, actor->y);
+
                     move_to_next = false;
 
                     for (void **i = TCOD_list_begin(tile->items); i != TCOD_list_end(tile->items); i++)
@@ -199,6 +210,8 @@ void actor_target_process(actor_t *actor)
 
                 if (interactions.take_item && TCOD_list_peek(tile->items) != NULL)
                 {
+                    msg_log("actor takes item", actor->map, actor->x, actor->y);
+
                     move_to_next = false;
 
                     item_t *item = TCOD_list_pop(tile->items);
@@ -213,12 +226,16 @@ void actor_target_process(actor_t *actor)
                 {
                     if (interactions.light_off && tile->light->on)
                     {
+                        msg_log("actor turns light off", actor->map, actor->x, actor->y);
+
                         move_to_next = false;
 
                         tile->light->on = false;
                     }
                     else if (interactions.light_on && !tile->light->on)
                     {
+                        msg_log("actor turns light on", actor->map, actor->x, actor->y);
+
                         move_to_next = false;
 
                         tile->light->on = true;
@@ -227,6 +244,8 @@ void actor_target_process(actor_t *actor)
 
                 if (interactions.descend && tile->type == TILE_TYPE_STAIR_DOWN)
                 {
+                    msg_log("actor descends", actor->map, actor->x, actor->y);
+
                     move_to_next = false;
 
                     map_t *new_map;
@@ -255,6 +274,8 @@ void actor_target_process(actor_t *actor)
 
                 if (interactions.ascend && tile->type == TILE_TYPE_STAIR_UP)
                 {
+                    msg_log("actor ascends", actor->map, actor->x, actor->y);
+
                     move_to_next = false;
 
                     if (actor->map->level > 0)

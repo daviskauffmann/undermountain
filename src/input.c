@@ -35,14 +35,14 @@ game_input_t input_handle(void)
     mouse_tile_x = mouse.cx + view_x;
     mouse_tile_y = mouse.cy + view_y;
 
-    interactions_t default_interactions = {
-        .descend = true,
-        .ascend = true,
-        .light_on = true,
-        .light_off = true,
-        .attack = true,
-        .take_item = true,
-        .take_items = true};
+    const interactions_t default_interactions = {
+        .descend = false,
+        .ascend = false,
+        .light_on = false,
+        .light_off = false,
+        .attack = false,
+        .take_item = false,
+        .take_items = false};
 
     switch (ev)
     {
@@ -80,16 +80,7 @@ game_input_t input_handle(void)
                     }
                     else
                     {
-                        interactions_t interactions = {
-                            .descend = false,
-                            .ascend = false,
-                            .light_on = false,
-                            .light_off = false,
-                            .attack = false,
-                            .take_item = false,
-                            .take_items = false};
-
-                        actor_target_set(player, mouse_tile_x, mouse_tile_y, interactions);
+                        actor_target_set(player, mouse_tile_x, mouse_tile_y, default_interactions);
                     }
                 }
             }
@@ -265,6 +256,23 @@ game_input_t input_handle(void)
                 input = GAME_INPUT_DRAW;
 
                 panel_toggle(CONTENT_INVENTORY, (content_data_t){.tile = NULL, .item = NULL, .actor = NULL});
+
+                break;
+            }
+            case 'g':
+            {
+                input = GAME_INPUT_TURN;
+
+                interactions_t interactions = {
+                    .descend = false,
+                    .ascend = false,
+                    .light_on = false,
+                    .light_off = false,
+                    .attack = false,
+                    .take_item = true,
+                    .take_items = false};
+
+                actor_target_set(player, player->x, player->y, interactions);
 
                 break;
             }

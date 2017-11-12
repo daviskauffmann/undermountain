@@ -30,7 +30,7 @@ void tooltip_hide()
     tooltip_visible = false;
 }
 
-void tooltip_options_add(char *text, void (*fn)(tooltip_data_t data), tooltip_data_t data)
+void tooltip_options_add(char *text, game_input_t (*fn)(tooltip_data_t data), tooltip_data_t data)
 {
     tooltip_option_t *option = (tooltip_option_t *)malloc(sizeof(tooltip_option_t));
 

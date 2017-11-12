@@ -20,8 +20,9 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
     actor->fov_map = NULL;
     actor->mark_for_delete = false;
     actor->target = false;
-    actor->speed = 2;
-    actor->turns_waited = 0;
+    actor->energy = 0;
+    actor->energy_per_turn = TCOD_random_get_int(NULL, 10, 20);
+    actor->energy_to_act = 20;
     actor->ai = ai;
 
     actor_calc_fov(actor);
@@ -35,15 +36,12 @@ void actor_turn(actor_t *actor)
 
     if (actor->ai != NULL)
     {
-        actor->turns_waited++;
+        actor->energy += actor->energy_per_turn;
 
-        if (actor->turns_waited >= actor->speed)
+        while (actor->energy >= actor->energy_to_act)
         {
-            actor->turns_waited = 0;
-        }
+            actor->energy -= actor->energy_to_act;
 
-        if (actor->turns_waited == 0)
-        {
             actor->ai(actor);
         }
     }

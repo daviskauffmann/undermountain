@@ -184,8 +184,9 @@ typedef struct actor_s
     TCOD_list_t items;
     actor_light_t light;
     TCOD_map_t fov_map;
-    int speed;
-    int turns_waited;
+    int energy;
+    int energy_per_turn;
+    int energy_to_act;
     void (*ai)(actor_t *actor);
     bool target;
     target_data_t target_data;
@@ -294,11 +295,22 @@ void msg_uninit(void);
 
 /* Side Menu */
 typedef enum content_e {
+    CONTENT_DEBUG,
     CONTENT_CHARACTER,
     CONTENT_INVENTORY,
+    CONTENT_EXAMINE_TILE,
+    CONTENT_EXAMINE_ITEM,
+    CONTENT_EXAMINE_ACTOR,
 
     NUM_CONTENTS
 } content_t;
+
+typedef struct content_data_s
+{
+    tile_t *tile;
+    item_t *item;
+    actor_t *actor;
+} content_data_t;
 
 bool panel_visible;
 int panel_x;
@@ -309,9 +321,10 @@ int panel_height;
 content_t content;
 int content_height[NUM_CONTENTS];
 int content_scroll[NUM_CONTENTS];
+content_data_t content_data;
 
 void panel_init(void);
-void panel_toggle(content_t new_content);
+void panel_toggle(content_t new_content, content_data_t data);
 void panel_content_scroll_down(void);
 void panel_content_scroll_up(void);
 bool panel_is_inside(int x, int y);
@@ -322,15 +335,15 @@ void panel_uninit(void);
 /* Tooltip */
 typedef struct tooltip_data_s
 {
-    int tile_x;
-    int tile_y;
+    int x;
+    int y;
     item_t *item;
 } tooltip_data_t;
 
 typedef struct tooltip_option_s
 {
     char *text;
-    void (*fn)(tooltip_data_t data);
+    game_input_t (*fn)(tooltip_data_t data);
     tooltip_data_t data;
 } tooltip_option_t;
 
@@ -344,7 +357,7 @@ TCOD_list_t tooltip_options;
 
 void tooltip_init(void);
 void tooltip_show(int x, int y);
-void tooltip_options_add(char *text, void (*fn)(tooltip_data_t data), tooltip_data_t data);
+void tooltip_options_add(char *text, game_input_t (*fn)(tooltip_data_t data), tooltip_data_t data);
 void tooltip_options_clear(void);
 void tooltip_hide(void);
 bool tooltip_is_inside(int x, int y);

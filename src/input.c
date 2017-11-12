@@ -5,15 +5,18 @@
 #include "system.h"
 #include "game.h"
 
-static void tooltip_option_move(tooltip_data_t data);
-static void tooltip_option_stair_descend(tooltip_data_t data);
-static void tooltip_option_stair_ascend(tooltip_data_t data);
-static void tooltip_option_light_on(tooltip_data_t data);
-static void tooltip_option_light_off(tooltip_data_t data);
-static void tooltip_option_item_take(tooltip_data_t data);
-static void tooltip_option_item_take_all(tooltip_data_t data);
-static void tooltip_option_item_drop(tooltip_data_t data);
-static void tooltip_option_actor_attack(tooltip_data_t data);
+static game_input_t tooltip_option_examine_tile(tooltip_data_t data);
+static game_input_t tooltip_option_examine_item(tooltip_data_t data);
+static game_input_t tooltip_option_examine_actor(tooltip_data_t data);
+static game_input_t tooltip_option_move(tooltip_data_t data);
+static game_input_t tooltip_option_stair_descend(tooltip_data_t data);
+static game_input_t tooltip_option_stair_ascend(tooltip_data_t data);
+static game_input_t tooltip_option_light_on(tooltip_data_t data);
+static game_input_t tooltip_option_light_off(tooltip_data_t data);
+static game_input_t tooltip_option_item_take(tooltip_data_t data);
+static game_input_t tooltip_option_item_take_all(tooltip_data_t data);
+static game_input_t tooltip_option_item_drop(tooltip_data_t data);
+static game_input_t tooltip_option_actor_attack(tooltip_data_t data);
 
 void input_init(void)
 {
@@ -55,9 +58,7 @@ game_input_t input_handle(void)
 
                     if (selected != NULL)
                     {
-                        input = GAME_INPUT_TURN;
-
-                        selected->fn(selected->data);
+                        input = selected->fn(selected->data);
 
                         tooltip_hide();
                     }
@@ -101,12 +102,14 @@ game_input_t input_handle(void)
 
                 tooltip_show(mouse_x, mouse_y);
 
+                tile_t *tile = &player->map->tiles[mouse_tile_x][mouse_tile_y];
+
                 tooltip_data_t data = {
-                    .tile_x = mouse_tile_x,
-                    .tile_y = mouse_tile_y};
+                    .x = mouse_tile_x,
+                    .y = mouse_tile_y,
+                    .item = TCOD_list_peek(tile->items)};
 
-                tile_t *tile = &player->map->tiles[data.tile_x][data.tile_y];
-
+                tooltip_options_add("Examine Tile", &tooltip_option_examine_tile, data);
                 tooltip_options_add("Move", &tooltip_option_move, data);
 
                 if (tile->type == TILE_TYPE_STAIR_DOWN)
@@ -119,7 +122,7 @@ game_input_t input_handle(void)
                     tooltip_options_add("Ascend", &tooltip_option_stair_ascend, data);
                 }
 
-                if (TCOD_map_is_in_fov(player->fov_map, data.tile_x, data.tile_y))
+                if (TCOD_map_is_in_fov(player->fov_map, mouse_tile_x, mouse_tile_y))
                 {
                     if (tile->light != NULL)
                     {
@@ -135,12 +138,9 @@ game_input_t input_handle(void)
 
                     if (tile->actor != NULL)
                     {
-                        if (tile->actor == player)
-                        {
-                            tooltip_options_add("Character", &tooltip_option_move, data);
-                            tooltip_options_add("Inventory", &tooltip_option_move, data);
-                        }
-                        else if (tile->actor->ai == ai_monster)
+                        tooltip_options_add("Examine Actor", &tooltip_option_examine_actor, data);
+
+                        if (tile->actor->ai == ai_monster)
                         {
                             tooltip_options_add("Attack", &tooltip_option_actor_attack, data);
                         }
@@ -148,6 +148,7 @@ game_input_t input_handle(void)
 
                     if (TCOD_list_peek(tile->items))
                     {
+                        tooltip_options_add("Examine Item", &tooltip_option_examine_item, data);
                         tooltip_options_add("Take Item", &tooltip_option_item_take, data);
                     }
 
@@ -191,6 +192,7 @@ game_input_t input_handle(void)
                         tooltip_data_t data = {
                             .item = selected};
 
+                        tooltip_options_add("Examine", &tooltip_option_examine_item, data);
                         tooltip_options_add("Drop", &tooltip_option_item_drop, data);
                     }
 
@@ -246,7 +248,15 @@ game_input_t input_handle(void)
             {
                 input = GAME_INPUT_DRAW;
 
-                panel_toggle(CONTENT_CHARACTER);
+                panel_toggle(CONTENT_CHARACTER, (content_data_t){.tile = NULL, .item = NULL, .actor = NULL});
+
+                break;
+            }
+            case 'd':
+            {
+                input = GAME_INPUT_DRAW;
+
+                panel_toggle(CONTENT_DEBUG, (content_data_t){.tile = NULL, .item = NULL, .actor = NULL});
 
                 break;
             }
@@ -254,7 +264,7 @@ game_input_t input_handle(void)
             {
                 input = GAME_INPUT_DRAW;
 
-                panel_toggle(CONTENT_INVENTORY);
+                panel_toggle(CONTENT_INVENTORY, (content_data_t){.tile = NULL, .item = NULL, .actor = NULL});
 
                 break;
             }
@@ -431,7 +441,37 @@ void input_uninit(void)
 {
 }
 
-static void tooltip_option_move(tooltip_data_t data)
+static game_input_t tooltip_option_examine_tile(tooltip_data_t data)
+{
+    content_data_t content_data = {
+        .tile = &player->map->tiles[data.x][data.y]};
+
+    panel_toggle(CONTENT_EXAMINE_TILE, content_data);
+
+    return GAME_INPUT_DRAW;
+}
+
+static game_input_t tooltip_option_examine_item(tooltip_data_t data)
+{
+    content_data_t content_data = {
+        .item = data.item};
+
+    panel_toggle(CONTENT_EXAMINE_ITEM, content_data);
+
+    return GAME_INPUT_DRAW;
+}
+
+static game_input_t tooltip_option_examine_actor(tooltip_data_t data)
+{
+    content_data_t content_data = {
+        .actor = player->map->tiles[data.x][data.y].actor};
+
+    panel_toggle(CONTENT_EXAMINE_ACTOR, content_data);
+
+    return GAME_INPUT_DRAW;
+}
+
+static game_input_t tooltip_option_move(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -442,10 +482,12 @@ static void tooltip_option_move(tooltip_data_t data)
         .take_item = false,
         .take_items = false};
 
-    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+    actor_target_set(player, data.x, data.y, interactions);
+
+    return GAME_INPUT_TURN;
 }
 
-static void tooltip_option_stair_descend(tooltip_data_t data)
+static game_input_t tooltip_option_stair_descend(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = true,
@@ -456,10 +498,12 @@ static void tooltip_option_stair_descend(tooltip_data_t data)
         .take_item = false,
         .take_items = false};
 
-    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+    actor_target_set(player, data.x, data.y, interactions);
+
+    return GAME_INPUT_TURN;
 }
 
-static void tooltip_option_stair_ascend(tooltip_data_t data)
+static game_input_t tooltip_option_stair_ascend(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -470,10 +514,12 @@ static void tooltip_option_stair_ascend(tooltip_data_t data)
         .take_item = false,
         .take_items = false};
 
-    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+    actor_target_set(player, data.x, data.y, interactions);
+
+    return GAME_INPUT_TURN;
 }
 
-static void tooltip_option_light_on(tooltip_data_t data)
+static game_input_t tooltip_option_light_on(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -484,10 +530,12 @@ static void tooltip_option_light_on(tooltip_data_t data)
         .take_item = false,
         .take_items = false};
 
-    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+    actor_target_set(player, data.x, data.y, interactions);
+
+    return GAME_INPUT_TURN;
 }
 
-static void tooltip_option_light_off(tooltip_data_t data)
+static game_input_t tooltip_option_light_off(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -498,10 +546,12 @@ static void tooltip_option_light_off(tooltip_data_t data)
         .take_item = false,
         .take_items = false};
 
-    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+    actor_target_set(player, data.x, data.y, interactions);
+
+    return GAME_INPUT_TURN;
 }
 
-static void tooltip_option_item_take(tooltip_data_t data)
+static game_input_t tooltip_option_item_take(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -512,10 +562,12 @@ static void tooltip_option_item_take(tooltip_data_t data)
         .take_item = true,
         .take_items = false};
 
-    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+    actor_target_set(player, data.x, data.y, interactions);
+
+    return GAME_INPUT_TURN;
 }
 
-static void tooltip_option_item_take_all(tooltip_data_t data)
+static game_input_t tooltip_option_item_take_all(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -526,18 +578,22 @@ static void tooltip_option_item_take_all(tooltip_data_t data)
         .take_item = false,
         .take_items = true};
 
-    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+    actor_target_set(player, data.x, data.y, interactions);
+
+    return GAME_INPUT_TURN;
 }
 
-static void tooltip_option_item_drop(tooltip_data_t data)
+static game_input_t tooltip_option_item_drop(tooltip_data_t data)
 {
     tile_t *tile = &player->map->tiles[player->x][player->y];
 
     TCOD_list_remove(player->items, data.item);
     TCOD_list_push(tile->items, data.item);
+
+    return GAME_INPUT_TURN;
 }
 
-static void tooltip_option_actor_attack(tooltip_data_t data)
+static game_input_t tooltip_option_actor_attack(tooltip_data_t data)
 {
     interactions_t interactions = {
         .descend = false,
@@ -548,5 +604,7 @@ static void tooltip_option_actor_attack(tooltip_data_t data)
         .take_item = false,
         .take_items = false};
 
-    actor_target_set(player, data.tile_x, data.tile_y, interactions);
+    actor_target_set(player, data.x, data.y, interactions);
+
+    return GAME_INPUT_TURN;
 }

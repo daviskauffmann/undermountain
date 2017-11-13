@@ -16,6 +16,8 @@ actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_
     actor->glyph = glyph;
     actor->color = color;
     actor->items = TCOD_list_new();
+    actor->spells = TCOD_list_new();
+    actor->spell_ready = NULL;
     actor->light = ACTOR_LIGHT_DEFAULT;
     actor->fov_map = NULL;
     actor->mark_for_delete = false;
@@ -314,6 +316,10 @@ void actor_target_process(actor_t *actor)
 
             TCOD_path_delete(path);
         }
+        else
+        {
+            actor->target = false;
+        }
 
         if (actor->target_data.actor != NULL && actor->target_data.actor->mark_for_delete)
         {
@@ -338,6 +344,8 @@ void actor_draw_tick(actor_t *actor)
 void actor_destroy(actor_t *actor)
 {
     TCOD_list_delete(actor->items);
+
+    TCOD_list_delete(actor->spells);
 
     if (actor->fov_map != NULL)
     {

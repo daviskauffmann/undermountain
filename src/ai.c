@@ -19,14 +19,9 @@ void ai_monster(actor_t *actor)
             {
                 msg_log("monster engages", actor->map, actor->x, actor->y);
 
-                interactions_t interactions = {
-                    .descend = false,
-                    .ascend = false,
-                    .light_on = false,
-                    .light_off = false,
-                    .attack = true,
-                    .take_item = false,
-                    .take_items = false};
+                interactions_t interactions = INTERACTIONS_NONE;
+
+                interactions.attack = true;
 
                 actor_target_set(actor, other->x, other->y, interactions);
 
@@ -39,34 +34,25 @@ void ai_monster(actor_t *actor)
 
     if (!chasing)
     {
-        interactions_t interactions = {
-            .descend = false,
-            .ascend = false,
-            .light_on = false,
-            .light_off = false,
-            .attack = false,
-            .take_item = false,
-            .take_items = false};
-
         switch (TCOD_random_get_int(NULL, 0, 8))
         {
         case 0:
-            actor_target_set(actor, actor->x, actor->y - 1, interactions);
+            actor_target_set(actor, actor->x, actor->y - 1, INTERACTIONS_NONE);
 
             break;
 
         case 1:
-            actor_target_set(actor, actor->x, actor->y + 1, interactions);
+            actor_target_set(actor, actor->x, actor->y + 1, INTERACTIONS_NONE);
 
             break;
 
         case 2:
-            actor_target_set(actor, actor->x - 1, actor->y, interactions);
+            actor_target_set(actor, actor->x - 1, actor->y, INTERACTIONS_NONE);
 
             break;
 
         case 3:
-            actor_target_set(actor, actor->x + 1, actor->y, interactions);
+            actor_target_set(actor, actor->x + 1, actor->y, INTERACTIONS_NONE);
 
             break;
         }
@@ -89,14 +75,9 @@ void ai_pet(actor_t *actor)
             {
                 msg_log("pet engages", actor->map, actor->x, actor->y);
 
-                interactions_t interactions = {
-                    .descend = false,
-                    .ascend = false,
-                    .light_on = false,
-                    .light_off = false,
-                    .attack = true,
-                    .take_item = false,
-                    .take_items = false};
+                interactions_t interactions = INTERACTIONS_NONE;
+
+                interactions.attack = true;
 
                 actor_target_set(actor, other->x, other->y, interactions);
 
@@ -109,16 +90,7 @@ void ai_pet(actor_t *actor)
 
     if (!chasing)
     {
-        interactions_t interactions = {
-            .descend = false,
-            .ascend = false,
-            .light_on = false,
-            .light_off = false,
-            .attack = false,
-            .take_item = false,
-            .take_items = false};
-
-        actor_target_set(actor, player->x, player->y, interactions);
+        actor_target_set(actor, player->x, player->y, INTERACTIONS_NONE);
     }
 
     actor_target_process(actor);

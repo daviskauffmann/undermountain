@@ -7,11 +7,14 @@ typedef struct map_s map_t;
 typedef struct tile_s tile_t;
 typedef struct room_s room_t;
 typedef struct light_s light_t;
-typedef struct actor_s actor_t;
 typedef struct item_s item_t;
 typedef struct armor_s armor_t;
 typedef struct weapon_s weapon_t;
 typedef struct potion_s potion_t;
+typedef struct scroll_s scroll_t;
+typedef struct spell_s spell_t;
+typedef struct interactions_s interactions_t;
+typedef struct actor_s actor_t;
 typedef enum game_input_e game_input_t;
 typedef enum content_e content_t;
 
@@ -99,6 +102,7 @@ typedef enum item_type_e {
     ITEM_TYPE_ARMOR,
     ITEM_TYPE_WEAPON,
     ITEM_TYPE_POTION,
+    ITEM_TYPE_SCROLL,
     ITEM_TYPE_CORPSE
 } item_type_t;
 
@@ -128,7 +132,14 @@ typedef struct weapon_s
 typedef struct potion_s
 {
     item_t item;
+    void (*quaff)(void);
 } potion_t;
+
+typedef struct scroll_s
+{
+    item_t item;
+    spell_t *spell;
+} scroll_t;
 
 typedef struct corpse_s
 {
@@ -146,7 +157,54 @@ void item_draw_turn(item_t *item);
 void item_draw_tick(item_t *item);
 void item_destroy(item_t *item);
 
+/* Spells */
+typedef enum spell_type_e {
+    SPELL_INSTAKILL,
+
+    NUM_SPELL_TYPES
+} spell_type_t;
+
+typedef struct cast_data_s
+{
+    actor_t *caster;
+    int x;
+    int y;
+} cast_data_t;
+
+typedef struct spell_s
+{
+    void (*cast)(cast_data_t);
+} spell_t;
+
+spell_t spells[NUM_SPELL_TYPES];
+
+void spell_instakill(cast_data_t data);
+
 /* Actors */
+#define INTERACTIONS_ALL   \
+    (interactions_t)       \
+    {                      \
+        .descend = true,   \
+        .ascend = true,    \
+        .light_on = true,  \
+        .light_off = true, \
+        .attack = true,    \
+        .take_item = true, \
+        .take_items = true \
+    }
+
+#define INTERACTIONS_NONE   \
+    (interactions_t)        \
+    {                       \
+        .descend = false,   \
+        .ascend = false,    \
+        .light_on = false,  \
+        .light_off = false, \
+        .attack = false,    \
+        .take_item = false, \
+        .take_items = false \
+    }
+
 typedef enum actor_light_e {
     ACTOR_LIGHT_NONE,
     ACTOR_LIGHT_DEFAULT,
@@ -182,6 +240,8 @@ typedef struct actor_s
     unsigned char glyph;
     TCOD_color_t color;
     TCOD_list_t items;
+    TCOD_list_t spells;
+    spell_t *spell_ready;
     actor_light_t light;
     TCOD_map_t fov_map;
     int energy;
@@ -299,22 +359,12 @@ void msg_uninit(void);
 
 /* Side Menu */
 typedef enum content_e {
-    CONTENT_DEBUG,
     CONTENT_CHARACTER,
     CONTENT_INVENTORY,
-    CONTENT_EXAMINE_TILE,
-    CONTENT_EXAMINE_ITEM,
-    CONTENT_EXAMINE_ACTOR,
+    CONTENT_SPELLBOOK,
 
     NUM_CONTENTS
 } content_t;
-
-typedef struct content_data_s
-{
-    tile_t *tile;
-    item_t *item;
-    actor_t *actor;
-} content_data_t;
 
 bool panel_visible;
 int panel_x;
@@ -325,10 +375,9 @@ int panel_height;
 content_t content;
 int content_height[NUM_CONTENTS];
 int content_scroll[NUM_CONTENTS];
-content_data_t content_data;
 
 void panel_init(void);
-void panel_toggle(content_t new_content, content_data_t data);
+void panel_toggle(content_t new_content);
 void panel_content_scroll_down(void);
 void panel_content_scroll_up(void);
 bool panel_is_inside(int x, int y);
@@ -342,6 +391,7 @@ typedef struct tooltip_data_s
     int x;
     int y;
     item_t *item;
+    spell_t *spell;
 } tooltip_data_t;
 
 typedef struct tooltip_option_s

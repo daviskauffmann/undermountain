@@ -32,6 +32,8 @@ void game_new()
         TCOD_list_push(player->items, item);
     }
 
+    TCOD_list_push(player->spells, &spells[SPELL_INSTAKILL]);
+
     msg_log("Hail, Player!", player->map, player->x, player->y);
 
     actor_t *pet = actor_create(map, player->x + 1, player->y, '@', TCOD_yellow, &ai_pet);

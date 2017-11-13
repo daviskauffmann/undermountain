@@ -5,9 +5,8 @@
 #include "system.h"
 #include "game.h"
 
-static game_input_t tooltip_option_examine_tile(tooltip_data_t data);
-static game_input_t tooltip_option_examine_item(tooltip_data_t data);
-static game_input_t tooltip_option_examine_actor(tooltip_data_t data);
+static spell_t *target_spell;
+
 static game_input_t tooltip_option_move(tooltip_data_t data);
 static game_input_t tooltip_option_stair_descend(tooltip_data_t data);
 static game_input_t tooltip_option_stair_ascend(tooltip_data_t data);
@@ -16,10 +15,14 @@ static game_input_t tooltip_option_light_off(tooltip_data_t data);
 static game_input_t tooltip_option_item_take(tooltip_data_t data);
 static game_input_t tooltip_option_item_take_all(tooltip_data_t data);
 static game_input_t tooltip_option_item_drop(tooltip_data_t data);
+static game_input_t tooltip_option_spell_ready(tooltip_data_t data);
+static game_input_t tooltip_option_spell_cast_ready(tooltip_data_t data);
+static game_input_t tooltip_option_spell_cast_spellbook(tooltip_data_t data);
 static game_input_t tooltip_option_actor_attack(tooltip_data_t data);
 
 void input_init(void)
 {
+    target_spell = NULL;
 }
 
 game_input_t input_handle(void)
@@ -35,15 +38,6 @@ game_input_t input_handle(void)
     mouse_tile_x = mouse.cx + view_x;
     mouse_tile_y = mouse.cy + view_y;
 
-    const interactions_t default_interactions = {
-        .descend = true,
-        .ascend = true,
-        .light_on = true,
-        .light_off = true,
-        .attack = true,
-        .take_item = true,
-        .take_items = true};
-
     switch (ev)
     {
     case TCOD_EVENT_MOUSE_PRESS:
@@ -54,7 +48,22 @@ game_input_t input_handle(void)
             {
                 if (tooltip_is_inside(mouse_x, mouse_y))
                 {
-                    tooltip_option_t *selected = tooltip_get_selected();
+                    tooltip_option_t *selected = NULL;
+
+                    int y = 1;
+                    for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
+                    {
+                        tooltip_option_t *option = *i;
+
+                        if (mouse_x > tooltip_x && mouse_x < tooltip_x + strlen(option->text) + 1 && mouse_y == y + tooltip_y)
+                        {
+                            selected = option;
+
+                            break;
+                        }
+
+                        y++;
+                    }
 
                     if (selected != NULL)
                     {
@@ -74,22 +83,29 @@ game_input_t input_handle(void)
             {
                 if (view_is_inside(mouse_x, mouse_y) && map_is_inside(mouse_tile_x, mouse_tile_y))
                 {
-                    if (TCOD_map_is_in_fov(player->fov_map, mouse_tile_x, mouse_tile_y))
+                    if (target_spell != NULL)
                     {
-                        actor_target_set(player, mouse_tile_x, mouse_tile_y, default_interactions);
+                        input = GAME_INPUT_TURN;
+
+                        cast_data_t data = {
+                            .caster = player,
+                            .x = mouse_tile_x,
+                            .y = mouse_tile_y};
+
+                        target_spell->cast(data);
+
+                        target_spell = NULL;
                     }
                     else
                     {
-                        interactions_t interactions = {
-                            .descend = false,
-                            .ascend = false,
-                            .light_on = false,
-                            .light_off = false,
-                            .attack = false,
-                            .take_item = false,
-                            .take_items = false};
-
-                        actor_target_set(player, mouse_tile_x, mouse_tile_y, interactions);
+                        if (TCOD_map_is_in_fov(player->fov_map, mouse_tile_x, mouse_tile_y))
+                        {
+                            actor_target_set(player, mouse_tile_x, mouse_tile_y, INTERACTIONS_ALL);
+                        }
+                        else
+                        {
+                            actor_target_set(player, mouse_tile_x, mouse_tile_y, INTERACTIONS_NONE);
+                        }
                     }
                 }
             }
@@ -109,8 +125,12 @@ game_input_t input_handle(void)
                     .y = mouse_tile_y,
                     .item = TCOD_list_peek(tile->items)};
 
-                tooltip_options_add("Examine Tile", &tooltip_option_examine_tile, data);
                 tooltip_options_add("Move", &tooltip_option_move, data);
+
+                if (player->spell_ready != NULL)
+                {
+                    tooltip_options_add("Cast", &tooltip_option_spell_cast_ready, data);
+                }
 
                 if (tile->type == TILE_TYPE_STAIR_DOWN)
                 {
@@ -138,8 +158,6 @@ game_input_t input_handle(void)
 
                     if (tile->actor != NULL)
                     {
-                        tooltip_options_add("Examine Actor", &tooltip_option_examine_actor, data);
-
                         if (tile->actor->ai == ai_monster)
                         {
                             tooltip_options_add("Attack", &tooltip_option_actor_attack, data);
@@ -148,7 +166,6 @@ game_input_t input_handle(void)
 
                     if (TCOD_list_peek(tile->items))
                     {
-                        tooltip_options_add("Examine Item", &tooltip_option_examine_item, data);
                         tooltip_options_add("Take Item", &tooltip_option_item_take, data);
                     }
 
@@ -171,16 +188,14 @@ game_input_t input_handle(void)
                     {
                         item_t *item = *i;
 
-                        if (mouse_x > panel_x && mouse_x < panel_x + strlen("{name}") + 1 && mouse_y == y + panel_y - content_scroll[content])
+                        if (mouse_x > panel_x && mouse_x < panel_x + strlen("item") + 1 && mouse_y == y + panel_y - content_scroll[content])
                         {
                             selected = item;
 
                             break;
                         }
-                        else
-                        {
-                            y++;
-                        }
+
+                        y++;
                     }
 
                     if (selected != NULL)
@@ -192,8 +207,47 @@ game_input_t input_handle(void)
                         tooltip_data_t data = {
                             .item = selected};
 
-                        tooltip_options_add("Examine", &tooltip_option_examine_item, data);
                         tooltip_options_add("Drop", &tooltip_option_item_drop, data);
+                    }
+
+                    break;
+                }
+                case CONTENT_SPELLBOOK:
+                {
+                    spell_t *selected = NULL;
+
+                    int y = 1;
+                    for (void **i = TCOD_list_begin(player->spells); i != TCOD_list_end(player->spells); i++)
+                    {
+                        spell_t *spell = *i;
+
+                        const char *spell_name = spell == player->spell_ready ? "spell (ready)" : "spell";
+
+                        if (mouse_x > panel_x && mouse_x < panel_x + strlen(spell_name) + 1 && mouse_y == y + panel_y - content_scroll[content])
+                        {
+                            selected = spell;
+
+                            break;
+                        }
+
+                        y++;
+                    }
+
+                    if (selected != NULL)
+                    {
+                        input = GAME_INPUT_DRAW;
+
+                        tooltip_show(panel_x + 1, y - content_scroll[content]);
+
+                        tooltip_data_t data = {
+                            .spell = selected};
+
+                        tooltip_options_add("Cast", &tooltip_option_spell_cast_spellbook, data);
+
+                        if (selected != player->spell_ready)
+                        {
+                            tooltip_options_add("Ready", &tooltip_option_spell_ready, data);
+                        }
                     }
 
                     break;
@@ -244,19 +298,19 @@ game_input_t input_handle(void)
         {
             switch (key.c)
             {
+            case 'b':
+            {
+                input = GAME_INPUT_DRAW;
+
+                panel_toggle(CONTENT_SPELLBOOK);
+
+                break;
+            }
             case 'c':
             {
                 input = GAME_INPUT_DRAW;
 
-                panel_toggle(CONTENT_CHARACTER, (content_data_t){.tile = NULL, .item = NULL, .actor = NULL});
-
-                break;
-            }
-            case 'd':
-            {
-                input = GAME_INPUT_DRAW;
-
-                panel_toggle(CONTENT_DEBUG, (content_data_t){.tile = NULL, .item = NULL, .actor = NULL});
+                panel_toggle(CONTENT_CHARACTER);
 
                 break;
             }
@@ -264,24 +318,7 @@ game_input_t input_handle(void)
             {
                 input = GAME_INPUT_DRAW;
 
-                panel_toggle(CONTENT_INVENTORY, (content_data_t){.tile = NULL, .item = NULL, .actor = NULL});
-
-                break;
-            }
-            case 'g':
-            {
-                input = GAME_INPUT_TURN;
-
-                interactions_t interactions = {
-                    .descend = false,
-                    .ascend = false,
-                    .light_on = false,
-                    .light_off = false,
-                    .attack = false,
-                    .take_item = true,
-                    .take_items = false};
-
-                actor_target_set(player, player->x, player->y, interactions);
+                panel_toggle(CONTENT_INVENTORY);
 
                 break;
             }
@@ -346,98 +383,6 @@ game_input_t input_handle(void)
 
             break;
         }
-        case TCODK_KP1:
-        {
-            input = GAME_INPUT_TURN;
-
-            actor_target_set(player, player->x - 1, player->y + 1, default_interactions);
-
-            tooltip_hide();
-
-            break;
-        }
-        case TCODK_KP2:
-        case TCODK_DOWN:
-        {
-            input = GAME_INPUT_TURN;
-
-            actor_target_set(player, player->x, player->y + 1, default_interactions);
-
-            tooltip_hide();
-
-            break;
-        }
-        case TCODK_KP3:
-        {
-            input = GAME_INPUT_TURN;
-
-            actor_target_set(player, player->x + 1, player->y + 1, default_interactions);
-
-            tooltip_hide();
-
-            break;
-        }
-        case TCODK_KP4:
-        case TCODK_LEFT:
-        {
-            input = GAME_INPUT_TURN;
-
-            actor_target_set(player, player->x - 1, player->y, default_interactions);
-
-            tooltip_hide();
-
-            break;
-        }
-        case TCODK_KP5:
-        {
-            input = GAME_INPUT_TURN;
-
-            tooltip_hide();
-
-            break;
-        }
-        case TCODK_KP6:
-        case TCODK_RIGHT:
-        {
-            input = GAME_INPUT_TURN;
-
-            actor_target_set(player, player->x + 1, player->y, default_interactions);
-
-            tooltip_hide();
-
-            break;
-        }
-        case TCODK_KP7:
-        {
-            input = GAME_INPUT_TURN;
-
-            actor_target_set(player, player->x - 1, player->y - 1, default_interactions);
-
-            tooltip_hide();
-
-            break;
-        }
-        case TCODK_KP8:
-        case TCODK_UP:
-        {
-            input = GAME_INPUT_TURN;
-
-            actor_target_set(player, player->x, player->y - 1, default_interactions);
-
-            tooltip_hide();
-
-            break;
-        }
-        case TCODK_KP9:
-        {
-            input = GAME_INPUT_TURN;
-
-            actor_target_set(player, player->x + 1, player->y - 1, default_interactions);
-
-            tooltip_hide();
-
-            break;
-        }
         }
 
         break;
@@ -452,36 +397,6 @@ game_input_t input_handle(void)
     }
 
     return input;
-}
-
-static game_input_t tooltip_option_examine_tile(tooltip_data_t data)
-{
-    content_data_t content_data = {
-        .tile = &player->map->tiles[data.x][data.y]};
-
-    panel_toggle(CONTENT_EXAMINE_TILE, content_data);
-
-    return GAME_INPUT_DRAW;
-}
-
-static game_input_t tooltip_option_examine_item(tooltip_data_t data)
-{
-    content_data_t content_data = {
-        .item = data.item};
-
-    panel_toggle(CONTENT_EXAMINE_ITEM, content_data);
-
-    return GAME_INPUT_DRAW;
-}
-
-static game_input_t tooltip_option_examine_actor(tooltip_data_t data)
-{
-    content_data_t content_data = {
-        .actor = player->map->tiles[data.x][data.y].actor};
-
-    panel_toggle(CONTENT_EXAMINE_ACTOR, content_data);
-
-    return GAME_INPUT_DRAW;
 }
 
 static game_input_t tooltip_option_move(tooltip_data_t data)
@@ -604,6 +519,34 @@ static game_input_t tooltip_option_item_drop(tooltip_data_t data)
     TCOD_list_push(tile->items, data.item);
 
     return GAME_INPUT_TURN;
+}
+
+static game_input_t tooltip_option_spell_ready(tooltip_data_t data)
+{
+    player->spell_ready = data.spell;
+
+    return GAME_INPUT_DRAW;
+}
+
+static game_input_t tooltip_option_spell_cast_ready(tooltip_data_t data)
+{
+    cast_data_t cast_data = {
+        .caster = player,
+        .x = data.x,
+        .y = data.y};
+
+    player->spell_ready->cast(cast_data);
+
+    return GAME_INPUT_TURN;
+}
+
+static game_input_t tooltip_option_spell_cast_spellbook(tooltip_data_t data)
+{
+    msg_log("select a target", player->map, player->x, player->y);
+
+    target_spell = data.spell;
+
+    return GAME_INPUT_DRAW;
 }
 
 static game_input_t tooltip_option_actor_attack(tooltip_data_t data)

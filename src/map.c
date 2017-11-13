@@ -91,7 +91,7 @@ map_t *map_create(int level)
             continue;
         }
 
-        actor_t *actor = actor_create(map, x, y, '@', TCOD_red, &ai_monster);
+        actor_t *actor = actor_create(map, x, y, "Monster", '@', TCOD_red, &ai_monster);
 
         switch (TCOD_random_get_int(NULL, 0, 10))
         {

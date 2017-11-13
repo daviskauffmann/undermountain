@@ -106,10 +106,17 @@ typedef enum item_type_e {
     ITEM_TYPE_CORPSE
 } item_type_t;
 
+typedef enum potion_type_e {
+    POTION_TYPE_POISON,
+
+    NUM_POTION_TYPES
+} potion_type_t;
+
 typedef struct item_s
 {
     int x;
     int y;
+    char *name;
     unsigned char glyph;
     TCOD_color_t color;
     item_type_t type;
@@ -147,9 +154,9 @@ typedef struct corpse_s
 } corpse_t;
 
 item_t *item_create_random(int x, int y);
-armor_t *armor_create(int x, int y, unsigned char glyph, TCOD_color_t color, int ac);
-weapon_t *weapon_create(int x, int y, unsigned char glyph, TCOD_color_t color, int a, int b, int c);
-potion_t *potion_create(int x, int y, unsigned char glyph, TCOD_color_t color);
+armor_t *armor_create(int x, int y, char *name, unsigned char glyph, TCOD_color_t color, int ac);
+weapon_t *weapon_create(int x, int y, char *name, unsigned char glyph, TCOD_color_t color, int a, int b, int c);
+potion_t *potion_create(int x, int y, char *name, unsigned char glyph, TCOD_color_t color);
 corpse_t *corpse_create(int x, int y, actor_t *actor);
 void item_turn(item_t *item);
 void item_tick(item_t *item);
@@ -173,6 +180,7 @@ typedef struct cast_data_s
 
 typedef struct spell_s
 {
+    char *name;
     void (*cast)(cast_data_t);
 } spell_t;
 
@@ -237,6 +245,7 @@ typedef struct actor_s
     map_t *map;
     int x;
     int y;
+    char *name;
     unsigned char glyph;
     TCOD_color_t color;
     TCOD_list_t items;
@@ -256,7 +265,7 @@ typedef struct actor_s
 int actor_light_radius[NUM_ACTOR_LIGHTS];
 TCOD_color_t actor_light_color[NUM_ACTOR_LIGHTS];
 
-actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, void (*ai)(actor_t *actor));
+actor_t *actor_create(map_t *map, int x, int y, char *name, unsigned char glyph, TCOD_color_t color, void (*ai)(actor_t *actor));
 void actor_turn(actor_t *actor);
 void actor_tick(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
@@ -351,11 +360,21 @@ int msg_width;
 int msg_height;
 
 void msg_init(void);
-void msg_log(const char *message, map_t *map, int x, int y);
+void msg_log(map_t *map, int x, int y, TCOD_color_t color, char *text, ...);
 bool msg_is_inside(int x, int y);
 void msg_draw_turn(void);
 void msg_draw_tick(void);
 void msg_uninit(void);
+
+/* Messages */
+typedef struct message_s
+{
+    char *text;
+    TCOD_color_t color;
+} message_t;
+
+message_t *message_create(char *text, TCOD_color_t color);
+void message_destroy(message_t *message);
 
 /* Side Menu */
 typedef enum content_e {

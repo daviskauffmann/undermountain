@@ -19,7 +19,7 @@ void game_new()
 
     TCOD_list_push(maps, map);
 
-    player = actor_create(map, map->stair_up_x, map->stair_up_y, '@', TCOD_white, NULL);
+    player = actor_create(map, map->stair_up_x, map->stair_up_y, "Blinky", '@', TCOD_white, NULL);
 
     TCOD_list_push(map->actors, player);
     map->tiles[player->x][player->y].actor = player;
@@ -34,9 +34,9 @@ void game_new()
 
     TCOD_list_push(player->spells, &spells[SPELL_INSTAKILL]);
 
-    msg_log("Hail, Player!", player->map, player->x, player->y);
+    msg_log(player->map, player->x, player->y, TCOD_white, "Hail, %s!\nWelcome to the dungeon!", player->name);
 
-    actor_t *pet = actor_create(map, player->x + 1, player->y, '@', TCOD_yellow, &ai_pet);
+    actor_t *pet = actor_create(map, player->x + 1, player->y, "Pet", '@', TCOD_yellow, &ai_pet);
 
     TCOD_list_push(map->actors, pet);
     map->tiles[pet->x][pet->y].actor = pet;

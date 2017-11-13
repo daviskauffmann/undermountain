@@ -1,15 +1,31 @@
 #include <string.h>
 #include <math.h>
 #include <libtcod.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #include "CMemLeak.h"
 #include "system.h"
 #include "game.h"
 
-#define MAX_MESSAGES 20
-
 static TCOD_console_t msg;
 static TCOD_list_t messages;
+
+message_t *message_create(char *text, TCOD_color_t color)
+{
+    message_t *message = (message_t *)malloc(sizeof(message_t));
+
+    message->text = strdup(text);
+    message->color = color;
+
+    return message;
+}
+
+void message_destroy(message_t *message)
+{
+    free(message->text);
+    free(message);
+}
 
 void msg_init(void)
 {
@@ -18,16 +34,43 @@ void msg_init(void)
     messages = TCOD_list_new();
 }
 
-void msg_log(const char *message, map_t *map, int x, int y)
+void msg_log(map_t *map, int x, int y, TCOD_color_t color, char *text, ...)
 {
     if (map == player->map && TCOD_map_is_in_fov(player->fov_map, x, y))
     {
-        TCOD_list_push(messages, message);
+        va_list ap;
+        char buf[128];
+        va_start(ap, text);
+        vsprintf(buf, text, ap);
+        va_end(ap);
 
-        if (TCOD_list_size(messages) >= MAX_MESSAGES)
+        char *line_begin = buf;
+        char *line_end;
+
+        do
         {
-            TCOD_list_remove(messages, *TCOD_list_begin(messages));
-        }
+            if (TCOD_list_size(messages) == 4)
+            {
+                message_t *message = TCOD_list_get(messages, 0);
+
+                TCOD_list_remove(messages, message);
+
+                message_destroy(message);
+            }
+
+            line_end = strchr(line_begin, '\n');
+
+            if (line_end)
+            {
+                *line_end = '\0';
+            }
+
+            message_t *message = message_create(line_begin, color);
+
+            TCOD_list_push(messages, message);
+
+            line_begin = line_end + 1;
+        } while (line_end);
     }
 }
 
@@ -44,47 +87,16 @@ void msg_draw_turn(void)
         TCOD_console_set_default_foreground(msg, foreground_color);
         TCOD_console_clear(msg);
 
-        TCOD_list_t new_messages = TCOD_list_duplicate(messages);
-
-        int total_lines = 0;
+        int y = 1;
         for (void **i = TCOD_list_begin(messages); i != TCOD_list_end(messages); i++)
         {
-            const char *message = *i;
+            message_t *message = *i;
 
-            total_lines += (int)ceil((float)strlen(message) / (float)(msg_width - 2));
+            TCOD_console_set_default_foreground(msg, message->color);
+            TCOD_console_print(msg, msg_x + 1, y, message->text);
+
+            y++;
         }
-
-        while (total_lines > msg_height - 2)
-        {
-            const char *message = *TCOD_list_begin(new_messages);
-
-            TCOD_list_remove(new_messages, message);
-
-            total_lines -= (int)ceil((float)strlen(message) / (float)(msg_width - 2));
-        }
-
-        int size = TCOD_list_size(new_messages);
-        int index = 0;
-        int message_y = 1;
-        for (void **i = TCOD_list_begin(new_messages); i != TCOD_list_end(new_messages); i++)
-        {
-            index++;
-
-            const char *message = *i;
-
-            TCOD_color_t color = index == size
-                                     ? TCOD_white
-                                     : index == size - 1
-                                           ? TCOD_light_gray
-                                           : index == size - 2
-                                                 ? TCOD_gray
-                                                 : TCOD_dark_gray;
-
-            TCOD_console_set_default_foreground(msg, color);
-            message_y += TCOD_console_print_rect(msg, 1, message_y, msg_width - 2, msg_height - 2, message);
-        }
-
-        TCOD_list_delete(new_messages);
 
         TCOD_console_set_default_foreground(msg, foreground_color);
         TCOD_console_print_frame(msg, 0, 0, msg_width, msg_height, false, TCOD_BKGND_SET, "Log");
@@ -101,6 +113,14 @@ void msg_draw_tick(void)
 
 void msg_uninit(void)
 {
-    TCOD_console_delete(msg);
+    for (void **i = TCOD_list_begin(messages); i != TCOD_list_end(messages); i++)
+    {
+        message_t *message = *i;
+
+        message_destroy(message);
+    }
+
     TCOD_list_delete(messages);
+
+    TCOD_console_delete(msg);
 }

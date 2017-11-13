@@ -21,6 +21,7 @@ void world_init(void)
     tile_walkable[TILE_TYPE_STAIR_DOWN] = true;
     tile_walkable[TILE_TYPE_STAIR_UP] = true;
 
+    spells[SPELL_INSTAKILL].name = "Instakill";
     spells[SPELL_INSTAKILL].cast = &spell_instakill;
 
     actor_light_radius[ACTOR_LIGHT_NONE] = 1;

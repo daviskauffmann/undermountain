@@ -30,18 +30,18 @@ void gfx_init(void)
 
 void gfx_draw_turn(void)
 {
-    panel_width = screen_width / 2;
-    panel_x = screen_width - panel_width;
-    panel_y = 0;
-    panel_height = screen_height;
-
-    content_height[CONTENT_CHARACTER] = 18;
-    content_height[CONTENT_INVENTORY] = TCOD_list_size(player->items) + 2;
-
     msg_x = 0;
     msg_height = screen_height / 4;
     msg_y = screen_height - msg_height;
-    msg_width = screen_width - (panel_visible ? panel_width : 0);
+    msg_width = screen_width;
+
+    panel_width = screen_width / 2;
+    panel_x = screen_width - panel_width;
+    panel_y = 0;
+    panel_height = screen_height - (msg_visible ? msg_height : 0);
+
+    content_height[CONTENT_CHARACTER] = 18;
+    content_height[CONTENT_INVENTORY] = TCOD_list_size(player->items) + 2;
 
     view_width = screen_width - (panel_visible ? panel_width : 0);
     view_height = screen_height - (msg_visible ? msg_height : 0);

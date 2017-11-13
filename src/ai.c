@@ -17,7 +17,7 @@ void ai_monster(actor_t *actor)
         {
             if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
-                msg_log("monster engages", actor->map, actor->x, actor->y);
+                msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s engages %s", actor->name, other->name);
 
                 interactions_t interactions = INTERACTIONS_NONE;
 
@@ -73,7 +73,7 @@ void ai_pet(actor_t *actor)
         {
             if (TCOD_map_is_in_fov(actor->fov_map, other->x, other->y))
             {
-                msg_log("pet engages", actor->map, actor->x, actor->y);
+                msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s engages %s", actor->name, other->name);
 
                 interactions_t interactions = INTERACTIONS_NONE;
 

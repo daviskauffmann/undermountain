@@ -122,13 +122,13 @@ void panel_draw_tick(void)
 
                     TCOD_color_t color = item->color;
 
-                    if (mouse_x > panel_x && mouse_x < panel_x + strlen("item") + 1 && mouse_y == item_y)
+                    if (mouse_x > panel_x && mouse_x < panel_x + strlen(item->name) + 1 && mouse_y == item_y)
                     {
                         color = TCOD_yellow;
                     }
 
                     TCOD_console_set_default_foreground(panel, color);
-                    TCOD_console_print_ex(panel, 1, item_y, TCOD_BKGND_NONE, TCOD_LEFT, "item");
+                    TCOD_console_print_ex(panel, 1, item_y, TCOD_BKGND_NONE, TCOD_LEFT, item->name);
                 }
 
                 y++;
@@ -147,17 +147,15 @@ void panel_draw_tick(void)
                 {
                     spell_t *spell = *i;
 
-                    const char *spell_name = spell == player->spell_ready ? "spell (ready)" : "spell";
-
                     TCOD_color_t color = TCOD_white;
 
-                    if (mouse_x > panel_x && mouse_x < panel_x + strlen(spell_name) + 1 && mouse_y == spell_y)
+                    if (mouse_x > panel_x && mouse_x < panel_x + strlen(spell->name) + 1 && mouse_y == spell_y)
                     {
                         color = TCOD_yellow;
                     }
 
                     TCOD_console_set_default_foreground(panel, color);
-                    TCOD_console_print_ex(panel, 1, spell_y, TCOD_BKGND_NONE, TCOD_LEFT, spell_name);
+                    TCOD_console_print_ex(panel, 1, spell_y, TCOD_BKGND_NONE, TCOD_LEFT, spell->name);
                 }
 
                 y++;

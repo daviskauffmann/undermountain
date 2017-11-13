@@ -5,6 +5,8 @@
 #include "system.h"
 #include "game.h"
 
+#define AUTOMOVE_DELAY 0.1f
+
 static spell_t *target_spell;
 
 static game_input_t tooltip_option_move(tooltip_data_t data);
@@ -15,6 +17,7 @@ static game_input_t tooltip_option_light_off(tooltip_data_t data);
 static game_input_t tooltip_option_item_take(tooltip_data_t data);
 static game_input_t tooltip_option_item_take_all(tooltip_data_t data);
 static game_input_t tooltip_option_item_drop(tooltip_data_t data);
+static game_input_t tooltip_option_item_potion_quaff(tooltip_data_t data);
 static game_input_t tooltip_option_spell_ready(tooltip_data_t data);
 static game_input_t tooltip_option_spell_cast_ready(tooltip_data_t data);
 static game_input_t tooltip_option_spell_cast_spellbook(tooltip_data_t data);
@@ -188,7 +191,7 @@ game_input_t input_handle(void)
                     {
                         item_t *item = *i;
 
-                        if (mouse_x > panel_x && mouse_x < panel_x + strlen("item") + 1 && mouse_y == y + panel_y - content_scroll[content])
+                        if (mouse_x > panel_x && mouse_x < panel_x + strlen(item->name) + 1 && mouse_y == y + panel_y - content_scroll[content])
                         {
                             selected = item;
 
@@ -208,6 +211,11 @@ game_input_t input_handle(void)
                             .item = selected};
 
                         tooltip_options_add("Drop", &tooltip_option_item_drop, data);
+
+                        if (selected->type == ITEM_TYPE_POTION)
+                        {
+                            tooltip_options_add("Quaff", &tooltip_option_item_potion_quaff, data);
+                        }
                     }
 
                     break;
@@ -221,9 +229,7 @@ game_input_t input_handle(void)
                     {
                         spell_t *spell = *i;
 
-                        const char *spell_name = spell == player->spell_ready ? "spell (ready)" : "spell";
-
-                        if (mouse_x > panel_x && mouse_x < panel_x + strlen(spell_name) + 1 && mouse_y == y + panel_y - content_scroll[content])
+                        if (mouse_x > panel_x && mouse_x < panel_x + strlen(spell->name) + 1 && mouse_y == y + panel_y - content_scroll[content])
                         {
                             selected = spell;
 
@@ -389,11 +395,22 @@ game_input_t input_handle(void)
     }
     }
 
+    static float automove_timer = 0.0f;
+
     if (player->target)
     {
-        input = GAME_INPUT_TURN;
+        if (automove_timer >= AUTOMOVE_DELAY)
+        {
+            input = GAME_INPUT_TURN;
 
-        actor_target_process(player);
+            actor_target_process(player);
+
+            automove_timer = 0.0f;
+        }
+        else
+        {
+            automove_timer += TCOD_sys_get_last_frame_length();
+        }
     }
 
     return input;
@@ -412,7 +429,7 @@ static game_input_t tooltip_option_move(tooltip_data_t data)
 
     actor_target_set(player, data.x, data.y, interactions);
 
-    return GAME_INPUT_TURN;
+    return GAME_INPUT_TICK;
 }
 
 static game_input_t tooltip_option_stair_descend(tooltip_data_t data)
@@ -428,7 +445,7 @@ static game_input_t tooltip_option_stair_descend(tooltip_data_t data)
 
     actor_target_set(player, data.x, data.y, interactions);
 
-    return GAME_INPUT_TURN;
+    return GAME_INPUT_TICK;
 }
 
 static game_input_t tooltip_option_stair_ascend(tooltip_data_t data)
@@ -444,7 +461,7 @@ static game_input_t tooltip_option_stair_ascend(tooltip_data_t data)
 
     actor_target_set(player, data.x, data.y, interactions);
 
-    return GAME_INPUT_TURN;
+    return GAME_INPUT_TICK;
 }
 
 static game_input_t tooltip_option_light_on(tooltip_data_t data)
@@ -460,7 +477,7 @@ static game_input_t tooltip_option_light_on(tooltip_data_t data)
 
     actor_target_set(player, data.x, data.y, interactions);
 
-    return GAME_INPUT_TURN;
+    return GAME_INPUT_TICK;
 }
 
 static game_input_t tooltip_option_light_off(tooltip_data_t data)
@@ -476,7 +493,7 @@ static game_input_t tooltip_option_light_off(tooltip_data_t data)
 
     actor_target_set(player, data.x, data.y, interactions);
 
-    return GAME_INPUT_TURN;
+    return GAME_INPUT_TICK;
 }
 
 static game_input_t tooltip_option_item_take(tooltip_data_t data)
@@ -492,7 +509,7 @@ static game_input_t tooltip_option_item_take(tooltip_data_t data)
 
     actor_target_set(player, data.x, data.y, interactions);
 
-    return GAME_INPUT_TURN;
+    return GAME_INPUT_TICK;
 }
 
 static game_input_t tooltip_option_item_take_all(tooltip_data_t data)
@@ -508,6 +525,11 @@ static game_input_t tooltip_option_item_take_all(tooltip_data_t data)
 
     actor_target_set(player, data.x, data.y, interactions);
 
+    return GAME_INPUT_TICK;
+}
+
+static game_input_t tooltip_option_item_potion_quaff(tooltip_data_t data)
+{
     return GAME_INPUT_TURN;
 }
 
@@ -542,7 +564,7 @@ static game_input_t tooltip_option_spell_cast_ready(tooltip_data_t data)
 
 static game_input_t tooltip_option_spell_cast_spellbook(tooltip_data_t data)
 {
-    msg_log("select a target", player->map, player->x, player->y);
+    // msg_log("select a target", player->map, player->x, player->y);
 
     target_spell = data.spell;
 
@@ -562,7 +584,7 @@ static game_input_t tooltip_option_actor_attack(tooltip_data_t data)
 
     actor_target_set(player, data.x, data.y, interactions);
 
-    return GAME_INPUT_TURN;
+    return GAME_INPUT_TICK;
 }
 
 void input_uninit(void)

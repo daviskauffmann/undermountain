@@ -6,13 +6,14 @@
 
 #define LIT_ROOMS 0
 
-actor_t *actor_create(map_t *map, int x, int y, unsigned char glyph, TCOD_color_t color, void (*ai)(actor_t *actor))
+actor_t *actor_create(map_t *map, int x, int y, char *name, unsigned char glyph, TCOD_color_t color, void (*ai)(actor_t *actor))
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
 
     actor->map = map;
     actor->x = x;
     actor->y = y;
+    actor->name = name;
     actor->glyph = glyph;
     actor->color = color;
     actor->items = TCOD_list_new();
@@ -52,7 +53,7 @@ void actor_turn(actor_t *actor)
 
     if (TCOD_list_peek(tile->items) != NULL)
     {
-        msg_log("actor sees items", actor->map, actor->x, actor->y);
+        // // msg_log(actor->map, actor->x, actor->y, "actor sees items");
     }
 }
 
@@ -185,7 +186,7 @@ void actor_target_process(actor_t *actor)
 
                     if (interactions.attack && tile->actor != player)
                     {
-                        msg_log("actor attacks actor", actor->map, actor->x, actor->y);
+                        msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s attacks %s", actor->name, tile->actor->name);
 
                         tile->actor->mark_for_delete = true;
                     }
@@ -193,7 +194,7 @@ void actor_target_process(actor_t *actor)
 
                 if (interactions.take_items && TCOD_list_size(tile->items) > 0)
                 {
-                    msg_log("actor takes items", actor->map, actor->x, actor->y);
+                    msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s takes items", actor->name);
 
                     move_to_next = false;
 
@@ -212,11 +213,11 @@ void actor_target_process(actor_t *actor)
 
                 if (interactions.take_item && TCOD_list_peek(tile->items) != NULL)
                 {
-                    msg_log("actor takes item", actor->map, actor->x, actor->y);
+                    item_t *item = TCOD_list_pop(tile->items);
+
+                    msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s takes %s", actor->name, item->name);
 
                     move_to_next = false;
-
-                    item_t *item = TCOD_list_pop(tile->items);
 
                     item->x = actor->x;
                     item->y = actor->y;
@@ -228,7 +229,7 @@ void actor_target_process(actor_t *actor)
                 {
                     if (interactions.light_off && tile->light->on)
                     {
-                        msg_log("actor turns light off", actor->map, actor->x, actor->y);
+                        // msg_log("actor turns light off", actor->map, actor->x, actor->y);
 
                         move_to_next = false;
 
@@ -236,7 +237,7 @@ void actor_target_process(actor_t *actor)
                     }
                     else if (interactions.light_on && !tile->light->on)
                     {
-                        msg_log("actor turns light on", actor->map, actor->x, actor->y);
+                        // msg_log("actor turns light on", actor->map, actor->x, actor->y);
 
                         move_to_next = false;
 
@@ -246,7 +247,7 @@ void actor_target_process(actor_t *actor)
 
                 if (interactions.descend && tile->type == TILE_TYPE_STAIR_DOWN)
                 {
-                    msg_log("actor descends", actor->map, actor->x, actor->y);
+                    // msg_log("actor descends", actor->map, actor->x, actor->y);
 
                     move_to_next = false;
 
@@ -276,7 +277,7 @@ void actor_target_process(actor_t *actor)
 
                 if (interactions.ascend && tile->type == TILE_TYPE_STAIR_UP)
                 {
-                    msg_log("actor ascends", actor->map, actor->x, actor->y);
+                    // msg_log("actor ascends", actor->map, actor->x, actor->y);
 
                     move_to_next = false;
 

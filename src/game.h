@@ -13,23 +13,27 @@ typedef struct weapon_s weapon_t;
 typedef struct potion_s potion_t;
 typedef struct scroll_s scroll_t;
 typedef struct spell_s spell_t;
-typedef struct interactions_s interactions_t;
 typedef struct actor_s actor_t;
 typedef enum game_input_e game_input_t;
 typedef enum content_e content_t;
 
 /* Game */
+typedef enum game_status_e {
+    GAME_STATUS_WAITING,
+    GAME_STATUS_UPDATE,
+    GAME_STATUS_QUIT
+} game_status_t;
+
+game_status_t game_status;
 int turn;
 actor_t *player;
 
 void game_init(void);
 game_input_t game_input(void);
-void game_turn(void);
-void game_tick(void);
+void game_update();
 void game_save(void);
 void game_load(void);
-void game_draw_turn(void);
-void game_draw_tick(void);
+void game_draw(void);
 void game_uninit(void);
 
 /* Tiles */
@@ -57,10 +61,8 @@ bool tile_transparent[NUM_TILE_TYPES];
 bool tile_walkable[NUM_TILE_TYPES];
 
 void tile_init(tile_t *tile, tile_type_t type);
-void tile_turn(tile_t *tile);
-void tile_tick(tile_t *tile);
-void tile_draw_turn(tile_t *tile, int x, int y);
-void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di);
+void tile_update(tile_t *tile);
+void tile_draw(tile_t *tile, int x, int y, float dx, float dy, float di);
 void tile_uninit(tile_t *tile);
 
 /* Rooms */
@@ -90,11 +92,9 @@ typedef struct light_s
 } light_t;
 
 light_t *light_create(map_t *map, int x, int y, int radius, TCOD_color_t color);
-void light_turn(light_t *light);
-void light_tick(light_t *light);
 void light_calc_fov(light_t *light);
-void light_draw_turn(light_t *light);
-void light_draw_tick(light_t *light);
+void light_update(light_t *light);
+void light_draw(light_t *light);
 void light_destroy(light_t *light);
 
 /* Items */
@@ -158,10 +158,8 @@ armor_t *armor_create(int x, int y, char *name, unsigned char glyph, TCOD_color_
 weapon_t *weapon_create(int x, int y, char *name, unsigned char glyph, TCOD_color_t color, int a, int b, int c);
 potion_t *potion_create(int x, int y, char *name, unsigned char glyph, TCOD_color_t color);
 corpse_t *corpse_create(int x, int y, actor_t *actor);
-void item_turn(item_t *item);
-void item_tick(item_t *item);
-void item_draw_turn(item_t *item);
-void item_draw_tick(item_t *item);
+void item_update(item_t *item);
+void item_draw(item_t *item);
 void item_destroy(item_t *item);
 
 /* Spells */
@@ -171,47 +169,24 @@ typedef enum spell_type_e {
     NUM_SPELL_TYPES
 } spell_type_t;
 
-typedef struct cast_data_s
-{
-    actor_t *caster;
-    int x;
-    int y;
-} cast_data_t;
-
 typedef struct spell_s
 {
     char *name;
-    void (*cast)(cast_data_t);
+    void (*cast)(actor_t *caster, int x, int y);
 } spell_t;
 
-spell_t spells[NUM_SPELL_TYPES];
+spell_t spell[NUM_SPELL_TYPES];
 
-void spell_instakill(cast_data_t data);
+void spell_instakill(actor_t *caster, int x, int y);
 
 /* Actors */
-#define INTERACTIONS_ALL   \
-    (interactions_t)       \
-    {                      \
-        .descend = true,   \
-        .ascend = true,    \
-        .light_on = true,  \
-        .light_off = true, \
-        .attack = true,    \
-        .take_item = true, \
-        .take_items = true \
-    }
+typedef enum actor_type_e {
+    ACTOR_TYPE_PLAYER,
+    ACTOR_TYPE_MONSTER,
+    ACTOR_TYPE_PET,
 
-#define INTERACTIONS_NONE   \
-    (interactions_t)        \
-    {                       \
-        .descend = false,   \
-        .ascend = false,    \
-        .light_on = false,  \
-        .light_off = false, \
-        .attack = false,    \
-        .take_item = false, \
-        .take_items = false \
-    }
+    NUM_ACTOR_TYPES
+} actor_type_t;
 
 typedef enum actor_light_e {
     ACTOR_LIGHT_NONE,
@@ -221,58 +196,34 @@ typedef enum actor_light_e {
     NUM_ACTOR_LIGHTS
 } actor_light_t;
 
-typedef struct interactions_s
-{
-    bool descend;
-    bool ascend;
-    bool light_on;
-    bool light_off;
-    bool attack;
-    bool take_item;
-    bool take_items;
-} interactions_t;
-
-typedef struct target_data_s
-{
-    int x;
-    int y;
-    actor_t *actor;
-    interactions_t interactions;
-} target_data_t;
-
 typedef struct actor_s
 {
+    actor_type_t type;
     map_t *map;
     int x;
     int y;
-    char *name;
-    unsigned char glyph;
-    TCOD_color_t color;
     TCOD_list_t items;
     TCOD_list_t spells;
     spell_t *spell_ready;
     actor_light_t light;
     TCOD_map_t fov_map;
-    int energy;
-    int energy_per_turn;
-    int energy_to_act;
-    void (*ai)(actor_t *actor);
-    bool target;
-    target_data_t target_data;
+    float energy;
     bool mark_for_delete;
 } actor_t;
+
+char *actor_name[NUM_ACTOR_TYPES];
+unsigned char actor_glyph[NUM_ACTOR_TYPES];
+TCOD_color_t actor_color[NUM_ACTOR_TYPES];
+float actor_energy_per_turn[NUM_ACTOR_TYPES];
+void (*actor_ai[NUM_ACTOR_TYPES])(actor_t *actor);
 
 int actor_light_radius[NUM_ACTOR_LIGHTS];
 TCOD_color_t actor_light_color[NUM_ACTOR_LIGHTS];
 
-actor_t *actor_create(map_t *map, int x, int y, char *name, unsigned char glyph, TCOD_color_t color, void (*ai)(actor_t *actor));
-void actor_turn(actor_t *actor);
-void actor_tick(actor_t *actor);
+actor_t *actor_create(actor_type_t type, map_t *map, int x, int y);
+void actor_update(actor_t *actor);
 void actor_calc_fov(actor_t *actor);
-void actor_target_set(actor_t *actor, int x, int y, interactions_t interactions);
-void actor_target_process(actor_t *actor);
-void actor_draw_turn(actor_t *actor);
-void actor_draw_tick(actor_t *actor);
+void actor_draw(actor_t *actor);
 void actor_destroy(actor_t *actor);
 
 void ai_monster(actor_t *actor);
@@ -297,41 +248,20 @@ typedef struct map_s
 } map_t;
 
 map_t *map_create(int level);
-void map_turn(map_t *map);
-void map_tick(map_t *map);
+void map_update(map_t *map);
 bool map_is_inside(int x, int y);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
-void map_draw_turn(map_t *map);
-void map_draw_tick(map_t *map);
+void map_draw(map_t *map);
 void map_destroy(map_t *map);
 
 /* World */
 TCOD_list_t maps;
 
 void world_init(void);
-void world_turn(void);
-void world_tick(void);
-void world_draw_turn(void);
-void world_draw_tick(void);
+void world_update(void);
+void world_draw(void);
 void world_uninit(void);
-
-/* Input */
-typedef enum game_input_e {
-    GAME_INPUT_TICK,
-    GAME_INPUT_TURN,
-    GAME_INPUT_DRAW,
-    GAME_INPUT_QUIT
-} game_input_t;
-
-int mouse_x;
-int mouse_y;
-int mouse_tile_x;
-int mouse_tile_y;
-
-void input_init(void);
-game_input_t input_handle(void);
-void input_uninit(void);
 
 /* Graphics */
 TCOD_color_t background_color;
@@ -340,8 +270,7 @@ TCOD_color_t tile_color_light;
 TCOD_color_t tile_color_dark;
 
 void gfx_init(void);
-void gfx_draw_turn(void);
-void gfx_draw_tick(void);
+void gfx_draw(void);
 void gfx_uninit(void);
 
 /* View */
@@ -362,8 +291,7 @@ int msg_height;
 void msg_init(void);
 void msg_log(map_t *map, int x, int y, TCOD_color_t color, char *text, ...);
 bool msg_is_inside(int x, int y);
-void msg_draw_turn(void);
-void msg_draw_tick(void);
+void msg_draw(void);
 void msg_uninit(void);
 
 /* Messages */
@@ -400,43 +328,7 @@ void panel_toggle(content_t new_content);
 void panel_content_scroll_down(void);
 void panel_content_scroll_up(void);
 bool panel_is_inside(int x, int y);
-void panel_draw_turn(void);
-void panel_draw_tick(void);
+void panel_draw(void);
 void panel_uninit(void);
-
-/* Tooltip */
-typedef struct tooltip_data_s
-{
-    int x;
-    int y;
-    item_t *item;
-    spell_t *spell;
-} tooltip_data_t;
-
-typedef struct tooltip_option_s
-{
-    char *text;
-    game_input_t (*fn)(tooltip_data_t data);
-    tooltip_data_t data;
-} tooltip_option_t;
-
-bool tooltip_visible;
-int tooltip_x;
-int tooltip_y;
-int tooltip_width;
-int tooltip_height;
-
-TCOD_list_t tooltip_options;
-
-void tooltip_init(void);
-void tooltip_show(int x, int y);
-void tooltip_options_add(char *text, game_input_t (*fn)(tooltip_data_t data), tooltip_data_t data);
-void tooltip_options_clear(void);
-void tooltip_hide(void);
-bool tooltip_is_inside(int x, int y);
-tooltip_option_t *tooltip_get_selected(void);
-void tooltip_draw_turn(void);
-void tooltip_draw_tick(void);
-void tooltip_uninit(void);
 
 #endif

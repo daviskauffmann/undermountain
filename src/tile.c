@@ -14,15 +14,11 @@ void tile_init(tile_t *tile, tile_type_t type)
     tile->items = TCOD_list_new();
 }
 
-void tile_turn(tile_t *tile)
+void tile_update(tile_t *tile)
 {
 }
 
-void tile_tick(tile_t *tile)
-{
-}
-
-void tile_draw_turn(tile_t *tile, int x, int y)
+void tile_draw(tile_t *tile, int x, int y, float dx, float dy, float di)
 {
     if (TCOD_map_is_in_fov(player->fov_map, x, y))
     {
@@ -49,14 +45,6 @@ void tile_draw_turn(tile_t *tile, int x, int y)
         }
     }
 
-    if (TCOD_map_is_in_fov(player->fov_map, x, y) || tile->seen)
-    {
-        TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_glyph[tile->type]);
-    }
-}
-
-void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
-{
     if (!TCOD_map_is_in_fov(player->fov_map, x, y) && !tile->seen)
     {
         return;
@@ -123,6 +111,7 @@ void tile_draw_tick(tile_t *tile, int x, int y, float dx, float dy, float di)
     }
 
     TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
+    TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_glyph[tile->type]);
 }
 
 void tile_uninit(tile_t *tile)

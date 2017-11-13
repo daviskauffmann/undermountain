@@ -2,14 +2,12 @@
 
 #include "game.h"
 
-void spell_instakill(cast_data_t data)
+void spell_instakill(actor_t *caster, int x, int y)
 {
-    tile_t *tile = &data.caster->map->tiles[data.x][data.y];
+    tile_t *tile = &caster->map->tiles[x][y];
 
     if (tile->actor != NULL)
     {
-        // msg_log("actor instakills actor", data.caster->map, data.caster->x, data.caster->y);
-
         tile->actor->mark_for_delete = true;
     }
 }

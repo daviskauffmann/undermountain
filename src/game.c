@@ -7,7 +7,6 @@
 void game_init(void)
 {
     world_init();
-    input_init();
     gfx_init();
 }
 
@@ -19,7 +18,7 @@ void game_new()
 
     TCOD_list_push(maps, map);
 
-    player = actor_create(map, map->stair_up_x, map->stair_up_y, "Blinky", '@', TCOD_white, NULL);
+    player = actor_create(ACTOR_TYPE_PLAYER, map, map->stair_up_x, map->stair_up_y);
 
     TCOD_list_push(map->actors, player);
     map->tiles[player->x][player->y].actor = player;
@@ -32,26 +31,205 @@ void game_new()
         TCOD_list_push(player->items, item);
     }
 
-    TCOD_list_push(player->spells, &spells[SPELL_INSTAKILL]);
+    TCOD_list_push(player->spells, &spell[SPELL_INSTAKILL]);
 
-    msg_log(player->map, player->x, player->y, TCOD_white, "Hail, %s!\nWelcome to the dungeon!", player->name);
+    msg_log(player->map, player->x, player->y, TCOD_white, "Hail, %s!\nWelcome to the dungeon!", actor_name[player->type]);
 
-    actor_t *pet = actor_create(map, player->x + 1, player->y, "Pet", '@', TCOD_yellow, &ai_pet);
+    actor_t *pet = actor_create(ACTOR_TYPE_PET, map, player->x + 1, player->y);
 
     TCOD_list_push(map->actors, pet);
     map->tiles[pet->x][pet->y].actor = pet;
 }
 
-void game_turn(void)
+void game_update(void)
 {
-    world_turn();
+    TCOD_key_t key;
+    TCOD_mouse_t mouse;
+    TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
 
-    turn++;
-}
+    switch (ev)
+    {
+    case TCOD_EVENT_KEY_PRESS:
+    {
+        switch (key.vk)
+        {
+        case TCODK_ESCAPE:
+        {
+            game_status = GAME_STATUS_QUIT;
 
-void game_tick(void)
-{
-    world_tick();
+            break;
+        }
+        case TCODK_KP1:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            actor_move(player, player->x - 1, player->y + 1);
+
+            break;
+        }
+        case TCODK_KP2:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            actor_move(player, player->x, player->y + 1);
+
+            break;
+        }
+        case TCODK_KP3:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            actor_move(player, player->x + 1, player->y + 1);
+
+            break;
+        }
+        case TCODK_KP4:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            actor_move(player, player->x - 1, player->y);
+
+            break;
+        }
+        case TCODK_KP5:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            break;
+        }
+        case TCODK_KP6:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            actor_move(player, player->x + 1, player->y);
+
+            break;
+        }
+        case TCODK_KP7:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            actor_move(player, player->x - 1, player->y - 1);
+
+            break;
+        }
+        case TCODK_KP8:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            actor_move(player, player->x, player->y - 1);
+
+            break;
+        }
+        case TCODK_KP9:
+        {
+            game_status = GAME_STATUS_UPDATE;
+
+            actor_move(player, player->x + 1, player->y - 1);
+
+            break;
+        }
+        case TCODK_CHAR:
+        {
+            switch (key.c)
+            {
+            case 'b':
+            {
+                panel_toggle(CONTENT_SPELLBOOK);
+
+                break;
+            }
+            case 'c':
+            {
+                panel_toggle(CONTENT_CHARACTER);
+
+                break;
+            }
+            case 'i':
+            {
+                panel_toggle(CONTENT_INVENTORY);
+
+                break;
+            }
+            case 'l':
+            {
+                if (key.lctrl)
+                {
+                    game_uninit();
+                    game_init();
+                    game_load();
+                }
+                else
+                {
+                    msg_visible = !msg_visible;
+                }
+
+                break;
+            }
+            case 'r':
+            {
+                game_uninit();
+                game_init();
+                game_new();
+
+                break;
+            }
+            case 's':
+            {
+                if (key.lctrl)
+                {
+                    game_save();
+                }
+
+                break;
+            }
+            case 't':
+            {
+                if (player->light != ACTOR_LIGHT_TORCH)
+                {
+                    player->light = ACTOR_LIGHT_TORCH;
+                }
+                else
+                {
+                    player->light = ACTOR_LIGHT_DEFAULT;
+                }
+
+                break;
+            }
+            case ',':
+            {
+                game_status = GAME_STATUS_UPDATE;
+
+                actor_ascend(player);
+
+                break;
+            }
+            case '.':
+            {
+                game_status = GAME_STATUS_UPDATE;
+
+                actor_descend(player);
+
+                break;
+            }
+            }
+
+            break;
+        }
+        }
+
+        break;
+    }
+    }
+
+    if (game_status == GAME_STATUS_UPDATE)
+    {
+        world_update();
+
+        turn++;
+
+        game_status = GAME_STATUS_WAITING;
+    }
 }
 
 void game_save(void)
@@ -62,19 +240,13 @@ void game_load(void)
 {
 }
 
-void game_draw_turn(void)
+void game_draw(void)
 {
-    gfx_draw_turn();
-}
-
-void game_draw_tick(void)
-{
-    gfx_draw_tick();
+    gfx_draw();
 }
 
 void game_uninit(void)
 {
     world_uninit();
-    input_uninit();
     gfx_uninit();
 }

@@ -87,31 +87,23 @@ corpse_t *corpse_create(int x, int y, actor_t *actor)
     item->y = y;
     item->name = "Corpse";
     item->glyph = '%';
-    item->color = actor->color;
+    item->color = actor_color[actor->type];
     item->type = ITEM_TYPE_CORPSE;
 
     return corpse;
 }
 
-void item_turn(item_t *item)
+void item_update(item_t *item)
 {
 }
 
-void item_tick(item_t *item)
-{
-}
-
-void item_draw_turn(item_t *item)
+void item_draw(item_t *item)
 {
     if (TCOD_map_is_in_fov(player->fov_map, item->x, item->y))
     {
         TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, item->color);
         TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, item->glyph);
     }
-}
-
-void item_draw_tick(item_t *item)
-{
 }
 
 void item_destroy(item_t *item)

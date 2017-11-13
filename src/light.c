@@ -40,26 +40,18 @@ void light_calc_fov(light_t *light)
     }
 }
 
-void light_turn(light_t *light)
+void light_update(light_t *light)
 {
     light_calc_fov(light);
 }
 
-void light_tick(light_t *light)
-{
-}
-
-void light_draw_turn(light_t *light)
+void light_draw(light_t *light)
 {
     if (TCOD_map_is_in_fov(player->fov_map, light->x, light->y))
     {
         TCOD_console_set_char_foreground(NULL, light->x - view_x, light->y - view_y, light->color);
         TCOD_console_set_char(NULL, light->x - view_x, light->y - view_y, '*');
     }
-}
-
-void light_draw_tick(light_t *light)
-{
 }
 
 void light_destroy(light_t *light)

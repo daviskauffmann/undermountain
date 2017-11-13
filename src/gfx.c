@@ -8,16 +8,6 @@
 
 void gfx_init(void)
 {
-    tile_glyph[TILE_TYPE_EMPTY] = ' ';
-    tile_glyph[TILE_TYPE_FLOOR] = '.';
-    tile_glyph[TILE_TYPE_WALL] = '#';
-    tile_glyph[TILE_TYPE_STAIR_DOWN] = '>';
-    tile_glyph[TILE_TYPE_STAIR_UP] = '<';
-
-    actor_light_color[ACTOR_LIGHT_NONE] = TCOD_white;
-    actor_light_color[ACTOR_LIGHT_DEFAULT] = TCOD_white;
-    actor_light_color[ACTOR_LIGHT_TORCH] = TCOD_light_amber;
-
     background_color = TCOD_black;
     foreground_color = TCOD_white;
     tile_color_light = TCOD_white;
@@ -25,10 +15,9 @@ void gfx_init(void)
 
     msg_init();
     panel_init();
-    tooltip_init();
 }
 
-void gfx_draw_turn(void)
+void gfx_draw(void)
 {
     msg_x = 0;
     msg_height = screen_height / 4;
@@ -61,21 +50,9 @@ void gfx_draw_turn(void)
                        : view_y;
 #endif
 
-    tooltip_width = 15;
-    tooltip_height = TCOD_list_size(tooltip_options) + 2;
-
-    world_draw_turn();
-    msg_draw_turn();
-    panel_draw_turn();
-    tooltip_draw_turn();
-}
-
-void gfx_draw_tick(void)
-{
-    world_draw_tick();
-    msg_draw_tick();
-    panel_draw_tick();
-    tooltip_draw_tick();
+    world_draw();
+    msg_draw();
+    panel_draw();
 
     TCOD_console_flush();
 }
@@ -84,5 +61,4 @@ void gfx_uninit(void)
 {
     msg_uninit();
     panel_uninit();
-    tooltip_uninit();
 }

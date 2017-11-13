@@ -79,7 +79,7 @@ bool msg_is_inside(int x, int y)
     return x >= msg_x && x < msg_x + msg_width && y >= msg_y && y < msg_y + msg_height;
 }
 
-void msg_draw_turn(void)
+void msg_draw(void)
 {
     if (msg_visible)
     {
@@ -100,13 +100,7 @@ void msg_draw_turn(void)
 
         TCOD_console_set_default_foreground(msg, foreground_color);
         TCOD_console_print_frame(msg, 0, 0, msg_width, msg_height, false, TCOD_BKGND_SET, "Log");
-    }
-}
 
-void msg_draw_tick(void)
-{
-    if (msg_visible)
-    {
         TCOD_console_blit(msg, 0, 0, msg_width, msg_height, NULL, msg_x, msg_y, 1, 1);
     }
 }

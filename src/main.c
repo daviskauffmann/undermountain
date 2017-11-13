@@ -14,37 +14,12 @@ int main(int argc, char *argv[])
     game_init();
     game_new();
 
-    goto draw;
-
-    while (!TCOD_console_is_window_closed())
+    while (!TCOD_console_is_window_closed() && game_status != GAME_STATUS_QUIT)
     {
-        switch (input_handle())
-        {
-        case GAME_INPUT_TICK:
-            goto tick;
-
-        case GAME_INPUT_TURN:
-            goto turn;
-
-        case GAME_INPUT_DRAW:
-            goto draw;
-
-        case GAME_INPUT_QUIT:
-            goto quit;
-        }
-
-    turn:
-        game_turn();
-
-    draw:
-        game_draw_turn();
-
-    tick:
-        game_tick();
-        game_draw_tick();
+        game_update();
+        game_draw();
     }
 
-quit:
     game_uninit();
 
     SDL_Quit();

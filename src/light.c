@@ -49,12 +49,10 @@ void light_update(light_t *light)
 
 void light_draw(light_t *light)
 {
-    light_calc_fov(light);
-
     if (TCOD_map_is_in_fov(player->fov_map, light->x, light->y))
     {
         TCOD_console_set_char_foreground(NULL, light->x - view_x, light->y - view_y, light->color);
-        TCOD_console_set_char(NULL, light->x - view_x, light->y - view_y, '*');
+        TCOD_console_set_char(NULL, light->x - view_x, light->y - view_y, light_common.glyph);
     }
 }
 

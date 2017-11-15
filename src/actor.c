@@ -20,7 +20,7 @@ actor_t *actor_create(actor_type_t type, map_t *map, int x, int y, void (*ai)(ac
     actor->items = TCOD_list_new();
     actor->spells = TCOD_list_new();
     actor->spell_ready = NULL;
-    actor->light = ACTOR_LIGHT_DEFAULT;
+    actor->light = ACTOR_LIGHT_TYPE_DEFAULT;
     actor->fov_map = NULL;
     actor->energy = 1.0f;
     actor->mark_for_delete = false;
@@ -36,7 +36,7 @@ void actor_update(actor_t *actor)
 
     if (actor->ai != NULL)
     {
-        actor->energy += actor_energy_per_turn[actor->type];
+        actor->energy += actor_info[actor->type].energy_per_turn;
 
         while (actor->energy >= 1.0f)
         {
@@ -49,7 +49,7 @@ void actor_update(actor_t *actor)
 
 char *actor_get_name(actor_t *actor)
 {
-    return actor->unique_name == NULL ? actor_name[actor->type] : actor->unique_name;
+    return actor->unique_name == NULL ? actor_info[actor->type].name : actor->unique_name;
 }
 
 void actor_calc_fov(actor_t *actor)
@@ -59,7 +59,7 @@ void actor_calc_fov(actor_t *actor)
         TCOD_map_delete(actor->fov_map);
     }
 
-    actor->fov_map = map_to_fov_map(actor->map, actor->x, actor->y, actor_light_radius[actor->light]);
+    actor->fov_map = map_to_fov_map(actor->map, actor->x, actor->y, actor_light_info[actor->light].radius);
 
     TCOD_map_t los_map = map_to_fov_map(actor->map, actor->x, actor->y, 0);
 
@@ -104,7 +104,7 @@ void actor_calc_fov(actor_t *actor)
                 {
                     actor_t *other = *i;
 
-                    if ((other->light == ACTOR_LIGHT_DEFAULT || other->light == ACTOR_LIGHT_TORCH) && TCOD_map_is_in_fov(other->fov_map, x, y))
+                    if ((other->light == ACTOR_LIGHT_TYPE_DEFAULT || other->light == ACTOR_LIGHT_TYPE_TORCH) && TCOD_map_is_in_fov(other->fov_map, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov_map, x, y, true);
                     }
@@ -156,6 +156,24 @@ void actor_move(actor_t *actor, int x, int y)
             item->x = actor->x;
             item->y = actor->y;
         }
+
+        actor_look(actor, x, y);
+    }
+}
+
+void actor_look(actor_t *actor, int x, int y)
+{
+    tile_t *tile = &actor->map->tiles[x][y];
+
+    item_t *item = TCOD_list_peek(tile->items);
+    if (item != NULL)
+    {
+        msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s sees %s", actor_get_name(actor), item_info[item->type].name);
+    }
+
+    if (tile->light != NULL)
+    {
+        msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s sees a light", actor_get_name(actor));
     }
 }
 
@@ -233,7 +251,7 @@ void actor_item_take(actor_t *actor, TCOD_list_t items)
 
     TCOD_list_push(actor->items, item);
 
-    msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s takes %s", actor_get_name(actor), item->name);
+    msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s takes %s", actor_get_name(actor), item_info[item->type].name);
 }
 
 void actor_descend(actor_t *actor)
@@ -297,7 +315,17 @@ void actor_ascend(actor_t *actor)
 
 void actor_swing(actor_t *actor, int x, int y)
 {
-    // should perform a melee attack at the target, whether there is something there or not
+    tile_t *tile = &actor->map->tiles[x][y];
+
+    // TODO: check if there is something destructible here
+    if (tile->actor)
+    {
+        actor_attack(actor, tile->actor);
+    }
+    else
+    {
+        msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s swings at the air", actor_get_name(actor));
+    }
 }
 
 void actor_shoot(actor_t *actor, int x, int y)
@@ -318,20 +346,20 @@ void actor_attack(actor_t *actor, actor_t *other)
 
     if (other != player)
     {
-        msg_log(actor->map, actor->x, actor->y, TCOD_red, "%s kills %s", actor_get_name(actor), actor_get_name(other));
-
         other->mark_for_delete = true;
     }
 }
 
+void actor_inventory_add(actor_t *actor, item_t *item)
+{
+}
+
 void actor_draw(actor_t *actor)
 {
-    actor_calc_fov(actor);
-
     if (TCOD_map_is_in_fov(player->fov_map, actor->x, actor->y))
     {
-        TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor_color[actor->type]);
-        TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor_glyph[actor->type]);
+        TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, actor_info[actor->type].color);
+        TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, actor_info[actor->type].glyph);
     }
 }
 

@@ -85,6 +85,11 @@ bool room_is_inside(room_t *room, int x, int y);
 void room_destroy(room_t *room);
 
 /* Lights */
+typedef struct light_common_s
+{
+    unsigned char glyph;
+} light_common_t;
+
 typedef struct light_s
 {
     map_t *map;
@@ -96,6 +101,8 @@ typedef struct light_s
     TCOD_map_t fov_map;
 } light_t;
 
+light_common_t light_common;
+
 light_t *light_create(map_t *map, int x, int y, int radius, TCOD_color_t color);
 void light_calc_fov(light_t *light);
 void light_update(light_t *light);
@@ -103,17 +110,36 @@ void light_draw(light_t *light);
 void light_destroy(light_t *light);
 
 /* Items */
-typedef struct item_s
+typedef enum item_type_e {
+    ITEM_TYPE_GOLD,
+    ITEM_TYPE_SWORD_LONG,
+    ITEM_TYPE_SHIELD_LARGE,
+    ITEM_TYPE_POTION_HEALING,
+    ITEM_TYPE_POTION_MANA,
+
+    NUM_ITEM_TYPES
+} item_type_t;
+
+typedef struct item_info_s
 {
-    int x;
-    int y;
     char *name;
     unsigned char glyph;
     TCOD_color_t color;
+    bool identified;
+    int max_stack;
+} item_info_t;
+
+typedef struct item_s
+{
+    item_type_t type;
+    int x;
+    int y;
+    int stack;
 } item_t;
 
-item_t *item_create(int x, int y, char *name, unsigned char glyph, TCOD_color_t color);
-item_t *item_create_random(int x, int y);
+item_info_t item_info[NUM_ITEM_TYPES];
+
+item_t *item_create(item_type_t type, int x, int y, int stack);
 void item_update(item_t *item);
 void item_draw(item_t *item);
 void item_destroy(item_t *item);
@@ -129,9 +155,9 @@ typedef struct spell_s
 {
     char *name;
     void (*cast)(actor_t *caster, int x, int y);
-} spell_t;
+} spell_info_t;
 
-spell_t spell[NUM_SPELL_TYPES];
+spell_info_t spell_info[NUM_SPELL_TYPES];
 
 void spell_instakill(actor_t *caster, int x, int y);
 
@@ -144,17 +170,32 @@ typedef enum actor_type_e {
     ACTOR_TYPE_SKELETON,
     ACTOR_TYPE_SKELETON_CAPTAIN,
     ACTOR_TYPE_ZOMBIE,
+    ACTOR_TYPE_JACKAL,
 
     NUM_ACTOR_TYPES
 } actor_type_t;
 
-typedef enum actor_light_e {
-    ACTOR_LIGHT_NONE,
-    ACTOR_LIGHT_DEFAULT,
-    ACTOR_LIGHT_TORCH,
+typedef enum actor_light_type_e {
+    ACTOR_LIGHT_TYPE_NONE,
+    ACTOR_LIGHT_TYPE_DEFAULT,
+    ACTOR_LIGHT_TYPE_TORCH,
 
-    NUM_ACTOR_LIGHTS
-} actor_light_t;
+    NUM_ACTOR_LIGHT_TYPES
+} actor_light_type_t;
+
+typedef struct actor_info_s
+{
+    char *name;
+    unsigned char glyph;
+    TCOD_color_t color;
+    float energy_per_turn;
+} actor_info_t;
+
+typedef struct actor_light_info_s
+{
+    int radius;
+    TCOD_color_t color;
+} actor_light_info_t;
 
 typedef struct actor_s
 {
@@ -167,19 +208,14 @@ typedef struct actor_s
     TCOD_list_t items;
     TCOD_list_t spells;
     spell_t *spell_ready;
-    actor_light_t light;
+    actor_light_type_t light;
     TCOD_map_t fov_map;
     float energy;
     bool mark_for_delete;
 } actor_t;
 
-char *actor_name[NUM_ACTOR_TYPES];
-unsigned char actor_glyph[NUM_ACTOR_TYPES];
-TCOD_color_t actor_color[NUM_ACTOR_TYPES];
-float actor_energy_per_turn[NUM_ACTOR_TYPES];
-
-int actor_light_radius[NUM_ACTOR_LIGHTS];
-TCOD_color_t actor_light_color[NUM_ACTOR_LIGHTS];
+actor_info_t actor_info[NUM_ACTOR_TYPES];
+actor_light_info_t actor_light_info[NUM_ACTOR_LIGHT_TYPES];
 
 actor_t *actor_create(actor_type_t type, map_t *map, int x, int y, void (*ai)(actor_t *actor), char *unique_name);
 void actor_update(actor_t *actor);
@@ -192,6 +228,8 @@ void actor_swap(actor_t *actor, actor_t *other);
 void actor_attack(actor_t *actor, actor_t *other);
 void actor_light_toggle(actor_t *actor, light_t *light);
 void actor_item_take(actor_t *actor, TCOD_list_t items);
+void actor_look(actor_t *actor, int x, int y);
+void actor_swing(actor_t *actor, int x, int y);
 void actor_draw(actor_t *actor);
 void actor_destroy(actor_t *actor);
 

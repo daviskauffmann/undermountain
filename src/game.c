@@ -25,13 +25,13 @@ void game_new()
 
     for (int i = 0; i < 30; i++)
     {
-        item_t *item = item_create_random(player->x, player->y);
+        item_t *item = item_create(TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1), player->x, player->y, 1);
 
         TCOD_list_push(map->items, item);
         TCOD_list_push(player->items, item);
     }
 
-    TCOD_list_push(player->spells, &spell[SPELL_INSTAKILL]);
+    TCOD_list_push(player->spells, &spell_info[SPELL_INSTAKILL]);
 
     msg_log(player->map, player->x, player->y, TCOD_white, "Hail, %s!", actor_get_name(player));
 
@@ -77,7 +77,17 @@ void game_input(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_default_action(player, player->x - 1, player->y + 1);
+            int x = player->x - 1;
+            int y = player->y + 1;
+
+            if (key.lctrl)
+            {
+                actor_swing(player, x, y);
+            }
+            else
+            {
+                actor_default_action(player, x, y);
+            }
 
             break;
         }
@@ -92,7 +102,17 @@ void game_input(void)
             {
                 game_status = GAME_STATUS_UPDATE;
 
-                actor_default_action(player, player->x, player->y + 1);
+                int x = player->x;
+                int y = player->y + 1;
+
+                if (key.lctrl)
+                {
+                    actor_swing(player, x, y);
+                }
+                else
+                {
+                    actor_default_action(player, x, y);
+                }
             }
 
             break;
@@ -101,7 +121,17 @@ void game_input(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_default_action(player, player->x + 1, player->y + 1);
+            int x = player->x + 1;
+            int y = player->y + 1;
+
+            if (key.lctrl)
+            {
+                actor_swing(player, x, y);
+            }
+            else
+            {
+                actor_default_action(player, x, y);
+            }
 
             break;
         }
@@ -109,7 +139,17 @@ void game_input(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_default_action(player, player->x - 1, player->y);
+            int x = player->x - 1;
+            int y = player->y;
+
+            if (key.lctrl)
+            {
+                actor_swing(player, x, y);
+            }
+            else
+            {
+                actor_default_action(player, x, y);
+            }
 
             break;
         }
@@ -123,7 +163,17 @@ void game_input(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_default_action(player, player->x + 1, player->y);
+            int x = player->x + 1;
+            int y = player->y;
+
+            if (key.lctrl)
+            {
+                actor_swing(player, x, y);
+            }
+            else
+            {
+                actor_default_action(player, x, y);
+            }
 
             break;
         }
@@ -131,7 +181,17 @@ void game_input(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_default_action(player, player->x - 1, player->y - 1);
+            int x = player->x - 1;
+            int y = player->y - 1;
+
+            if (key.lctrl)
+            {
+                actor_swing(player, x, y);
+            }
+            else
+            {
+                actor_default_action(player, x, y);
+            }
 
             break;
         }
@@ -146,15 +206,36 @@ void game_input(void)
             {
                 game_status = GAME_STATUS_UPDATE;
 
-                actor_default_action(player, player->x, player->y - 1);
+                int x = player->x;
+                int y = player->y - 1;
+
+                if (key.lctrl)
+                {
+                    actor_swing(player, x, y);
+                }
+                else
+                {
+                    actor_default_action(player, x, y);
+                }
             }
+
             break;
         }
         case TCODK_KP9:
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_default_action(player, player->x + 1, player->y - 1);
+            int x = player->x + 1;
+            int y = player->y - 1;
+
+            if (key.lctrl)
+            {
+                actor_swing(player, x, y);
+            }
+            else
+            {
+                actor_default_action(player, x, y);
+            }
 
             break;
         }
@@ -182,6 +263,8 @@ void game_input(void)
             }
             case 'g':
             {
+                game_status = GAME_STATUS_UPDATE;
+
                 if (TCOD_list_peek(tile->items) != NULL)
                 {
                     actor_item_take(player, tile->items);
@@ -223,19 +306,23 @@ void game_input(void)
             }
             case 't':
             {
-                if (player->light != ACTOR_LIGHT_TORCH)
+                game_status = GAME_STATUS_UPDATE;
+
+                if (player->light != ACTOR_LIGHT_TYPE_TORCH)
                 {
-                    player->light = ACTOR_LIGHT_TORCH;
+                    player->light = ACTOR_LIGHT_TYPE_TORCH;
                 }
                 else
                 {
-                    player->light = ACTOR_LIGHT_DEFAULT;
+                    player->light = ACTOR_LIGHT_TYPE_DEFAULT;
                 }
 
                 break;
             }
             case 'y':
             {
+                game_status = GAME_STATUS_UPDATE;
+
                 light_t *light = tile->light;
 
                 if (light != NULL)

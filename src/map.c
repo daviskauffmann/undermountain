@@ -91,25 +91,26 @@ map_t *map_create(int level)
             continue;
         }
 
-        actor_t *actor = actor_create(TCOD_random_get_int(NULL, ACTOR_TYPE_SKELETON, ACTOR_TYPE_ZOMBIE), map, x, y, &ai_monster, NULL);
+        // TODO: select actor type better
+        actor_t *actor = actor_create(TCOD_random_get_int(NULL, ACTOR_TYPE_SKELETON, NUM_ACTOR_TYPES - 1), map, x, y, &ai_monster, NULL);
 
         switch (TCOD_random_get_int(NULL, 0, 10))
         {
         case 0:
         {
-            actor->light = ACTOR_LIGHT_DEFAULT;
+            actor->light = ACTOR_LIGHT_TYPE_DEFAULT;
 
             break;
         }
         case 1:
         {
-            actor->light = ACTOR_LIGHT_TORCH;
+            actor->light = ACTOR_LIGHT_TYPE_TORCH;
 
             break;
         }
         default:
         {
-            actor->light = ACTOR_LIGHT_NONE;
+            actor->light = ACTOR_LIGHT_TYPE_NONE;
 
             break;
         }
@@ -120,7 +121,7 @@ map_t *map_create(int level)
 
         if (TCOD_random_get_int(NULL, 0, 4) == 0)
         {
-            item_t *item = item_create_random(x, y);
+            item_t *item = item_create(TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1), x, y, 1);
 
             TCOD_list_push(map->items, item);
             TCOD_list_push(actor->items, item);
@@ -134,7 +135,7 @@ map_t *map_create(int level)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        item_t *item = item_create_random(x, y);
+        item_t *item = item_create(TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1), x, y, 1);
 
         TCOD_list_push(map->items, item);
         TCOD_list_push(map->tiles[x][y].items, item);
@@ -371,6 +372,8 @@ void map_update(map_t *map)
 
         if (actor->mark_for_delete)
         {
+            msg_log(actor->map, actor->x, actor->y, TCOD_red, "%s dies", actor_get_name(actor));
+
             for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
             {
                 item_t *item = *i;
@@ -385,6 +388,13 @@ void map_update(map_t *map)
 
             actor_destroy(actor);
         }
+    }
+
+    for (void **i = TCOD_list_begin(map->actors); i != TCOD_list_end(map->actors); i++)
+    {
+        actor_t *actor = *i;
+
+        actor_calc_fov(actor);
     }
 
     for (void **i = TCOD_list_begin(map->items); i != TCOD_list_end(map->items); i++)

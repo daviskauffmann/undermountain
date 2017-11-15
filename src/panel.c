@@ -108,10 +108,10 @@ void panel_draw(void)
             {
                 item_t *item = *iterator;
 
-                TCOD_color_t color = i == content_selected_idx[content] ? TCOD_yellow : item->color;
+                TCOD_color_t color = i == content_selected_idx[content] ? TCOD_yellow : item_info[item->type].color;
 
                 TCOD_console_set_default_foreground(panel, color);
-                TCOD_console_print(panel, 1, y, item->name);
+                TCOD_console_print(panel, 1, y, item_info[item->type].name);
 
                 i++;
                 y++;

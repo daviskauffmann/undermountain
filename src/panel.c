@@ -1,5 +1,6 @@
 #include <libtcod.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "CMemLeak.h"
 #include "system.h"
@@ -15,6 +16,10 @@ void panel_init(void)
     content_scroll[CONTENT_CHARACTER] = 0;
     content_scroll[CONTENT_INVENTORY] = 0;
     content_scroll[CONTENT_SPELLBOOK] = 0;
+
+    content_selected_idx[CONTENT_CHARACTER] = 0;
+    content_selected_idx[CONTENT_INVENTORY] = 0;
+    content_selected_idx[CONTENT_SPELLBOOK] = 0;
 }
 
 void panel_toggle(content_t new_content)
@@ -29,6 +34,16 @@ void panel_toggle(content_t new_content)
 
         panel_visible = true;
     }
+}
+
+void panel_content_idx_up(void)
+{
+    content_selected_idx[content]++;
+}
+
+void panel_content_idx_down(void)
+{
+    content_selected_idx[content]--;
 }
 
 void panel_content_scroll_down(void)
@@ -87,6 +102,22 @@ void panel_draw(void)
         }
         case CONTENT_INVENTORY:
         {
+            int i = 0;
+            int y = 1 - content_scroll[content];
+            for (void **iterator = TCOD_list_begin(player->items); iterator != TCOD_list_end(player->items); iterator++)
+            {
+                item_t *item = *iterator;
+
+                TCOD_color_t color = i == content_selected_idx[content] ? TCOD_yellow : item->color;
+
+                TCOD_console_set_default_foreground(panel, color);
+                TCOD_console_print(panel, 1, y, item->name);
+
+                i++;
+                y++;
+            }
+
+            TCOD_console_set_default_foreground(panel, foreground_color);
             TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
 
             break;

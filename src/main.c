@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <SDL.h>
-#include <time.h>
 #include <libtcod.h>
 
 #include "CMemLeak.h"
@@ -16,6 +15,7 @@ int main(int argc, char *argv[])
 
     while (!TCOD_console_is_window_closed() && game_status != GAME_STATUS_QUIT)
     {
+        game_input();
         game_update();
         game_draw();
     }

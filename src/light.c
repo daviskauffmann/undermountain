@@ -32,11 +32,13 @@ void light_calc_fov(light_t *light)
         TCOD_map_delete(light->fov_map);
     }
 
-    light->fov_map = map_to_TCOD_map(light->map);
-
     if (light->on)
     {
-        TCOD_map_compute_fov(light->fov_map, light->x, light->y, light->radius, true, FOV_DIAMOND);
+        light->fov_map = map_to_fov_map(light->map, light->x, light->y, light->radius);
+    }
+    else
+    {
+        light->fov_map = map_to_TCOD_map(light->map);
     }
 }
 
@@ -47,6 +49,8 @@ void light_update(light_t *light)
 
 void light_draw(light_t *light)
 {
+    light_calc_fov(light);
+
     if (TCOD_map_is_in_fov(player->fov_map, light->x, light->y))
     {
         TCOD_console_set_char_foreground(NULL, light->x - view_x, light->y - view_y, light->color);

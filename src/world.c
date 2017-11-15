@@ -9,46 +9,61 @@ void world_init(void)
 {
     maps = TCOD_list_new();
 
-    tile_glyph[TILE_TYPE_EMPTY] = ' ';
-    tile_glyph[TILE_TYPE_FLOOR] = '.';
-    tile_glyph[TILE_TYPE_WALL] = '#';
-    tile_glyph[TILE_TYPE_STAIR_DOWN] = '>';
-    tile_glyph[TILE_TYPE_STAIR_UP] = '<';
-
-    tile_transparent[TILE_TYPE_EMPTY] = true;
-    tile_transparent[TILE_TYPE_FLOOR] = true;
-    tile_transparent[TILE_TYPE_WALL] = false;
-    tile_transparent[TILE_TYPE_STAIR_DOWN] = true;
-    tile_transparent[TILE_TYPE_STAIR_UP] = true;
-
-    tile_walkable[TILE_TYPE_EMPTY] = true;
-    tile_walkable[TILE_TYPE_FLOOR] = true;
-    tile_walkable[TILE_TYPE_WALL] = false;
-    tile_walkable[TILE_TYPE_STAIR_DOWN] = true;
-    tile_walkable[TILE_TYPE_STAIR_UP] = true;
+    tile_info[TILE_TYPE_EMPTY] = (tile_info_t){
+        .glyph = ' ',
+        .is_transparent = true,
+        .is_walkable = true};
+    tile_info[TILE_TYPE_FLOOR] = (tile_info_t){
+        .glyph = '.',
+        .is_transparent = true,
+        .is_walkable = true};
+    tile_info[TILE_TYPE_WALL] = (tile_info_t){
+        .glyph = '#',
+        .is_transparent = false,
+        .is_walkable = false};
+    tile_info[TILE_TYPE_STAIR_DOWN] = (tile_info_t){
+        .glyph = '>',
+        .is_transparent = true,
+        .is_walkable = true};
+    tile_info[TILE_TYPE_STAIR_UP] = (tile_info_t){
+        .glyph = '<',
+        .is_transparent = true,
+        .is_walkable = true};
 
     spell[SPELL_INSTAKILL].name = "Instakill";
     spell[SPELL_INSTAKILL].cast = &spell_instakill;
 
-    actor_name[ACTOR_TYPE_PLAYER] = "Blinky";
-    actor_name[ACTOR_TYPE_MONSTER] = "Monster";
-    actor_name[ACTOR_TYPE_PET] = "Pet";
+    actor_name[ACTOR_TYPE_WARRIOR] = "Warrior";
+    actor_name[ACTOR_TYPE_MAGE] = "Mage";
+    actor_name[ACTOR_TYPE_ROGUE] = "Rogue";
+    actor_name[ACTOR_TYPE_DOG] = "Dog";
+    actor_name[ACTOR_TYPE_SKELETON] = "Skeleton";
+    actor_name[ACTOR_TYPE_SKELETON_CAPTAIN] = "Skeleton Captain";
+    actor_name[ACTOR_TYPE_ZOMBIE] = "Zombie";
 
-    actor_glyph[ACTOR_TYPE_PLAYER] = '@';
-    actor_glyph[ACTOR_TYPE_MONSTER] = '@';
-    actor_glyph[ACTOR_TYPE_PET] = '@';
+    actor_glyph[ACTOR_TYPE_WARRIOR] = '@';
+    actor_glyph[ACTOR_TYPE_MAGE] = '@';
+    actor_glyph[ACTOR_TYPE_ROGUE] = '@';
+    actor_glyph[ACTOR_TYPE_DOG] = 'd';
+    actor_glyph[ACTOR_TYPE_SKELETON] = 's';
+    actor_glyph[ACTOR_TYPE_SKELETON_CAPTAIN] = 'S';
+    actor_glyph[ACTOR_TYPE_ZOMBIE] = 'z';
 
-    actor_color[ACTOR_TYPE_PLAYER] = TCOD_white;
-    actor_color[ACTOR_TYPE_MONSTER] = TCOD_red;
-    actor_color[ACTOR_TYPE_PET] = TCOD_yellow;
+    actor_color[ACTOR_TYPE_WARRIOR] = TCOD_white;
+    actor_color[ACTOR_TYPE_MAGE] = TCOD_white;
+    actor_color[ACTOR_TYPE_ROGUE] = TCOD_white;
+    actor_color[ACTOR_TYPE_DOG] = TCOD_white;
+    actor_color[ACTOR_TYPE_SKELETON] = TCOD_white;
+    actor_color[ACTOR_TYPE_SKELETON_CAPTAIN] = TCOD_white;
+    actor_color[ACTOR_TYPE_ZOMBIE] = TCOD_green;
 
-    actor_energy_per_turn[ACTOR_TYPE_PLAYER] = 1.0f;
-    actor_energy_per_turn[ACTOR_TYPE_MONSTER] = 0.5f;
-    actor_energy_per_turn[ACTOR_TYPE_PET] = 0.5f;
-
-    actor_ai[ACTOR_TYPE_PLAYER] = NULL;
-    actor_ai[ACTOR_TYPE_MONSTER] = &ai_monster;
-    actor_ai[ACTOR_TYPE_PET] = &ai_pet;
+    actor_energy_per_turn[ACTOR_TYPE_WARRIOR] = 0.5f;
+    actor_energy_per_turn[ACTOR_TYPE_MAGE] = 0.5f;
+    actor_energy_per_turn[ACTOR_TYPE_ROGUE] = 0.5f;
+    actor_energy_per_turn[ACTOR_TYPE_DOG] = 0.75f;
+    actor_energy_per_turn[ACTOR_TYPE_SKELETON] = 0.5f;
+    actor_energy_per_turn[ACTOR_TYPE_SKELETON_CAPTAIN] = 0.75f;
+    actor_energy_per_turn[ACTOR_TYPE_ZOMBIE] = 0.25f;
 
     actor_light_radius[ACTOR_LIGHT_NONE] = 1;
     actor_light_radius[ACTOR_LIGHT_DEFAULT] = 5;

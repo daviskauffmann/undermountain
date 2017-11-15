@@ -91,7 +91,7 @@ map_t *map_create(int level)
             continue;
         }
 
-        actor_t *actor = actor_create(ACTOR_TYPE_MONSTER, map, x, y);
+        actor_t *actor = actor_create(TCOD_random_get_int(NULL, ACTOR_TYPE_SKELETON, ACTOR_TYPE_ZOMBIE), map, x, y, &ai_monster, NULL);
 
         switch (TCOD_random_get_int(NULL, 0, 10))
         {
@@ -371,11 +371,6 @@ void map_update(map_t *map)
 
         if (actor->mark_for_delete)
         {
-            corpse_t *corpse = corpse_create(actor->x, actor->y, actor);
-
-            TCOD_list_push(map->items, corpse);
-            TCOD_list_push(tile->items, corpse);
-
             for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
             {
                 item_t *item = *i;
@@ -420,11 +415,20 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            TCOD_map_set_properties(TCOD_map, x, y, tile_transparent[tile->type], tile->actor == NULL ? tile_walkable[tile->type] : false);
+            TCOD_map_set_properties(TCOD_map, x, y, tile_info[tile->type].is_transparent, tile->actor == NULL ? tile_info[tile->type].is_walkable : false);
         }
     }
 
     return TCOD_map;
+}
+
+TCOD_map_t map_to_fov_map(map_t *map, int x, int y, int radius)
+{
+    TCOD_map_t fov_map = map_to_TCOD_map(map);
+
+    TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_BASIC);
+
+    return fov_map;
 }
 
 void map_draw(map_t *map)

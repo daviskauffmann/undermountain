@@ -18,7 +18,7 @@ void game_new()
 
     TCOD_list_push(maps, map);
 
-    player = actor_create(ACTOR_TYPE_PLAYER, map, map->stair_up_x, map->stair_up_y);
+    player = actor_create(ACTOR_TYPE_WARRIOR, map, map->stair_up_x, map->stair_up_y, NULL, "Blinky");
 
     TCOD_list_push(map->actors, player);
     map->tiles[player->x][player->y].actor = player;
@@ -33,15 +33,15 @@ void game_new()
 
     TCOD_list_push(player->spells, &spell[SPELL_INSTAKILL]);
 
-    msg_log(player->map, player->x, player->y, TCOD_white, "Hail, %s!\nWelcome to the dungeon!", actor_name[player->type]);
+    msg_log(player->map, player->x, player->y, TCOD_white, "Hail, %s!", actor_get_name(player));
 
-    actor_t *pet = actor_create(ACTOR_TYPE_PET, map, player->x + 1, player->y);
+    actor_t *pet = actor_create(ACTOR_TYPE_DOG, map, player->x + 1, player->y, &ai_pet, "Spot");
 
     TCOD_list_push(map->actors, pet);
     map->tiles[pet->x][pet->y].actor = pet;
 }
 
-void game_update(void)
+void game_input(void)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;
@@ -51,6 +51,8 @@ void game_update(void)
     {
     case TCOD_EVENT_KEY_PRESS:
     {
+        tile_t *tile = &player->map->tiles[player->x][player->y];
+
         switch (key.vk)
         {
         case TCODK_ESCAPE:
@@ -59,19 +61,39 @@ void game_update(void)
 
             break;
         }
+        case TCODK_PAGEDOWN:
+        {
+            panel_content_scroll_down();
+
+            break;
+        }
+        case TCODK_PAGEUP:
+        {
+            panel_content_scroll_up();
+
+            break;
+        }
         case TCODK_KP1:
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_move(player, player->x - 1, player->y + 1);
+            actor_default_action(player, player->x - 1, player->y + 1);
 
             break;
         }
         case TCODK_KP2:
+        case TCODK_DOWN:
         {
-            game_status = GAME_STATUS_UPDATE;
+            if (panel_visible)
+            {
+                panel_content_idx_up();
+            }
+            else
+            {
+                game_status = GAME_STATUS_UPDATE;
 
-            actor_move(player, player->x, player->y + 1);
+                actor_default_action(player, player->x, player->y + 1);
+            }
 
             break;
         }
@@ -79,7 +101,7 @@ void game_update(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_move(player, player->x + 1, player->y + 1);
+            actor_default_action(player, player->x + 1, player->y + 1);
 
             break;
         }
@@ -87,7 +109,7 @@ void game_update(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_move(player, player->x - 1, player->y);
+            actor_default_action(player, player->x - 1, player->y);
 
             break;
         }
@@ -101,7 +123,7 @@ void game_update(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_move(player, player->x + 1, player->y);
+            actor_default_action(player, player->x + 1, player->y);
 
             break;
         }
@@ -109,23 +131,30 @@ void game_update(void)
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_move(player, player->x - 1, player->y - 1);
+            actor_default_action(player, player->x - 1, player->y - 1);
 
             break;
         }
         case TCODK_KP8:
+        case TCODK_UP:
         {
-            game_status = GAME_STATUS_UPDATE;
+            if (panel_visible)
+            {
+                panel_content_idx_down();
+            }
+            else
+            {
+                game_status = GAME_STATUS_UPDATE;
 
-            actor_move(player, player->x, player->y - 1);
-
+                actor_default_action(player, player->x, player->y - 1);
+            }
             break;
         }
         case TCODK_KP9:
         {
             game_status = GAME_STATUS_UPDATE;
 
-            actor_move(player, player->x + 1, player->y - 1);
+            actor_default_action(player, player->x + 1, player->y - 1);
 
             break;
         }
@@ -148,6 +177,15 @@ void game_update(void)
             case 'i':
             {
                 panel_toggle(CONTENT_INVENTORY);
+
+                break;
+            }
+            case 'g':
+            {
+                if (TCOD_list_peek(tile->items) != NULL)
+                {
+                    actor_item_take(player, tile->items);
+                }
 
                 break;
             }
@@ -196,6 +234,17 @@ void game_update(void)
 
                 break;
             }
+            case 'y':
+            {
+                light_t *light = tile->light;
+
+                if (light != NULL)
+                {
+                    actor_light_toggle(player, light);
+                }
+
+                break;
+            }
             case ',':
             {
                 game_status = GAME_STATUS_UPDATE;
@@ -221,7 +270,10 @@ void game_update(void)
         break;
     }
     }
+}
 
+void game_update(void)
+{
     if (game_status == GAME_STATUS_UPDATE)
     {
         world_update();

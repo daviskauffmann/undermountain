@@ -111,7 +111,7 @@ void tile_draw(tile_t *tile, int x, int y, float dx, float dy, float di)
     }
 
     TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
-    TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_glyph[tile->type]);
+    TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info[tile->type].glyph);
 }
 
 void tile_uninit(tile_t *tile)

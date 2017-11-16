@@ -20,7 +20,7 @@ actor_t *actor_create(actor_type_t type, map_t *map, int x, int y, void (*ai)(ac
     actor->items = TCOD_list_new();
     actor->spells = TCOD_list_new();
     actor->spell_ready = NULL;
-    actor->light = ACTOR_LIGHT_TYPE_DEFAULT;
+    actor->light = ACTOR_LIGHT_TYPE_GLOW;
     actor->fov_map = NULL;
     actor->energy = 1.0f;
     actor->mark_for_delete = false;
@@ -104,7 +104,7 @@ void actor_calc_fov(actor_t *actor)
                 {
                     actor_t *other = *i;
 
-                    if ((other->light == ACTOR_LIGHT_TYPE_DEFAULT || other->light == ACTOR_LIGHT_TYPE_TORCH) && TCOD_map_is_in_fov(other->fov_map, x, y))
+                    if ((other->light == ACTOR_LIGHT_TYPE_GLOW || other->light == ACTOR_LIGHT_TYPE_TORCH) && TCOD_map_is_in_fov(other->fov_map, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov_map, x, y, true);
                     }
@@ -118,7 +118,6 @@ void actor_calc_fov(actor_t *actor)
 
 void actor_default_action(actor_t *actor, int x, int y)
 {
-    // should take a coordinate and figure out what the best action to do there is
     tile_t *tile = &actor->map->tiles[x][y];
 
     if (tile->actor != NULL)
@@ -258,42 +257,50 @@ void actor_descend(actor_t *actor)
 {
     tile_t *tile = &actor->map->tiles[actor->x][actor->y];
 
-    if (tile->type == TILE_TYPE_STAIR_DOWN)
+    // if (tile->type == TILE_TYPE_STAIR_DOWN)
+    // {
+    map_t *new_map;
+
+    if (TCOD_list_size(maps) == actor->map->level + 1)
     {
-        map_t *new_map;
+        new_map = map_create(actor->map->level + 1);
 
-        if (TCOD_list_size(maps) == actor->map->level + 1)
-        {
-            new_map = map_create(actor->map->level + 1);
-
-            TCOD_list_push(maps, new_map);
-        }
-        else
-        {
-            new_map = TCOD_list_get(maps, actor->map->level + 1);
-        }
-
-        TCOD_list_remove(actor->map->actors, actor);
-        TCOD_list_push(new_map->actors, actor);
-
-        actor->map->tiles[actor->x][actor->y].actor = NULL;
-        new_map->tiles[new_map->stair_up_x][new_map->stair_up_y].actor = actor;
-
-        actor->map = new_map;
-        actor->x = new_map->stair_up_x;
-        actor->y = new_map->stair_up_y;
-
-        actor_calc_fov(actor);
-
-        msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s descends to level %d", actor_get_name(actor), actor->map->level);
+        TCOD_list_push(maps, new_map);
     }
+    else
+    {
+        new_map = TCOD_list_get(maps, actor->map->level + 1);
+    }
+
+    TCOD_list_remove(actor->map->actors, actor);
+    TCOD_list_push(new_map->actors, actor);
+
+    actor->map->tiles[actor->x][actor->y].actor = NULL;
+    new_map->tiles[new_map->stair_up_x][new_map->stair_up_y].actor = actor;
+
+    for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+    {
+        item_t *item = *i;
+
+        TCOD_list_remove(actor->map->items, item);
+        TCOD_list_push(new_map->items, item);
+    }
+
+    actor->map = new_map;
+    actor->x = new_map->stair_up_x;
+    actor->y = new_map->stair_up_y;
+
+    actor_calc_fov(actor);
+
+    msg_log(actor->map, actor->x, actor->y, TCOD_white, "%s descends to level %d", actor_get_name(actor), actor->map->level);
+    // }
 }
 
 void actor_ascend(actor_t *actor)
 {
     tile_t *tile = &actor->map->tiles[actor->x][actor->y];
 
-    if (tile->type == TILE_TYPE_STAIR_UP && actor->map->level > 0)
+    if (/*tile->type == TILE_TYPE_STAIR_UP && */ actor->map->level > 0)
     {
         map_t *new_map = TCOD_list_get(maps, actor->map->level - 1);
 
@@ -302,6 +309,14 @@ void actor_ascend(actor_t *actor)
 
         actor->map->tiles[actor->x][actor->y].actor = NULL;
         new_map->tiles[new_map->stair_down_x][new_map->stair_down_y].actor = actor;
+
+        for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+        {
+            item_t *item = *i;
+
+            TCOD_list_remove(actor->map->items, item);
+            TCOD_list_push(new_map->items, item);
+        }
 
         actor->map = new_map;
         actor->x = new_map->stair_down_x;

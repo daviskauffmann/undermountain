@@ -314,7 +314,7 @@ void game_input(void)
                 }
                 else
                 {
-                    player->light = ACTOR_LIGHT_TYPE_DEFAULT;
+                    player->light = ACTOR_LIGHT_TYPE_GLOW;
                 }
 
                 break;

@@ -39,7 +39,7 @@ void tile_draw(tile_t *tile, int x, int y, float dx, float dy, float di)
     {
         actor_t *actor = *i;
 
-        if ((actor->light == ACTOR_LIGHT_TYPE_DEFAULT || actor->light == ACTOR_LIGHT_TYPE_TORCH) && TCOD_map_is_in_fov(actor->fov_map, x, y))
+        if ((actor->light == ACTOR_LIGHT_TYPE_GLOW || actor->light == ACTOR_LIGHT_TYPE_TORCH) && TCOD_map_is_in_fov(actor->fov_map, x, y))
         {
             tile->seen = true;
         }
@@ -72,7 +72,7 @@ void tile_draw(tile_t *tile, int x, int y, float dx, float dy, float di)
     {
         actor_t *actor = *i;
 
-        if (actor->light == ACTOR_LIGHT_TYPE_DEFAULT && TCOD_map_is_in_fov(actor->fov_map, x, y))
+        if (actor->light == ACTOR_LIGHT_TYPE_GLOW && TCOD_map_is_in_fov(actor->fov_map, x, y))
         {
             float r2 = pow(actor_light_info[actor->light].radius, 2);
             float d = pow(x - actor->x, 2) + pow(y - actor->y, 2);

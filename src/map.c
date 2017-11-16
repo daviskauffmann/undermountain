@@ -98,7 +98,7 @@ map_t *map_create(int level)
         {
         case 0:
         {
-            actor->light = ACTOR_LIGHT_TYPE_DEFAULT;
+            actor->light = ACTOR_LIGHT_TYPE_GLOW;
 
             break;
         }

@@ -110,7 +110,7 @@ void world_init(void)
     actor_light_info[ACTOR_LIGHT_TYPE_NONE] = (actor_light_info_t){
         .radius = 1,
         .color = TCOD_white};
-    actor_light_info[ACTOR_LIGHT_TYPE_DEFAULT] = (actor_light_info_t){
+    actor_light_info[ACTOR_LIGHT_TYPE_GLOW] = (actor_light_info_t){
         .radius = 5,
         .color = TCOD_white};
     actor_light_info[ACTOR_LIGHT_TYPE_TORCH] = (actor_light_info_t){

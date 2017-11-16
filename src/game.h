@@ -177,7 +177,7 @@ typedef enum actor_type_e {
 
 typedef enum actor_light_type_e {
     ACTOR_LIGHT_TYPE_NONE,
-    ACTOR_LIGHT_TYPE_DEFAULT,
+    ACTOR_LIGHT_TYPE_GLOW,
     ACTOR_LIGHT_TYPE_TORCH,
 
     NUM_ACTOR_LIGHT_TYPES

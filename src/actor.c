@@ -5,8 +5,6 @@
 #include "game.h"
 #include "utils.h"
 
-#define LIT_ROOMS 0
-
 actor_t *actor_create(actor_type_t type, map_t *map, int x, int y, void (*ai)(actor_t *actor), char *unique_name)
 {
     actor_t *actor = (actor_t *)malloc(sizeof(actor_t));
@@ -62,25 +60,6 @@ void actor_calc_fov(actor_t *actor)
     actor->fov_map = map_to_fov_map(actor->map, actor->x, actor->y, actor_light_info[actor->light].radius);
 
     TCOD_map_t los_map = map_to_fov_map(actor->map, actor->x, actor->y, 0);
-
-#if LIT_ROOMS
-    for (void **i = TCOD_list_begin(actor->map->rooms); i != TCOD_list_end(actor->map->rooms); i++)
-    {
-        room_t *room = *i;
-
-        if (room_is_inside(room, x, y))
-        {
-            for (int x = room->x - 1; x <= room->x + room->w; x++)
-            {
-                for (int y = room->y - 1; y <= room->y + room->h; y++)
-                {
-                    TCOD_map_set_in_fov(actor->fov_map, x, y, true);
-                    TCOD_map_set_in_fov(los_map, x, y, true);
-                }
-            }
-        }
-    }
-#endif
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {

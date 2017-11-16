@@ -6,76 +6,22 @@
 #include "system.h"
 
 /* Game */
+typedef enum status_e {
+    STATUS_WAITING,
+    STATUS_UPDATE,
+    STATUS_QUIT
+} status_t;
+
 typedef struct game_s
 {
-    TCOD_list_t maps;
+    status_t status;
+    int turn;
 } game_t;
 
-/* Maps */
-#define MAP_WIDTH 50
-#define MAP_HEIGHT 50
-
-typedef struct map_s
-{
-    int level;
-    int stair_down_x;
-    int stair_down_y;
-    int stair_up_x;
-    int stair_up_y;
-    tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
-    TCOD_list_t rooms;
-} map_t;
-
-map_t *map_create(int level);
-void map_draw(map_t *map);
-void map_destroy(map_t *map);
-
-/* Rooms */
-typedef struct room_s
-{
-    int x;
-    int y;
-    int w;
-    int h;
-} room_t;
-
-room_t *room_create(int x, int y, int w, int h);
-void room_get_random_pos(room_t *room, int *x, int *y);
-bool room_is_inside(room_t *room, int x, int y);
-void room_destroy(room_t *room);
-
-/* Tiles */
-typedef enum tile_type_e {
-    TILE_TYPE_EMPTY,
-    TILE_TYPE_FLOOR,
-    TILE_TYPE_WALL,
-    TILE_TYPE_STAIR_DOWN,
-    TILE_TYPE_STAIR_UP,
-
-    NUM_TILE_TYPES
-} tile_type_t;
-
-typedef struct tile_info_s
-{
-    unsigned char glyph;
-    bool is_transparent;
-    bool is_walkable;
-} tile_info_t;
-
-typedef struct tile_s
-{
-    tile_type_t type;
-    bool seen;
-} tile_t;
-
-tile_info_t tile_info[NUM_TILE_TYPES];
-
-void tile_init(tile_t *tile, tile_type_t type);
-void tile_update(tile_t *tile);
-void tile_draw(tile_t *tile, int x, int y, float dx, float dy, float di);
-void tile_uninit(tile_t *tile);
-
 /* Components */
+#define MAX_ENTITIES 256
+#define ID_UNUSED -1
+
 typedef enum component_e {
     COMPONENT_POSITION,
     COMPONENT_APPEARANCE,
@@ -87,16 +33,117 @@ typedef enum component_e {
 
 typedef struct position_s
 {
+    int id;
     int x;
     int y;
 } position_t;
 
+typedef struct appearance_s
+{
+    int id;
+    char *name;
+    unsigned char glyph;
+    TCOD_color_t color;
+} appearance_t;
+
+void *components[NUM_COMPONENTS][MAX_ENTITIES];
+
+position_t position_components[MAX_ENTITIES];
+appearance_t appearance_components[MAX_ENTITIES];
+
+/* Entities */
+typedef struct entity_s
+{
+    int id;
+    void *components[NUM_COMPONENTS];
+} entity_t;
+
+entity_t entities[MAX_ENTITIES];
+
+entity_t *entity_create()
+{
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        if (entities[i].id == ID_UNUSED)
+        {
+            return &entities[i];
+        }
+    }
+
+    return NULL;
+}
+
+void *entity_add_component(entity_t *entity, component_t component)
+{
+}
+
+void *entity_get_component(entity_t *entity, component_t component)
+{
+}
+
 /* Systems */
-void input_system();
+void ECS_init(void)
+{
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        entities[i].id = ID_UNUSED;
+        position_components[i].id = ID_UNUSED;
+        appearance_components[i].id = ID_UNUSED;
+    }
+}
+
+void input_system(game_t *game, entity_t *player)
+{
+    TCOD_key_t key;
+    TCOD_mouse_t mouse;
+    TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
+
+    switch (ev)
+    {
+    case TCOD_EVENT_KEY_PRESS:
+    {
+        switch (key.vk)
+        {
+        case TCODK_ESCAPE:
+        {
+            game->status = STATUS_QUIT;
+
+            break;
+        }
+        }
+    }
+    }
+}
+
+void render_system(void)
+{
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        if (appearance_components[i].id != ID_UNUSED)
+        {
+        }
+    }
+}
 
 int main(int argc, char *argv[])
 {
     system_init();
+
+    game_t game = {
+        .status = STATUS_WAITING,
+        .turn = 0};
+
+    entity_t *player = entity_create();
+
+    while (!TCOD_console_is_window_closed())
+    {
+        input_system(&game, player);
+
+        if (game.status == STATUS_QUIT)
+        {
+            break;
+        }
+    }
 
     SDL_Quit();
 

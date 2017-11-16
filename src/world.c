@@ -32,12 +32,21 @@ void world_init(void)
 
     light_common.glyph = '*';
 
+    item_common.torch_radius = 10;
+    item_common.torch_color = TCOD_light_amber;
+
     item_info[ITEM_TYPE_GOLD] = (item_info_t){
         .name = "Gold",
         .glyph = '$',
         .color = TCOD_gold,
         .identified = true,
         .max_stack = 1000};
+    item_info[ITEM_TYPE_TORCH] = (item_info_t){
+        .name = "Torch",
+        .glyph = '*',
+        .color = TCOD_white,
+        .identified = true,
+        .max_stack = 1};
     item_info[ITEM_TYPE_SWORD_LONG] = (item_info_t){
         .name = "Longsword",
         .glyph = '|',
@@ -65,6 +74,9 @@ void world_init(void)
     spell_info[SPELL_INSTAKILL] = (spell_info_t){
         .name = "Instakill",
         .cast = &spell_instakill};
+
+    actor_common.glow_radius = 5;
+    actor_common.glow_color = TCOD_white;
 
     actor_info[ACTOR_TYPE_WARRIOR] = (actor_info_t){
         .name = "Warrior",
@@ -106,16 +118,6 @@ void world_init(void)
         .glyph = 'j',
         .color = TCOD_dark_orange,
         .energy_per_turn = 1.5f};
-
-    actor_light_info[ACTOR_LIGHT_TYPE_NONE] = (actor_light_info_t){
-        .radius = 1,
-        .color = TCOD_white};
-    actor_light_info[ACTOR_LIGHT_TYPE_GLOW] = (actor_light_info_t){
-        .radius = 5,
-        .color = TCOD_white};
-    actor_light_info[ACTOR_LIGHT_TYPE_TORCH] = (actor_light_info_t){
-        .radius = 10,
-        .color = TCOD_light_amber};
 }
 
 void world_update(void)

@@ -23,17 +23,16 @@ void game_new()
     TCOD_list_push(map->actors, player);
     map->tiles[player->x][player->y].actor = player;
 
-    for (int i = 0; i < 30; i++)
-    {
-        item_t *item = item_create(TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1), player->x, player->y, 1);
-
-        TCOD_list_push(map->items, item);
-        TCOD_list_push(player->items, item);
-    }
-
     TCOD_list_push(player->spells, &spell_info[SPELL_INSTAKILL]);
 
     msg_log(player->map, player->x, player->y, TCOD_white, "Hail, %s!", actor_get_name(player));
+
+    item_t *torch = item_create(ITEM_TYPE_TORCH, map, player->x, player->y, 1);
+
+    torch->torch = true;
+
+    TCOD_list_push(map->items, torch);
+    TCOD_list_push(map->tiles[player->x][player->y].items, torch);
 
     actor_t *pet = actor_create(ACTOR_TYPE_DOG, map, player->x + 1, player->y, &ai_pet, "Spot");
 
@@ -306,16 +305,16 @@ void game_input(void)
             }
             case 't':
             {
-                game_status = GAME_STATUS_UPDATE;
+                // game_status = GAME_STATUS_UPDATE;
 
-                if (player->light != ACTOR_LIGHT_TYPE_TORCH)
-                {
-                    player->light = ACTOR_LIGHT_TYPE_TORCH;
-                }
-                else
-                {
-                    player->light = ACTOR_LIGHT_TYPE_GLOW;
-                }
+                // if (player->light_type != ACTOR_LIGHT_TYPE_TORCH)
+                // {
+                //     player->light_type = ACTOR_LIGHT_TYPE_TORCH;
+                // }
+                // else
+                // {
+                //     player->light_type = ACTOR_LIGHT_TYPE_GLOW;
+                // }
 
                 break;
             }

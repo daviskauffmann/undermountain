@@ -18,7 +18,7 @@ actor_t *actor_create(actor_type_t type, map_t *map, int x, int y, void (*ai)(ac
     actor->items = TCOD_list_new();
     actor->spells = TCOD_list_new();
     actor->spell_ready = NULL;
-    actor->light = ACTOR_LIGHT_TYPE_GLOW;
+    actor->glow = true;
     actor->fov_map = NULL;
     actor->energy = 1.0f;
     actor->mark_for_delete = false;
@@ -57,7 +57,7 @@ void actor_calc_fov(actor_t *actor)
         TCOD_map_delete(actor->fov_map);
     }
 
-    actor->fov_map = map_to_fov_map(actor->map, actor->x, actor->y, actor_light_info[actor->light].radius);
+    actor->fov_map = map_to_fov_map(actor->map, actor->x, actor->y, actor->glow ? actor_common.glow_radius : 1);
 
     TCOD_map_t los_map = map_to_fov_map(actor->map, actor->x, actor->y, 0);
 
@@ -79,11 +79,21 @@ void actor_calc_fov(actor_t *actor)
                     }
                 }
 
+                for (void **i = TCOD_list_begin(actor->map->items); i != TCOD_list_end(actor->map->items); i++)
+                {
+                    item_t *item = *i;
+
+                    if (item->torch && TCOD_map_is_in_fov(item->fov_map, x, y))
+                    {
+                        TCOD_map_set_in_fov(actor->fov_map, x, y, true);
+                    }
+                }
+
                 for (void **i = TCOD_list_begin(actor->map->actors); i != TCOD_list_end(actor->map->actors); i++)
                 {
                     actor_t *other = *i;
 
-                    if ((other->light == ACTOR_LIGHT_TYPE_GLOW || other->light == ACTOR_LIGHT_TYPE_TORCH) && TCOD_map_is_in_fov(other->fov_map, x, y))
+                    if (other->glow && TCOD_map_is_in_fov(other->fov_map, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov_map, x, y, true);
                     }
@@ -262,12 +272,22 @@ void actor_descend(actor_t *actor)
         item_t *item = *i;
 
         TCOD_list_remove(actor->map->items, item);
-        TCOD_list_push(new_map->items, item);
     }
 
     actor->map = new_map;
     actor->x = new_map->stair_up_x;
     actor->y = new_map->stair_up_y;
+
+    for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+    {
+        item_t *item = *i;
+
+        TCOD_list_push(actor->map->items, item);
+
+        item->map = actor->map;
+        item->x = actor->x;
+        item->y = actor->y;
+    }
 
     actor_calc_fov(actor);
 
@@ -294,12 +314,22 @@ void actor_ascend(actor_t *actor)
             item_t *item = *i;
 
             TCOD_list_remove(actor->map->items, item);
-            TCOD_list_push(new_map->items, item);
         }
 
         actor->map = new_map;
         actor->x = new_map->stair_down_x;
         actor->y = new_map->stair_down_y;
+
+        for (void **i = TCOD_list_begin(actor->items); i != TCOD_list_end(actor->items); i++)
+        {
+            item_t *item = *i;
+
+            TCOD_list_push(actor->map->items, item);
+
+            item->map = actor->map;
+            item->x = actor->x;
+            item->y = actor->y;
+        }
 
         actor_calc_fov(actor);
 

@@ -94,34 +94,12 @@ map_t *map_create(int level)
         // TODO: select actor type better
         actor_t *actor = actor_create(TCOD_random_get_int(NULL, ACTOR_TYPE_SKELETON, NUM_ACTOR_TYPES - 1), map, x, y, &ai_monster, NULL);
 
-        switch (TCOD_random_get_int(NULL, 0, 10))
-        {
-        case 0:
-        {
-            actor->light = ACTOR_LIGHT_TYPE_GLOW;
-
-            break;
-        }
-        case 1:
-        {
-            actor->light = ACTOR_LIGHT_TYPE_TORCH;
-
-            break;
-        }
-        default:
-        {
-            actor->light = ACTOR_LIGHT_TYPE_NONE;
-
-            break;
-        }
-        }
-
         TCOD_list_push(map->actors, actor);
         map->tiles[x][y].actor = actor;
 
         if (TCOD_random_get_int(NULL, 0, 4) == 0)
         {
-            item_t *item = item_create(TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1), x, y, 1);
+            item_t *item = item_create(TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1), map, x, y, 1);
 
             TCOD_list_push(map->items, item);
             TCOD_list_push(actor->items, item);
@@ -135,7 +113,7 @@ map_t *map_create(int level)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        item_t *item = item_create(TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1), x, y, 1);
+        item_t *item = item_create(TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1), map, x, y, 1);
 
         TCOD_list_push(map->items, item);
         TCOD_list_push(map->tiles[x][y].items, item);

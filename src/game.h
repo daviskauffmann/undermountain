@@ -112,6 +112,7 @@ void light_destroy(light_t *light);
 /* Items */
 typedef enum item_type_e {
     ITEM_TYPE_GOLD,
+    ITEM_TYPE_TORCH,
     ITEM_TYPE_SWORD_LONG,
     ITEM_TYPE_SHIELD_LARGE,
     ITEM_TYPE_POTION_HEALING,
@@ -119,6 +120,12 @@ typedef enum item_type_e {
 
     NUM_ITEM_TYPES
 } item_type_t;
+
+typedef enum item_light_type_e {
+    ITEM_LIGHT_TYPE_TORCH,
+
+    NUM_ITEM_LIGHT_TYPES
+} item_light_type_t;
 
 typedef struct item_info_s
 {
@@ -129,18 +136,29 @@ typedef struct item_info_s
     int max_stack;
 } item_info_t;
 
+typedef struct item_common_s
+{
+    int torch_radius;
+    TCOD_color_t torch_color;
+} item_common_t;
+
 typedef struct item_s
 {
     item_type_t type;
+    map_t *map;
     int x;
     int y;
     int stack;
+    bool torch;
+    TCOD_map_t fov_map;
 } item_t;
 
+item_common_t item_common;
 item_info_t item_info[NUM_ITEM_TYPES];
 
-item_t *item_create(item_type_t type, int x, int y, int stack);
+item_t *item_create(item_type_t type, map_t *map, int x, int y, int stack);
 void item_update(item_t *item);
+void item_calc_fov(item_t *item);
 void item_draw(item_t *item);
 void item_destroy(item_t *item);
 
@@ -175,13 +193,11 @@ typedef enum actor_type_e {
     NUM_ACTOR_TYPES
 } actor_type_t;
 
-typedef enum actor_light_type_e {
-    ACTOR_LIGHT_TYPE_NONE,
-    ACTOR_LIGHT_TYPE_GLOW,
-    ACTOR_LIGHT_TYPE_TORCH,
-
-    NUM_ACTOR_LIGHT_TYPES
-} actor_light_type_t;
+typedef struct actor_common_s
+{
+    int glow_radius;
+    TCOD_color_t glow_color;
+} actor_common_t;
 
 typedef struct actor_info_s
 {
@@ -208,14 +224,14 @@ typedef struct actor_s
     TCOD_list_t items;
     TCOD_list_t spells;
     spell_t *spell_ready;
-    actor_light_type_t light;
+    bool glow;
     TCOD_map_t fov_map;
     float energy;
     bool mark_for_delete;
 } actor_t;
 
+actor_common_t actor_common;
 actor_info_t actor_info[NUM_ACTOR_TYPES];
-actor_light_info_t actor_light_info[NUM_ACTOR_LIGHT_TYPES];
 
 actor_t *actor_create(actor_type_t type, map_t *map, int x, int y, void (*ai)(actor_t *actor), char *unique_name);
 void actor_update(actor_t *actor);

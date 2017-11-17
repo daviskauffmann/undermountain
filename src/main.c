@@ -351,6 +351,7 @@ typedef struct light_s
     int radius;
     TCOD_color_t color;
     bool flicker;
+    TCOD_map_t fov_map;
 } light_t;
 
 typedef struct fov_s
@@ -456,6 +457,8 @@ void input_system(void)
         }
         case TCODK_KP1:
         {
+            game_status = STATUS_UPDATE;
+
             position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
 
             if (position != NULL)
@@ -468,6 +471,8 @@ void input_system(void)
         }
         case TCODK_KP2:
         {
+            game_status = STATUS_UPDATE;
+
             position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
 
             if (position != NULL)
@@ -480,6 +485,8 @@ void input_system(void)
         }
         case TCODK_KP3:
         {
+            game_status = STATUS_UPDATE;
+
             position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
 
             if (position != NULL)
@@ -492,6 +499,8 @@ void input_system(void)
         }
         case TCODK_KP4:
         {
+            game_status = STATUS_UPDATE;
+
             position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
 
             if (position != NULL)
@@ -504,18 +513,14 @@ void input_system(void)
         }
         case TCODK_KP5:
         {
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x;
-                position->next_y = position->y;
-            }
+            game_status = STATUS_UPDATE;
 
             break;
         }
         case TCODK_KP6:
         {
+            game_status = STATUS_UPDATE;
+
             position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
 
             if (position != NULL)
@@ -528,6 +533,8 @@ void input_system(void)
         }
         case TCODK_KP7:
         {
+            game_status = STATUS_UPDATE;
+
             position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
 
             if (position != NULL)
@@ -540,6 +547,8 @@ void input_system(void)
         }
         case TCODK_KP8:
         {
+            game_status = STATUS_UPDATE;
+
             position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
 
             if (position != NULL)
@@ -552,6 +561,8 @@ void input_system(void)
         }
         case TCODK_KP9:
         {
+            game_status = STATUS_UPDATE;
+
             position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
 
             if (position != NULL)
@@ -639,6 +650,30 @@ void movement_system(void)
     }
 }
 
+void lighting_system(void)
+{
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        entity_t *entity = &entities[i];
+
+        if (entity->id != ID_UNUSED)
+        {
+            position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
+            light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
+
+            if (position != NULL && light != NULL)
+            {
+                if (light->fov_map != NULL)
+                {
+                    TCOD_map_delete(light->fov_map);
+                }
+
+                light->fov_map = map_to_fov_map(position->map, position->x, position->y, light->radius);
+            }
+        }
+    }
+}
+
 void fov_system(void)
 {
     for (int i = 0; i < MAX_ENTITIES; i++)
@@ -650,7 +685,7 @@ void fov_system(void)
             position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
             fov_t *fov = (fov_t *)component_get(entity, COMPONENT_TYPE_FOV);
 
-            if (fov != NULL)
+            if (position != NULL && fov != NULL)
             {
                 if (fov->fov_map != NULL)
                 {
@@ -694,14 +729,10 @@ void fov_system(void)
                                 position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
                                 light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
 
-                                TCOD_map_t fov_map = map_to_fov_map(position->map, position->x, position->y, light->radius);
-
-                                if (TCOD_map_is_in_fov(fov_map, x, y))
+                                if (TCOD_map_is_in_fov(light->fov_map, x, y))
                                 {
                                     TCOD_map_set_in_fov(fov->fov_map, x, y, true);
                                 }
-
-                                TCOD_map_delete(fov_map);
                             }
                         }
                     }
@@ -803,14 +834,10 @@ void render_system(void)
                     position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
                     light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
 
-                    TCOD_map_t fov_map = map_to_fov_map(position->map, position->x, position->y, light->radius);
-
-                    if (TCOD_map_is_in_fov(fov_map, x, y))
+                    if (TCOD_map_is_in_fov(light->fov_map, x, y))
                     {
                         tile->seen = true;
                     }
-
-                    TCOD_map_delete(fov_map);
                 }
 
                 TCOD_color_t color = tile_common.shadow_color;
@@ -824,11 +851,14 @@ void render_system(void)
                         position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
                         light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
 
-                        float r2 = pow(light->radius, 2);
-                        float d = pow(x - position->x + (light->flicker ? dx : 0), 2) + pow(y - position->y + (light->flicker ? dy : 0), 2);
-                        float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (light->flicker ? di : 0));
+                        if (TCOD_map_is_in_fov(light->fov_map, x, y))
+                        {
+                            float r2 = pow(light->radius, 2);
+                            float d = pow(x - position->x + (light->flicker ? dx : 0), 2) + pow(y - position->y + (light->flicker ? dy : 0), 2);
+                            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (light->flicker ? di : 0));
 
-                        color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, light->color, l), l);
+                            color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, light->color, l), l);
+                        }
                     }
                 }
                 else
@@ -899,7 +929,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    game_status = STATUS_WAITING;
+    game_status = STATUS_UPDATE;
     turn = 0;
 
     maps = TCOD_list_new();
@@ -920,9 +950,10 @@ int main(int argc, char *argv[])
     player_light->radius = 5;
     player_light->color = TCOD_white;
     player_light->flicker = false;
+    player_light->fov_map = NULL;
     fov_t *player_fov = (fov_t *)component_add(player, COMPONENT_TYPE_FOV);
     player_fov->radius = 5;
-    player_fov->fov_map = map_to_fov_map(map, player_position->x, player_position->y, player_fov->radius);
+    player_fov->fov_map = NULL;
     appearance_t *player_appearance = (appearance_t *)component_add(player, COMPONENT_TYPE_APPEARANCE);
     player_appearance->name = "Blinky";
     player_appearance->glyph = '@';
@@ -942,6 +973,7 @@ int main(int argc, char *argv[])
     npc_light->radius = 5;
     npc_light->color = TCOD_light_amber;
     npc_light->flicker = true;
+    npc_light->fov_map = NULL;
     appearance_t *npc_appearance = (appearance_t *)component_add(npc, COMPONENT_TYPE_APPEARANCE);
     npc_appearance->name = "NPC";
     npc_appearance->glyph = '@';
@@ -950,15 +982,23 @@ int main(int argc, char *argv[])
     while (!TCOD_console_is_window_closed())
     {
         input_system();
-        ai_system();
-        movement_system();
-        fov_system();
+
+        if (game_status == STATUS_UPDATE)
+        {
+            ai_system();
+            lighting_system();
+            movement_system();
+            fov_system();
+        }
+
         render_system();
 
         if (game_status == STATUS_QUIT)
         {
             break;
         }
+
+        game_status = STATUS_WAITING;
     }
 
     for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
@@ -967,6 +1007,7 @@ int main(int argc, char *argv[])
 
         free(map);
     }
+
     TCOD_list_delete(maps);
 
     SDL_Quit();

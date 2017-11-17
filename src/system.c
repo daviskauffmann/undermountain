@@ -11,7 +11,7 @@ void system_init(void)
     fullscreen = false;
     renderer = TCOD_RENDERER_SDL;
 
-    font_file = "Msgothic.png";
+    font_file = "Anikki_square_16x16.png";
     font_flags = TCOD_FONT_LAYOUT_ASCII_INROW;
     font_char_horiz = 16;
     font_char_vertic = 16;

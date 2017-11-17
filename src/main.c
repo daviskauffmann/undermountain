@@ -4,7 +4,21 @@
 #include <libtcod.h>
 
 #include "CMemLeak.h"
-#include "system.h"
+
+/* Window */
+#define WINDOW_TITLE "Roguelike v0.1"
+#define FPS 60
+
+int screen_width;
+int screen_height;
+bool fullscreen;
+int renderer;
+
+/* Fonts */
+char *font_file;
+int font_flags;
+int font_char_horiz;
+int font_char_vertic;
 
 /* Game */
 typedef enum game_status_e {
@@ -18,18 +32,148 @@ int turn;
 TCOD_list_t maps;
 struct entity_s *player;
 
-/* Maps */
-#define MAP_WIDTH 50
-#define MAP_HEIGHT 50
-#define BSP_DEPTH 10
-#define MIN_ROOM_SIZE 5
-#define FULL_ROOMS 1
+/* Entities */
+#define MAX_ENTITIES 65536
+#define ID_UNUSED -1
 
+typedef struct entity_s
+{
+    int id;
+} entity_t;
+
+typedef enum component_type_e {
+    COMPONENT_POSITION,
+    COMPONENT_PHYSICS,
+    COMPONENT_LIGHT,
+    COMPONENT_FOV,
+    COMPONENT_APPEARANCE,
+
+    NUM_COMPONENTS
+} component_type_t;
+
+typedef struct position_s
+{
+    struct map_s *map;
+    int x;
+    int y;
+    int next_x;
+    int next_y;
+} position_t;
+
+typedef enum ai_type_e {
+    AI_MONSTER,
+    AI_PET
+} ai_type_t;
+
+typedef struct ai_s
+{
+    ai_type_t type;
+} ai_t;
+
+typedef struct physics_s
+{
+    bool is_walkable;
+    bool is_transparent;
+} physics_t;
+
+typedef struct light_s
+{
+    int radius;
+    TCOD_color_t color;
+    bool flicker;
+    int priority;
+    TCOD_map_t fov_map;
+} light_t;
+
+typedef struct fov_s
+{
+    int radius;
+    TCOD_map_t fov_map;
+} fov_t;
+
+typedef struct appearance_s
+{
+    char *name;
+    unsigned char glyph;
+    TCOD_color_t color;
+} appearance_t;
+
+typedef struct component_s
+{
+    int id;
+    component_type_t type;
+    union {
+        position_t position;
+        ai_t ai;
+        physics_t physics;
+        light_t light;
+        fov_t fov;
+        appearance_t appearance;
+    };
+} component_t;
+
+entity_t entities[MAX_ENTITIES];
+component_t component_lists[NUM_COMPONENTS][MAX_ENTITIES];
+
+entity_t *entity_create(void)
+{
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        if (entities[i].id == ID_UNUSED)
+        {
+            entities[i].id = i;
+
+            return &entities[i];
+        }
+    }
+
+    return NULL;
+}
+
+void entity_destroy(entity_t *entity)
+{
+    for (int i = 0; i < NUM_COMPONENTS; i++)
+    {
+        component_lists[i][entity->id].id = ID_UNUSED;
+    }
+
+    entity->id = ID_UNUSED;
+}
+
+component_t *component_add(entity_t *entity, component_type_t component_type)
+{
+    component_t *component = &component_lists[component_type][entity->id];
+
+    component->id = entity->id;
+
+    return component;
+}
+
+component_t *component_get(entity_t *entity, component_type_t component_type)
+{
+    component_t *component = &component_lists[component_type][entity->id];
+
+    if (component->id != ID_UNUSED)
+    {
+        return component;
+    }
+
+    return NULL;
+}
+
+void component_remove(entity_t *entity, component_type_t component_type)
+{
+    component_t *component = &component_lists[component_type][entity->id];
+
+    component->id = ID_UNUSED;
+}
+
+/* Tiles */
 typedef enum tile_type_e {
-    TILE_TYPE_FLOOR,
-    TILE_TYPE_WALL,
+    TILE_FLOOR,
+    TILE_WALL,
 
-    NUM_TILE_TYPES
+    NUM_TILES
 } tile_type_t;
 
 typedef struct tile_common_s
@@ -53,12 +197,53 @@ typedef struct tile_s
 } tile_t;
 
 tile_common_t tile_common;
-tile_info_t tile_info[NUM_TILE_TYPES];
+tile_info_t tile_info[NUM_TILES];
+
+/* Rooms */
+typedef struct room_s
+{
+    int x;
+    int y;
+    int w;
+    int h;
+} room_t;
+
+room_t *room_create(int x, int y, int w, int h)
+{
+    room_t *room = (room_t *)malloc(sizeof(room_t));
+
+    room->x = x;
+    room->y = y;
+    room->w = w;
+    room->h = h;
+
+    return room;
+}
+
+void room_get_random_pos(room_t *room, int *x, int *y)
+{
+    *x = TCOD_random_get_int(NULL, room->x, room->x + room->w - 1);
+    *y = TCOD_random_get_int(NULL, room->y, room->y + room->h - 1);
+}
+
+void room_destroy(room_t *room)
+{
+    free(room);
+}
+
+/* Maps */
+#define MAP_WIDTH 50
+#define MAP_HEIGHT 50
+#define BSP_DEPTH 10
+#define MIN_ROOM_SIZE 5
+#define FULL_ROOMS 1
+#define NUM_MONSTERS 20
 
 typedef struct map_s
 {
     int level;
     tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
+    TCOD_list_t rooms;
 } map_t;
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);
@@ -69,11 +254,17 @@ static void hline(map_t *map, int x1, int y, int x2);
 static void hline_left(map_t *map, int x, int y);
 static void hline_right(map_t *map, int x, int y);
 
+room_t *map_get_random_room(map_t *map)
+{
+    return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
+}
+
 map_t *map_create(int level)
 {
     map_t *map = (map_t *)malloc(sizeof(map_t));
 
     map->level = level;
+    map->rooms = TCOD_list_new();
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -81,7 +272,7 @@ map_t *map_create(int level)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            tile->type = TILE_TYPE_WALL;
+            tile->type = TILE_WALL;
             tile->seen = false;
             tile->entity = NULL;
         }
@@ -91,6 +282,35 @@ map_t *map_create(int level)
     TCOD_bsp_split_recursive(bsp, NULL, BSP_DEPTH, MIN_ROOM_SIZE + 1, MIN_ROOM_SIZE + 1, 1.5f, 1.5f);
     TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
     TCOD_bsp_delete(bsp);
+
+    for (int i = 0; i < NUM_MONSTERS; i++)
+    {
+        room_t *room = map_get_random_room(map);
+
+        int x, y;
+        room_get_random_pos(room, &x, &y);
+
+        entity_t *entity = entity_create();
+        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+        position->map = map;
+        position->x = x;
+        position->y = y;
+        position->next_x = -1;
+        position->next_y = -1;
+        physics_t *physics = (physics_t *)component_add(entity, COMPONENT_PHYSICS);
+        physics->is_walkable = false;
+        physics->is_transparent = true;
+        light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
+        light->radius = 10;
+        light->color = TCOD_light_amber;
+        light->flicker = true;
+        light->priority = 0;
+        light->fov_map = NULL;
+        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+        appearance->name = "NPC";
+        appearance->glyph = '@';
+        appearance->color = TCOD_yellow;
+    }
 
     return map;
 }
@@ -131,9 +351,13 @@ static bool traverse_node(TCOD_bsp_t *node, map_t *map)
             {
                 tile_t *tile = &map->tiles[x][y];
 
-                tile->type = TILE_TYPE_FLOOR;
+                tile->type = TILE_FLOOR;
             }
         }
+
+        room_t *room = room_create(node->x, node->y, node->w, node->h);
+
+        TCOD_list_push(map->rooms, room);
     }
     else
     {
@@ -217,7 +441,7 @@ static void vline(map_t *map, int x, int y1, int y2)
     {
         tile_t *tile = &map->tiles[x][y];
 
-        tile->type = TILE_TYPE_FLOOR;
+        tile->type = TILE_FLOOR;
     }
 }
 
@@ -225,9 +449,9 @@ static void vline_up(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (y >= 0 && tile->type != TILE_TYPE_FLOOR)
+    while (y >= 0 && tile->type != TILE_FLOOR)
     {
-        tile->type = TILE_TYPE_FLOOR;
+        tile->type = TILE_FLOOR;
 
         y--;
     }
@@ -237,9 +461,9 @@ static void vline_down(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (y < MAP_HEIGHT && tile->type != TILE_TYPE_FLOOR)
+    while (y < MAP_HEIGHT && tile->type != TILE_FLOOR)
     {
-        tile->type = TILE_TYPE_FLOOR;
+        tile->type = TILE_FLOOR;
 
         y++;
     }
@@ -258,7 +482,7 @@ static void hline(map_t *map, int x1, int y, int x2)
     {
         tile_t *tile = &map->tiles[x][y];
 
-        tile->type = TILE_TYPE_FLOOR;
+        tile->type = TILE_FLOOR;
     }
 }
 
@@ -266,9 +490,9 @@ static void hline_left(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (x >= 0 && tile->type != TILE_TYPE_FLOOR)
+    while (x >= 0 && tile->type != TILE_FLOOR)
     {
-        tile->type = TILE_TYPE_FLOOR;
+        tile->type = TILE_FLOOR;
 
         x--;
     }
@@ -278,9 +502,9 @@ static void hline_right(map_t *map, int x, int y)
 {
     tile_t *tile = &map->tiles[x][y];
 
-    while (x < MAP_WIDTH && tile->type != TILE_TYPE_FLOOR)
+    while (x < MAP_WIDTH && tile->type != TILE_FLOOR)
     {
-        tile->type = TILE_TYPE_FLOOR;
+        tile->type = TILE_FLOOR;
 
         x++;
     }
@@ -301,7 +525,22 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            TCOD_map_set_properties(TCOD_map, x, y, tile_info[tile->type].is_transparent, tile_info[tile->type].is_walkable);
+            bool is_walkable = tile_info[tile->type].is_walkable;
+
+            if (tile->entity != NULL)
+            {
+                if (tile->entity->id != ID_UNUSED)
+                {
+                    physics_t *physics = (physics_t *)component_get(tile->entity, COMPONENT_PHYSICS);
+
+                    if (physics != NULL)
+                    {
+                        is_walkable = physics->is_walkable;
+                    }
+                }
+            }
+
+            TCOD_map_set_properties(TCOD_map, x, y, tile_info[tile->type].is_transparent, is_walkable);
         }
     }
 
@@ -317,123 +556,16 @@ TCOD_map_t map_to_fov_map(map_t *map, int x, int y, int radius)
     return fov_map;
 }
 
-/* Components */
-#define MAX_ENTITIES 65536
-#define ID_UNUSED -1
-
-typedef enum component_type_e {
-    COMPONENT_TYPE_POSITION,
-    COMPONENT_TYPE_PHYSICS,
-    COMPONENT_TYPE_LIGHT,
-    COMPONENT_TYPE_FOV,
-    COMPONENT_TYPE_APPEARANCE,
-
-    NUM_COMPONENTS
-} component_type_t;
-
-typedef struct position_s
+void map_destroy(map_t *map)
 {
-    map_t *map;
-    int x;
-    int y;
-    int next_x;
-    int next_y;
-} position_t;
-
-typedef struct physics_s
-{
-    bool is_walkable;
-    bool is_transparent;
-} physics_t;
-
-typedef struct light_s
-{
-    int radius;
-    TCOD_color_t color;
-    bool flicker;
-    TCOD_map_t fov_map;
-} light_t;
-
-typedef struct fov_s
-{
-    int radius;
-    TCOD_map_t fov_map;
-} fov_t;
-
-typedef struct appearance_s
-{
-    char *name;
-    unsigned char glyph;
-    TCOD_color_t color;
-} appearance_t;
-
-typedef struct component_s
-{
-    int id;
-    component_type_t type;
-    union {
-        position_t position;
-        physics_t physics;
-        light_t light;
-        fov_t fov;
-        appearance_t appearance;
-    };
-} component_t;
-
-component_t component_lists[NUM_COMPONENTS][MAX_ENTITIES];
-
-/* Entities */
-typedef struct entity_s
-{
-    int id;
-} entity_t;
-
-entity_t entities[MAX_ENTITIES];
-
-entity_t *entity_create(void)
-{
-    for (int i = 0; i < MAX_ENTITIES; i++)
+    for (void **iterator = TCOD_list_begin(map->rooms); iterator != TCOD_list_end(map->rooms); iterator++)
     {
-        if (entities[i].id == ID_UNUSED)
-        {
-            entities[i].id = i;
+        room_t *room = *iterator;
 
-            return &entities[i];
-        }
+        room_destroy(room);
     }
 
-    return NULL;
-}
-
-void entity_destroy(entity_t *entity)
-{
-    for (int i = 0; i < NUM_COMPONENTS; i++)
-    {
-        component_lists[i][entity->id].id = ID_UNUSED;
-    }
-
-    entity->id = ID_UNUSED;
-}
-
-component_t *component_add(entity_t *entity, component_type_t component_type)
-{
-    component_t *component = &component_lists[component_type][entity->id];
-
-    component->id = entity->id;
-
-    return component;
-}
-
-component_t *component_get(entity_t *entity, component_type_t component_type)
-{
-    component_t *component = &component_lists[component_type][entity->id];
-
-    if (component->id != ID_UNUSED)
-    {
-        return component;
-    }
-
-    return NULL;
+    free(map);
 }
 
 /* Systems */
@@ -442,6 +574,8 @@ void input_system(void)
     TCOD_key_t key;
     TCOD_mouse_t mouse;
     TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
+
+    position_t *position = (position_t *)component_get(player, COMPONENT_POSITION);
 
     switch (ev)
     {
@@ -459,13 +593,8 @@ void input_system(void)
         {
             game_status = STATUS_UPDATE;
 
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x - 1;
-                position->next_y = position->y + 1;
-            }
+            position->next_x = position->x - 1;
+            position->next_y = position->y + 1;
 
             break;
         }
@@ -473,13 +602,8 @@ void input_system(void)
         {
             game_status = STATUS_UPDATE;
 
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x;
-                position->next_y = position->y + 1;
-            }
+            position->next_x = position->x;
+            position->next_y = position->y + 1;
 
             break;
         }
@@ -487,13 +611,8 @@ void input_system(void)
         {
             game_status = STATUS_UPDATE;
 
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x + 1;
-                position->next_y = position->y + 1;
-            }
+            position->next_x = position->x + 1;
+            position->next_y = position->y + 1;
 
             break;
         }
@@ -501,13 +620,8 @@ void input_system(void)
         {
             game_status = STATUS_UPDATE;
 
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x - 1;
-                position->next_y = position->y;
-            }
+            position->next_x = position->x - 1;
+            position->next_y = position->y;
 
             break;
         }
@@ -521,13 +635,8 @@ void input_system(void)
         {
             game_status = STATUS_UPDATE;
 
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x + 1;
-                position->next_y = position->y;
-            }
+            position->next_x = position->x + 1;
+            position->next_y = position->y;
 
             break;
         }
@@ -535,13 +644,8 @@ void input_system(void)
         {
             game_status = STATUS_UPDATE;
 
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x - 1;
-                position->next_y = position->y - 1;
-            }
+            position->next_x = position->x - 1;
+            position->next_y = position->y - 1;
 
             break;
         }
@@ -549,13 +653,8 @@ void input_system(void)
         {
             game_status = STATUS_UPDATE;
 
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x;
-                position->next_y = position->y - 1;
-            }
+            position->next_x = position->x;
+            position->next_y = position->y - 1;
 
             break;
         }
@@ -563,13 +662,8 @@ void input_system(void)
         {
             game_status = STATUS_UPDATE;
 
-            position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
-
-            if (position != NULL)
-            {
-                position->next_x = position->x + 1;
-                position->next_y = position->y - 1;
-            }
+            position->next_x = position->x + 1;
+            position->next_y = position->y - 1;
 
             break;
         }
@@ -590,15 +684,16 @@ void movement_system(void)
 
         if (entity->id != ID_UNUSED)
         {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
             if (position != NULL)
             {
+                tile_t *tile = &position->map->tiles[position->x][position->y];
+
                 if (position->next_x != -1 && position->next_y != -1)
                 {
                     bool can_move = true;
 
-                    tile_t *tile = &position->map->tiles[position->x][position->y];
                     tile_t *next_tile = &position->map->tiles[position->next_x][position->next_y];
 
                     if (!tile_info[next_tile->type].is_walkable)
@@ -606,28 +701,17 @@ void movement_system(void)
                         can_move = false;
                     }
 
-                    // TODO: better way to check entity at position?
-                    for (int j = 0; j < MAX_ENTITIES; j++)
+                    if (next_tile->entity != NULL)
                     {
-                        entity_t *next_entity = &entities[j];
-
-                        if (next_entity->id != ID_UNUSED)
+                        if (next_tile->entity->id != ID_UNUSED)
                         {
-                            position_t *next_position = (position_t *)component_get(&entities[j], COMPONENT_TYPE_POSITION);
+                            physics_t *physics = (physics_t *)component_get(next_tile->entity, COMPONENT_PHYSICS);
 
-                            if (next_position != NULL)
+                            if (physics != NULL)
                             {
-                                if (next_position->x == position->next_x && next_position->y == position->next_y)
+                                if (!physics->is_walkable)
                                 {
-                                    physics_t *physics = (physics_t *)component_get(&entities[j], COMPONENT_TYPE_PHYSICS);
-
-                                    if (physics != NULL)
-                                    {
-                                        if (!physics->is_walkable)
-                                        {
-                                            can_move = false;
-                                        }
-                                    }
+                                    can_move = false;
                                 }
                             }
                         }
@@ -635,16 +719,17 @@ void movement_system(void)
 
                     if (can_move)
                     {
+                        position->map->tiles[position->x][position->y].entity = NULL;
+
                         position->x = position->next_x;
                         position->y = position->next_y;
-
-                        // tile->entity = NULL;
-                        // next_tile->entity = &entities[i];
                     }
 
                     position->next_x = -1;
                     position->next_y = -1;
                 }
+
+                position->map->tiles[position->x][position->y].entity = entity;
             }
         }
     }
@@ -658,8 +743,8 @@ void lighting_system(void)
 
         if (entity->id != ID_UNUSED)
         {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
-            light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
             if (position != NULL && light != NULL)
             {
@@ -682,8 +767,8 @@ void fov_system(void)
 
         if (entity->id != ID_UNUSED)
         {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
-            fov_t *fov = (fov_t *)component_get(entity, COMPONENT_TYPE_FOV);
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+            fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
 
             if (position != NULL && fov != NULL)
             {
@@ -694,8 +779,6 @@ void fov_system(void)
 
                 fov->fov_map = map_to_fov_map(position->map, position->x, position->y, fov->radius);
 
-                TCOD_map_t los_map = map_to_fov_map(position->map, position->x, position->y, 0);
-
                 TCOD_list_t light_entities = TCOD_list_new();
 
                 for (int i = 0; i < MAX_ENTITIES; i++)
@@ -704,8 +787,8 @@ void fov_system(void)
 
                     if (entity->id != ID_UNUSED)
                     {
-                        position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
-                        light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
+                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
                         if (position != NULL && light != NULL)
                         {
@@ -713,6 +796,8 @@ void fov_system(void)
                         }
                     }
                 }
+
+                TCOD_map_t los_map = map_to_fov_map(position->map, position->x, position->y, 0);
 
                 for (int x = 0; x < MAP_WIDTH; x++)
                 {
@@ -726,8 +811,8 @@ void fov_system(void)
                             {
                                 entity_t *entity = *iterator;
 
-                                position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
-                                light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
+                                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                                light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
                                 if (TCOD_map_is_in_fov(light->fov_map, x, y))
                                 {
@@ -738,9 +823,9 @@ void fov_system(void)
                     }
                 }
 
-                TCOD_list_delete(light_entities);
-
                 TCOD_map_delete(los_map);
+
+                TCOD_list_delete(light_entities);
             }
         }
     }
@@ -754,7 +839,7 @@ void render_system(void)
     TCOD_console_set_default_foreground(NULL, TCOD_white);
     TCOD_console_clear(NULL);
 
-    position_t *position = (position_t *)component_get(player, COMPONENT_TYPE_POSITION);
+    position_t *position = (position_t *)component_get(player, COMPONENT_POSITION);
 
     static int view_x;
     static int view_y;
@@ -794,6 +879,8 @@ void render_system(void)
     float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
     float di = 0.2f * TCOD_noise_get(noise, &noise_x);
 
+    // TODO: sort lights so that certain types get priority when drawing
+    // torches > stationary lights > entity glow
     TCOD_list_t light_entities = TCOD_list_new();
 
     for (int i = 0; i < MAX_ENTITIES; i++)
@@ -802,8 +889,8 @@ void render_system(void)
 
         if (entity->id != ID_UNUSED)
         {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
-            light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
             if (position != NULL && light != NULL)
             {
@@ -812,7 +899,7 @@ void render_system(void)
         }
     }
 
-    fov_t *fov = (fov_t *)component_get(player, COMPONENT_TYPE_FOV);
+    fov_t *fov = (fov_t *)component_get(player, COMPONENT_FOV);
 
     for (int x = view_x; x < view_x + view_width; x++)
     {
@@ -831,8 +918,8 @@ void render_system(void)
                 {
                     entity_t *entity = *iterator;
 
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
-                    light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
+                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                    light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
                     if (TCOD_map_is_in_fov(light->fov_map, x, y))
                     {
@@ -848,8 +935,8 @@ void render_system(void)
                     {
                         entity_t *entity = *iterator;
 
-                        position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
-                        light_t *light = (light_t *)component_get(entity, COMPONENT_TYPE_LIGHT);
+                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
                         if (TCOD_map_is_in_fov(light->fov_map, x, y))
                         {
@@ -884,8 +971,8 @@ void render_system(void)
 
         if (entity->id != ID_UNUSED)
         {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_TYPE_POSITION);
-            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_TYPE_APPEARANCE);
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
 
             if (position != NULL && appearance != NULL)
             {
@@ -903,17 +990,30 @@ void render_system(void)
 
 int main(int argc, char *argv[])
 {
-    system_init();
+    screen_width = 40;
+    screen_height = 25;
+    fullscreen = false;
+    renderer = TCOD_RENDERER_SDL;
+
+    font_file = "Msgothic.png";
+    font_flags = TCOD_FONT_LAYOUT_ASCII_INROW;
+    font_char_horiz = 16;
+    font_char_vertic = 16;
+
+    TCOD_sys_set_fps(FPS);
+
+    TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
+    TCOD_console_init_root(screen_width, screen_height, WINDOW_TITLE, fullscreen, renderer);
 
     tile_common = (tile_common_t){
         .shadow_color = TCOD_color_RGB(16, 16, 32)};
 
-    tile_info[TILE_TYPE_FLOOR] = (tile_info_t){
+    tile_info[TILE_FLOOR] = (tile_info_t){
         .glyph = '.',
         .color = TCOD_white,
         .is_transparent = true,
         .is_walkable = true};
-    tile_info[TILE_TYPE_WALL] = (tile_info_t){
+    tile_info[TILE_WALL] = (tile_info_t){
         .glyph = '#',
         .color = TCOD_white,
         .is_transparent = false,
@@ -937,47 +1037,28 @@ int main(int argc, char *argv[])
     TCOD_list_push(maps, map);
 
     player = entity_create();
-    position_t *player_position = (position_t *)component_add(player, COMPONENT_TYPE_POSITION);
+    position_t *player_position = (position_t *)component_add(player, COMPONENT_POSITION);
     player_position->map = map;
     player_position->x = 5;
     player_position->y = 5;
     player_position->next_x = -1;
     player_position->next_y = -1;
-    physics_t *player_physics = (physics_t *)component_add(player, COMPONENT_TYPE_PHYSICS);
+    physics_t *player_physics = (physics_t *)component_add(player, COMPONENT_PHYSICS);
     player_physics->is_walkable = false;
     player_physics->is_transparent = true;
-    light_t *player_light = (light_t *)component_add(player, COMPONENT_TYPE_LIGHT);
+    light_t *player_light = (light_t *)component_add(player, COMPONENT_LIGHT);
     player_light->radius = 5;
     player_light->color = TCOD_white;
     player_light->flicker = false;
+    player_light->priority = 0;
     player_light->fov_map = NULL;
-    fov_t *player_fov = (fov_t *)component_add(player, COMPONENT_TYPE_FOV);
-    player_fov->radius = 5;
+    fov_t *player_fov = (fov_t *)component_add(player, COMPONENT_FOV);
+    player_fov->radius = 1;
     player_fov->fov_map = NULL;
-    appearance_t *player_appearance = (appearance_t *)component_add(player, COMPONENT_TYPE_APPEARANCE);
+    appearance_t *player_appearance = (appearance_t *)component_add(player, COMPONENT_APPEARANCE);
     player_appearance->name = "Blinky";
     player_appearance->glyph = '@';
     player_appearance->color = TCOD_white;
-
-    entity_t *npc = entity_create();
-    position_t *npc_position = (position_t *)component_add(npc, COMPONENT_TYPE_POSITION);
-    npc_position->map = map;
-    npc_position->x = 10;
-    npc_position->y = 10;
-    npc_position->next_x = -1;
-    npc_position->next_y = -1;
-    physics_t *npc_physics = (physics_t *)component_add(npc, COMPONENT_TYPE_PHYSICS);
-    npc_physics->is_walkable = false;
-    npc_physics->is_transparent = true;
-    light_t *npc_light = (light_t *)component_add(npc, COMPONENT_TYPE_LIGHT);
-    npc_light->radius = 5;
-    npc_light->color = TCOD_light_amber;
-    npc_light->flicker = true;
-    npc_light->fov_map = NULL;
-    appearance_t *npc_appearance = (appearance_t *)component_add(npc, COMPONENT_TYPE_APPEARANCE);
-    npc_appearance->name = "NPC";
-    npc_appearance->glyph = '@';
-    npc_appearance->color = TCOD_yellow;
 
     while (!TCOD_console_is_window_closed())
     {
@@ -986,8 +1067,8 @@ int main(int argc, char *argv[])
         if (game_status == STATUS_UPDATE)
         {
             ai_system();
-            lighting_system();
             movement_system();
+            lighting_system();
             fov_system();
         }
 
@@ -1005,7 +1086,7 @@ int main(int argc, char *argv[])
     {
         map_t *map = *iterator;
 
-        free(map);
+        map_destroy(map);
     }
 
     TCOD_list_delete(maps);

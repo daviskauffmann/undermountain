@@ -85,7 +85,7 @@ void room_destroy(room_t *room)
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
-#define NUM_MONSTERS 50
+#define NUM_MONSTERS 200
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);
 static void vline(map_t *map, int x, int y1, int y2);
@@ -152,8 +152,12 @@ map_t *map_create(int level)
         physics->is_transparent = true;
         appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
         fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
-        fov->fov_map = NULL;
         fov->radius = 5;
+        if (fov->fov_map != NULL)
+        {
+            TCOD_map_delete(fov->fov_map);
+        }
+        fov->fov_map = NULL;
         ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
         ai->type = AI_MONSTER;
         ai->energy = 1.0f;
@@ -204,7 +208,11 @@ map_t *map_create(int level)
             light->radius = 10;
             light->color = TCOD_light_amber;
             light->flicker = true;
-            light->priority = 0;
+            light->priority = LIGHT_PRIORITY_1;
+            if (light->fov_map != NULL)
+            {
+                TCOD_map_delete(light->fov_map);
+            }
             light->fov_map = NULL;
         }
     }

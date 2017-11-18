@@ -11,11 +11,15 @@ void ECS_init(void)
 {
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
-        entities[i].id = ID_UNUSED;
+        entity_t *entity = &entities[i];
+
+        entity->id = ID_UNUSED;
 
         for (int j = 0; j < NUM_COMPONENTS; j++)
         {
-            components[j][i].id = ID_UNUSED;
+            component_t *component = &components[j][i];
+
+            component->id = ID_UNUSED;
         }
     }
 }
@@ -149,6 +153,29 @@ void entity_move(entity_t *entity, int x, int y)
     }
 }
 
+void entity_swing(entity_t *entity, int x, int y)
+{
+    if (entity->id != ID_UNUSED)
+    {
+        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+        if (position != NULL && appearance != NULL)
+        {
+            tile_t *other_tile = &position->map->tiles[x][y];
+
+            if (other_tile->entity != NULL)
+            {
+                entity_attack(entity, other_tile->entity);
+            }
+            else
+            {
+                msg_log(position, TCOD_white, "%s swings at the air", appearance->name);
+            }
+        }
+    }
+}
+
 void entity_attack(entity_t *entity, entity_t *other)
 {
     if (entity->id != ID_UNUSED && other->id != ID_UNUSED)
@@ -158,19 +185,23 @@ void entity_attack(entity_t *entity, entity_t *other)
 
         appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
 
-        // TODO: calculate damage
-        msg_log(position, TCOD_white, "%s attacks %s", appearance->name, other_appearance->name);
-
-        // TODO: check health
-        if (other != player)
+        if (position != NULL && appearance != NULL &&
+            other_appearance != NULL)
         {
-            position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+            // TODO: calculate damage
+            msg_log(position, TCOD_white, "%s attacks %s", appearance->name, other_appearance->name);
 
-            msg_log(other_position, TCOD_red, "%s dies", other_appearance->name);
+            // TODO: check health
+            if (other != player)
+            {
+                position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
 
-            other_position->map->tiles[other_position->x][other_position->y].entity = NULL;
+                msg_log(other_position, TCOD_red, "%s dies", other_appearance->name);
 
-            entity_destroy(other);
+                other_position->map->tiles[other_position->x][other_position->y].entity = NULL;
+
+                entity_destroy(other);
+            }
         }
     }
 }
@@ -255,7 +286,14 @@ void input_system(void)
             int x = player_position->x;
             int y = player_position->y + 1;
 
-            entity_move(player, x, y);
+            if (key.lctrl)
+            {
+                entity_swing(player, x, y);
+            }
+            else
+            {
+                entity_move(player, x, y);
+            }
 
             break;
         }
@@ -266,7 +304,14 @@ void input_system(void)
             int x = player_position->x + 1;
             int y = player_position->y + 1;
 
-            entity_move(player, x, y);
+            if (key.lctrl)
+            {
+                entity_swing(player, x, y);
+            }
+            else
+            {
+                entity_move(player, x, y);
+            }
 
             break;
         }
@@ -277,7 +322,14 @@ void input_system(void)
             int x = player_position->x - 1;
             int y = player_position->y;
 
-            entity_move(player, x, y);
+            if (key.lctrl)
+            {
+                entity_swing(player, x, y);
+            }
+            else
+            {
+                entity_move(player, x, y);
+            }
 
             break;
         }
@@ -294,7 +346,14 @@ void input_system(void)
             int x = player_position->x + 1;
             int y = player_position->y;
 
-            entity_move(player, x, y);
+            if (key.lctrl)
+            {
+                entity_swing(player, x, y);
+            }
+            else
+            {
+                entity_move(player, x, y);
+            }
 
             break;
         }
@@ -305,7 +364,14 @@ void input_system(void)
             int x = player_position->x - 1;
             int y = player_position->y - 1;
 
-            entity_move(player, x, y);
+            if (key.lctrl)
+            {
+                entity_swing(player, x, y);
+            }
+            else
+            {
+                entity_move(player, x, y);
+            }
 
             break;
         }
@@ -316,7 +382,14 @@ void input_system(void)
             int x = player_position->x;
             int y = player_position->y - 1;
 
-            entity_move(player, x, y);
+            if (key.lctrl)
+            {
+                entity_swing(player, x, y);
+            }
+            else
+            {
+                entity_move(player, x, y);
+            }
 
             break;
         }
@@ -327,7 +400,14 @@ void input_system(void)
             int x = player_position->x + 1;
             int y = player_position->y - 1;
 
-            entity_move(player, x, y);
+            if (key.lctrl)
+            {
+                entity_swing(player, x, y);
+            }
+            else
+            {
+                entity_move(player, x, y);
+            }
 
             break;
         }
@@ -454,6 +534,24 @@ void lighting_system(void)
 
 void fov_system(void)
 {
+    TCOD_list_t light_entities = TCOD_list_new();
+
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        entity_t *entity = &entities[i];
+
+        if (entity->id != ID_UNUSED)
+        {
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+
+            if (position != NULL && light != NULL)
+            {
+                TCOD_list_push(light_entities, entity);
+            }
+        }
+    }
+
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
         entity_t *entity = &entities[i];
@@ -471,24 +569,6 @@ void fov_system(void)
                 }
 
                 fov->fov_map = map_to_fov_map(position->map, position->x, position->y, fov->radius);
-
-                TCOD_list_t light_entities = TCOD_list_new();
-
-                for (int i = 0; i < MAX_ENTITIES; i++)
-                {
-                    entity_t *entity = &entities[i];
-
-                    if (entity->id != ID_UNUSED)
-                    {
-                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                        if (position != NULL && light != NULL)
-                        {
-                            TCOD_list_push(light_entities, entity);
-                        }
-                    }
-                }
 
                 TCOD_map_t los_map = map_to_fov_map(position->map, position->x, position->y, 0);
 
@@ -517,11 +597,11 @@ void fov_system(void)
                 }
 
                 TCOD_map_delete(los_map);
-
-                TCOD_list_delete(light_entities);
             }
         }
     }
+
+    TCOD_list_delete(light_entities);
 }
 
 #define CONSTRAIN_VIEW 1
@@ -584,7 +664,12 @@ void render_system(void)
 
     // TODO: sort lights so that certain types get priority when drawing
     // torches > stationary lights > entity glow
-    TCOD_list_t light_entities = TCOD_list_new();
+    TCOD_list_t light_entities[NUM_LIGHT_PRIORITIES];
+
+    for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+    {
+        light_entities[i] = TCOD_list_new();
+    }
 
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
@@ -597,7 +682,7 @@ void render_system(void)
 
             if (position != NULL && light != NULL)
             {
-                TCOD_list_push(light_entities, entity);
+                TCOD_list_push(light_entities[light->priority], entity);
             }
         }
     }
@@ -617,15 +702,18 @@ void render_system(void)
                     tile->seen = true;
                 }
 
-                for (void **iterator = TCOD_list_begin(light_entities); iterator != TCOD_list_end(light_entities); iterator++)
+                for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
                 {
-                    entity_t *entity = *iterator;
-
-                    light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                    if (TCOD_map_is_in_fov(light->fov_map, x, y))
+                    for (void **iterator = TCOD_list_begin(light_entities[i]); iterator != TCOD_list_end(light_entities[i]); iterator++)
                     {
-                        tile->seen = true;
+                        entity_t *entity = *iterator;
+
+                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+
+                        if (TCOD_map_is_in_fov(light->fov_map, x, y))
+                        {
+                            tile->seen = true;
+                        }
                     }
                 }
 
@@ -633,20 +721,23 @@ void render_system(void)
 
                 if (TCOD_map_is_in_fov(player_fov->fov_map, x, y) || tile->seen)
                 {
-                    for (void **iterator = TCOD_list_begin(light_entities); iterator != TCOD_list_end(light_entities); iterator++)
+                    for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
                     {
-                        entity_t *entity = *iterator;
-
-                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                        if (TCOD_map_is_in_fov(light->fov_map, x, y))
+                        for (void **iterator = TCOD_list_begin(light_entities[i]); iterator != TCOD_list_end(light_entities[i]); iterator++)
                         {
-                            float r2 = pow(light->radius, 2);
-                            float d = pow(x - position->x + (light->flicker ? dx : 0), 2) + pow(y - position->y + (light->flicker ? dy : 0), 2);
-                            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (light->flicker ? di : 0));
+                            entity_t *entity = *iterator;
 
-                            color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, light->color, l), l);
+                            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+
+                            if (TCOD_map_is_in_fov(light->fov_map, x, y))
+                            {
+                                float r2 = pow(light->radius, 2);
+                                float d = pow(x - position->x + (light->flicker ? dx : 0), 2) + pow(y - position->y + (light->flicker ? dy : 0), 2);
+                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (light->flicker ? di : 0));
+
+                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, light->color, l), l);
+                            }
                         }
                     }
                 }
@@ -664,7 +755,10 @@ void render_system(void)
         }
     }
 
-    TCOD_list_delete(light_entities);
+    for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+    {
+        TCOD_list_delete(light_entities[i]);
+    }
 
     // TODO: maybe store a list of all entities on a given map?
     for (int i = 0; i < MAX_ENTITIES; i++)

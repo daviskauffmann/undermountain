@@ -17,7 +17,7 @@ void game_init(void)
 
 void game_new(void)
 {
-    game_status = STATUS_WAITING;
+    game_status = STATUS_UPDATE;
     turn = 0;
 
     map_t *map = map_create(0);
@@ -37,10 +37,18 @@ void game_new(void)
     player_light->radius = 5;
     player_light->color = TCOD_white;
     player_light->flicker = false;
-    player_light->priority = 0;
+    player_light->priority = LIGHT_PRIORITY_0;
+    if (player_light->fov_map != NULL)
+    {
+        TCOD_map_delete(player_light->fov_map);
+    }
     player_light->fov_map = NULL;
     fov_t *player_fov = (fov_t *)component_add(player, COMPONENT_FOV);
     player_fov->radius = 1;
+    if (player_fov->fov_map != NULL)
+    {
+        TCOD_map_delete(player_fov->fov_map);
+    }
     player_fov->fov_map = NULL;
     appearance_t *player_appearance = (appearance_t *)component_add(player, COMPONENT_APPEARANCE);
     player_appearance->name = "Blinky";

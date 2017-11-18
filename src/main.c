@@ -20,12 +20,11 @@ int main(int argc, char *argv[])
     while (!TCOD_console_is_window_closed())
     {
         input_system();
-        lighting_system();
-        fov_system();
 
         if (game_status == STATUS_UPDATE)
         {
-
+            lighting_system();
+            fov_system();
             ai_system();
             movement_system();
 

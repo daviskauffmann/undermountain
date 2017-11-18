@@ -21,6 +21,7 @@ entity_t *entity_create(void);
 void entity_path_towards(entity_t *entity, int x, int y);
 void entity_move_towards(entity_t *entity, int x, int y);
 void entity_move(entity_t *entity, int x, int y);
+void entity_swing(entity_t *entity, int x, int y);
 void entity_attack(entity_t *entity, entity_t *other);
 void entity_destroy(entity_t *entity);
 
@@ -63,12 +64,19 @@ typedef struct physics_s
     bool is_transparent;
 } physics_t;
 
+typedef enum light_type_e {
+    LIGHT_PRIORITY_0,
+    LIGHT_PRIORITY_1,
+
+    NUM_LIGHT_PRIORITIES
+} light_priority_t;
+
 typedef struct light_s
 {
     int radius;
     TCOD_color_t color;
     bool flicker;
-    int priority;
+    light_priority_t priority;
     TCOD_map_t fov_map;
 } light_t;
 

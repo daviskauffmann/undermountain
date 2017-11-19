@@ -55,6 +55,11 @@ void game_new(void)
     player_appearance->glyph = '@';
     player_appearance->color = TCOD_white;
     player_appearance->layer = LAYER_1;
+    health_t *player_health = (health_t *)component_add(player, COMPONENT_HEALTH);
+    player_health->max = 20;
+    player_health->current = player_health->max;
+    alignment_t *player_alignment = (alignment_t *)component_add(player, COMPONENT_ALIGNMENT);
+    player_alignment->type = ALIGNMENT_GOOD;
 
     entity_t *pet = entity_create();
     position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
@@ -91,6 +96,11 @@ void game_new(void)
     pet_ai->type = AI_PET;
     pet_ai->energy = 1.0f;
     pet_ai->energy_per_turn = 0.5f;
+    health_t *pet_health = (health_t *)component_add(pet, COMPONENT_HEALTH);
+    pet_health->max = 20;
+    pet_health->current = pet_health->max;
+    alignment_t *pet_alignment = (alignment_t *)component_add(pet, COMPONENT_ALIGNMENT);
+    pet_alignment->type = ALIGNMENT_GOOD;
 
     msg_log(NULL, TCOD_white, "Hail, %s!", player_appearance->name);
 }

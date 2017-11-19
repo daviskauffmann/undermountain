@@ -153,22 +153,25 @@ void entity_move(entity_t *entity, int x, int y)
                             }
                         }
 
-                        ai_t *other_ai = (ai_t *)component_get(other, COMPONENT_AI);
-
                         // TODO: properly check for combat
-                        if (other_ai != NULL)
+
+                        health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+
+                        if (other_health != NULL)
                         {
-                            ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
+                            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
+                            alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
 
-                            can_move = false;
-
-                            if (other_ai->type == AI_MONSTER && (ai == NULL || ai->type != AI_MONSTER))
+                            if (alignment != NULL && other_alignment != NULL && alignment->type != other_alignment->type)
                             {
                                 entity_attack(entity, other);
                             }
-                            else if (other != player)
+                            else
                             {
-                                entity_swap(entity, other);
+                                if (entity == player)
+                                {
+                                    entity_swap(entity, other);
+                                }
                             }
                         }
                     }
@@ -244,7 +247,9 @@ void entity_swing(entity_t *entity, int x, int y)
             {
                 entity_t *other = *iterator;
 
-                if (other != NULL)
+                health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+
+                if (other_health != NULL)
                 {
                     hit = true;
 
@@ -272,17 +277,37 @@ void entity_attack(entity_t *entity, entity_t *other)
 
         position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
         appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
+        health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
 
         if (position != NULL && appearance != NULL &&
-            other_position != NULL && other_appearance != NULL)
+            other_position != NULL && other_appearance != NULL && other_health != NULL)
         {
             // TODO: calculate damage
-            msg_log(position, TCOD_white, "%s attacks %s", appearance->name, other_appearance->name);
+            bool hit = TCOD_random_get_int(NULL, 0, 4) > 0;
 
-            // TODO: check health
-            if (other != player)
+            if (hit)
             {
-                entity_die(other);
+                if (other == player)
+                {
+                    msg_log(position, TCOD_white, "%s's attack fizzles", appearance->name);
+                }
+                else
+                {
+                    int damage = TCOD_random_get_int(NULL, 1, 8);
+
+                    msg_log(position, TCOD_white, "%s attacks %s for %d", appearance->name, other_appearance->name, damage);
+
+                    other_health->current -= damage;
+
+                    if (other_health->current <= 0)
+                    {
+                        entity_die(other);
+                    }
+                }
+            }
+            else
+            {
+                msg_log(position, TCOD_white, "%s misses", appearance->name);
             }
         }
     }
@@ -306,8 +331,9 @@ void entity_die(entity_t *entity)
             appearance->layer = LAYER_0;
 
             component_remove(entity, COMPONENT_AI);
-
             component_remove(entity, COMPONENT_LIGHT);
+            component_remove(entity, COMPONENT_HEALTH);
+            component_remove(entity, COMPONENT_ALIGNMENT);
         }
     }
 }
@@ -362,208 +388,213 @@ void input_system(void)
 
     position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
 
-    switch (ev)
+    if (player_position != NULL)
     {
-    case TCOD_EVENT_KEY_PRESS:
-    {
-        switch (key.vk)
+        switch (ev)
         {
-        case TCODK_ESCAPE:
+        case TCOD_EVENT_KEY_PRESS:
         {
-            game_status = STATUS_QUIT;
-
-            break;
-        }
-        case TCODK_KP1:
-        {
-            game_status = STATUS_UPDATE;
-
-            int x = player_position->x - 1;
-            int y = player_position->y + 1;
-
-            entity_move(player, x, y);
-
-            break;
-        }
-        case TCODK_KP2:
-        {
-            game_status = STATUS_UPDATE;
-
-            int x = player_position->x;
-            int y = player_position->y + 1;
-
-            if (key.lctrl)
+            switch (key.vk)
             {
-                entity_swing(player, x, y);
-            }
-            else
+            case TCODK_ESCAPE:
             {
-                entity_move(player, x, y);
-            }
-
-            break;
-        }
-        case TCODK_KP3:
-        {
-            game_status = STATUS_UPDATE;
-
-            int x = player_position->x + 1;
-            int y = player_position->y + 1;
-
-            if (key.lctrl)
-            {
-                entity_swing(player, x, y);
-            }
-            else
-            {
-                entity_move(player, x, y);
-            }
-
-            break;
-        }
-        case TCODK_KP4:
-        {
-            game_status = STATUS_UPDATE;
-
-            int x = player_position->x - 1;
-            int y = player_position->y;
-
-            if (key.lctrl)
-            {
-                entity_swing(player, x, y);
-            }
-            else
-            {
-                entity_move(player, x, y);
-            }
-
-            break;
-        }
-        case TCODK_KP5:
-        {
-            game_status = STATUS_UPDATE;
-
-            break;
-        }
-        case TCODK_KP6:
-        {
-            game_status = STATUS_UPDATE;
-
-            int x = player_position->x + 1;
-            int y = player_position->y;
-
-            if (key.lctrl)
-            {
-                entity_swing(player, x, y);
-            }
-            else
-            {
-                entity_move(player, x, y);
-            }
-
-            break;
-        }
-        case TCODK_KP7:
-        {
-            game_status = STATUS_UPDATE;
-
-            int x = player_position->x - 1;
-            int y = player_position->y - 1;
-
-            if (key.lctrl)
-            {
-                entity_swing(player, x, y);
-            }
-            else
-            {
-                entity_move(player, x, y);
-            }
-
-            break;
-        }
-        case TCODK_KP8:
-        {
-            game_status = STATUS_UPDATE;
-
-            int x = player_position->x;
-            int y = player_position->y - 1;
-
-            if (key.lctrl)
-            {
-                entity_swing(player, x, y);
-            }
-            else
-            {
-                entity_move(player, x, y);
-            }
-
-            break;
-        }
-        case TCODK_KP9:
-        {
-            game_status = STATUS_UPDATE;
-
-            int x = player_position->x + 1;
-            int y = player_position->y - 1;
-
-            if (key.lctrl)
-            {
-                entity_swing(player, x, y);
-            }
-            else
-            {
-                entity_move(player, x, y);
-            }
-
-            break;
-        }
-        case TCODK_CHAR:
-        {
-            switch (key.c)
-            {
-            case 'r':
-            {
-                game_reset();
-                world_reset();
-                ECS_reset();
-
-                ECS_init();
-                world_init();
-                game_init();
-
-                game_new();
+                game_status = STATUS_QUIT;
 
                 break;
             }
-            case 't':
+            case TCODK_KP1:
             {
-                static bool torch = false;
+                game_status = STATUS_UPDATE;
 
-                light_t *player_light = (light_t *)component_get(player, COMPONENT_LIGHT);
+                int x = player_position->x - 1;
+                int y = player_position->y + 1;
 
-                torch = !torch;
+                entity_move(player, x, y);
 
-                if (torch)
+                break;
+            }
+            case TCODK_KP2:
+            {
+                game_status = STATUS_UPDATE;
+
+                int x = player_position->x;
+                int y = player_position->y + 1;
+
+                if (key.lctrl)
                 {
-                    player_light->radius = 10;
-                    player_light->color = TCOD_light_amber;
-                    player_light->priority = LIGHT_PRIORITY_1;
+                    entity_swing(player, x, y);
                 }
                 else
                 {
-                    player_light->radius = 5;
-                    player_light->color = TCOD_white;
-                    player_light->priority = LIGHT_PRIORITY_0;
+                    entity_move(player, x, y);
+                }
+
+                break;
+            }
+            case TCODK_KP3:
+            {
+                game_status = STATUS_UPDATE;
+
+                int x = player_position->x + 1;
+                int y = player_position->y + 1;
+
+                if (key.lctrl)
+                {
+                    entity_swing(player, x, y);
+                }
+                else
+                {
+                    entity_move(player, x, y);
+                }
+
+                break;
+            }
+            case TCODK_KP4:
+            {
+                game_status = STATUS_UPDATE;
+
+                int x = player_position->x - 1;
+                int y = player_position->y;
+
+                if (key.lctrl)
+                {
+                    entity_swing(player, x, y);
+                }
+                else
+                {
+                    entity_move(player, x, y);
+                }
+
+                break;
+            }
+            case TCODK_KP5:
+            {
+                game_status = STATUS_UPDATE;
+
+                break;
+            }
+            case TCODK_KP6:
+            {
+                game_status = STATUS_UPDATE;
+
+                int x = player_position->x + 1;
+                int y = player_position->y;
+
+                if (key.lctrl)
+                {
+                    entity_swing(player, x, y);
+                }
+                else
+                {
+                    entity_move(player, x, y);
+                }
+
+                break;
+            }
+            case TCODK_KP7:
+            {
+                game_status = STATUS_UPDATE;
+
+                int x = player_position->x - 1;
+                int y = player_position->y - 1;
+
+                if (key.lctrl)
+                {
+                    entity_swing(player, x, y);
+                }
+                else
+                {
+                    entity_move(player, x, y);
+                }
+
+                break;
+            }
+            case TCODK_KP8:
+            {
+                game_status = STATUS_UPDATE;
+
+                int x = player_position->x;
+                int y = player_position->y - 1;
+
+                if (key.lctrl)
+                {
+                    entity_swing(player, x, y);
+                }
+                else
+                {
+                    entity_move(player, x, y);
+                }
+
+                break;
+            }
+            case TCODK_KP9:
+            {
+                game_status = STATUS_UPDATE;
+
+                int x = player_position->x + 1;
+                int y = player_position->y - 1;
+
+                if (key.lctrl)
+                {
+                    entity_swing(player, x, y);
+                }
+                else
+                {
+                    entity_move(player, x, y);
+                }
+
+                break;
+            }
+            case TCODK_CHAR:
+            {
+                switch (key.c)
+                {
+                case 'r':
+                {
+                    game_reset();
+                    world_reset();
+                    ECS_reset();
+
+                    ECS_init();
+                    world_init();
+                    game_init();
+
+                    game_new();
+
+                    break;
+                }
+                case 't':
+                {
+                    game_status = STATUS_UPDATE;
+
+                    static bool torch = false;
+
+                    light_t *player_light = (light_t *)component_get(player, COMPONENT_LIGHT);
+
+                    torch = !torch;
+
+                    if (torch)
+                    {
+                        player_light->radius = 10;
+                        player_light->color = TCOD_light_amber;
+                        player_light->priority = LIGHT_PRIORITY_1;
+                    }
+                    else
+                    {
+                        player_light->radius = 5;
+                        player_light->color = TCOD_white;
+                        player_light->priority = LIGHT_PRIORITY_0;
+                    }
+
+                    break;
+                }
                 }
 
                 break;
             }
             }
-
-            break;
         }
         }
-    }
     }
 }
 
@@ -596,18 +627,21 @@ void ai_system(void)
 
                             position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
 
-                            // TODO: properly look for all hostile targets
-                            if (TCOD_map_is_in_fov(fov->fov_map, player_position->x, player_position->y))
+                            if (player_position != NULL)
                             {
-                                target_found = true;
+                                // TODO: properly look for all hostile targets
+                                if (TCOD_map_is_in_fov(fov->fov_map, player_position->x, player_position->y))
+                                {
+                                    target_found = true;
 
-                                if (distance(position->x, position->y, player_position->x, player_position->y) < 2.0f)
-                                {
-                                    entity_attack(entity, player);
-                                }
-                                else
-                                {
-                                    entity_path_towards(entity, player_position->x, player_position->y);
+                                    if (distance(position->x, position->y, player_position->x, player_position->y) < 2.0f)
+                                    {
+                                        entity_attack(entity, player);
+                                    }
+                                    else
+                                    {
+                                        entity_path_towards(entity, player_position->x, player_position->y);
+                                    }
                                 }
                             }
 
@@ -653,14 +687,17 @@ void ai_system(void)
                             {
                                 position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
 
-                                if (TCOD_map_is_in_fov(fov->fov_map, player_position->x, player_position->y) &&
-                                    distance(position->x, position->y, player_position->x, player_position->y) < 5.0f)
+                                if (player_position != NULL)
                                 {
-                                    entity_move_random(entity);
-                                }
-                                else
-                                {
-                                    entity_path_towards(entity, player_position->x, player_position->y);
+                                    if (TCOD_map_is_in_fov(fov->fov_map, player_position->x, player_position->y) &&
+                                        distance(position->x, position->y, player_position->x, player_position->y) < 5.0f)
+                                    {
+                                        entity_move_random(entity);
+                                    }
+                                    else
+                                    {
+                                        entity_path_towards(entity, player_position->x, player_position->y);
+                                    }
                                 }
                             }
                         }
@@ -755,55 +792,6 @@ void fov_system(void)
     TCOD_list_delete(light_entities);
 }
 
-// TODO: is this necessary? or should we just make sure to update these references only when things happen
-void positioning_system(void)
-{
-    TCOD_list_t position_entities = TCOD_list_new();
-
-    for (int i = 0; i < MAX_ENTITIES; i++)
-    {
-        entity_t *entity = &entities[i];
-
-        if (entity->id != ID_UNUSED)
-        {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-
-            if (position != NULL)
-            {
-                TCOD_list_push(position_entities, entity);
-            }
-        }
-    }
-
-    for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
-    {
-        map_t *map = *iterator;
-
-        for (int x = 0; x < MAP_WIDTH; x++)
-        {
-            for (int y = 0; y < MAP_HEIGHT; y++)
-            {
-                tile_t *tile = &map->tiles[x][y];
-
-                TCOD_list_clear(tile->entities);
-
-                for (void **iterator = TCOD_list_begin(position_entities); iterator != TCOD_list_end(position_entities); iterator++)
-                {
-                    entity_t *entity = *iterator;
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-
-                    if (position->map == map && position->x == x && position->y == y)
-                    {
-                        TCOD_list_push(tile->entities, entity);
-                    }
-                }
-            }
-        }
-    }
-
-    TCOD_list_delete(position_entities);
-}
-
 #define CONSTRAIN_VIEW 1
 
 void render_system(void)
@@ -831,8 +819,11 @@ void render_system(void)
 
     view_width = screen_width;
     view_height = screen_height - msg_height;
-    view_x = player_position->x - view_width / 2;
-    view_y = player_position->y - view_height / 2;
+    if (player_position != NULL)
+    {
+        view_x = player_position->x - view_width / 2;
+        view_y = player_position->y - view_height / 2;
+    }
 
 #if CONSTRAIN_VIEW
     view_x = view_x < 0

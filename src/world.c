@@ -163,6 +163,11 @@ map_t *map_create(int level)
         ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
         ai->type = AI_MONSTER;
         ai->energy = 1.0f;
+        health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
+        health->max = TCOD_random_get_int(NULL, 10, 20);
+        health->current = health->max;
+        alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
+        alignment->type = ALIGNMENT_EVIL;
 
         switch (TCOD_random_get_int(NULL, 0, 3))
         {
@@ -439,18 +444,25 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
 
             bool is_walkable = tile_info[tile->type].is_walkable;
 
-            // if (tile->entity != NULL)
-            // {
-            //     if (tile->entity->id != ID_UNUSED)
-            //     {
-            //         physics_t *physics = (physics_t *)component_get(tile->entity, COMPONENT_PHYSICS);
+            for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
+            {
+                entity_t *entity = *iterator;
 
-            //         if (physics != NULL)
-            //         {
-            //             is_walkable = physics->is_walkable;
-            //         }
-            //     }
-            // }
+                if (entity->id != ID_UNUSED)
+                {
+                    physics_t *physics = (physics_t *)component_get(entity, COMPONENT_PHYSICS);
+
+                    if (physics != NULL)
+                    {
+                        if (!physics->is_walkable)
+                        {
+                            is_walkable = false;
+
+                            break;
+                        }
+                    }
+                }
+            }
 
             TCOD_map_set_properties(TCOD_map, x, y, tile_info[tile->type].is_transparent, is_walkable);
         }

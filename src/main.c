@@ -21,8 +21,6 @@ int main(int argc, char *argv[])
     {
         input_system();
 
-        // positioning_system();
-
         if (game_status == STATUS_UPDATE)
         {
             fov_system();

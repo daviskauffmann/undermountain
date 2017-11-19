@@ -36,6 +36,8 @@ typedef enum component_type_e {
     COMPONENT_FOV,
     COMPONENT_APPEARANCE,
     COMPONENT_AI,
+    COMPONENT_HEALTH,
+    COMPONENT_ALIGNMENT,
 
     NUM_COMPONENTS
 } component_type_t;
@@ -103,6 +105,22 @@ typedef struct appearance_s
     layer_t layer;
 } appearance_t;
 
+typedef struct health_s
+{
+    int max;
+    int current;
+} health_t;
+
+typedef enum alignment_type_e {
+    ALIGNMENT_GOOD,
+    ALIGNMENT_EVIL,
+} alignment_type_t;
+
+typedef struct alignment_s
+{
+    alignment_type_t type;
+} alignment_t;
+
 typedef struct component_s
 {
     int id;
@@ -114,6 +132,8 @@ typedef struct component_s
         light_t light;
         fov_t fov;
         appearance_t appearance;
+        health_t health;
+        alignment_t alignment;
     };
 } component_t;
 
@@ -127,7 +147,6 @@ void component_remove(entity_t *entity, component_type_t component_type);
 void input_system(void);
 void ai_system(void);
 void fov_system(void);
-void positioning_system(void);
 void render_system(void);
 
 #endif

@@ -21,12 +21,12 @@ int main(int argc, char *argv[])
     {
         input_system();
 
+        // positioning_system();
+
         if (game_status == STATUS_UPDATE)
         {
-            lighting_system();
             fov_system();
             ai_system();
-            movement_system();
 
             game_status = STATUS_WAITING;
             turn++;

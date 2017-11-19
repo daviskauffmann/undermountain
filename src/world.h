@@ -37,13 +37,13 @@ typedef struct tile_s
 {
     tile_type_t type;
     bool seen;
-    entity_t *entity;
+    TCOD_list_t entities;
 } tile_t;
 
 tile_common_t tile_common;
 tile_info_t tile_info[NUM_TILES];
 
-void tile_init(tile_t *tile, tile_type_t type, bool seen, entity_t *entity);
+void tile_init(tile_t *tile, tile_type_t type, bool seen);
 void tile_reset(tile_t *tile);
 
 /* Rooms */

@@ -1,11 +1,12 @@
 #include <libtcod.h>
 #include <math.h>
 
+#include "ECS.h"
+#include "CMemLeak.h"
 #include "utils.h"
 #include "config.h"
 #include "game.h"
 #include "world.h"
-#include "ECS.h"
 
 void ECS_init(void)
 {
@@ -89,10 +90,29 @@ void entity_move_towards(entity_t *entity, int x, int y)
             int dy = y - position->y;
             float distance = distance(position->x, position->y, x, y);
 
-            dx = round(dx / distance);
-            dy = round(dy / distance);
+            if (distance > 0)
+            {
+                dx = round(dx / distance);
+                dy = round(dy / distance);
 
-            entity_move(entity, position->x + dx, position->y + dy);
+                entity_move(entity, position->x + dx, position->y + dy);
+            }
+        }
+    }
+}
+
+void entity_move_random(entity_t *entity)
+{
+    if (entity->id != ID_UNUSED)
+    {
+        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+        if (position != NULL)
+        {
+            int x = position->x + TCOD_random_get_int(NULL, -1, 1);
+            int y = position->y + TCOD_random_get_int(NULL, -1, 1);
+
+            entity_move(entity, x, y);
         }
     }
 }
@@ -115,26 +135,40 @@ void entity_move(entity_t *entity, int x, int y)
                 can_move = false;
             }
 
-            if (next_tile->entity != NULL)
+            for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
             {
-                if (next_tile->entity->id != ID_UNUSED)
+                entity_t *other = *iterator;
+
+                if (other != NULL)
                 {
-                    // TODO: check for combat
-                    if (true)
+                    if (other->id != ID_UNUSED)
                     {
-                        can_move = false;
+                        physics_t *other_physics = (physics_t *)component_get(other, COMPONENT_PHYSICS);
 
-                        entity_attack(entity, next_tile->entity);
-                    }
-                    else
-                    {
-                        physics_t *physics = (physics_t *)component_get(next_tile->entity, COMPONENT_PHYSICS);
-
-                        if (physics != NULL)
+                        if (other_physics != NULL)
                         {
-                            if (!physics->is_walkable)
+                            if (!other_physics->is_walkable)
                             {
                                 can_move = false;
+                            }
+                        }
+
+                        ai_t *other_ai = (ai_t *)component_get(other, COMPONENT_AI);
+
+                        // TODO: properly check for combat
+                        if (other_ai != NULL)
+                        {
+                            ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
+
+                            can_move = false;
+
+                            if (other_ai->type == AI_MONSTER && (ai == NULL || ai->type != AI_MONSTER))
+                            {
+                                entity_attack(entity, other);
+                            }
+                            else if (other != player)
+                            {
+                                entity_swap(entity, other);
                             }
                         }
                     }
@@ -146,8 +180,48 @@ void entity_move(entity_t *entity, int x, int y)
                 position->x = x;
                 position->y = y;
 
-                current_tile->entity = NULL;
-                next_tile->entity = entity;
+                TCOD_list_remove(current_tile->entities, entity);
+                TCOD_list_push(next_tile->entities, entity);
+            }
+        }
+    }
+}
+
+void entity_swap(entity_t *entity, entity_t *other)
+{
+    if (entity->id != ID_UNUSED &&
+        other->id != ID_UNUSED)
+    {
+        if (entity != other)
+        {
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+            position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+            appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
+
+            if (position != NULL && appearance != NULL &&
+                other_position != NULL && other_appearance != NULL)
+            {
+                msg_log(position, TCOD_white, "%s swaps with %s", appearance->name, other_appearance->name);
+
+                tile_t *tile = &position->map->tiles[position->x][position->y];
+                tile_t *other_tile = &other_position->map->tiles[other_position->x][other_position->y];
+
+                int x = position->x;
+                int y = position->y;
+
+                position->x = other_position->x;
+                position->y = other_position->y;
+
+                other_position->x = x;
+                other_position->y = y;
+
+                TCOD_list_remove(tile->entities, entity);
+                TCOD_list_push(other_tile->entities, entity);
+
+                TCOD_list_remove(other_tile->entities, other);
+                TCOD_list_push(tile->entities, other);
             }
         }
     }
@@ -164,11 +238,23 @@ void entity_swing(entity_t *entity, int x, int y)
         {
             tile_t *other_tile = &position->map->tiles[x][y];
 
-            if (other_tile->entity != NULL)
+            bool hit = false;
+
+            for (void **iterator = TCOD_list_begin(other_tile->entities); iterator != TCOD_list_end(other_tile->entities); iterator++)
             {
-                entity_attack(entity, other_tile->entity);
+                entity_t *other = *iterator;
+
+                if (other != NULL)
+                {
+                    hit = true;
+
+                    entity_attack(entity, other);
+
+                    break;
+                }
             }
-            else
+
+            if (!hit)
             {
                 msg_log(position, TCOD_white, "%s swings at the air", appearance->name);
             }
@@ -178,15 +264,17 @@ void entity_swing(entity_t *entity, int x, int y)
 
 void entity_attack(entity_t *entity, entity_t *other)
 {
-    if (entity->id != ID_UNUSED && other->id != ID_UNUSED)
+    if (entity->id != ID_UNUSED &&
+        other->id != ID_UNUSED)
     {
         position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
         appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
 
+        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
         appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
 
         if (position != NULL && appearance != NULL &&
-            other_appearance != NULL)
+            other_position != NULL && other_appearance != NULL)
         {
             // TODO: calculate damage
             msg_log(position, TCOD_white, "%s attacks %s", appearance->name, other_appearance->name);
@@ -194,14 +282,32 @@ void entity_attack(entity_t *entity, entity_t *other)
             // TODO: check health
             if (other != player)
             {
-                position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-
-                msg_log(other_position, TCOD_red, "%s dies", other_appearance->name);
-
-                other_position->map->tiles[other_position->x][other_position->y].entity = NULL;
-
-                entity_destroy(other);
+                entity_die(other);
             }
+        }
+    }
+}
+
+void entity_die(entity_t *entity)
+{
+    if (entity->id != ID_UNUSED)
+    {
+        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+        physics_t *physics = (physics_t *)component_get(entity, COMPONENT_PHYSICS);
+        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+        if (position != NULL && physics != NULL && appearance != NULL)
+        {
+            msg_log(position, TCOD_red, "%s dies", appearance->name);
+
+            physics->is_walkable = true;
+
+            appearance->glyph = '%';
+            appearance->layer = LAYER_0;
+
+            component_remove(entity, COMPONENT_AI);
+
+            component_remove(entity, COMPONENT_LIGHT);
         }
     }
 }
@@ -429,6 +535,29 @@ void input_system(void)
 
                 break;
             }
+            case 't':
+            {
+                static bool torch = false;
+
+                light_t *player_light = (light_t *)component_get(player, COMPONENT_LIGHT);
+
+                torch = !torch;
+
+                if (torch)
+                {
+                    player_light->radius = 10;
+                    player_light->color = TCOD_light_amber;
+                    player_light->priority = LIGHT_PRIORITY_1;
+                }
+                else
+                {
+                    player_light->radius = 5;
+                    player_light->color = TCOD_white;
+                    player_light->priority = LIGHT_PRIORITY_0;
+                }
+
+                break;
+            }
             }
 
             break;
@@ -461,16 +590,73 @@ void ai_system(void)
                         position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
                         fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
 
-                        position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
-
                         if (position != NULL && fov != NULL)
                         {
+                            bool target_found = false;
+
+                            position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
+
                             // TODO: properly look for all hostile targets
                             if (TCOD_map_is_in_fov(fov->fov_map, player_position->x, player_position->y))
                             {
+                                target_found = true;
+
                                 if (distance(position->x, position->y, player_position->x, player_position->y) < 2.0f)
                                 {
                                     entity_attack(entity, player);
+                                }
+                                else
+                                {
+                                    entity_path_towards(entity, player_position->x, player_position->y);
+                                }
+                            }
+
+                            if (!target_found)
+                            {
+                                entity_move_random(entity);
+                            }
+                        }
+
+                        break;
+                    }
+                    case AI_PET:
+                    {
+                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                        fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
+
+                        if (position != NULL && fov != NULL)
+                        {
+                            bool target_found = false;
+
+                            for (int i = 0; i < MAX_ENTITIES; i++)
+                            {
+                                entity_t *other = &entities[i];
+
+                                if (other->id != ID_UNUSED)
+                                {
+                                    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+                                    ai_t *other_ai = (ai_t *)component_get(other, COMPONENT_AI);
+
+                                    if (other_position != NULL && other_ai != NULL)
+                                    {
+                                        if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) && other_ai->type == AI_MONSTER)
+                                        {
+                                            target_found = true;
+
+                                            entity_path_towards(entity, other_position->x, other_position->y);
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!target_found)
+                            {
+                                position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
+
+                                if (TCOD_map_is_in_fov(fov->fov_map, player_position->x, player_position->y) &&
+                                    distance(position->x, position->y, player_position->x, player_position->y) < 5.0f)
+                                {
+                                    entity_move_random(entity);
                                 }
                                 else
                                 {
@@ -485,48 +671,6 @@ void ai_system(void)
 
                     ai->energy -= 1.0f;
                 }
-            }
-        }
-    }
-}
-
-void movement_system(void)
-{
-    for (int i = 0; i < MAX_ENTITIES; i++)
-    {
-        entity_t *entity = &entities[i];
-
-        if (entity->id != ID_UNUSED)
-        {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-
-            if (position != NULL)
-            {
-                position->map->tiles[position->x][position->y].entity = entity;
-            }
-        }
-    }
-}
-
-void lighting_system(void)
-{
-    for (int i = 0; i < MAX_ENTITIES; i++)
-    {
-        entity_t *entity = &entities[i];
-
-        if (entity->id != ID_UNUSED)
-        {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-            if (position != NULL && light != NULL)
-            {
-                if (light->fov_map != NULL)
-                {
-                    TCOD_map_delete(light->fov_map);
-                }
-
-                light->fov_map = map_to_fov_map(position->map, position->x, position->y, light->radius);
             }
         }
     }
@@ -547,6 +691,13 @@ void fov_system(void)
 
             if (position != NULL && light != NULL)
             {
+                if (light->fov_map != NULL)
+                {
+                    TCOD_map_delete(light->fov_map);
+                }
+
+                light->fov_map = map_to_fov_map(position->map, position->x, position->y, light->radius);
+
                 TCOD_list_push(light_entities, entity);
             }
         }
@@ -602,6 +753,55 @@ void fov_system(void)
     }
 
     TCOD_list_delete(light_entities);
+}
+
+// TODO: is this necessary? or should we just make sure to update these references only when things happen
+void positioning_system(void)
+{
+    TCOD_list_t position_entities = TCOD_list_new();
+
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        entity_t *entity = &entities[i];
+
+        if (entity->id != ID_UNUSED)
+        {
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+            if (position != NULL)
+            {
+                TCOD_list_push(position_entities, entity);
+            }
+        }
+    }
+
+    for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
+    {
+        map_t *map = *iterator;
+
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            for (int y = 0; y < MAP_HEIGHT; y++)
+            {
+                tile_t *tile = &map->tiles[x][y];
+
+                TCOD_list_clear(tile->entities);
+
+                for (void **iterator = TCOD_list_begin(position_entities); iterator != TCOD_list_end(position_entities); iterator++)
+                {
+                    entity_t *entity = *iterator;
+                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+                    if (position->map == map && position->x == x && position->y == y)
+                    {
+                        TCOD_list_push(tile->entities, entity);
+                    }
+                }
+            }
+        }
+    }
+
+    TCOD_list_delete(position_entities);
 }
 
 #define CONSTRAIN_VIEW 1
@@ -664,11 +864,17 @@ void render_system(void)
 
     // TODO: sort lights so that certain types get priority when drawing
     // torches > stationary lights > entity glow
-    TCOD_list_t light_entities[NUM_LIGHT_PRIORITIES];
+    TCOD_list_t entities_by_layer[NUM_LAYERS];
+    TCOD_list_t lights_by_priority[NUM_LIGHT_PRIORITIES];
+
+    for (int i = 0; i < NUM_LAYERS; i++)
+    {
+        entities_by_layer[i] = TCOD_list_new();
+    }
 
     for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
     {
-        light_entities[i] = TCOD_list_new();
+        lights_by_priority[i] = TCOD_list_new();
     }
 
     for (int i = 0; i < MAX_ENTITIES; i++)
@@ -677,12 +883,19 @@ void render_system(void)
 
         if (entity->id != ID_UNUSED)
         {
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+            if (appearance != NULL)
+            {
+                TCOD_list_push(entities_by_layer[appearance->layer], entity);
+            }
+
             position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
             light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
-            if (position != NULL && light != NULL)
+            if (light != NULL)
             {
-                TCOD_list_push(light_entities[light->priority], entity);
+                TCOD_list_push(lights_by_priority[light->priority], entity);
             }
         }
     }
@@ -704,7 +917,7 @@ void render_system(void)
 
                 for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
                 {
-                    for (void **iterator = TCOD_list_begin(light_entities[i]); iterator != TCOD_list_end(light_entities[i]); iterator++)
+                    for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
                     {
                         entity_t *entity = *iterator;
 
@@ -723,7 +936,7 @@ void render_system(void)
                 {
                     for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
                     {
-                        for (void **iterator = TCOD_list_begin(light_entities[i]); iterator != TCOD_list_end(light_entities[i]); iterator++)
+                        for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
                         {
                             entity_t *entity = *iterator;
 
@@ -749,6 +962,11 @@ void render_system(void)
                     }
                 }
 
+                if (TCOD_list_peek(tile->entities) != NULL)
+                {
+                    // TCOD_console_set_char_background(NULL, x - view_x, y - view_y, TCOD_dark_red, TCOD_BKGND_SET);
+                }
+
                 TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
                 TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info[tile->type].glyph);
             }
@@ -757,16 +975,15 @@ void render_system(void)
 
     for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
     {
-        TCOD_list_delete(light_entities[i]);
+        TCOD_list_delete(lights_by_priority[i]);
     }
 
-    // TODO: maybe store a list of all entities on a given map?
-    for (int i = 0; i < MAX_ENTITIES; i++)
+    for (int i = 0; i < NUM_LAYERS; i++)
     {
-        entity_t *entity = &entities[i];
-
-        if (entity->id != ID_UNUSED)
+        for (void **iterator = TCOD_list_begin(entities_by_layer[i]); iterator != TCOD_list_end(entities_by_layer[i]); iterator++)
         {
+            entity_t *entity = *iterator;
+
             position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
             appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
 
@@ -779,6 +996,11 @@ void render_system(void)
                 }
             }
         }
+    }
+
+    for (int i = 0; i < NUM_LAYERS; i++)
+    {
+        TCOD_list_delete(entities_by_layer[i]);
     }
 
     TCOD_console_set_default_background(msg, TCOD_black);

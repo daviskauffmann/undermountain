@@ -1,4 +1,7 @@
+#include <libtcod.h>
+
 #include "config.h"
+#include "CMemLeak.h"
 
 void config_init(void)
 {

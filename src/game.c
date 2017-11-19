@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "config.h"
 #include "game.h"
+#include "CMemLeak.h"
+#include "config.h"
 #include "ECS.h"
 #include "world.h"
 
@@ -28,8 +29,7 @@ void game_new(void)
     player_position->map = map;
     player_position->x = map->stair_up_x;
     player_position->y = map->stair_up_y;
-    player_position->next_x = -1;
-    player_position->next_y = -1;
+    TCOD_list_push(map->tiles[player_position->x][player_position->y].entities, player);
     physics_t *player_physics = (physics_t *)component_add(player, COMPONENT_PHYSICS);
     player_physics->is_walkable = false;
     player_physics->is_transparent = true;
@@ -54,6 +54,43 @@ void game_new(void)
     player_appearance->name = "Blinky";
     player_appearance->glyph = '@';
     player_appearance->color = TCOD_white;
+    player_appearance->layer = LAYER_1;
+
+    entity_t *pet = entity_create();
+    position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
+    pet_position->map = map;
+    pet_position->x = map->stair_up_x + 1;
+    pet_position->y = map->stair_up_y;
+    TCOD_list_push(map->tiles[pet_position->x][pet_position->y].entities, pet);
+    physics_t *pet_physics = (physics_t *)component_add(pet, COMPONENT_PHYSICS);
+    pet_physics->is_walkable = false;
+    pet_physics->is_transparent = true;
+    light_t *pet_light = (light_t *)component_add(pet, COMPONENT_LIGHT);
+    pet_light->radius = 5;
+    pet_light->color = TCOD_white;
+    pet_light->flicker = false;
+    pet_light->priority = LIGHT_PRIORITY_0;
+    if (pet_light->fov_map != NULL)
+    {
+        TCOD_map_delete(pet_light->fov_map);
+    }
+    pet_light->fov_map = NULL;
+    fov_t *pet_fov = (fov_t *)component_add(pet, COMPONENT_FOV);
+    pet_fov->radius = 1;
+    if (pet_fov->fov_map != NULL)
+    {
+        TCOD_map_delete(pet_fov->fov_map);
+    }
+    pet_fov->fov_map = NULL;
+    appearance_t *pet_appearance = (appearance_t *)component_add(pet, COMPONENT_APPEARANCE);
+    pet_appearance->name = "Spot";
+    pet_appearance->glyph = 'd';
+    pet_appearance->color = TCOD_white;
+    pet_appearance->layer = LAYER_1;
+    ai_t *pet_ai = (ai_t *)component_add(pet, COMPONENT_AI);
+    pet_ai->type = AI_PET;
+    pet_ai->energy = 1.0f;
+    pet_ai->energy_per_turn = 0.5f;
 
     msg_log(NULL, TCOD_white, "Hail, %s!", player_appearance->name);
 }

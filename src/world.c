@@ -1,6 +1,7 @@
 #include <libtcod.h>
 
 #include "world.h"
+#include "CMemLeak.h"
 #include "ECS.h"
 
 /* World */
@@ -46,15 +47,16 @@ void world_reset(void)
 }
 
 /* Tiles */
-void tile_init(tile_t *tile, tile_type_t type, bool seen, entity_t *entity)
+void tile_init(tile_t *tile, tile_type_t type, bool seen)
 {
     tile->type = type;
     tile->seen = seen;
-    tile->entity = entity;
+    tile->entities = TCOD_list_new();
 }
 
 void tile_reset(tile_t *tile)
 {
+    TCOD_list_delete(tile->entities);
 }
 
 /* Rooms */
@@ -85,7 +87,7 @@ void room_destroy(room_t *room)
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
-#define NUM_MONSTERS 200
+#define NUM_MONSTERS 50
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);
 static void vline(map_t *map, int x, int y1, int y2);
@@ -108,7 +110,7 @@ map_t *map_create(int level)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            tile_init(tile, TILE_WALL, false, NULL);
+            tile_init(tile, TILE_WALL, false);
         }
     }
 
@@ -145,12 +147,12 @@ map_t *map_create(int level)
         position->map = map;
         position->x = x;
         position->y = y;
-        position->next_x = -1;
-        position->next_y = -1;
+        TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
         physics_t *physics = (physics_t *)component_add(entity, COMPONENT_PHYSICS);
         physics->is_walkable = false;
         physics->is_transparent = true;
         appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+        appearance->layer = LAYER_1;
         fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
         fov->radius = 5;
         if (fov->fov_map != NULL)
@@ -202,7 +204,7 @@ map_t *map_create(int level)
         }
         }
 
-        if (TCOD_random_get_int(NULL, 0, 10) == 0)
+        if (TCOD_random_get_int(NULL, 0, 100) == 0)
         {
             light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
             light->radius = 10;
@@ -437,18 +439,18 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
 
             bool is_walkable = tile_info[tile->type].is_walkable;
 
-            if (tile->entity != NULL)
-            {
-                if (tile->entity->id != ID_UNUSED)
-                {
-                    physics_t *physics = (physics_t *)component_get(tile->entity, COMPONENT_PHYSICS);
+            // if (tile->entity != NULL)
+            // {
+            //     if (tile->entity->id != ID_UNUSED)
+            //     {
+            //         physics_t *physics = (physics_t *)component_get(tile->entity, COMPONENT_PHYSICS);
 
-                    if (physics != NULL)
-                    {
-                        is_walkable = physics->is_walkable;
-                    }
-                }
-            }
+            //         if (physics != NULL)
+            //         {
+            //             is_walkable = physics->is_walkable;
+            //         }
+            //     }
+            // }
 
             TCOD_map_set_properties(TCOD_map, x, y, tile_info[tile->type].is_transparent, is_walkable);
         }

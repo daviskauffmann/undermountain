@@ -20,9 +20,12 @@ entity_t entities[MAX_ENTITIES];
 entity_t *entity_create(void);
 void entity_path_towards(entity_t *entity, int x, int y);
 void entity_move_towards(entity_t *entity, int x, int y);
+void entity_move_random(entity_t *entity);
 void entity_move(entity_t *entity, int x, int y);
+void entity_swap(entity_t *entity, entity_t *other);
 void entity_swing(entity_t *entity, int x, int y);
 void entity_attack(entity_t *entity, entity_t *other);
+void entity_die(entity_t *entity);
 void entity_destroy(entity_t *entity);
 
 /* Components */
@@ -42,8 +45,6 @@ typedef struct position_s
     struct map_s *map;
     int x;
     int y;
-    int next_x;
-    int next_y;
 } position_t;
 
 typedef enum ai_type_e {
@@ -86,11 +87,20 @@ typedef struct fov_s
     TCOD_map_t fov_map;
 } fov_t;
 
+typedef enum layer_e {
+    LAYER_0,
+    LAYER_1,
+    LAYER_2,
+
+    NUM_LAYERS,
+} layer_t;
+
 typedef struct appearance_s
 {
     char *name;
     unsigned char glyph;
     TCOD_color_t color;
+    layer_t layer;
 } appearance_t;
 
 typedef struct component_s
@@ -116,9 +126,8 @@ void component_remove(entity_t *entity, component_type_t component_type);
 /* Systems */
 void input_system(void);
 void ai_system(void);
-void movement_system(void);
-void lighting_system(void);
 void fov_system(void);
+void positioning_system(void);
 void render_system(void);
 
 #endif

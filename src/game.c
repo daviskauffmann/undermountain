@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <math.h>
 
 #include "game.h"
 #include "CMemLeak.h"
@@ -60,6 +61,10 @@ void game_new(void)
     player_health->current = player_health->max;
     alignment_t *player_alignment = (alignment_t *)component_add(player, COMPONENT_ALIGNMENT);
     player_alignment->type = ALIGNMENT_GOOD;
+    targeting_t *player_targeting = (targeting_t *)component_add(player, COMPONENT_TARGETING);
+    player_targeting->active = false;
+    player_targeting->x = -1;
+    player_targeting->y = -1;
 
     entity_t *pet = entity_create();
     position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
@@ -103,6 +108,19 @@ void game_new(void)
     pet_alignment->type = ALIGNMENT_GOOD;
 
     msg_log(NULL, TCOD_white, "Hail, %s!", player_appearance->name);
+}
+
+void game_update(void)
+{
+    if (game_status == STATUS_UPDATE)
+    {
+        game_status = STATUS_WAITING;
+
+        fov_system();
+        ai_system();
+
+        turn++;
+    }
 }
 
 void game_reset(void)
@@ -157,7 +175,7 @@ void msg_log(position_t *position, TCOD_color_t color, char *text, ...)
 
         do
         {
-            if (TCOD_list_size(messages) == 4)
+            if (TCOD_list_size(messages) == (screen_height / 4) - 2)
             {
                 message_t *message = TCOD_list_get(messages, 0);
 

@@ -38,6 +38,7 @@ typedef enum component_type_e {
     COMPONENT_AI,
     COMPONENT_HEALTH,
     COMPONENT_ALIGNMENT,
+    COMPONENT_TARGETING,
 
     NUM_COMPONENTS
 } component_type_t;
@@ -121,6 +122,13 @@ typedef struct alignment_s
     alignment_type_t type;
 } alignment_t;
 
+typedef struct targeting_s
+{
+    bool active;
+    int x;
+    int y;
+} targeting_t;
+
 typedef struct component_s
 {
     int id;
@@ -134,6 +142,7 @@ typedef struct component_s
         appearance_t appearance;
         health_t health;
         alignment_t alignment;
+        targeting_t targeting;
     };
 } component_t;
 

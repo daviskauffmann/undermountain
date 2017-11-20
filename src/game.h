@@ -16,6 +16,7 @@ int turn;
 entity_t *player;
 
 void game_init(void);
+void game_update(void);
 void game_new(void);
 void game_reset(void);
 

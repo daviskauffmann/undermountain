@@ -20,16 +20,7 @@ int main(int argc, char *argv[])
     while (!TCOD_console_is_window_closed())
     {
         input_system();
-
-        if (game_status == STATUS_UPDATE)
-        {
-            fov_system();
-            ai_system();
-
-            game_status = STATUS_WAITING;
-            turn++;
-        }
-
+        game_update();
         render_system();
 
         if (game_status == STATUS_QUIT)

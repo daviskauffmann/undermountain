@@ -187,6 +187,28 @@ void entity_swap(entity_t *entity, entity_t *other)
     }
 }
 
+void entity_pick(entity_t *entity, entity_t *other)
+{
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+    appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+    inventory_t *inventory = (inventory_t *)component_get(entity, COMPONENT_INVENTORY);
+
+    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+    appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
+    pickable_t *other_pickable = (pickable_t *)component_get(other, COMPONENT_PICKABLE);
+
+    if (position != NULL && appearance != NULL && inventory != NULL &&
+        other_appearance != NULL && other_position != NULL && other_pickable != NULL)
+    {
+        TCOD_list_remove(other_position->map->tiles[other_position->x][other_position->y].entities, other);
+        TCOD_list_push(inventory->items, other);
+
+        component_remove(other, COMPONENT_POSITION);
+
+        msg_log(position, TCOD_white, "%s picks up %s", appearance->name, other_appearance->name);
+    }
+}
+
 void entity_swing(entity_t *entity, int x, int y)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);

@@ -1,5 +1,6 @@
 #include <libtcod.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "CMemLeak.h"
 #include "config.h"
@@ -101,6 +102,8 @@ void game_new(void)
     player_targeting->active = false;
     player_targeting->x = -1;
     player_targeting->y = -1;
+    inventory_t *player_inventory = (inventory_t *)component_add(player, COMPONENT_INVENTORY);
+    player_inventory->items = TCOD_list_new();
 
     entity_t *pet = entity_create();
     position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
@@ -449,6 +452,35 @@ void game_input(void)
 
                 break;
             }
+            case 'g':
+            {
+                tile_t *tile = &player_position->map->tiles[player_position->x][player_position->y];
+
+                bool item_found = false;
+
+                for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
+                {
+                    entity_t *entity = *iterator;
+
+                    pickable_t *pickable = (pickable_t *)component_get(entity, COMPONENT_PICKABLE);
+
+                    if (pickable != NULL)
+                    {
+                        item_found = true;
+
+                        entity_pick(player, entity);
+
+                        break;
+                    }
+                }
+
+                if (!item_found)
+                {
+                    msg_log(player_position, TCOD_white, "There is nothing here!");
+                }
+
+                break;
+            }
             case 'r':
             {
                 game_reset();
@@ -493,6 +525,8 @@ void game_input(void)
     }
 }
 
+#define SIMULATE_ALL_MAPS 1
+
 void game_update(void)
 {
     if (game_status == STATUS_UPDATE)
@@ -501,209 +535,18 @@ void game_update(void)
 
         turn++;
 
-        TCOD_list_t light_entities = TCOD_list_new();
-
+#if SIMULATE_ALL_MAPS
         for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
         {
             map_t *map = *iterator;
 
-            for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
-            {
-                entity_t *entity = *iterator;
-
-                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                if (position != NULL && light != NULL)
-                {
-                    if (light->fov_map != NULL)
-                    {
-                        TCOD_map_delete(light->fov_map);
-                    }
-
-                    light->fov_map = map_to_fov_map(position->map, position->x, position->y, light->radius);
-
-                    TCOD_list_push(light_entities, entity);
-                }
-            }
+            map_update(map);
         }
+#elif
+        position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
 
-        for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
-        {
-            map_t *map = *iterator;
-
-            for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
-            {
-                entity_t *entity = *iterator;
-                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
-
-                if (position != NULL && fov != NULL)
-                {
-                    if (fov->fov_map != NULL)
-                    {
-                        TCOD_map_delete(fov->fov_map);
-                    }
-
-                    fov->fov_map = map_to_fov_map(position->map, position->x, position->y, fov->radius);
-
-                    TCOD_map_t los_map = map_to_fov_map(position->map, position->x, position->y, 0);
-
-                    for (int x = 0; x < MAP_WIDTH; x++)
-                    {
-                        for (int y = 0; y < MAP_HEIGHT; y++)
-                        {
-                            if (TCOD_map_is_in_fov(los_map, x, y))
-                            {
-                                tile_t *tile = &position->map->tiles[x][y];
-
-                                for (void **iterator = TCOD_list_begin(light_entities); iterator != TCOD_list_end(light_entities); iterator++)
-                                {
-                                    entity_t *entity = *iterator;
-
-                                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                                    light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                                    if (TCOD_map_is_in_fov(light->fov_map, x, y))
-                                    {
-                                        TCOD_map_set_in_fov(fov->fov_map, x, y, true);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    TCOD_map_delete(los_map);
-                }
-            }
-        }
-
-        TCOD_list_delete(light_entities);
-
-        for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
-        {
-            map_t *map = *iterator;
-
-            for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
-            {
-                entity_t *entity = *iterator;
-
-                ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
-
-                if (ai != NULL)
-                {
-                    ai->energy += ai->energy_per_turn;
-
-                    while (ai->energy >= 1.0f)
-                    {
-                        ai->energy -= 1.0f;
-
-                        switch (ai->type)
-                        {
-                        case AI_MONSTER:
-                        {
-                            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                            fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
-                            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-
-                            if (position != NULL && fov != NULL && alignment != NULL)
-                            {
-                                bool target_found = false;
-
-                                for (void **iterator = TCOD_list_begin(position->map->entities); iterator != TCOD_list_end(position->map->entities); iterator++)
-                                {
-                                    entity_t *other = *iterator;
-
-                                    if (entity->id != ID_UNUSED && other != entity)
-                                    {
-                                        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-                                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                                        if (other_position != NULL && other_alignment != NULL)
-                                        {
-                                            if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                                other_alignment->type != alignment->type)
-                                            {
-                                                target_found = true;
-
-                                                if (distance(position->x, position->y, other_position->x, other_position->y) < 2.0f)
-                                                {
-                                                    entity_attack(entity, other);
-                                                }
-                                                else
-                                                {
-                                                    entity_path_towards(entity, other_position->x, other_position->y);
-                                                }
-
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (!target_found)
-                                {
-                                    entity_move_random(entity);
-                                }
-                            }
-
-                            break;
-                        }
-                        case AI_PET:
-                        {
-                            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                            fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
-                            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-
-                            if (position != NULL && fov != NULL && alignment != NULL)
-                            {
-                                bool target_found = false;
-
-                                for (void **iterator = TCOD_list_begin(position->map->entities); iterator != TCOD_list_end(position->map->entities); iterator++)
-                                {
-                                    entity_t *other = *iterator;
-
-                                    if (other->id != ID_UNUSED)
-                                    {
-                                        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-                                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                                        if (other_position != NULL && other_alignment != NULL)
-                                        {
-                                            if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                                other_alignment->type != alignment->type)
-                                            {
-                                                target_found = true;
-
-                                                entity_path_towards(entity, other_position->x, other_position->y);
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (!target_found)
-                                {
-                                    position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
-
-                                    if (TCOD_map_is_in_fov(fov->fov_map, player_position->x, player_position->y) &&
-                                        distance(position->x, position->y, player_position->x, player_position->y) < 5.0f)
-                                    {
-                                        entity_move_random(entity);
-                                    }
-                                    else
-                                    {
-                                        entity_path_towards(entity, player_position->x, player_position->y);
-                                    }
-                                }
-                            }
-
-                            break;
-                        }
-                        }
-                    }
-                }
-            }
-        }
+        map_update(player_position->map);
+#endif
     }
 }
 

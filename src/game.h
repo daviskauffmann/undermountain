@@ -20,6 +20,7 @@ void entity_move_towards(entity_t *entity, int x, int y);
 void entity_move_random(entity_t *entity);
 void entity_move(entity_t *entity, int x, int y);
 void entity_swap(entity_t *entity, entity_t *other);
+void entity_pick(entity_t *entity, entity_t *other);
 void entity_swing(entity_t *entity, int x, int y);
 void entity_attack(entity_t *entity, entity_t *other);
 void entity_die(entity_t *entity);
@@ -36,6 +37,8 @@ typedef enum component_type_e {
     COMPONENT_HEALTH,
     COMPONENT_ALIGNMENT,
     COMPONENT_TARGETING,
+    COMPONENT_PICKABLE,
+    COMPONENT_INVENTORY,
 
     NUM_COMPONENTS
 } component_type_t;
@@ -126,6 +129,16 @@ typedef struct targeting_s
     int y;
 } targeting_t;
 
+typedef struct pickable_s
+{
+    float weight;
+} pickable_t;
+
+typedef struct inventory_s
+{
+    TCOD_list_t items;
+} inventory_t;
+
 typedef struct component_s
 {
     int id;
@@ -140,6 +153,8 @@ typedef struct component_s
         health_t health;
         alignment_t alignment;
         targeting_t targeting;
+        pickable_t pickable;
+        inventory_t inventory;
     };
 } component_t;
 
@@ -215,6 +230,7 @@ typedef struct map_s
 } map_t;
 
 map_t *map_create(int level);
+void map_update(map_t *map);
 bool map_is_inside(int x, int y);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);

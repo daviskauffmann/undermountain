@@ -1,89 +1,8 @@
 #include <libtcod.h>
 
-#include "world.h"
 #include "CMemLeak.h"
-#include "ECS.h"
+#include "game.h"
 
-/* World */
-void world_init(void)
-{
-    maps = TCOD_list_new();
-
-    tile_common = (tile_common_t){
-        .shadow_color = TCOD_color_RGB(16, 16, 32)};
-
-    tile_info[TILE_FLOOR] = (tile_info_t){
-        .glyph = '.',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    tile_info[TILE_WALL] = (tile_info_t){
-        .glyph = '#',
-        .color = TCOD_white,
-        .is_transparent = false,
-        .is_walkable = false};
-    tile_info[TILE_STAIR_DOWN] = (tile_info_t){
-        .glyph = '>',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    tile_info[TILE_STAIR_UP] = (tile_info_t){
-        .glyph = '<',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-}
-
-void world_reset(void)
-{
-    for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
-    {
-        map_t *map = *iterator;
-
-        map_destroy(map);
-    }
-
-    TCOD_list_delete(maps);
-}
-
-/* Tiles */
-void tile_init(tile_t *tile, tile_type_t type, bool seen)
-{
-    tile->type = type;
-    tile->seen = seen;
-    tile->entities = TCOD_list_new();
-}
-
-void tile_reset(tile_t *tile)
-{
-    TCOD_list_delete(tile->entities);
-}
-
-/* Rooms */
-room_t *room_create(int x, int y, int w, int h)
-{
-    room_t *room = (room_t *)malloc(sizeof(room_t));
-
-    room->x = x;
-    room->y = y;
-    room->w = w;
-    room->h = h;
-
-    return room;
-}
-
-void room_get_random_pos(room_t *room, int *x, int *y)
-{
-    *x = TCOD_random_get_int(NULL, room->x, room->x + room->w - 1);
-    *y = TCOD_random_get_int(NULL, room->y, room->y + room->h - 1);
-}
-
-void room_destroy(room_t *room)
-{
-    free(room);
-}
-
-/* Maps */
 #define BSP_DEPTH 10
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
@@ -103,6 +22,7 @@ map_t *map_create(int level)
 
     map->level = level;
     map->rooms = TCOD_list_new();
+    map->entities = TCOD_list_new();
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -148,6 +68,7 @@ map_t *map_create(int level)
         position->x = x;
         position->y = y;
         TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+        TCOD_list_push(map->entities, entity);
         physics_t *physics = (physics_t *)component_add(entity, COMPONENT_PHYSICS);
         physics->is_walkable = false;
         physics->is_transparent = true;
@@ -498,6 +419,8 @@ void map_destroy(map_t *map)
 
         room_destroy(room);
     }
+
+    TCOD_list_delete(map->entities);
 
     free(map);
 }

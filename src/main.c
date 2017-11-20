@@ -3,25 +3,20 @@
 
 #include "CMemLeak.h"
 #include "config.h"
-#include "ECS.h"
-#include "world.h"
 #include "game.h"
 
 int main(int argc, char *argv[])
 {
     config_init();
 
-    ECS_init();
-    world_init();
     game_init();
-
     game_new();
 
     while (!TCOD_console_is_window_closed())
     {
-        input_system();
+        game_input();
         game_update();
-        render_system();
+        game_render();
 
         if (game_status == STATUS_QUIT)
         {
@@ -30,8 +25,6 @@ int main(int argc, char *argv[])
     }
 
     game_reset();
-    world_reset();
-    ECS_reset();
 
     SDL_Quit();
 

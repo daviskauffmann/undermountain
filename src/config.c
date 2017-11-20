@@ -1,12 +1,14 @@
 #include <libtcod.h>
 
-#include "config.h"
 #include "CMemLeak.h"
+#include "config.h"
 
 void config_init(void)
 {
-    screen_width = 40;
-    screen_height = 25;
+    screen_width = 1366;
+    screen_height = 768;
+    console_width = (screen_width / 16) / 2;
+    console_height = (screen_height / 16) / 2;
     fullscreen = false;
     renderer = TCOD_RENDERER_SDL;
 
@@ -18,5 +20,5 @@ void config_init(void)
     TCOD_sys_set_fps(FPS);
 
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
-    TCOD_console_init_root(screen_width, screen_height, WINDOW_TITLE, fullscreen, renderer);
+    TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, renderer);
 }

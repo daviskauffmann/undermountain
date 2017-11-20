@@ -1,8 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <libtcod.h>
-
 void config_init(void);
 
 /* Window */
@@ -11,6 +9,8 @@ void config_init(void);
 
 int screen_width;
 int screen_height;
+int console_width;
+int console_height;
 bool fullscreen;
 int renderer;
 

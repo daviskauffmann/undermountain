@@ -6,20 +6,9 @@
 #include "config.h"
 #include "game.h"
 
-message_t *message_create(char *text, TCOD_color_t color)
+void msg_init(void)
 {
-    message_t *message = (message_t *)malloc(sizeof(message_t));
-
-    message->text = strdup(text);
-    message->color = color;
-
-    return message;
-}
-
-void message_destroy(message_t *message)
-{
-    free(message->text);
-    free(message);
+    messages = TCOD_list_new();
 }
 
 void msg_log(position_t *position, TCOD_color_t color, char *text, ...)
@@ -49,7 +38,8 @@ void msg_log(position_t *position, TCOD_color_t color, char *text, ...)
 
                 TCOD_list_remove(messages, message);
 
-                message_destroy(message);
+                free(message->text);
+                free(message);
             }
 
             line_end = strchr(line_begin, '\n');
@@ -59,11 +49,26 @@ void msg_log(position_t *position, TCOD_color_t color, char *text, ...)
                 *line_end = '\0';
             }
 
-            message_t *message = message_create(line_begin, color);
+            message_t *message = (message_t *)malloc(sizeof(message_t));
+            message->text = strdup(line_begin);
+            message->color = color;
 
             TCOD_list_push(messages, message);
 
             line_begin = line_end + 1;
         } while (line_end);
     }
+}
+
+void msg_reset(void)
+{
+    for (void **iterator = TCOD_list_begin(messages); iterator != TCOD_list_end(messages); iterator++)
+    {
+        message_t *message = *iterator;
+
+        free(message->text);
+        free(message);
+    }
+
+    TCOD_list_delete(messages);
 }

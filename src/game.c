@@ -9,48 +9,9 @@
 
 void game_init(void)
 {
-    for (int i = 0; i < MAX_ENTITIES; i++)
-    {
-        entity_t *entity = &entities[i];
-
-        entity->id = ID_UNUSED;
-
-        for (int j = 0; j < NUM_COMPONENTS; j++)
-        {
-            component_t *component = &components[j][i];
-
-            component->id = ID_UNUSED;
-        }
-    }
-
-    maps = TCOD_list_new();
-
-    tile_common = (tile_common_t){
-        .shadow_color = TCOD_color_RGB(16, 16, 32)};
-
-    tile_info[TILE_FLOOR] = (tile_info_t){
-        .glyph = '.',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    tile_info[TILE_WALL] = (tile_info_t){
-        .glyph = '#',
-        .color = TCOD_white,
-        .is_transparent = false,
-        .is_walkable = false};
-    tile_info[TILE_STAIR_DOWN] = (tile_info_t){
-        .glyph = '>',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    tile_info[TILE_STAIR_UP] = (tile_info_t){
-        .glyph = '<',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-
-    msg = TCOD_console_new(console_width, console_height);
-    messages = TCOD_list_new();
+    world_init();
+    entities_init();
+    msg_init();
 }
 
 void game_new(void)
@@ -99,7 +60,7 @@ void game_new(void)
     alignment_t *player_alignment = (alignment_t *)component_add(player, COMPONENT_ALIGNMENT);
     player_alignment->type = ALIGNMENT_GOOD;
     targeting_t *player_targeting = (targeting_t *)component_add(player, COMPONENT_TARGETING);
-    player_targeting->active = false;
+    player_targeting->type = TARGETING_NONE;
     player_targeting->x = -1;
     player_targeting->y = -1;
     inventory_t *player_inventory = (inventory_t *)component_add(player, COMPONENT_INVENTORY);
@@ -169,9 +130,9 @@ void game_input(void)
         {
         case TCODK_ESCAPE:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
-                player_targeting->active = false;
+                player_targeting->type = TARGETING_NONE;
             }
             else
             {
@@ -193,7 +154,7 @@ void game_input(void)
         }
         case TCODK_KP1:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
                 player_targeting->x--;
                 player_targeting->y++;
@@ -219,7 +180,7 @@ void game_input(void)
         }
         case TCODK_KP2:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
                 player_targeting->y++;
             }
@@ -244,7 +205,7 @@ void game_input(void)
         }
         case TCODK_KP3:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
                 player_targeting->x++;
                 player_targeting->y++;
@@ -270,7 +231,7 @@ void game_input(void)
         }
         case TCODK_KP4:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
                 player_targeting->x--;
                 player_targeting->y;
@@ -302,7 +263,7 @@ void game_input(void)
         }
         case TCODK_KP6:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
                 player_targeting->x++;
                 player_targeting->y;
@@ -328,7 +289,7 @@ void game_input(void)
         }
         case TCODK_KP7:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
                 player_targeting->x--;
                 player_targeting->y--;
@@ -353,7 +314,7 @@ void game_input(void)
         }
         case TCODK_KP8:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
                 player_targeting->x;
                 player_targeting->y--;
@@ -379,7 +340,7 @@ void game_input(void)
         }
         case TCODK_KP9:
         {
-            if (player_targeting->active)
+            if (player_targeting->type != TARGETING_NONE)
             {
                 player_targeting->x++;
                 player_targeting->y--;
@@ -409,17 +370,17 @@ void game_input(void)
             {
             case 'f':
             {
-                if (player_targeting->active)
+                if (player_targeting->type == TARGETING_SHOOT)
                 {
                     game_status = STATUS_UPDATE;
 
-                    player_targeting->active = false;
+                    player_targeting->type = TARGETING_NONE;
 
                     entity_shoot(player, player_targeting->x, player_targeting->y);
                 }
                 else
                 {
-                    player_targeting->active = true;
+                    player_targeting->type = TARGETING_SHOOT;
 
                     bool target_found = false;
 
@@ -466,6 +427,8 @@ void game_input(void)
 
                     if (pickable != NULL)
                     {
+                        game_status = STATUS_UPDATE;
+
                         item_found = true;
 
                         entity_pick(player, entity);
@@ -477,6 +440,23 @@ void game_input(void)
                 if (!item_found)
                 {
                     msg_log(player_position, TCOD_white, "There is nothing here!");
+                }
+
+                break;
+            }
+            case 'l':
+            {
+                if (player_targeting->type == TARGETING_LOOK)
+                {
+                    player_targeting->type = TARGETING_NONE;
+
+                    msg_log(player_position, TCOD_white, "Look!");
+                }
+                else
+                {
+                    player_targeting->type = TARGETING_LOOK;
+                    player_targeting->x = player_position->x;
+                    player_targeting->y = player_position->y;
                 }
 
                 break;
@@ -504,7 +484,7 @@ void game_input(void)
                     player_light->radius = 10;
                     player_light->color = TCOD_light_amber;
                     player_light->flicker = true;
-                    player_light->priority = LIGHT_PRIORITY_1;
+                    player_light->priority = LIGHT_PRIORITY_2;
                 }
                 else
                 {
@@ -512,6 +492,51 @@ void game_input(void)
                     player_light->color = TCOD_white;
                     player_light->flicker = false;
                     player_light->priority = LIGHT_PRIORITY_0;
+                }
+
+                break;
+            }
+            case 'z':
+            {
+                if (player_targeting->type == TARGETING_ZAP)
+                {
+                    game_status = STATUS_UPDATE;
+
+                    player_targeting->type = TARGETING_NONE;
+
+                    msg_log(player_position, TCOD_white, "Zap!");
+                }
+                else
+                {
+                    player_targeting->type = TARGETING_ZAP;
+
+                    bool target_found = false;
+
+                    for (void **iterator = TCOD_list_begin(player_position->map->entities); iterator != TCOD_list_end(player_position->map->entities); iterator++)
+                    {
+                        entity_t *entity = *iterator;
+
+                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                        alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
+
+                        if (position != NULL && alignment != NULL)
+                        {
+                            if (TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y) &&
+                                alignment->type != player_alignment->type)
+                            {
+                                target_found = true;
+
+                                player_targeting->x = position->x;
+                                player_targeting->y = position->y;
+                            }
+                        }
+                    }
+
+                    if (!target_found)
+                    {
+                        player_targeting->x = player_position->x;
+                        player_targeting->y = player_position->y;
+                    }
                 }
 
                 break;
@@ -608,8 +633,6 @@ void game_render(void)
     float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
     float di = 0.2f * TCOD_noise_get(noise, &noise_x);
 
-    // TODO: sort lights so that certain types get priority when drawing
-    // torches > stationary lights > entity glow
     TCOD_list_t entities_by_layer[NUM_LAYERS];
     TCOD_list_t lights_by_priority[NUM_LIGHT_PRIORITIES];
 
@@ -748,10 +771,17 @@ void game_render(void)
 
     targeting_t *player_targeting = (targeting_t *)component_get(player, COMPONENT_TARGETING);
 
-    if (player_targeting->active)
+    if (player_targeting->type != TARGETING_NONE)
     {
         TCOD_console_set_char_foreground(NULL, player_targeting->x - view_x, player_targeting->y - view_y, TCOD_red);
         TCOD_console_set_char(NULL, player_targeting->x - view_x, player_targeting->y - view_y, 'X');
+    }
+
+    static TCOD_console_t msg = NULL;
+
+    if (msg == NULL)
+    {
+        msg = TCOD_console_new(console_width, console_height);
     }
 
     TCOD_console_set_default_background(msg, TCOD_black);
@@ -781,23 +811,7 @@ void game_render(void)
 
 void game_reset(void)
 {
-    for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
-    {
-        map_t *map = *iterator;
-
-        map_destroy(map);
-    }
-
-    TCOD_list_delete(maps);
-
-    TCOD_console_delete(msg);
-
-    for (void **iterator = TCOD_list_begin(messages); iterator != TCOD_list_end(messages); iterator++)
-    {
-        message_t *message = *iterator;
-
-        message_destroy(message);
-    }
-
-    TCOD_list_delete(messages);
+    world_reset();
+    entities_reset();
+    msg_reset();
 }

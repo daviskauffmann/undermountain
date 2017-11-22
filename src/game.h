@@ -3,27 +3,6 @@
 
 #include <libtcod.h>
 
-/* Game */
-typedef enum game_status_e {
-    STATUS_WAITING,
-    STATUS_UPDATE,
-    STATUS_QUIT
-} game_status_t;
-
-game_status_t game_status;
-int turn;
-struct entity_s *player;
-
-void game_init(void);
-void game_input(void);
-void game_update(void);
-void game_render(void);
-void game_new(void);
-void game_reset(void);
-
-/* World */
-TCOD_list_t maps;
-
 /* Tiles */
 typedef enum tile_type_e {
     TILE_FLOOR,
@@ -53,9 +32,6 @@ typedef struct tile_s
     bool seen;
     TCOD_list_t entities;
 } tile_t;
-
-tile_common_t tile_common;
-tile_info_t tile_info[NUM_TILES];
 
 void tile_init(tile_t *tile, tile_type_t type, bool seen);
 void tile_reset(tile_t *tile);
@@ -90,7 +66,6 @@ typedef struct map_s
 } map_t;
 
 map_t *map_create(int level);
-void map_update(map_t *map);
 TCOD_list_t map_get_lights(map_t *map);
 bool map_is_inside(int x, int y);
 room_t *map_get_random_room(map_t *map);
@@ -107,8 +82,6 @@ typedef struct entity_s
     int id;
 } entity_t;
 
-entity_t entities[MAX_ENTITIES];
-
 entity_t *entity_create(void);
 void entity_calc_fov(entity, lights);
 void entity_calc_ai(entity);
@@ -119,6 +92,7 @@ void entity_move(entity_t *entity, int x, int y);
 void entity_swap(entity_t *entity, entity_t *other);
 void entity_pick(entity_t *entity, entity_t *other);
 void entity_swing(entity_t *entity, int x, int y);
+void entity_shoot(entity_t *entity, int x, int y);
 void entity_attack(entity_t *entity, entity_t *other);
 void entity_die(entity_t *entity);
 void entity_destroy(entity_t *entity);
@@ -148,15 +122,17 @@ typedef struct position_s
 } position_t;
 
 typedef enum ai_type_e {
-    AI_MONSTER,
-    AI_PET
+    AI_INPUT,
+    AI_GENERIC
 } ai_type_t;
 
 typedef struct ai_s
 {
     ai_type_t type;
+    bool turn;
     float energy;
     float energy_per_turn;
+    entity_t *follow_target;
 } ai_t;
 
 typedef struct physics_s
@@ -263,8 +239,6 @@ typedef struct component_s
     };
 } component_t;
 
-component_t components[NUM_COMPONENTS][MAX_ENTITIES];
-
 component_t *component_add(entity_t *entity, component_type_t component_type);
 component_t *component_get(entity_t *entity, component_type_t component_type);
 void component_remove(entity_t *entity, component_type_t component_type);
@@ -276,10 +250,31 @@ typedef struct message_s
     TCOD_color_t color;
 } message_t;
 
-TCOD_list_t messages;
-
 void msg_init(void);
 void msg_log(position_t *position, TCOD_color_t color, char *text, ...);
 void msg_reset(void);
+
+/* Game */
+TCOD_list_t maps;
+tile_common_t tile_common;
+tile_info_t tile_info[NUM_TILES];
+entity_t entities[MAX_ENTITIES];
+entity_t *player;
+component_t components[NUM_COMPONENTS][MAX_ENTITIES];
+TCOD_list_t messages;
+int turn;
+bool should_render;
+bool should_quit;
+
+TCOD_key_t key;
+TCOD_mouse_t mouse;
+TCOD_event_t ev;
+
+void game_init(void);
+void game_input(void);
+void game_update(void);
+void game_render(void);
+void game_new(void);
+void game_reset(void);
 
 #endif

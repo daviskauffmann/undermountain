@@ -1,5 +1,7 @@
 #include <libtcod.h>
+#include <stdio.h>
 
+#include "config.h"
 #include "game.h"
 #include "utils.h"
 
@@ -97,68 +99,417 @@ void entity_calc_ai(entity_t *entity)
 
     if (ai != NULL)
     {
-        ai->energy += ai->energy_per_turn;
+        bool took_turn = false;
 
-        while (ai->energy >= 1.0f)
+        if (ai->energy >= 1.0f)
         {
-            ai->energy -= 1.0f;
-
             switch (ai->type)
             {
-            case AI_MONSTER:
+            case AI_INPUT:
             {
                 position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
+                alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
+                targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
 
-                if (position != NULL)
+                switch (ev)
                 {
-                    bool target_found = false;
-
-                    fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
-                    alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-
-                    if (fov != NULL && alignment != NULL)
+                case TCOD_EVENT_KEY_PRESS:
+                {
+                    switch (key.vk)
                     {
-                        for (void **iterator = TCOD_list_begin(position->map->entities); iterator != TCOD_list_end(position->map->entities); iterator++)
+                    case TCODK_KP1:
+                    {
+                        if (targeting->type != TARGETING_NONE)
                         {
-                            entity_t *other = *iterator;
+                            targeting->x--;
+                            targeting->y++;
+                        }
+                        else
+                        {
+                            took_turn = true;
 
-                            if (entity->id != ID_UNUSED && other != entity)
+                            int x = position->x - 1;
+                            int y = position->y + 1;
+
+                            if (key.lctrl)
                             {
-                                position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-                                alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                                if (other_position != NULL && other_alignment != NULL)
-                                {
-                                    if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                        other_alignment->type != alignment->type)
-                                    {
-                                        target_found = true;
-
-                                        if (distance(position->x, position->y, other_position->x, other_position->y) < 2.0f)
-                                        {
-                                            entity_attack(entity, other);
-                                        }
-                                        else
-                                        {
-                                            entity_path_towards(entity, other_position->x, other_position->y);
-                                        }
-
-                                        break;
-                                    }
-                                }
+                                entity_swing(entity, x, y);
+                            }
+                            else
+                            {
+                                entity_move(entity, x, y);
                             }
                         }
-                    }
 
-                    if (!target_found)
-                    {
-                        entity_move_random(entity);
+                        break;
                     }
+                    case TCODK_KP2:
+                    {
+                        if (targeting->type != TARGETING_NONE)
+                        {
+                            targeting->y++;
+                        }
+                        else
+                        {
+                            took_turn = true;
+
+                            int x = position->x;
+                            int y = position->y + 1;
+
+                            if (key.lctrl)
+                            {
+                                entity_swing(entity, x, y);
+                            }
+                            else
+                            {
+                                entity_move(entity, x, y);
+                            }
+                        }
+
+                        break;
+                    }
+                    case TCODK_KP3:
+                    {
+                        if (targeting->type != TARGETING_NONE)
+                        {
+                            targeting->x++;
+                            targeting->y++;
+                        }
+                        else
+                        {
+                            took_turn = true;
+
+                            int x = position->x + 1;
+                            int y = position->y + 1;
+
+                            if (key.lctrl)
+                            {
+                                entity_swing(entity, x, y);
+                            }
+                            else
+                            {
+                                entity_move(entity, x, y);
+                            }
+                        }
+
+                        break;
+                    }
+                    case TCODK_KP4:
+                    {
+                        if (targeting->type != TARGETING_NONE)
+                        {
+                            targeting->x--;
+                            targeting->y;
+                        }
+                        else
+                        {
+                            took_turn = true;
+
+                            int x = position->x - 1;
+                            int y = position->y;
+
+                            if (key.lctrl)
+                            {
+                                entity_swing(entity, x, y);
+                            }
+                            else
+                            {
+                                entity_move(entity, x, y);
+                            }
+                        }
+
+                        break;
+                    }
+                    case TCODK_KP5:
+                    {
+                        took_turn = true;
+
+                        break;
+                    }
+                    case TCODK_KP6:
+                    {
+                        if (targeting->type != TARGETING_NONE)
+                        {
+                            targeting->x++;
+                            targeting->y;
+                        }
+                        else
+                        {
+                            took_turn = true;
+
+                            int x = position->x + 1;
+                            int y = position->y;
+
+                            if (key.lctrl)
+                            {
+                                entity_swing(entity, x, y);
+                            }
+                            else
+                            {
+                                entity_move(entity, x, y);
+                            }
+                        }
+
+                        break;
+                    }
+                    case TCODK_KP7:
+                    {
+                        if (targeting->type != TARGETING_NONE)
+                        {
+                            targeting->x--;
+                            targeting->y--;
+                        }
+                        else
+                        {
+                            took_turn = true;
+
+                            int x = position->x - 1;
+                            int y = position->y - 1;
+
+                            if (key.lctrl)
+                            {
+                                entity_swing(entity, x, y);
+                            }
+                            else
+                            {
+                                entity_move(entity, x, y);
+                            }
+                        }
+                        break;
+                    }
+                    case TCODK_KP8:
+                    {
+                        if (targeting->type != TARGETING_NONE)
+                        {
+                            targeting->x;
+                            targeting->y--;
+                        }
+                        else
+                        {
+                            took_turn = true;
+
+                            int x = position->x;
+                            int y = position->y - 1;
+
+                            if (key.lctrl)
+                            {
+                                entity_swing(entity, x, y);
+                            }
+                            else
+                            {
+                                entity_move(entity, x, y);
+                            }
+                        }
+
+                        break;
+                    }
+                    case TCODK_KP9:
+                    {
+                        if (targeting->type != TARGETING_NONE)
+                        {
+                            targeting->x++;
+                            targeting->y--;
+                        }
+                        else
+                        {
+                            took_turn = true;
+
+                            int x = position->x + 1;
+                            int y = position->y - 1;
+
+                            if (key.lctrl)
+                            {
+                                entity_swing(entity, x, y);
+                            }
+                            else
+                            {
+                                entity_move(entity, x, y);
+                            }
+                        }
+
+                        break;
+                    }
+                    case TCODK_CHAR:
+                    {
+                        switch (key.c)
+                        {
+                        case 'f':
+                        {
+                            if (targeting->type == TARGETING_SHOOT)
+                            {
+                                took_turn = true;
+
+                                targeting->type = TARGETING_NONE;
+
+                                entity_shoot(entity, targeting->x, targeting->y);
+                            }
+                            else
+                            {
+                                targeting->type = TARGETING_SHOOT;
+
+                                bool target_found = false;
+
+                                for (void **iterator = TCOD_list_begin(position->map->entities); iterator != TCOD_list_end(position->map->entities); iterator++)
+                                {
+                                    entity_t *other = *iterator;
+
+                                    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+                                    alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+
+                                    if (other_position != NULL && other_alignment != NULL)
+                                    {
+                                        if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
+                                            other_alignment->type != alignment->type)
+                                        {
+                                            target_found = true;
+
+                                            targeting->x = other_position->x;
+                                            targeting->y = other_position->y;
+                                        }
+                                    }
+                                }
+
+                                if (!target_found)
+                                {
+                                    targeting->x = position->x;
+                                    targeting->y = position->y;
+                                }
+                            }
+
+                            break;
+                        }
+                        case 'g':
+                        {
+                            tile_t *tile = &position->map->tiles[position->x][position->y];
+
+                            bool item_found = false;
+
+                            for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
+                            {
+                                entity_t *other = *iterator;
+
+                                pickable_t *pickable = (pickable_t *)component_get(other, COMPONENT_PICKABLE);
+
+                                if (pickable != NULL)
+                                {
+                                    took_turn = true;
+
+                                    item_found = true;
+
+                                    entity_pick(entity, other);
+
+                                    break;
+                                }
+                            }
+
+                            if (!item_found)
+                            {
+                                msg_log(position, TCOD_white, "There is nothing here!");
+                            }
+
+                            break;
+                        }
+                        case 'l':
+                        {
+                            if (targeting->type == TARGETING_LOOK)
+                            {
+                                targeting->type = TARGETING_NONE;
+
+                                msg_log(position, TCOD_white, "Look!");
+                            }
+                            else
+                            {
+                                targeting->type = TARGETING_LOOK;
+                                targeting->x = position->x;
+                                targeting->y = position->y;
+                            }
+
+                            break;
+                        }
+                        case 't':
+                        {
+                            took_turn = true;
+
+                            static bool torch = false;
+
+                            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+
+                            torch = !torch;
+
+                            if (torch)
+                            {
+                                light->radius = 10;
+                                light->color = TCOD_light_amber;
+                                light->flicker = true;
+                                light->priority = LIGHT_PRIORITY_2;
+                            }
+                            else
+                            {
+                                light->radius = 5;
+                                light->color = TCOD_white;
+                                light->flicker = false;
+                                light->priority = LIGHT_PRIORITY_0;
+                            }
+
+                            break;
+                        }
+                        case 'z':
+                        {
+                            if (targeting->type == TARGETING_ZAP)
+                            {
+                                took_turn = true;
+
+                                targeting->type = TARGETING_NONE;
+
+                                msg_log(position, TCOD_white, "Zap!");
+                            }
+                            else
+                            {
+                                targeting->type = TARGETING_ZAP;
+
+                                bool target_found = false;
+
+                                for (void **iterator = TCOD_list_begin(position->map->entities); iterator != TCOD_list_end(position->map->entities); iterator++)
+                                {
+                                    entity_t *other = *iterator;
+
+                                    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+                                    alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+
+                                    if (other_position != NULL && other_alignment != NULL)
+                                    {
+                                        if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
+                                            other_alignment->type != alignment->type)
+                                        {
+                                            target_found = true;
+
+                                            targeting->x = other_position->x;
+                                            targeting->y = other_position->y;
+                                        }
+                                    }
+                                }
+
+                                if (!target_found)
+                                {
+                                    targeting->x = position->x;
+                                    targeting->y = position->y;
+                                }
+                            }
+
+                            break;
+                        }
+                        }
+
+                        break;
+                    }
+                    }
+                }
                 }
 
                 break;
             }
-            case AI_PET:
+            case AI_GENERIC:
             {
                 position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
@@ -187,7 +538,14 @@ void entity_calc_ai(entity_t *entity)
                                     {
                                         target_found = true;
 
-                                        entity_path_towards(entity, other_position->x, other_position->y);
+                                        if (distance(position->x, position->y, other_position->x, other_position->y) < 2.0f)
+                                        {
+                                            entity_attack(entity, other);
+                                        }
+                                        else
+                                        {
+                                            entity_path_towards(entity, other_position->x, other_position->y);
+                                        }
                                     }
                                 }
                             }
@@ -196,22 +554,44 @@ void entity_calc_ai(entity_t *entity)
 
                     if (!target_found)
                     {
-                        position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
+                        if (ai->follow_target != NULL)
+                        {
+                            position_t *follow_position = (position_t *)component_get(ai->follow_target, COMPONENT_POSITION);
 
-                        if (TCOD_map_is_in_fov(fov->fov_map, player_position->x, player_position->y) &&
-                            distance(position->x, position->y, player_position->x, player_position->y) < 5.0f)
-                        {
-                            entity_move_random(entity);
-                        }
-                        else
-                        {
-                            entity_path_towards(entity, player_position->x, player_position->y);
+                            if (follow_position != NULL)
+                            {
+                                if (TCOD_map_is_in_fov(fov->fov_map, follow_position->x, follow_position->y) &&
+                                    distance(position->x, position->y, follow_position->x, follow_position->y) < 5.0f)
+                                {
+                                    entity_move_random(entity);
+                                }
+                                else
+                                {
+                                    entity_path_towards(entity, follow_position->x, follow_position->y);
+                                }
+                            }
                         }
                     }
+
+                    took_turn = true;
                 }
 
                 break;
             }
+            }
+        }
+        else
+        {
+            ai->turn = false;
+        }
+
+        if (took_turn)
+        {
+            ai->energy -= 1.0f;
+
+            if (ai->energy < 1.0f)
+            {
+                ai->turn = false;
             }
         }
     }
@@ -492,22 +872,42 @@ void entity_attack(entity_t *entity, entity_t *other)
         other_position != NULL && other_appearance != NULL && other_health != NULL)
     {
         // TODO: calculate damage
-        bool hit = TCOD_random_get_int(NULL, 0, 4) > 0;
-        bool crit = TCOD_random_get_int(NULL, 0, 5) == 0;
+        int attack_roll = TCOD_random_get_int(NULL, 1, 20);
+        int attack_bonus = 0;
+        int total_attack = attack_roll + attack_bonus;
+        int other_armor_class = 5;
+        bool hit = attack_roll == 1
+                       ? false
+                       : attack_roll == 20
+                             ? true
+                             : total_attack >= other_armor_class;
 
         if (hit)
         {
+            int total_damage = 0;
+
+            int a = 1;
+            int x = 8;
+            int b = 0;
+            total_damage += TCOD_random_get_int(NULL, a, a * x) + b;
+
+            bool crit = false;
+            int threat_range = 19;
+            if (attack_roll >= threat_range)
+            {
+                crit = true;
+                total_damage += TCOD_random_get_int(NULL, a, a * x) + b;
+            }
+
             if (other == player)
             {
                 msg_log(position, TCOD_white, "%s's attack fizzles", appearance->name);
             }
             else
             {
-                int damage = TCOD_random_get_int(NULL, 1, 8) * (crit ? 2 : 1);
+                msg_log(position, TCOD_white, "%s %s %s for %d", appearance->name, (crit ? "crits" : "hits"), other_appearance->name, total_damage);
 
-                msg_log(position, TCOD_white, "%s %s %s for %d", appearance->name, (crit ? "crits" : "hits"), other_appearance->name, damage);
-
-                other_health->current -= damage;
+                other_health->current -= total_damage;
 
                 if (other_health->current <= 0)
                 {

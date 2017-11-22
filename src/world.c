@@ -1,4 +1,5 @@
 #include <libtcod.h>
+#include <stdio.h>
 
 #include "CMemLeak.h"
 #include "game.h"
@@ -165,8 +166,10 @@ map_t *map_create(int level)
         }
         monster_fov->fov_map = NULL;
         ai_t *monster_ai = (ai_t *)component_add(monster, COMPONENT_AI);
-        monster_ai->type = AI_MONSTER;
+        monster_ai->type = AI_GENERIC;
+        monster_ai->turn = true;
         monster_ai->energy = 1.0f;
+        monster_ai->follow_target = NULL;
         health_t *monster_health = (health_t *)component_add(monster, COMPONENT_HEALTH);
         monster_health->max = TCOD_random_get_int(NULL, 10, 20);
         monster_health->current = monster_health->max;
@@ -478,25 +481,6 @@ static void hline_right(map_t *map, int x, int y)
     }
 }
 
-void map_update(map_t *map)
-{
-    TCOD_list_t lights = map_get_lights(map);
-    for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
-    {
-        entity_t *entity = *iterator;
-
-        entity_calc_fov(entity, lights);
-    }
-    TCOD_list_delete(lights);
-
-    for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
-    {
-        entity_t *entity = *iterator;
-
-        entity_calc_ai(entity);
-    }
-}
-
 TCOD_list_t map_get_lights(map_t *map)
 {
     TCOD_list_t lights = TCOD_list_new();
@@ -598,7 +582,7 @@ void map_destroy(map_t *map)
     {
         room_t *room = *iterator;
 
-        room_destroy(room);
+         room_destroy(room);
     }
 
     TCOD_list_delete(map->entities);

@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
         game_update();
         game_render();
 
-        if (game_status == STATUS_QUIT)
+        if (should_quit)
         {
             break;
         }

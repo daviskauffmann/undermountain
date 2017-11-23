@@ -5,48 +5,6 @@
 #include "game.h"
 #include "utils.h"
 
-/* World */
-void world_init(void)
-{
-    maps = TCOD_list_new();
-
-    tile_common = (tile_common_t){
-        .shadow_color = TCOD_color_RGB(16, 16, 32)};
-
-    tile_info[TILE_FLOOR] = (tile_info_t){
-        .glyph = '.',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    tile_info[TILE_WALL] = (tile_info_t){
-        .glyph = '#',
-        .color = TCOD_white,
-        .is_transparent = false,
-        .is_walkable = false};
-    tile_info[TILE_STAIR_DOWN] = (tile_info_t){
-        .glyph = '>',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    tile_info[TILE_STAIR_UP] = (tile_info_t){
-        .glyph = '<',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-}
-
-void world_reset(void)
-{
-    for (void **iterator = TCOD_list_begin(maps); iterator != TCOD_list_end(maps); iterator++)
-    {
-        map_t *map = *iterator;
-
-        map_destroy(map);
-    }
-
-    TCOD_list_delete(maps);
-}
-
 /* Tiles */
 void tile_init(tile_t *tile, tile_type_t type, bool seen)
 {
@@ -100,10 +58,11 @@ static void hline(map_t *map, int x1, int y, int x2);
 static void hline_left(map_t *map, int x, int y);
 static void hline_right(map_t *map, int x, int y);
 
-map_t *map_create(int level)
+map_t *map_create(game_t *game, int level)
 {
     map_t *map = (map_t *)malloc(sizeof(map_t));
 
+    map->game = game;
     map->level = level;
     map->rooms = TCOD_list_new();
     map->entities = TCOD_list_new();
@@ -146,7 +105,7 @@ map_t *map_create(int level)
         }
 
         // TODO: better npc generation
-        entity_t *monster = entity_create();
+        entity_t *monster = entity_create(game);
         position_t *monster_position = (position_t *)component_add(monster, COMPONENT_POSITION);
         monster_position->map = map;
         monster_position->x = x;
@@ -238,7 +197,7 @@ map_t *map_create(int level)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *item = entity_create();
+        entity_t *item = entity_create(game);
         position_t *item_position = (position_t *)component_add(item, COMPONENT_POSITION);
         item_position->map = map;
         item_position->x = x;
@@ -260,7 +219,7 @@ map_t *map_create(int level)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *brazier = entity_create();
+        entity_t *brazier = entity_create(game);
         position_t *brazier_position = (position_t *)component_add(brazier, COMPONENT_POSITION);
         brazier_position->map = map;
         brazier_position->x = x;
@@ -528,7 +487,7 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            bool is_walkable = tile_info[tile->type].is_walkable;
+            bool is_walkable = map->game->tile_info[tile->type].is_walkable;
 
             for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
             {
@@ -550,7 +509,7 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
                 }
             }
 
-            TCOD_map_set_properties(TCOD_map, x, y, tile_info[tile->type].is_transparent, is_walkable);
+            TCOD_map_set_properties(TCOD_map, x, y, map->game->tile_info[tile->type].is_transparent, is_walkable);
         }
     }
 
@@ -582,7 +541,7 @@ void map_destroy(map_t *map)
     {
         room_t *room = *iterator;
 
-         room_destroy(room);
+        room_destroy(room);
     }
 
     TCOD_list_delete(map->entities);

@@ -6,17 +6,12 @@
 #include "config.h"
 #include "game.h"
 
-void msg_init(void)
+void msg_log(game_t *game, position_t *position, TCOD_color_t color, char *text, ...)
 {
-    messages = TCOD_list_new();
-}
-
-void msg_log(position_t *position, TCOD_color_t color, char *text, ...)
-{
-    if (player != NULL)
+    if (game->player != NULL)
     {
-        position_t *player_position = (position_t *)component_get(player, COMPONENT_POSITION);
-        fov_t *player_fov = (fov_t *)component_get(player, COMPONENT_FOV);
+        position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+        fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
 
         if (player_position != NULL && player_fov != NULL)
         {
@@ -36,11 +31,11 @@ void msg_log(position_t *position, TCOD_color_t color, char *text, ...)
 
                 do
                 {
-                    if (TCOD_list_size(messages) == (console_height / 4) - 2)
+                    if (TCOD_list_size(game->messages) == (console_height / 4) - 2)
                     {
-                        message_t *message = TCOD_list_get(messages, 0);
+                        message_t *message = TCOD_list_get(game->messages, 0);
 
-                        TCOD_list_remove(messages, message);
+                        TCOD_list_remove(game->messages, message);
 
                         free(message->text);
                         free(message);
@@ -57,24 +52,11 @@ void msg_log(position_t *position, TCOD_color_t color, char *text, ...)
                     message->text = strdup(line_begin);
                     message->color = color;
 
-                    TCOD_list_push(messages, message);
+                    TCOD_list_push(game->messages, message);
 
                     line_begin = line_end + 1;
                 } while (line_end);
             }
         }
     }
-}
-
-void msg_reset(void)
-{
-    for (void **iterator = TCOD_list_begin(messages); iterator != TCOD_list_end(messages); iterator++)
-    {
-        message_t *message = *iterator;
-
-        free(message->text);
-        free(message);
-    }
-
-    TCOD_list_delete(messages);
 }

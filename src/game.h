@@ -55,6 +55,7 @@ void room_destroy(room_t *room);
 
 typedef struct map_s
 {
+    struct game_s *game;
     int level;
     int stair_down_x;
     int stair_down_y;
@@ -65,7 +66,7 @@ typedef struct map_s
     TCOD_list_t entities;
 } map_t;
 
-map_t *map_create(int level);
+map_t *map_create(struct game_s *game, int level);
 TCOD_list_t map_get_lights(map_t *map);
 bool map_is_inside(int x, int y);
 room_t *map_get_random_room(map_t *map);
@@ -80,11 +81,12 @@ void map_destroy(map_t *map);
 typedef struct entity_s
 {
     int id;
+    struct game_s *game;
 } entity_t;
 
-entity_t *entity_create(void);
-void entity_calc_fov(entity, lights);
-void entity_calc_ai(entity);
+entity_t *entity_create(struct game_s *game);
+void entity_calc_fov(entity_t *entity, TCOD_list_t lights);
+void entity_calc_ai(entity_t *entity);
 void entity_path_towards(entity_t *entity, int x, int y);
 void entity_move_towards(entity_t *entity, int x, int y);
 void entity_move_random(entity_t *entity);
@@ -250,32 +252,33 @@ typedef struct message_s
     TCOD_color_t color;
 } message_t;
 
-void msg_init(void);
-void msg_log(position_t *position, TCOD_color_t color, char *text, ...);
-void msg_reset(void);
+void msg_log(struct game_s *game, position_t *position, TCOD_color_t color, char *text, ...);
 
 /* Game */
-TCOD_list_t maps;
-tile_common_t tile_common;
-tile_info_t tile_info[NUM_TILES];
-entity_t entities[MAX_ENTITIES];
-entity_t *player;
-void **current;
-component_t components[NUM_COMPONENTS][MAX_ENTITIES];
-TCOD_list_t messages;
-int turn;
-bool should_render;
-bool should_quit;
+typedef struct game_s
+{
+    TCOD_list_t maps;
+    tile_common_t tile_common;
+    tile_info_t tile_info[NUM_TILES];
+    entity_t entities[MAX_ENTITIES];
+    entity_t *player;
+    void **current;
+    component_t components[NUM_COMPONENTS][MAX_ENTITIES];
+    TCOD_list_t messages;
+    int turn;
+    bool should_render;
+    bool should_restart;
+    bool should_quit;
+    TCOD_key_t key;
+    TCOD_mouse_t mouse;
+    TCOD_event_t ev;
+} game_t;
 
-TCOD_key_t key;
-TCOD_mouse_t mouse;
-TCOD_event_t ev;
-
-void game_init(void);
-void game_input(void);
-void game_update(void);
-void game_render(void);
-void game_new(void);
-void game_reset(void);
+void game_init(game_t *game);
+void game_new(game_t *game);
+void game_input(game_t *game);
+void game_update(game_t *game);
+void game_render(game_t *game);
+void game_reset(game_t *game);
 
 #endif

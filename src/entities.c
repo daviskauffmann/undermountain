@@ -5,32 +5,11 @@
 #include "game.h"
 #include "utils.h"
 
-void entities_init(void)
+entity_t *entity_create(game_t *game)
 {
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
-        entity_t *entity = &entities[i];
-
-        entity->id = ID_UNUSED;
-
-        for (int j = 0; j < NUM_COMPONENTS; j++)
-        {
-            component_t *component = &components[j][i];
-
-            component->id = ID_UNUSED;
-        }
-    }
-}
-
-void entities_reset(void)
-{
-}
-
-entity_t *entity_create(void)
-{
-    for (int i = 0; i < MAX_ENTITIES; i++)
-    {
-        entity_t *entity = &entities[i];
+        entity_t *entity = &game->entities[i];
 
         if (entity->id == ID_UNUSED)
         {
@@ -112,11 +91,11 @@ void entity_calc_ai(entity_t *entity)
                 alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
                 targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
 
-                switch (ev)
+                switch (entity->game->ev)
                 {
                 case TCOD_EVENT_KEY_PRESS:
                 {
-                    switch (key.vk)
+                    switch (entity->game->key.vk)
                     {
                     case TCODK_KP1:
                     {
@@ -132,7 +111,7 @@ void entity_calc_ai(entity_t *entity)
                             int x = position->x - 1;
                             int y = position->y + 1;
 
-                            if (key.lctrl)
+                            if (entity->game->key.lctrl)
                             {
                                 entity_swing(entity, x, y);
                             }
@@ -157,7 +136,7 @@ void entity_calc_ai(entity_t *entity)
                             int x = position->x;
                             int y = position->y + 1;
 
-                            if (key.lctrl)
+                            if (entity->game->key.lctrl)
                             {
                                 entity_swing(entity, x, y);
                             }
@@ -183,7 +162,7 @@ void entity_calc_ai(entity_t *entity)
                             int x = position->x + 1;
                             int y = position->y + 1;
 
-                            if (key.lctrl)
+                            if (entity->game->key.lctrl)
                             {
                                 entity_swing(entity, x, y);
                             }
@@ -209,7 +188,7 @@ void entity_calc_ai(entity_t *entity)
                             int x = position->x - 1;
                             int y = position->y;
 
-                            if (key.lctrl)
+                            if (entity->game->key.lctrl)
                             {
                                 entity_swing(entity, x, y);
                             }
@@ -241,7 +220,7 @@ void entity_calc_ai(entity_t *entity)
                             int x = position->x + 1;
                             int y = position->y;
 
-                            if (key.lctrl)
+                            if (entity->game->key.lctrl)
                             {
                                 entity_swing(entity, x, y);
                             }
@@ -267,7 +246,7 @@ void entity_calc_ai(entity_t *entity)
                             int x = position->x - 1;
                             int y = position->y - 1;
 
-                            if (key.lctrl)
+                            if (entity->game->key.lctrl)
                             {
                                 entity_swing(entity, x, y);
                             }
@@ -292,7 +271,7 @@ void entity_calc_ai(entity_t *entity)
                             int x = position->x;
                             int y = position->y - 1;
 
-                            if (key.lctrl)
+                            if (entity->game->key.lctrl)
                             {
                                 entity_swing(entity, x, y);
                             }
@@ -318,7 +297,7 @@ void entity_calc_ai(entity_t *entity)
                             int x = position->x + 1;
                             int y = position->y - 1;
 
-                            if (key.lctrl)
+                            if (entity->game->key.lctrl)
                             {
                                 entity_swing(entity, x, y);
                             }
@@ -332,7 +311,7 @@ void entity_calc_ai(entity_t *entity)
                     }
                     case TCODK_CHAR:
                     {
-                        switch (key.c)
+                        switch (entity->game->key.c)
                         {
                         case 'f':
                         {
@@ -405,7 +384,7 @@ void entity_calc_ai(entity_t *entity)
 
                             if (!item_found)
                             {
-                                msg_log(position, TCOD_white, "There is nothing here!");
+                                msg_log(entity->game, position, TCOD_white, "There is nothing here!");
                             }
 
                             break;
@@ -416,7 +395,7 @@ void entity_calc_ai(entity_t *entity)
                             {
                                 targeting->type = TARGETING_NONE;
 
-                                msg_log(position, TCOD_white, "Look!");
+                                msg_log(entity->game, position, TCOD_white, "Look!");
                             }
                             else
                             {
@@ -462,7 +441,7 @@ void entity_calc_ai(entity_t *entity)
 
                                 targeting->type = TARGETING_NONE;
 
-                                msg_log(position, TCOD_white, "Zap!");
+                                msg_log(entity->game, position, TCOD_white, "Zap!");
                             }
                             else
                             {
@@ -671,7 +650,7 @@ void entity_move(entity_t *entity, int x, int y)
 
             bool can_move = true;
 
-            if (!tile_info[next_tile->type].is_walkable)
+            if (!entity->game->tile_info[next_tile->type].is_walkable)
             {
                 can_move = false;
             }
@@ -707,7 +686,7 @@ void entity_move(entity_t *entity, int x, int y)
                             }
                             else
                             {
-                                if (entity == player)
+                                if (entity == entity->game->player)
                                 {
                                     entity_swap(entity, other);
                                 }
@@ -742,7 +721,7 @@ void entity_swap(entity_t *entity, entity_t *other)
         if (position != NULL && appearance != NULL &&
             other_position != NULL && other_appearance != NULL)
         {
-            msg_log(position, TCOD_white, "%s swaps with %s", appearance->name, other_appearance->name);
+            msg_log(entity->game, position, TCOD_white, "%s swaps with %s", appearance->name, other_appearance->name);
 
             tile_t *tile = &position->map->tiles[position->x][position->y];
             tile_t *other_tile = &other_position->map->tiles[other_position->x][other_position->y];
@@ -783,7 +762,7 @@ void entity_pick(entity_t *entity, entity_t *other)
 
         component_remove(other, COMPONENT_POSITION);
 
-        msg_log(position, TCOD_white, "%s picks up %s", appearance->name, other_appearance->name);
+        msg_log(entity->game, position, TCOD_white, "%s picks up %s", appearance->name, other_appearance->name);
     }
 }
 
@@ -816,7 +795,7 @@ void entity_swing(entity_t *entity, int x, int y)
 
         if (!hit)
         {
-            msg_log(position, TCOD_white, "%s swings at the air", appearance->name);
+            msg_log(entity->game, position, TCOD_white, "%s swings at the air", appearance->name);
         }
     }
 }
@@ -828,7 +807,7 @@ void entity_shoot(entity_t *entity, int x, int y)
 
     if (position != NULL && appearance != NULL)
     {
-        msg_log(position, TCOD_white, "%s shoots", appearance->name);
+        msg_log(entity->game, position, TCOD_white, "%s shoots", appearance->name);
 
         tile_t *other_tile = &position->map->tiles[x][y];
 
@@ -852,7 +831,7 @@ void entity_shoot(entity_t *entity, int x, int y)
 
         if (!hit)
         {
-            msg_log(position, TCOD_white, "%s's arrow flies through the air", appearance->name);
+            msg_log(entity->game, position, TCOD_white, "%s's arrow flies through the air", appearance->name);
         }
     }
 }
@@ -911,7 +890,7 @@ void entity_attack(entity_t *entity, entity_t *other)
                 }
             }
 
-            msg_log(position, crit ? TCOD_yellow : TCOD_white, "%s %s %s for %d", appearance->name, crit ? "crits" : "hits", other_appearance->name, total_damage);
+            msg_log(entity->game, position, crit ? TCOD_yellow : TCOD_white, "%s %s %s for %d", appearance->name, crit ? "crits" : "hits", other_appearance->name, total_damage);
 
             other_health->current -= total_damage;
 
@@ -922,7 +901,7 @@ void entity_attack(entity_t *entity, entity_t *other)
         }
         else
         {
-            msg_log(position, TCOD_white, "%s misses", appearance->name);
+            msg_log(entity->game, position, TCOD_white, "%s misses", appearance->name);
         }
     }
 }
@@ -935,7 +914,7 @@ void entity_die(entity_t *entity)
 
     if (position != NULL && physics != NULL && appearance != NULL)
     {
-        msg_log(position, TCOD_red, "%s dies", appearance->name);
+        msg_log(entity->game, position, TCOD_red, "%s dies", appearance->name);
 
         physics->is_walkable = true;
 
@@ -961,7 +940,12 @@ void entity_destroy(entity_t *entity)
 
 component_t *component_add(entity_t *entity, component_type_t component_type)
 {
-    component_t *component = &components[component_type][entity->id];
+    if (entity->id == ID_UNUSED)
+    {
+        return NULL;
+    }
+
+    component_t *component = &entity->game->components[component_type][entity->id];
 
     component->id = entity->id;
 
@@ -975,7 +959,7 @@ component_t *component_get(entity_t *entity, component_type_t component_type)
         return NULL;
     }
 
-    component_t *component = &components[component_type][entity->id];
+    component_t *component = &entity->game->components[component_type][entity->id];
 
     if (component->id != ID_UNUSED)
     {
@@ -987,7 +971,12 @@ component_t *component_get(entity_t *entity, component_type_t component_type)
 
 void component_remove(entity_t *entity, component_type_t component_type)
 {
-    component_t *component = &components[component_type][entity->id];
+    if (entity->id == ID_UNUSED)
+    {
+        return;
+    }
+
+    component_t *component = &entity->game->components[component_type][entity->id];
 
     component->id = ID_UNUSED;
 }

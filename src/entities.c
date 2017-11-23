@@ -525,6 +525,8 @@ void entity_calc_ai(entity_t *entity)
                                         {
                                             entity_path_towards(entity, other_position->x, other_position->y);
                                         }
+
+                                        break;
                                     }
                                 }
                             }
@@ -848,7 +850,7 @@ void entity_attack(entity_t *entity, entity_t *other)
     if (position != NULL && appearance != NULL &&
         other_position != NULL && other_appearance != NULL && other_health != NULL)
     {
-        int attack_roll = TCOD_random_get_int(NULL, 1, 20);
+        int attack_roll = roll(1, 20);
         int attack_bonus = 1;
         int total_attack = attack_roll + attack_bonus;
         int other_armor_class = 5;
@@ -860,34 +862,32 @@ void entity_attack(entity_t *entity, entity_t *other)
 
         if (hit)
         {
-            int total_damage = 0;
-
+            // 1d8 19-20x2
             int weapon_a = 1;
             int weapon_x = 8;
-            for (int i = 1; i <= weapon_a; i++)
-            {
-                total_damage += TCOD_random_get_int(NULL, 1, weapon_x);
-            }
-
-            bool crit = false;
             int weapon_threat_range = 19;
             int weapon_crit_multiplier = 2;
+
+            int damage_rolls = 1;
+
+            bool crit = false;
             if (attack_roll >= weapon_threat_range)
             {
-                int threat_roll = TCOD_random_get_int(NULL, 1, 20);
+                int threat_roll = roll(1, 20);
                 int total_threat = threat_roll + attack_bonus;
 
                 if (total_threat >= other_armor_class)
                 {
                     crit = true;
-                    for (int i = 1; i < weapon_crit_multiplier; i++)
-                    {
-                        for (int j = 1; j <= weapon_a; j++)
-                        {
-                            total_damage += TCOD_random_get_int(NULL, 1, weapon_x);
-                        }
-                    }
+                    damage_rolls *= weapon_crit_multiplier;
                 }
+            }
+
+            int total_damage = 0;
+            int bonus_damage = 0;
+            for (int i = 0; i < damage_rolls; i++)
+            {
+                total_damage += roll(weapon_a, weapon_x) + bonus_damage;
             }
 
             msg_log(entity->game, position, crit ? TCOD_yellow : TCOD_white, "%s %s %s for %d", appearance->name, crit ? "crits" : "hits", other_appearance->name, total_damage);

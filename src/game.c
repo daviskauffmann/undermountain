@@ -286,6 +286,8 @@ void game_update(game_t *game)
                 game->current++;
             }
         }
+
+        TCOD_list_delete(lights);
     }
 }
 

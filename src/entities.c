@@ -552,25 +552,25 @@ void entity_calc_ai(entity_t *entity)
                         }
                     }
 
-                    if (!target_found)
+                    if (ai->follow_target != NULL)
                     {
-                        if (ai->follow_target != NULL)
-                        {
-                            position_t *follow_position = (position_t *)component_get(ai->follow_target, COMPONENT_POSITION);
+                        position_t *follow_position = (position_t *)component_get(ai->follow_target, COMPONENT_POSITION);
 
-                            if (follow_position != NULL)
+                        if (follow_position != NULL)
+                        {
+                            if (!TCOD_map_is_in_fov(fov->fov_map, follow_position->x, follow_position->y) ||
+                                distance(position->x, position->y, follow_position->x, follow_position->y) > 5.0f)
                             {
-                                if (TCOD_map_is_in_fov(fov->fov_map, follow_position->x, follow_position->y) &&
-                                    distance(position->x, position->y, follow_position->x, follow_position->y) < 5.0f)
-                                {
-                                    entity_move_random(entity);
-                                }
-                                else
-                                {
-                                    entity_path_towards(entity, follow_position->x, follow_position->y);
-                                }
+                                target_found = true;
+
+                                entity_path_towards(entity, follow_position->x, follow_position->y);
                             }
                         }
+                    }
+
+                    if (!target_found)
+                    {
+                        entity_move_random(entity);
                     }
 
                     took_turn = true;
@@ -693,8 +693,6 @@ void entity_move(entity_t *entity, int x, int y)
                                 can_move = false;
                             }
                         }
-
-                        // TODO: properly check for combat
 
                         health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
 
@@ -871,9 +869,8 @@ void entity_attack(entity_t *entity, entity_t *other)
     if (position != NULL && appearance != NULL &&
         other_position != NULL && other_appearance != NULL && other_health != NULL)
     {
-        // TODO: calculate damage
         int attack_roll = TCOD_random_get_int(NULL, 1, 20);
-        int attack_bonus = 0;
+        int attack_bonus = 1;
         int total_attack = attack_roll + attack_bonus;
         int other_armor_class = 5;
         bool hit = attack_roll == 1
@@ -886,33 +883,41 @@ void entity_attack(entity_t *entity, entity_t *other)
         {
             int total_damage = 0;
 
-            int a = 1;
-            int x = 8;
-            int b = 0;
-            total_damage += TCOD_random_get_int(NULL, a, a * x) + b;
+            int weapon_a = 1;
+            int weapon_x = 8;
+            for (int i = 1; i <= weapon_a; i++)
+            {
+                total_damage += TCOD_random_get_int(NULL, 1, weapon_x);
+            }
 
             bool crit = false;
-            int threat_range = 19;
-            if (attack_roll >= threat_range)
+            int weapon_threat_range = 19;
+            int weapon_crit_multiplier = 2;
+            if (attack_roll >= weapon_threat_range)
             {
-                crit = true;
-                total_damage += TCOD_random_get_int(NULL, a, a * x) + b;
-            }
+                int threat_roll = TCOD_random_get_int(NULL, 1, 20);
+                int total_threat = threat_roll + attack_bonus;
 
-            if (other == player)
-            {
-                msg_log(position, TCOD_white, "%s's attack fizzles", appearance->name);
-            }
-            else
-            {
-                msg_log(position, TCOD_white, "%s %s %s for %d", appearance->name, (crit ? "crits" : "hits"), other_appearance->name, total_damage);
-
-                other_health->current -= total_damage;
-
-                if (other_health->current <= 0)
+                if (total_threat >= other_armor_class)
                 {
-                    entity_die(other);
+                    crit = true;
+                    for (int i = 1; i < weapon_crit_multiplier; i++)
+                    {
+                        for (int j = 1; j <= weapon_a; j++)
+                        {
+                            total_damage += TCOD_random_get_int(NULL, 1, weapon_x);
+                        }
+                    }
                 }
+            }
+
+            msg_log(position, crit ? TCOD_yellow : TCOD_white, "%s %s %s for %d", appearance->name, crit ? "crits" : "hits", other_appearance->name, total_damage);
+
+            other_health->current -= total_damage;
+
+            if (other_health->current <= 0)
+            {
+                entity_die(other);
             }
         }
         else

@@ -10,6 +10,7 @@
 void game_init(void)
 {
     player = NULL;
+    current = NULL;
     should_render = false;
     should_quit = false;
 
@@ -72,8 +73,8 @@ void game_new(void)
     ai_t *player_ai = (ai_t *)component_add(player, COMPONENT_AI);
     player_ai->type = AI_INPUT;
     player_ai->turn = true;
-    player_ai->energy = 5.0f;
-    player_ai->energy_per_turn = 5.0f;
+    player_ai->energy = 1.0f;
+    player_ai->energy_per_turn = 1.0f;
     player_ai->follow_target = NULL;
 
     entity_t *pet = entity_create();
@@ -109,10 +110,10 @@ void game_new(void)
     pet_appearance->color = TCOD_white;
     pet_appearance->layer = LAYER_1;
     ai_t *pet_ai = (ai_t *)component_add(pet, COMPONENT_AI);
-    pet_ai->type = AI_INPUT;
+    pet_ai->type = AI_GENERIC;
     pet_ai->turn = true;
-    pet_ai->energy = 5.0f;
-    pet_ai->energy_per_turn = 5.0f;
+    pet_ai->energy = 1.0f;
+    pet_ai->energy_per_turn = 0.5f;
     pet_ai->follow_target = player;
     health_t *pet_health = (health_t *)component_add(pet, COMPONENT_HEALTH);
     pet_health->max = 20;
@@ -185,35 +186,17 @@ void game_update(void)
 
         TCOD_list_t lights = map_get_lights(map);
 
-        entity_t *next = NULL;
-
-        for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
+        if (current == NULL)
         {
-            entity_t *entity = *iterator;
-
-            ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
-
-            if (ai != NULL)
-            {
-                if (ai->turn)
-                {
-                    if (ai->type == AI_INPUT)
-                    {
-                        should_render = true;
-
-                        player = entity;
-                    }
-
-                    next = entity;
-
-                    break;
-                }
-            }
+            current = TCOD_list_begin(map->entities);
         }
 
-        if (next == NULL)
+        if (current == TCOD_list_end(map->entities))
         {
+            current = NULL;
+
             turn++;
+            should_render = true;
 
             for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
             {
@@ -230,11 +213,38 @@ void game_update(void)
         }
         else
         {
-            entity_calc_ai(next);
-            entity_calc_fov(next, lights);
-        }
+            entity_t *entity = *current;
 
-        TCOD_list_delete(lights);
+            bool took_turn = false;
+
+            ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
+
+            if (ai != NULL)
+            {
+                if (ai->turn)
+                {
+                    if (ai->type == AI_INPUT)
+                    {
+                        should_render = true;
+
+                        player = entity;
+                    }
+
+                    entity_calc_ai(entity);
+                    entity_calc_fov(entity, lights);
+
+                    if (!ai->turn)
+                    {
+                        took_turn = true;
+                    }
+                }
+            }
+
+            if (ai == NULL || took_turn)
+            {
+                current++;
+            }
+        }
     }
 }
 
@@ -397,11 +407,6 @@ void game_render(void)
                             }
                         }
 
-                        if (TCOD_list_peek(tile->entities) != NULL)
-                        {
-                            // TCOD_console_set_char_background(NULL, x - view_x, y - view_y, TCOD_dark_gray, TCOD_BKGND_SET);
-                        }
-
                         TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
                         TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info[tile->type].glyph);
                     }
@@ -426,7 +431,7 @@ void game_render(void)
                     {
                         if (position->map == player_position->map && TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))
                         {
-                            TCOD_console_set_char_foreground(NULL, position->x - view_x, position->y - view_y, entity == player ? TCOD_green : appearance->color);
+                            TCOD_console_set_char_foreground(NULL, position->x - view_x, position->y - view_y, appearance->color);
                             TCOD_console_set_char(NULL, position->x - view_x, position->y - view_y, appearance->glyph);
                         }
                     }

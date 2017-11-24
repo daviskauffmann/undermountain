@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <libtcod.h>
+#include <stdio.h>
 
 #include "CMemLeak.h"
 #include "config.h"

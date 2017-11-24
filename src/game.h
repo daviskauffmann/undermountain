@@ -50,6 +50,7 @@ void room_get_random_pos(room_t *room, int *x, int *y);
 void room_destroy(room_t *room);
 
 /* Maps */
+#define NUM_MAPS 1
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
 
@@ -66,13 +67,13 @@ typedef struct map_s
     TCOD_list_t entities;
 } map_t;
 
-map_t *map_create(struct game_s *game, int level);
+void map_init(map_t *map, struct game_s *game, int level);
 TCOD_list_t map_get_lights(map_t *map);
 bool map_is_inside(int x, int y);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
 TCOD_map_t map_to_fov_map(map_t *map, int x, int y, int radius);
-void map_destroy(map_t *map);
+void map_reset(map_t *map);
 
 /* Entities */
 #define MAX_ENTITIES 65536
@@ -220,6 +221,12 @@ typedef struct pickable_s
 typedef struct inventory_s
 {
     TCOD_list_t items;
+    entity_t *head;
+    entity_t *chest;
+    entity_t *legs;
+    entity_t *feet;
+    entity_t *main_hand;
+    entity_t *off_hand;
 } inventory_t;
 
 typedef struct component_s
@@ -257,7 +264,7 @@ void msg_log(struct game_s *game, position_t *position, TCOD_color_t color, char
 /* Game */
 typedef struct game_s
 {
-    TCOD_list_t maps;
+    map_t maps[NUM_MAPS];
     tile_common_t tile_common;
     tile_info_t tile_info[NUM_TILES];
     entity_t entities[MAX_ENTITIES];

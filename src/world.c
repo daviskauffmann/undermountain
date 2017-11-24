@@ -58,10 +58,8 @@ static void hline(map_t *map, int x1, int y, int x2);
 static void hline_left(map_t *map, int x, int y);
 static void hline_right(map_t *map, int x, int y);
 
-map_t *map_create(game_t *game, int level)
+void map_init(map_t *map, game_t *game, int level)
 {
-    map_t *map = (map_t *)malloc(sizeof(map_t));
-
     map->game = game;
     map->level = level;
     map->rooms = TCOD_list_new();
@@ -104,7 +102,6 @@ map_t *map_create(game_t *game, int level)
             continue;
         }
 
-        // TODO: better npc generation
         entity_t *monster = entity_create(game);
         position_t *monster_position = (position_t *)component_add(monster, COMPONENT_POSITION);
         monster_position->map = map;
@@ -241,8 +238,6 @@ map_t *map_create(game_t *game, int level)
         }
         brazier_light->fov_map = NULL;
     }
-
-    return map;
 }
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map)
@@ -525,7 +520,7 @@ TCOD_map_t map_to_fov_map(map_t *map, int x, int y, int radius)
     return fov_map;
 }
 
-void map_destroy(map_t *map)
+void map_reset(map_t *map)
 {
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -544,7 +539,7 @@ void map_destroy(map_t *map)
         room_destroy(room);
     }
 
-    TCOD_list_delete(map->entities);
+    TCOD_list_delete(map->rooms);
 
-    free(map);
+    TCOD_list_delete(map->entities);
 }

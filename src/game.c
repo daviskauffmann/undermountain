@@ -9,7 +9,27 @@
 
 void game_init(game_t *game)
 {
-    game->maps = TCOD_list_new();
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        entity_t *entity = &game->entities[i];
+
+        entity->id = ID_UNUSED;
+        entity->game = game;
+
+        for (int j = 0; j < NUM_COMPONENTS; j++)
+        {
+            component_t *component = &game->components[j][i];
+
+            component->id = ID_UNUSED;
+        }
+    }
+
+    for (int i = 0; i < NUM_MAPS; i++)
+    {
+        map_t *map = &game->maps[i];
+
+        map_init(map, game, i);
+    }
 
     game->tile_common = (tile_common_t){
         .shadow_color = TCOD_color_RGB(16, 16, 32)};
@@ -35,21 +55,6 @@ void game_init(game_t *game)
         .is_transparent = true,
         .is_walkable = true};
 
-    for (int i = 0; i < MAX_ENTITIES; i++)
-    {
-        entity_t *entity = &game->entities[i];
-
-        entity->id = ID_UNUSED;
-        entity->game = game;
-
-        for (int j = 0; j < NUM_COMPONENTS; j++)
-        {
-            component_t *component = &game->components[j][i];
-
-            component->id = ID_UNUSED;
-        }
-    }
-
     game->player = NULL;
     game->current = NULL;
 
@@ -65,8 +70,7 @@ void game_new(game_t *game)
     game->should_render = true;
     game->turn = 0;
 
-    map_t *map = map_create(game, 0);
-    TCOD_list_push(game->maps, map);
+    map_t *map = &game->maps[0];
 
     // TODO: why assign the player here?
     entity_t *player = entity_create(game);
@@ -120,55 +124,52 @@ void game_new(game_t *game)
     player_ai->energy_per_turn = 1.0f;
     player_ai->follow_target = NULL;
 
-    entity_t *pet = entity_create(game);
-    position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
-    pet_position->map = map;
-    pet_position->x = map->stair_up_x + 1;
-    pet_position->y = map->stair_up_y;
-    TCOD_list_push(map->tiles[pet_position->x][pet_position->y].entities, pet);
-    TCOD_list_push(map->entities, pet);
-    physics_t *pet_physics = (physics_t *)component_add(pet, COMPONENT_PHYSICS);
-    pet_physics->is_walkable = false;
-    pet_physics->is_transparent = true;
-    light_t *pet_light = (light_t *)component_add(pet, COMPONENT_LIGHT);
-    pet_light->radius = 5;
-    pet_light->color = TCOD_white;
-    pet_light->flicker = false;
-    pet_light->priority = LIGHT_PRIORITY_0;
-    if (pet_light->fov_map != NULL)
+    for (int i = 0; i < 4; i++)
     {
-        TCOD_map_delete(pet_light->fov_map);
+        entity_t *pet = entity_create(game);
+        position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
+        pet_position->map = map;
+        pet_position->x = map->stair_up_x + 1;
+        pet_position->y = map->stair_up_y;
+        TCOD_list_push(map->tiles[pet_position->x][pet_position->y].entities, pet);
+        TCOD_list_push(map->entities, pet);
+        physics_t *pet_physics = (physics_t *)component_add(pet, COMPONENT_PHYSICS);
+        pet_physics->is_walkable = false;
+        pet_physics->is_transparent = true;
+        light_t *pet_light = (light_t *)component_add(pet, COMPONENT_LIGHT);
+        pet_light->radius = 5;
+        pet_light->color = TCOD_white;
+        pet_light->flicker = false;
+        pet_light->priority = LIGHT_PRIORITY_0;
+        if (pet_light->fov_map != NULL)
+        {
+            TCOD_map_delete(pet_light->fov_map);
+        }
+        pet_light->fov_map = NULL;
+        fov_t *pet_fov = (fov_t *)component_add(pet, COMPONENT_FOV);
+        pet_fov->radius = 1;
+        if (pet_fov->fov_map != NULL)
+        {
+            TCOD_map_delete(pet_fov->fov_map);
+        }
+        pet_fov->fov_map = NULL;
+        appearance_t *pet_appearance = (appearance_t *)component_add(pet, COMPONENT_APPEARANCE);
+        pet_appearance->name = "Spot";
+        pet_appearance->glyph = 'd';
+        pet_appearance->color = TCOD_white;
+        pet_appearance->layer = LAYER_1;
+        ai_t *pet_ai = (ai_t *)component_add(pet, COMPONENT_AI);
+        pet_ai->type = AI_GENERIC;
+        pet_ai->turn = true;
+        pet_ai->energy = 1.0f;
+        pet_ai->energy_per_turn = 1.0f;
+        pet_ai->follow_target = player;
+        health_t *pet_health = (health_t *)component_add(pet, COMPONENT_HEALTH);
+        pet_health->max = 20;
+        pet_health->current = pet_health->max;
+        alignment_t *pet_alignment = (alignment_t *)component_add(pet, COMPONENT_ALIGNMENT);
+        pet_alignment->type = ALIGNMENT_GOOD;
     }
-    pet_light->fov_map = NULL;
-    fov_t *pet_fov = (fov_t *)component_add(pet, COMPONENT_FOV);
-    pet_fov->radius = 1;
-    if (pet_fov->fov_map != NULL)
-    {
-        TCOD_map_delete(pet_fov->fov_map);
-    }
-    pet_fov->fov_map = NULL;
-    appearance_t *pet_appearance = (appearance_t *)component_add(pet, COMPONENT_APPEARANCE);
-    pet_appearance->name = "Spot";
-    pet_appearance->glyph = 'd';
-    pet_appearance->color = TCOD_white;
-    pet_appearance->layer = LAYER_1;
-    ai_t *pet_ai = (ai_t *)component_add(pet, COMPONENT_AI);
-    pet_ai->type = AI_GENERIC;
-    pet_ai->turn = true;
-    pet_ai->energy = 1.0f;
-    pet_ai->energy_per_turn = 0.5f;
-    pet_ai->follow_target = player;
-    health_t *pet_health = (health_t *)component_add(pet, COMPONENT_HEALTH);
-    pet_health->max = 20;
-    pet_health->current = pet_health->max;
-    alignment_t *pet_alignment = (alignment_t *)component_add(pet, COMPONENT_ALIGNMENT);
-    pet_alignment->type = ALIGNMENT_GOOD;
-    targeting_t *pet_targeting = (targeting_t *)component_add(pet, COMPONENT_TARGETING);
-    pet_targeting->type = TARGETING_NONE;
-    pet_targeting->x = -1;
-    pet_targeting->y = -1;
-    inventory_t *pet_inventory = (inventory_t *)component_add(pet, COMPONENT_INVENTORY);
-    pet_inventory->items = TCOD_list_new();
 
     msg_log(player->game, NULL, TCOD_white, "Hail, %s!", player_appearance->name);
 }
@@ -221,9 +222,9 @@ void game_input(game_t *game)
 
 void game_update(game_t *game)
 {
-    for (void **iterator = TCOD_list_begin(game->maps); iterator != TCOD_list_end(game->maps); iterator++)
+    for (int i = 0; i < NUM_MAPS; i++)
     {
-        map_t *map = *iterator;
+        map_t *map = &game->maps[i];
 
         TCOD_list_t lights = map_get_lights(map);
 
@@ -489,7 +490,7 @@ void game_render(game_t *game)
 
             targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-            if (player_targeting->type != TARGETING_NONE)
+            if (player_targeting != NULL && player_targeting->type != TARGETING_NONE)
             {
                 TCOD_console_set_char_foreground(NULL, player_targeting->x - view_x, player_targeting->y - view_y, TCOD_red);
                 TCOD_console_set_char(NULL, player_targeting->x - view_x, player_targeting->y - view_y, 'X');
@@ -531,14 +532,12 @@ void game_render(game_t *game)
 
 void game_reset(game_t *game)
 {
-    for (void **iterator = TCOD_list_begin(game->maps); iterator != TCOD_list_end(game->maps); iterator++)
+    for (int i = 0; i < NUM_MAPS; i++)
     {
-        map_t *map = *iterator;
+        map_t *map = &game->maps[i];
 
-        map_destroy(map);
+        map_reset(map);
     }
-
-    TCOD_list_delete(game->maps);
 
     for (void **iterator = TCOD_list_begin(game->messages); iterator != TCOD_list_end(game->messages); iterator++)
     {

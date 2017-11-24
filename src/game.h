@@ -269,7 +269,7 @@ typedef struct game_s
     tile_info_t tile_info[NUM_TILES];
     entity_t entities[MAX_ENTITIES];
     entity_t *player;
-    void **current;
+    int current_id;
     component_t components[NUM_COMPONENTS][MAX_ENTITIES];
     TCOD_list_t messages;
     int turn;

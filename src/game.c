@@ -56,7 +56,7 @@ void game_init(game_t *game)
         .is_walkable = true};
 
     game->player = NULL;
-    game->current = NULL;
+    game->current_id = 0;
 
     game->should_render = false;
     game->should_restart = false;
@@ -124,52 +124,49 @@ void game_new(game_t *game)
     player_ai->energy_per_turn = 1.0f;
     player_ai->follow_target = NULL;
 
-    for (int i = 0; i < 4; i++)
+    entity_t *pet = entity_create(game);
+    position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
+    pet_position->map = map;
+    pet_position->x = map->stair_up_x + 1;
+    pet_position->y = map->stair_up_y;
+    TCOD_list_push(map->tiles[pet_position->x][pet_position->y].entities, pet);
+    TCOD_list_push(map->entities, pet);
+    physics_t *pet_physics = (physics_t *)component_add(pet, COMPONENT_PHYSICS);
+    pet_physics->is_walkable = false;
+    pet_physics->is_transparent = true;
+    light_t *pet_light = (light_t *)component_add(pet, COMPONENT_LIGHT);
+    pet_light->radius = 5;
+    pet_light->color = TCOD_white;
+    pet_light->flicker = false;
+    pet_light->priority = LIGHT_PRIORITY_0;
+    if (pet_light->fov_map != NULL)
     {
-        entity_t *pet = entity_create(game);
-        position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
-        pet_position->map = map;
-        pet_position->x = map->stair_up_x + 1;
-        pet_position->y = map->stair_up_y;
-        TCOD_list_push(map->tiles[pet_position->x][pet_position->y].entities, pet);
-        TCOD_list_push(map->entities, pet);
-        physics_t *pet_physics = (physics_t *)component_add(pet, COMPONENT_PHYSICS);
-        pet_physics->is_walkable = false;
-        pet_physics->is_transparent = true;
-        light_t *pet_light = (light_t *)component_add(pet, COMPONENT_LIGHT);
-        pet_light->radius = 5;
-        pet_light->color = TCOD_white;
-        pet_light->flicker = false;
-        pet_light->priority = LIGHT_PRIORITY_0;
-        if (pet_light->fov_map != NULL)
-        {
-            TCOD_map_delete(pet_light->fov_map);
-        }
-        pet_light->fov_map = NULL;
-        fov_t *pet_fov = (fov_t *)component_add(pet, COMPONENT_FOV);
-        pet_fov->radius = 1;
-        if (pet_fov->fov_map != NULL)
-        {
-            TCOD_map_delete(pet_fov->fov_map);
-        }
-        pet_fov->fov_map = NULL;
-        appearance_t *pet_appearance = (appearance_t *)component_add(pet, COMPONENT_APPEARANCE);
-        pet_appearance->name = "Spot";
-        pet_appearance->glyph = 'd';
-        pet_appearance->color = TCOD_white;
-        pet_appearance->layer = LAYER_1;
-        ai_t *pet_ai = (ai_t *)component_add(pet, COMPONENT_AI);
-        pet_ai->type = AI_GENERIC;
-        pet_ai->turn = true;
-        pet_ai->energy = 1.0f;
-        pet_ai->energy_per_turn = 1.0f;
-        pet_ai->follow_target = player;
-        health_t *pet_health = (health_t *)component_add(pet, COMPONENT_HEALTH);
-        pet_health->max = 20;
-        pet_health->current = pet_health->max;
-        alignment_t *pet_alignment = (alignment_t *)component_add(pet, COMPONENT_ALIGNMENT);
-        pet_alignment->type = ALIGNMENT_GOOD;
+        TCOD_map_delete(pet_light->fov_map);
     }
+    pet_light->fov_map = NULL;
+    fov_t *pet_fov = (fov_t *)component_add(pet, COMPONENT_FOV);
+    pet_fov->radius = 1;
+    if (pet_fov->fov_map != NULL)
+    {
+        TCOD_map_delete(pet_fov->fov_map);
+    }
+    pet_fov->fov_map = NULL;
+    appearance_t *pet_appearance = (appearance_t *)component_add(pet, COMPONENT_APPEARANCE);
+    pet_appearance->name = "Spot";
+    pet_appearance->glyph = 'd';
+    pet_appearance->color = TCOD_white;
+    pet_appearance->layer = LAYER_1;
+    ai_t *pet_ai = (ai_t *)component_add(pet, COMPONENT_AI);
+    pet_ai->type = AI_GENERIC;
+    pet_ai->turn = true;
+    pet_ai->energy = 1.0f;
+    pet_ai->energy_per_turn = 1.0f;
+    pet_ai->follow_target = player;
+    health_t *pet_health = (health_t *)component_add(pet, COMPONENT_HEALTH);
+    pet_health->max = 20;
+    pet_health->current = pet_health->max;
+    alignment_t *pet_alignment = (alignment_t *)component_add(pet, COMPONENT_ALIGNMENT);
+    pet_alignment->type = ALIGNMENT_GOOD;
 
     msg_log(player->game, NULL, TCOD_white, "Hail, %s!", player_appearance->name);
 }
@@ -222,73 +219,67 @@ void game_input(game_t *game)
 
 void game_update(game_t *game)
 {
-    for (int i = 0; i < NUM_MAPS; i++)
+    if (game->current_id == MAX_ENTITIES)
     {
-        map_t *map = &game->maps[i];
+        game->current_id = 0;
+        game->turn++;
+        game->should_render = true;
 
-        TCOD_list_t lights = map_get_lights(map);
-
-        if (game->current == NULL)
+        for (int i = 0; i < MAX_ENTITIES; i++)
         {
-            game->current = TCOD_list_begin(map->entities);
-        }
-
-        if (game->current == TCOD_list_end(map->entities))
-        {
-            game->current = NULL;
-
-            game->turn++;
-            game->should_render = true;
-
-            for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
-            {
-                entity_t *entity = *iterator;
-
-                ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
-
-                if (ai != NULL)
-                {
-                    ai->turn = true;
-                    ai->energy += ai->energy_per_turn;
-                }
-            }
-        }
-        else
-        {
-            entity_t *entity = *game->current;
-
-            bool took_turn = false;
+            entity_t *entity = &game->entities[i];
 
             ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
 
             if (ai != NULL)
             {
-                if (ai->turn)
+                ai->turn = true;
+                ai->energy += ai->energy_per_turn;
+            }
+        }
+    }
+    else
+    {
+        entity_t *entity = &game->entities[game->current_id];
+
+        bool took_turn = false;
+
+        ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
+
+        if (ai != NULL)
+        {
+            if (ai->turn)
+            {
+                if (ai->type == AI_INPUT)
                 {
-                    if (ai->type == AI_INPUT)
-                    {
-                        game->should_render = true;
+                    game->player = entity;
+                    game->should_render = true;
+                }
 
-                        game->player = entity;
-                    }
+                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-                    entity_calc_ai(entity);
+                if (position != NULL)
+                {
+                    TCOD_list_t lights = map_get_lights(position->map);
+
                     entity_calc_fov(entity, lights);
 
-                    if (!ai->turn)
-                    {
-                        took_turn = true;
-                    }
+                    TCOD_list_delete(lights);
                 }
-            }
 
-            if (ai == NULL || took_turn)
-            {
-                game->current++;
+                entity_calc_ai(entity);
+
+                if (!ai->turn)
+                {
+                    took_turn = true;
+                }
             }
         }
 
-        TCOD_list_delete(lights);
+        if (ai == NULL || took_turn)
+        {
+            game->current_id++;
+        }
     }
 }
 

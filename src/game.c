@@ -219,6 +219,8 @@ void game_input(game_t *game)
 
 void game_update(game_t *game)
 {
+    static TCOD_list_t lights_by_map[NUM_MAPS];
+
     if (game->current_id == MAX_ENTITIES)
     {
         game->current_id = 0;
@@ -236,6 +238,18 @@ void game_update(game_t *game)
                 ai->turn = true;
                 ai->energy += ai->energy_per_turn;
             }
+        }
+
+        for (int i = 0; i < NUM_MAPS; i++)
+        {
+            if (lights_by_map[i] != NULL)
+            {
+                TCOD_list_delete(lights_by_map[i]);
+            }
+
+            map_t *map = &game->maps[i];
+
+            lights_by_map[i] = map_get_lights(map);
         }
     }
     else
@@ -260,11 +274,12 @@ void game_update(game_t *game)
 
                 if (position != NULL)
                 {
-                    TCOD_list_t lights = map_get_lights(position->map);
+                    TCOD_list_t lights = lights_by_map[position->map->level];
 
-                    entity_calc_fov(entity, lights);
-
-                    TCOD_list_delete(lights);
+                    if (lights != NULL)
+                    {
+                        entity_calc_fov(entity, lights);
+                    }
                 }
 
                 entity_calc_ai(entity);

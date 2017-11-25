@@ -157,10 +157,10 @@ void game_new(game_t *game)
     pet_appearance->color = TCOD_white;
     pet_appearance->layer = LAYER_1;
     ai_t *pet_ai = (ai_t *)component_add(pet, COMPONENT_AI);
-    pet_ai->type = AI_GENERIC;
+    pet_ai->type = AI_INPUT;
     pet_ai->turn = true;
     pet_ai->energy = 1.0f;
-    pet_ai->energy_per_turn = 1.0f;
+    pet_ai->energy_per_turn = 0.5F;
     pet_ai->follow_target = player;
     health_t *pet_health = (health_t *)component_add(pet, COMPONENT_HEALTH);
     pet_health->max = 20;
@@ -264,12 +264,6 @@ void game_update(game_t *game)
         {
             if (ai->turn)
             {
-                if (ai->type == AI_INPUT)
-                {
-                    game->player = entity;
-                    game->should_render = true;
-                }
-
                 position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
                 if (position != NULL)
@@ -284,7 +278,15 @@ void game_update(game_t *game)
 
                 entity_calc_ai(entity);
 
-                if (!ai->turn)
+                if (ai->turn)
+                {
+                    if (ai->type == AI_INPUT)
+                    {
+                        game->player = entity;
+                        game->should_render = true;
+                    }
+                }
+                else
                 {
                     took_turn = true;
                 }

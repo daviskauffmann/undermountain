@@ -157,10 +157,10 @@ void game_new(game_t *game)
     pet_appearance->color = TCOD_white;
     pet_appearance->layer = LAYER_1;
     ai_t *pet_ai = (ai_t *)component_add(pet, COMPONENT_AI);
-    pet_ai->type = AI_INPUT;
+    pet_ai->type = AI_GENERIC;
     pet_ai->turn = true;
     pet_ai->energy = 1.0f;
-    pet_ai->energy_per_turn = 0.5F;
+    pet_ai->energy_per_turn = 0.5f;
     pet_ai->follow_target = player;
     health_t *pet_health = (health_t *)component_add(pet, COMPONENT_HEALTH);
     pet_health->max = 20;
@@ -219,8 +219,6 @@ void game_input(game_t *game)
 
 void game_update(game_t *game)
 {
-    static TCOD_list_t lights_by_map[NUM_MAPS];
-
     if (game->current_id == MAX_ENTITIES)
     {
         game->current_id = 0;
@@ -239,18 +237,6 @@ void game_update(game_t *game)
                 ai->energy += ai->energy_per_turn;
             }
         }
-
-        for (int i = 0; i < NUM_MAPS; i++)
-        {
-            if (lights_by_map[i] != NULL)
-            {
-                TCOD_list_delete(lights_by_map[i]);
-            }
-
-            map_t *map = &game->maps[i];
-
-            lights_by_map[i] = map_get_lights(map);
-        }
     }
     else
     {
@@ -268,12 +254,9 @@ void game_update(game_t *game)
 
                 if (position != NULL)
                 {
-                    TCOD_list_t lights = lights_by_map[position->map->level];
-
-                    if (lights != NULL)
-                    {
-                        entity_calc_fov(entity, lights);
-                    }
+                    TCOD_list_t lights = map_get_lights(position->map);
+                    entity_calc_fov(entity, lights);
+                    TCOD_list_delete(lights);
                 }
 
                 entity_calc_ai(entity);

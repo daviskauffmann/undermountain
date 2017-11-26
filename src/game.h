@@ -87,7 +87,7 @@ typedef struct entity_s
 
 entity_t *entity_create(struct game_s *game);
 void entity_calc_fov(entity_t *entity, TCOD_list_t lights);
-void entity_calc_ai(entity_t *entity);
+bool entity_take_turn(entity_t *entity);
 void entity_path_towards(entity_t *entity, int x, int y);
 void entity_move_towards(entity_t *entity, int x, int y);
 void entity_move_random(entity_t *entity);
@@ -132,7 +132,6 @@ typedef enum ai_type_e {
 typedef struct ai_s
 {
     ai_type_t type;
-    bool turn;
     float energy;
     float energy_per_turn;
     entity_t *follow_target;
@@ -276,10 +275,11 @@ typedef struct game_s
     bool should_render;
     bool should_restart;
     bool should_quit;
-    TCOD_key_t key;
-    TCOD_mouse_t mouse;
-    TCOD_event_t ev;
 } game_t;
+
+TCOD_key_t key;
+TCOD_mouse_t mouse;
+TCOD_event_t ev;
 
 void game_init(game_t *game);
 void game_new(game_t *game);

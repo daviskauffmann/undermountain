@@ -123,7 +123,6 @@ void map_init(map_t *map, game_t *game, int level)
         monster_fov->fov_map = NULL;
         ai_t *monster_ai = (ai_t *)component_add(monster, COMPONENT_AI);
         monster_ai->type = AI_GENERIC;
-        monster_ai->turn = true;
         monster_ai->energy = 1.0f;
         monster_ai->follow_target = NULL;
         health_t *monster_health = (health_t *)component_add(monster, COMPONENT_HEALTH);

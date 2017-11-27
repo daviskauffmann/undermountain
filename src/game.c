@@ -251,7 +251,7 @@ void game_update(game_t *game)
 
             if (position != NULL)
             {
-                if (ai->type == AI_INPUT || true)
+                if (ai->type == AI_INPUT)
                 {
                     TCOD_list_t lights = map_get_lights(position->map);
 

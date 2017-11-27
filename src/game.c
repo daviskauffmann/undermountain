@@ -11,14 +11,14 @@ void game_init(game_t *game)
 {
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
-        entity_t *entity = &game->entities[i];
+        entity_t *entity = &game->state.entities[i];
 
         entity->id = ID_UNUSED;
         entity->game = game;
 
         for (int j = 0; j < NUM_COMPONENTS; j++)
         {
-            component_t *component = &game->components[j][i];
+            component_t *component = &game->state.components[j][i];
 
             component->id = ID_UNUSED;
         }
@@ -26,7 +26,7 @@ void game_init(game_t *game)
 
     for (int i = 0; i < NUM_MAPS; i++)
     {
-        map_t *map = &game->maps[i];
+        map_t *map = &game->state.maps[i];
 
         map_init(map, game, i);
     }
@@ -62,15 +62,18 @@ void game_init(game_t *game)
     game->should_restart = false;
     game->should_quit = false;
 
-    game->messages = TCOD_list_new();
+    game->state.messages = TCOD_list_new();
+
+    game->msg_visible = true;
+    game->panel_visible = false;
 }
 
 void game_new(game_t *game)
 {
+    game->state.turn = 0;
     game->should_render = true;
-    game->turn = 0;
 
-    map_t *map = &game->maps[0];
+    map_t *map = &game->state.maps[0];
 
     // TODO: why assign the player here?
     entity_t *player = entity_create(game);
@@ -171,19 +174,61 @@ void game_new(game_t *game)
 
 void game_input(game_t *game)
 {
+    ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
+
+    switch (ev)
+    {
+    case TCOD_EVENT_KEY_PRESS:
+    {
+        switch (key.vk)
+        {
+        case TCODK_ESCAPE:
+        {
+            game->should_quit = true;
+
+            break;
+        }
+        case TCODK_ENTER:
+        {
+            if (key.lalt)
+            {
+                fullscreen = !fullscreen;
+
+                TCOD_console_set_fullscreen(fullscreen);
+            }
+
+            break;
+        }
+        case TCODK_CHAR:
+        {
+            switch (key.c)
+            {
+            case 'r':
+            {
+                game->should_restart = true;
+
+                break;
+            }
+            }
+
+            break;
+        }
+        }
+    }
+    }
 }
 
 void game_update(game_t *game)
 {
     if (game->current_id == MAX_ENTITIES)
     {
+        game->state.turn++;
         game->current_id = 0;
-        game->turn++;
         game->should_render = true;
 
         for (int i = 0; i < MAX_ENTITIES; i++)
         {
-            entity_t *entity = &game->entities[i];
+            entity_t *entity = &game->state.entities[i];
 
             ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
 
@@ -194,7 +239,7 @@ void game_update(game_t *game)
         }
     }
 
-    entity_t *entity = &game->entities[game->current_id];
+    entity_t *entity = &game->state.entities[game->current_id];
 
     ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
 
@@ -206,10 +251,12 @@ void game_update(game_t *game)
 
             if (position != NULL)
             {
-                if (ai->type == AI_INPUT)
+                if (ai->type == AI_INPUT || true)
                 {
                     TCOD_list_t lights = map_get_lights(position->map);
+
                     entity_calc_fov(entity, lights);
+
                     TCOD_list_delete(lights);
                 }
                 else
@@ -222,7 +269,10 @@ void game_update(game_t *game)
             {
                 ai->energy -= 1.0f;
 
-                game->current_id++;
+                if (ai->energy < 1.0f)
+                {
+                    game->current_id++;
+                }
             }
             else
             {
@@ -258,25 +308,20 @@ void game_render(game_t *game)
 
         position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
 
-        static int msg_x = 0;
-        static int msg_y = 0;
-        static int msg_width = 0;
-        static int msg_height = 0;
+        int msg_x = 0;
+        int msg_height = console_height / 4;
+        int msg_y = console_height - msg_height;
+        int msg_width = console_width;
 
-        static int view_x = 0;
-        static int view_y = 0;
-        static int view_width = 0;
-        static int view_height = 0;
+        int panel_width = console_width / 2;
+        int panel_x = console_width - panel_width;
+        int panel_y = 0;
+        int panel_height = console_height - (game->msg_visible ? msg_height : 0);
 
-        msg_x = 0;
-        msg_height = console_height / 4;
-        msg_y = console_height - msg_height;
-        msg_width = console_width;
-
-        view_width = console_width;
-        view_height = console_height - msg_height;
-        view_x = player_position->x - view_width / 2;
-        view_y = player_position->y - view_height / 2;
+        int view_width = console_width - (game->panel_visible ? panel_width : 0);
+        int view_height = console_height - (game->msg_visible ? msg_height : 0);
+        int view_x = player_position->x - view_width / 2;
+        int view_y = player_position->y - view_height / 2;
 
 #if CONSTRAIN_VIEW
         view_x = view_x < 0
@@ -445,34 +490,51 @@ void game_render(game_t *game)
             TCOD_console_set_char(NULL, player_targeting->x - view_x, player_targeting->y - view_y, 'X');
         }
 
-        static TCOD_console_t msg = NULL;
-
-        if (msg == NULL)
+        if (game->msg_visible)
         {
-            msg = TCOD_console_new(console_width, console_height);
+            static TCOD_console_t msg = NULL;
+
+            if (msg == NULL)
+            {
+                msg = TCOD_console_new(console_width, console_height);
+            }
+
+            TCOD_console_set_default_background(msg, TCOD_black);
+            TCOD_console_set_default_foreground(msg, TCOD_white);
+            TCOD_console_clear(msg);
+
+            int y = 1;
+            for (void **i = TCOD_list_begin(game->state.messages); i != TCOD_list_end(game->state.messages); i++)
+            {
+                message_t *message = *i;
+
+                TCOD_console_set_default_foreground(msg, message->color);
+                TCOD_console_print(msg, msg_x + 1, y, message->text);
+
+                y++;
+            }
+
+            TCOD_console_set_default_foreground(msg, TCOD_white);
+            TCOD_console_print_frame(msg, 0, 0, msg_width, msg_height, false, TCOD_BKGND_SET, "Log");
+
+            TCOD_console_blit(msg, 0, 0, msg_width, msg_height, NULL, msg_x, msg_y, 1, 1);
         }
 
-        TCOD_console_set_default_background(msg, TCOD_black);
-        TCOD_console_set_default_foreground(msg, TCOD_white);
-        TCOD_console_clear(msg);
-
-        int y = 1;
-        for (void **i = TCOD_list_begin(game->messages); i != TCOD_list_end(game->messages); i++)
+        if (game->panel_visible)
         {
-            message_t *message = *i;
+            static TCOD_console_t panel = NULL;
 
-            TCOD_console_set_default_foreground(msg, message->color);
-            TCOD_console_print(msg, msg_x + 1, y, message->text);
+            if (panel == NULL)
+            {
+                panel = TCOD_console_new(console_height, console_width);
+            }
 
-            y++;
+            TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Panel");
+
+            TCOD_console_blit(panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
         }
 
-        TCOD_console_set_default_foreground(msg, TCOD_white);
-        TCOD_console_print_frame(msg, 0, 0, msg_width, msg_height, false, TCOD_BKGND_SET, "Log");
-
-        TCOD_console_blit(msg, 0, 0, msg_width, msg_height, NULL, msg_x, msg_y, 1, 1);
-
-        TCOD_console_print(NULL, 0, 0, "Turn: %d", game->turn);
+        TCOD_console_print(NULL, 0, 0, "Turn: %d", game->state.turn);
 
         TCOD_console_flush();
     }
@@ -482,12 +544,12 @@ void game_reset(game_t *game)
 {
     for (int i = 0; i < NUM_MAPS; i++)
     {
-        map_t *map = &game->maps[i];
+        map_t *map = &game->state.maps[i];
 
         map_reset(map);
     }
 
-    for (void **iterator = TCOD_list_begin(game->messages); iterator != TCOD_list_end(game->messages); iterator++)
+    for (void **iterator = TCOD_list_begin(game->state.messages); iterator != TCOD_list_end(game->state.messages); iterator++)
     {
         message_t *message = *iterator;
 
@@ -495,5 +557,5 @@ void game_reset(game_t *game)
         free(message);
     }
 
-    TCOD_list_delete(game->messages);
+    TCOD_list_delete(game->state.messages);
 }

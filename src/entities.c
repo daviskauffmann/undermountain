@@ -9,7 +9,7 @@ entity_t *entity_create(game_t *game)
 {
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
-        entity_t *entity = &game->entities[i];
+        entity_t *entity = &game->state.entities[i];
 
         if (entity->id == ID_UNUSED)
         {
@@ -84,8 +84,6 @@ bool entity_take_turn(entity_t *entity)
         {
         case AI_INPUT:
         {
-            ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
-
             position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
             fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
             alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
@@ -97,23 +95,6 @@ bool entity_take_turn(entity_t *entity)
             {
                 switch (key.vk)
                 {
-                case TCODK_ESCAPE:
-                {
-                    entity->game->should_quit = true;
-
-                    break;
-                }
-                case TCODK_ENTER:
-                {
-                    if (key.lalt)
-                    {
-                        fullscreen = !fullscreen;
-
-                        TCOD_console_set_fullscreen(fullscreen);
-                    }
-
-                    break;
-                }
                 case TCODK_KP1:
                 {
                     if (targeting != NULL && targeting->type != TARGETING_NONE)
@@ -330,6 +311,12 @@ bool entity_take_turn(entity_t *entity)
                 {
                     switch (key.c)
                     {
+                    case 'c':
+                    {
+                        entity->game->panel_visible = !entity->game->panel_visible;
+
+                        break;
+                    }
                     case 'f':
                     {
                         if (targeting != NULL)
@@ -417,6 +404,12 @@ bool entity_take_turn(entity_t *entity)
 
                         break;
                     }
+                    case 'i':
+                    {
+                        entity->game->panel_visible = !entity->game->panel_visible;
+
+                        break;
+                    }
                     case 'l':
                     {
                         if (targeting != NULL)
@@ -437,9 +430,9 @@ bool entity_take_turn(entity_t *entity)
 
                         break;
                     }
-                    case 'r':
+                    case 'm':
                     {
-                        entity->game->should_restart = true;
+                        entity->game->msg_visible = !entity->game->msg_visible;
 
                         break;
                     }
@@ -987,7 +980,7 @@ component_t *component_add(entity_t *entity, component_type_t component_type)
         return NULL;
     }
 
-    component_t *component = &entity->game->components[component_type][entity->id];
+    component_t *component = &entity->game->state.components[component_type][entity->id];
 
     component->id = entity->id;
 
@@ -1001,7 +994,7 @@ component_t *component_get(entity_t *entity, component_type_t component_type)
         return NULL;
     }
 
-    component_t *component = &entity->game->components[component_type][entity->id];
+    component_t *component = &entity->game->state.components[component_type][entity->id];
 
     if (component->id != ID_UNUSED)
     {
@@ -1018,7 +1011,7 @@ void component_remove(entity_t *entity, component_type_t component_type)
         return;
     }
 
-    component_t *component = &entity->game->components[component_type][entity->id];
+    component_t *component = &entity->game->state.components[component_type][entity->id];
 
     component->id = ID_UNUSED;
 }

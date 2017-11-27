@@ -31,11 +31,11 @@ void msg_log(game_t *game, position_t *position, TCOD_color_t color, char *text,
 
                 do
                 {
-                    if (TCOD_list_size(game->messages) == (console_height / 4) - 2)
+                    if (TCOD_list_size(game->state.messages) == (console_height / 4) - 2)
                     {
-                        message_t *message = TCOD_list_get(game->messages, 0);
+                        message_t *message = TCOD_list_get(game->state.messages, 0);
 
-                        TCOD_list_remove(game->messages, message);
+                        TCOD_list_remove(game->state.messages, message);
 
                         free(message->text);
                         free(message);
@@ -52,7 +52,7 @@ void msg_log(game_t *game, position_t *position, TCOD_color_t color, char *text,
                     message->text = strdup(line_begin);
                     message->color = color;
 
-                    TCOD_list_push(game->messages, message);
+                    TCOD_list_push(game->state.messages, message);
 
                     line_begin = line_end + 1;
                 } while (line_end);

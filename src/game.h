@@ -261,20 +261,27 @@ typedef struct message_s
 void msg_log(struct game_s *game, position_t *position, TCOD_color_t color, char *text, ...);
 
 /* Game */
-typedef struct game_s
+typedef struct state_s
 {
     map_t maps[NUM_MAPS];
-    tile_common_t tile_common;
-    tile_info_t tile_info[NUM_TILES];
     entity_t entities[MAX_ENTITIES];
-    entity_t *player;
-    int current_id;
     component_t components[NUM_COMPONENTS][MAX_ENTITIES];
     TCOD_list_t messages;
     int turn;
+} state_t;
+
+typedef struct game_s
+{
+    state_t state;
+    tile_common_t tile_common;
+    tile_info_t tile_info[NUM_TILES];
+    entity_t *player;
+    int current_id;
     bool should_render;
     bool should_restart;
     bool should_quit;
+    bool msg_visible;
+    bool panel_visible;
 } game_t;
 
 TCOD_key_t key;

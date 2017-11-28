@@ -47,8 +47,8 @@ void room_destroy(room_t *room)
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
 #define NUM_MONSTERS 50
-#define NUM_ADVENTURERS 10
-#define NUM_ITEMS 50
+#define NUM_ADVENTURERS 20
+#define NUM_ITEMS 10
 #define NUM_BRAZIERS 5
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);

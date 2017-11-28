@@ -1,6 +1,8 @@
 #include <libtcod.h>
-#include <math.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <math.h>
 
 #include "CMemLeak.h"
 #include "config.h"
@@ -11,14 +13,14 @@ void game_init(game_t *game)
 {
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
-        entity_t *entity = &game->state.entities[i];
+        entity_t *entity = &game->entities[i];
 
         entity->id = ID_UNUSED;
         entity->game = game;
 
         for (int j = 0; j < NUM_COMPONENTS; j++)
         {
-            component_t *component = &game->state.components[j][i];
+            component_t *component = &game->components[j][i];
 
             component->id = ID_UNUSED;
         }
@@ -26,7 +28,7 @@ void game_init(game_t *game)
 
     for (int i = 0; i < NUM_MAPS; i++)
     {
-        map_t *map = &game->state.maps[i];
+        map_t *map = &game->maps[i];
 
         map_init(map, game, i);
     }
@@ -63,18 +65,18 @@ void game_init(game_t *game)
     game->should_quit = false;
     game->game_over = false;
 
-    game->state.messages = TCOD_list_new();
+    game->messages = TCOD_list_new();
 
-    game->msg_visible = true;
+    game->message_log_visible = true;
     game->panel_visible = false;
 }
 
 void game_new(game_t *game)
 {
-    game->state.turn = 0;
+    game->turn = 0;
     game->should_update = true;
 
-    map_t *map = &game->state.maps[0];
+    map_t *map = &game->maps[0];
 
     // TODO: why assign the player here?
     entity_t *player = entity_create(game);
@@ -164,7 +166,7 @@ void game_new(game_t *game)
     alignment_t *pet_alignment = (alignment_t *)component_add(pet, COMPONENT_ALIGNMENT);
     pet_alignment->type = ALIGNMENT_GOOD;
 
-    msg_log(player->game, NULL, TCOD_white, "Hail, %s!", player_appearance->name);
+    game_log(player->game, NULL, TCOD_white, "Hail, %s!", player_appearance->name);
 }
 
 void game_input(game_t *game)
@@ -550,7 +552,7 @@ void game_input(game_t *game)
 
                             if (!item_found)
                             {
-                                msg_log(entity->game, position, TCOD_white, "There is nothing here!");
+                                game_log(entity->game, position, TCOD_white, "There is nothing here!");
                             }
                         }
 
@@ -570,7 +572,7 @@ void game_input(game_t *game)
                             {
                                 targeting->type = TARGETING_NONE;
 
-                                msg_log(entity->game, position, TCOD_white, "Look!");
+                                game_log(entity->game, position, TCOD_white, "Look!");
                             }
                             else
                             {
@@ -584,7 +586,7 @@ void game_input(game_t *game)
                     }
                     case 'm':
                     {
-                        game->msg_visible = !game->msg_visible;
+                        game->message_log_visible = !game->message_log_visible;
 
                         break;
                     }
@@ -628,7 +630,7 @@ void game_input(game_t *game)
 
                                 targeting->type = TARGETING_NONE;
 
-                                msg_log(entity->game, position, TCOD_white, "Zap!");
+                                game_log(entity->game, position, TCOD_white, "Zap!");
                             }
                             else
                             {
@@ -723,7 +725,7 @@ void game_update(game_t *game)
         if (game->should_update)
         {
             game->should_update = false;
-            game->state.turn++;
+            game->turn++;
 
             TCOD_list_t lights = TCOD_list_new();
 
@@ -874,6 +876,55 @@ void game_update(game_t *game)
     }
 }
 
+void game_log(game_t *game, position_t *position, TCOD_color_t color, char *text, ...)
+{
+    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+    fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
+
+    if (player_position != NULL && player_fov != NULL)
+    {
+        if (position == NULL ||
+            (position->map == player_position->map &&
+             ((position->x == player_position->x && position->y == player_position->y) ||
+              TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))))
+        {
+            va_list ap;
+            char buf[128];
+            va_start(ap, text);
+            vsprintf(buf, text, ap);
+            va_end(ap);
+
+            char *line_begin = buf;
+            char *line_end;
+
+            do
+            {
+                if (TCOD_list_size(game->messages) == (console_height / 4) - 2)
+                {
+                    message_t *message = TCOD_list_get(game->messages, 0);
+
+                    TCOD_list_remove(game->messages, message);
+
+                    message_destroy(message);
+                }
+
+                line_end = strchr(line_begin, '\n');
+
+                if (line_end)
+                {
+                    *line_end = '\0';
+                }
+
+                message_t *message = message_create(line_begin, color);
+
+                TCOD_list_push(game->messages, message);
+
+                line_begin = line_end + 1;
+            } while (line_end);
+        }
+    }
+}
+
 #define CONSTRAIN_VIEW 1
 
 void game_render(game_t *game)
@@ -882,201 +933,197 @@ void game_render(game_t *game)
     TCOD_console_set_default_foreground(NULL, TCOD_white);
     TCOD_console_clear(NULL);
 
-    int msg_x = 0;
-    int msg_height = console_height / 4;
-    int msg_y = console_height - msg_height;
-    int msg_width = console_width;
+    int message_log_x = 0;
+    int message_log_height = console_height / 4;
+    int message_log_y = console_height - message_log_height;
+    int message_log_width = console_width;
 
     int panel_width = console_width / 2;
     int panel_x = console_width - panel_width;
     int panel_y = 0;
-    int panel_height = console_height - (game->msg_visible ? msg_height : 0);
+    int panel_height = console_height - (game->message_log_visible ? message_log_height : 0);
 
-    if (game->player != NULL)
+    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+    fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
+
+    if (player_position != NULL && player_fov != NULL)
     {
-        position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
-
-        if (player_position != NULL)
-        {
-            int view_width = console_width - (game->panel_visible ? panel_width : 0);
-            int view_height = console_height - (game->msg_visible ? msg_height : 0);
-            int view_x = player_position->x - view_width / 2;
-            int view_y = player_position->y - view_height / 2;
+        int view_width = console_width - (game->panel_visible ? panel_width : 0);
+        int view_height = console_height - (game->message_log_visible ? message_log_height : 0);
+        int view_x = player_position->x - view_width / 2;
+        int view_y = player_position->y - view_height / 2;
 
 #if CONSTRAIN_VIEW
-            view_x = view_x < 0
-                         ? 0
-                         : view_x + view_width > MAP_WIDTH
-                               ? MAP_WIDTH - view_width
-                               : view_x;
-            view_y = view_y < 0
-                         ? 0
-                         : view_y + view_height > MAP_HEIGHT
-                               ? MAP_HEIGHT - view_height
-                               : view_y;
+        view_x = view_x < 0
+                     ? 0
+                     : view_x + view_width > MAP_WIDTH
+                           ? MAP_WIDTH - view_width
+                           : view_x;
+        view_y = view_y < 0
+                     ? 0
+                     : view_y + view_height > MAP_HEIGHT
+                           ? MAP_HEIGHT - view_height
+                           : view_y;
 #endif
 
-            static TCOD_noise_t noise = NULL;
-            if (noise == NULL)
+        static TCOD_noise_t noise = NULL;
+        if (noise == NULL)
+        {
+            noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
+        }
+
+        static float noise_x = 0.0f;
+
+        noise_x += 0.2f;
+        float noise_dx = noise_x + 20.0f;
+        float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+        noise_dx += 30.0f;
+        float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+        float di = 0.2f * TCOD_noise_get(noise, &noise_x);
+
+        TCOD_list_t entities_by_layer[NUM_LAYERS];
+        TCOD_list_t lights_by_priority[NUM_LIGHT_PRIORITIES];
+
+        for (int i = 0; i < NUM_LAYERS; i++)
+        {
+            entities_by_layer[i] = TCOD_list_new();
+        }
+
+        for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+        {
+            lights_by_priority[i] = TCOD_list_new();
+        }
+
+        for (void **iterator = TCOD_list_begin(player_position->map->entities); iterator != TCOD_list_end(player_position->map->entities); iterator++)
+        {
+            entity_t *entity = *iterator;
+
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+            if (appearance != NULL)
             {
-                noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
+                TCOD_list_push(entities_by_layer[appearance->layer], entity);
             }
 
-            static float noise_x = 0.0f;
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
-            noise_x += 0.2f;
-            float noise_dx = noise_x + 20.0f;
-            float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-            noise_dx += 30.0f;
-            float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-            float di = 0.2f * TCOD_noise_get(noise, &noise_x);
-
-            TCOD_list_t entities_by_layer[NUM_LAYERS];
-            TCOD_list_t lights_by_priority[NUM_LIGHT_PRIORITIES];
-
-            for (int i = 0; i < NUM_LAYERS; i++)
+            if (position != NULL && light != NULL)
             {
-                entities_by_layer[i] = TCOD_list_new();
+                TCOD_list_push(lights_by_priority[light->priority], entity);
             }
+        }
 
-            for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+        for (int x = view_x; x < view_x + view_width; x++)
+        {
+            for (int y = view_y; y < view_y + view_height; y++)
             {
-                lights_by_priority[i] = TCOD_list_new();
-            }
-
-            for (void **iterator = TCOD_list_begin(player_position->map->entities); iterator != TCOD_list_end(player_position->map->entities); iterator++)
-            {
-                entity_t *entity = *iterator;
-
-                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
-
-                if (appearance != NULL)
+                if (map_is_inside(x, y))
                 {
-                    TCOD_list_push(entities_by_layer[appearance->layer], entity);
-                }
+                    tile_t *tile = &player_position->map->tiles[x][y];
 
-                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                if (position != NULL && light != NULL)
-                {
-                    TCOD_list_push(lights_by_priority[light->priority], entity);
-                }
-            }
-
-            fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
-
-            if (player_fov != NULL)
-            {
-                for (int x = view_x; x < view_x + view_width; x++)
-                {
-                    for (int y = view_y; y < view_y + view_height; y++)
+                    if (TCOD_map_is_in_fov(player_fov->fov_map, x, y))
                     {
-                        if (map_is_inside(x, y))
-                        {
-                            tile_t *tile = &player_position->map->tiles[x][y];
+                        tile->seen = true;
+                    }
 
-                            if (TCOD_map_is_in_fov(player_fov->fov_map, x, y))
+                    for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+                    {
+                        for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
+                        {
+                            entity_t *entity = *iterator;
+
+                            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+
+                            if (TCOD_map_is_in_fov(light->fov_map, x, y))
                             {
                                 tile->seen = true;
                             }
-
-                            for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
-                            {
-                                for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
-                                {
-                                    entity_t *entity = *iterator;
-
-                                    light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                                    if (TCOD_map_is_in_fov(light->fov_map, x, y))
-                                    {
-                                        tile->seen = true;
-                                    }
-                                }
-                            }
-
-                            TCOD_color_t color = game->tile_common.shadow_color;
-
-                            if (TCOD_map_is_in_fov(player_fov->fov_map, x, y) || tile->seen)
-                            {
-                                for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
-                                {
-                                    for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
-                                    {
-                                        entity_t *entity = *iterator;
-
-                                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                                        if (TCOD_map_is_in_fov(light->fov_map, x, y))
-                                        {
-                                            float r2 = pow(light->radius, 2);
-                                            float d = pow(x - position->x + (light->flicker ? dx : 0), 2) + pow(y - position->y + (light->flicker ? dy : 0), 2);
-                                            float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (light->flicker ? di : 0));
-
-                                            color = TCOD_color_lerp(color, TCOD_color_lerp(game->tile_info[tile->type].color, light->color, l), l);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (!tile->seen)
-                                {
-                                    continue;
-                                }
-                            }
-
-                            TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
-                            TCOD_console_set_char(NULL, x - view_x, y - view_y, game->tile_info[tile->type].glyph);
                         }
                     }
-                }
 
-                for (int i = 0; i < NUM_LAYERS; i++)
-                {
-                    for (void **iterator = TCOD_list_begin(entities_by_layer[i]); iterator != TCOD_list_end(entities_by_layer[i]); iterator++)
+                    TCOD_color_t color = game->tile_common.shadow_color;
+
+                    if (TCOD_map_is_in_fov(player_fov->fov_map, x, y) || tile->seen)
                     {
-                        entity_t *entity = *iterator;
-
-                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
-
-                        if (position != NULL && appearance != NULL)
+                        for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
                         {
-                            if (position->map == player_position->map && TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))
+                            for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
                             {
-                                TCOD_color_t color = appearance->color;
+                                entity_t *entity = *iterator;
 
-                                took_damage_t *took_damage = (took_damage_t *)component_get(entity, COMPONENT_TOOK_DAMAGE);
+                                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                                light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
-                                if (took_damage != NULL)
+                                if (TCOD_map_is_in_fov(light->fov_map, x, y))
                                 {
-                                    color = TCOD_color_lerp(appearance->color, TCOD_red, took_damage->fade);
-                                }
+                                    float r2 = pow(light->radius, 2);
+                                    float d = pow(x - position->x + (light->flicker ? dx : 0), 2) + pow(y - position->y + (light->flicker ? dy : 0), 2);
+                                    float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (light->flicker ? di : 0));
 
-                                TCOD_console_set_char_foreground(NULL, position->x - view_x, position->y - view_y, color);
-                                TCOD_console_set_char(NULL, position->x - view_x, position->y - view_y, appearance->glyph);
+                                    color = TCOD_color_lerp(color, TCOD_color_lerp(game->tile_info[tile->type].color, light->color, l), l);
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        if (!tile->seen)
+                        {
+                            continue;
+                        }
+                    }
+
+                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
+                    TCOD_console_set_char(NULL, x - view_x, y - view_y, game->tile_info[tile->type].glyph);
                 }
             }
+        }
 
-            for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+        for (int i = 0; i < NUM_LAYERS; i++)
+        {
+            for (void **iterator = TCOD_list_begin(entities_by_layer[i]); iterator != TCOD_list_end(entities_by_layer[i]); iterator++)
             {
-                TCOD_list_delete(lights_by_priority[i]);
+                entity_t *entity = *iterator;
+
+                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+                if (position != NULL && appearance != NULL)
+                {
+                    if (position->map == player_position->map && TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))
+                    {
+                        TCOD_color_t color = appearance->color;
+
+                        took_damage_t *took_damage = (took_damage_t *)component_get(entity, COMPONENT_TOOK_DAMAGE);
+
+                        if (took_damage != NULL)
+                        {
+                            color = TCOD_color_lerp(appearance->color, TCOD_red, took_damage->fade);
+                        }
+
+                        TCOD_console_set_char_foreground(NULL, position->x - view_x, position->y - view_y, color);
+                        TCOD_console_set_char(NULL, position->x - view_x, position->y - view_y, appearance->glyph);
+                    }
+                }
             }
+        }
 
-            for (int i = 0; i < NUM_LAYERS; i++)
-            {
-                TCOD_list_delete(entities_by_layer[i]);
-            }
+        for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+        {
+            TCOD_list_delete(lights_by_priority[i]);
+        }
 
-            targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
+        for (int i = 0; i < NUM_LAYERS; i++)
+        {
+            TCOD_list_delete(entities_by_layer[i]);
+        }
 
-            if (player_targeting != NULL && player_targeting->type != TARGETING_NONE)
+        targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
+
+        if (player_targeting != NULL)
+        {
+            if (player_targeting->type != TARGETING_NONE)
             {
                 TCOD_console_set_char_foreground(NULL, player_targeting->x - view_x, player_targeting->y - view_y, TCOD_red);
                 TCOD_console_set_char(NULL, player_targeting->x - view_x, player_targeting->y - view_y, 'X');
@@ -1084,34 +1131,34 @@ void game_render(game_t *game)
         }
     }
 
-    if (game->msg_visible)
+    if (game->message_log_visible)
     {
-        static TCOD_console_t msg = NULL;
+        static TCOD_console_t message_log = NULL;
 
-        if (msg == NULL)
+        if (message_log == NULL)
         {
-            msg = TCOD_console_new(console_width, console_height);
+            message_log = TCOD_console_new(console_width, console_height);
         }
 
-        TCOD_console_set_default_background(msg, TCOD_black);
-        TCOD_console_set_default_foreground(msg, TCOD_white);
-        TCOD_console_clear(msg);
+        TCOD_console_set_default_background(message_log, TCOD_black);
+        TCOD_console_set_default_foreground(message_log, TCOD_white);
+        TCOD_console_clear(message_log);
 
         int y = 1;
-        for (void **i = TCOD_list_begin(game->state.messages); i != TCOD_list_end(game->state.messages); i++)
+        for (void **i = TCOD_list_begin(game->messages); i != TCOD_list_end(game->messages); i++)
         {
             message_t *message = *i;
 
-            TCOD_console_set_default_foreground(msg, message->color);
-            TCOD_console_print(msg, msg_x + 1, y, message->text);
+            TCOD_console_set_default_foreground(message_log, message->color);
+            TCOD_console_print(message_log, message_log_x + 1, y, message->text);
 
             y++;
         }
 
-        TCOD_console_set_default_foreground(msg, TCOD_white);
-        TCOD_console_print_frame(msg, 0, 0, msg_width, msg_height, false, TCOD_BKGND_SET, "Log");
+        TCOD_console_set_default_foreground(message_log, TCOD_white);
+        TCOD_console_print_frame(message_log, 0, 0, message_log_width, message_log_height, false, TCOD_BKGND_SET, "Log");
 
-        TCOD_console_blit(msg, 0, 0, msg_width, msg_height, NULL, msg_x, msg_y, 1, 1);
+        TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
     }
 
     if (game->panel_visible)
@@ -1128,7 +1175,7 @@ void game_render(game_t *game)
         TCOD_console_blit(panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
     }
 
-    TCOD_console_print(NULL, 0, 0, "Turn: %d", game->state.turn);
+    TCOD_console_print(NULL, 0, 0, "Turn: %d", game->turn);
 
     TCOD_console_flush();
 }
@@ -1137,18 +1184,17 @@ void game_reset(game_t *game)
 {
     for (int i = 0; i < NUM_MAPS; i++)
     {
-        map_t *map = &game->state.maps[i];
+        map_t *map = &game->maps[i];
 
         map_reset(map);
     }
 
-    for (void **iterator = TCOD_list_begin(game->state.messages); iterator != TCOD_list_end(game->state.messages); iterator++)
+    for (void **iterator = TCOD_list_begin(game->messages); iterator != TCOD_list_end(game->messages); iterator++)
     {
         message_t *message = *iterator;
 
-        free(message->text);
-        free(message);
+        message_destroy(message);
     }
 
-    TCOD_list_delete(game->state.messages);
+    TCOD_list_delete(game->messages);
 }

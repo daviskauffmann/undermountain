@@ -9,7 +9,7 @@ entity_t *entity_create(game_t *game)
 {
     for (int i = 0; i < MAX_ENTITIES; i++)
     {
-        entity_t *entity = &game->state.entities[i];
+        entity_t *entity = &game->entities[i];
 
         if (entity->id == ID_UNUSED)
         {
@@ -167,7 +167,7 @@ void entity_swap(entity_t *entity, entity_t *other)
         if (position != NULL && appearance != NULL &&
             other_position != NULL && other_appearance != NULL)
         {
-            msg_log(entity->game, position, TCOD_white, "%s swaps with %s", appearance->name, other_appearance->name);
+            game_log(entity->game, position, TCOD_white, "%s swaps with %s", appearance->name, other_appearance->name);
 
             tile_t *tile = &position->map->tiles[position->x][position->y];
             tile_t *other_tile = &other_position->map->tiles[other_position->x][other_position->y];
@@ -208,7 +208,7 @@ void entity_pick(entity_t *entity, entity_t *other)
 
         component_remove(other, COMPONENT_POSITION);
 
-        msg_log(entity->game, position, TCOD_white, "%s picks up %s", appearance->name, other_appearance->name);
+        game_log(entity->game, position, TCOD_white, "%s picks up %s", appearance->name, other_appearance->name);
     }
 }
 
@@ -241,7 +241,7 @@ void entity_swing(entity_t *entity, int x, int y)
 
         if (!hit)
         {
-            msg_log(entity->game, position, TCOD_white, "%s swings at the air", appearance->name);
+            game_log(entity->game, position, TCOD_white, "%s swings at the air", appearance->name);
         }
     }
 }
@@ -255,11 +255,11 @@ void entity_shoot(entity_t *entity, int x, int y)
     {
         if (position->x == x && position->y == y)
         {
-            msg_log(entity->game, position, TCOD_white, "%s thinks that's a bad idea!", appearance->name);
+            game_log(entity->game, position, TCOD_white, "%s thinks that's a bad idea!", appearance->name);
         }
         else
         {
-            msg_log(entity->game, position, TCOD_white, "%s shoots", appearance->name);
+            game_log(entity->game, position, TCOD_white, "%s shoots", appearance->name);
 
             tile_t *other_tile = &position->map->tiles[x][y];
 
@@ -283,7 +283,7 @@ void entity_shoot(entity_t *entity, int x, int y)
 
             if (!hit)
             {
-                msg_log(entity->game, position, TCOD_white, "%s's arrow flies through the air", appearance->name);
+                game_log(entity->game, position, TCOD_white, "%s's arrow flies through the air", appearance->name);
             }
         }
     }
@@ -341,7 +341,7 @@ void entity_attack(entity_t *entity, entity_t *other)
                 total_damage += roll(weapon_a, weapon_x) + bonus_damage;
             }
 
-            msg_log(entity->game, position, crit ? TCOD_yellow : TCOD_white, "%s %s %s for %d", appearance->name, crit ? "crits" : "hits", other_appearance->name, total_damage);
+            game_log(entity->game, position, crit ? TCOD_yellow : TCOD_white, "%s %s %s for %d", appearance->name, crit ? "crits" : "hits", other_appearance->name, total_damage);
 
             other_health->current -= total_damage;
 
@@ -350,17 +350,17 @@ void entity_attack(entity_t *entity, entity_t *other)
 
             if (other_health->current <= 0)
             {
-                entity_die(other);
+                entity_die(other, entity);
             }
         }
         else
         {
-            msg_log(entity->game, position, TCOD_white, "%s misses", appearance->name);
+            game_log(entity->game, position, TCOD_white, "%s misses", appearance->name);
         }
     }
 }
 
-void entity_die(entity_t *entity)
+void entity_die(entity_t *entity, entity_t *killer)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
     physics_t *physics = (physics_t *)component_get(entity, COMPONENT_PHYSICS);
@@ -368,7 +368,7 @@ void entity_die(entity_t *entity)
 
     if (position != NULL && physics != NULL && appearance != NULL)
     {
-        msg_log(entity->game, position, TCOD_red, "%s dies", appearance->name);
+        game_log(entity->game, position, TCOD_red, "%s dies", appearance->name);
 
         physics->is_walkable = true;
 
@@ -379,11 +379,22 @@ void entity_die(entity_t *entity)
         component_remove(entity, COMPONENT_HEALTH);
         component_remove(entity, COMPONENT_ALIGNMENT);
 
+        if (killer != NULL)
+        {
+            position_t *killer_position = (position_t *)component_get(killer, COMPONENT_POSITION);
+            appearance_t *killer_appearance = (appearance_t *)component_get(killer, COMPONENT_APPEARANCE);
+
+            if (killer_position != NULL && killer_appearance != NULL)
+            {
+                game_log(killer->game, killer_position, TCOD_azure, "%s gains %d experience", killer_appearance->name, TCOD_random_get_int(NULL, 50, 100));
+            }
+        }
+
         if (entity == entity->game->player)
         {
             entity->game->game_over = true;
 
-            msg_log(entity->game, position, TCOD_white, "Game over! Press 'r' to restart");
+            game_log(entity->game, position, TCOD_green, "Game over! Press 'r' to restart");
         }
     }
 }
@@ -394,7 +405,7 @@ void entity_destroy(entity_t *entity)
     {
         for (int i = 0; i < NUM_COMPONENTS; i++)
         {
-            component_remove(entity, i);
+            component_remove(entity, (component_type_t)i);
         }
 
         entity->id = ID_UNUSED;
@@ -407,7 +418,7 @@ component_t *component_add(entity_t *entity, component_type_t component_type)
 
     if (entity != NULL && entity->id != ID_UNUSED)
     {
-        component = &entity->game->state.components[component_type][entity->id];
+        component = &entity->game->components[component_type][entity->id];
 
         component->id = entity->id;
     }
@@ -421,7 +432,7 @@ component_t *component_get(entity_t *entity, component_type_t component_type)
 
     if (entity != NULL && entity->id != ID_UNUSED)
     {
-        component = &entity->game->state.components[component_type][entity->id];
+        component = &entity->game->components[component_type][entity->id];
 
         if (component->id == ID_UNUSED)
         {
@@ -436,7 +447,7 @@ void component_remove(entity_t *entity, component_type_t component_type)
 {
     if (entity != NULL && entity->id != ID_UNUSED)
     {
-        component_t *component = &entity->game->state.components[component_type][entity->id];
+        component_t *component = &entity->game->components[component_type][entity->id];
 
         component->id = ID_UNUSED;
     }

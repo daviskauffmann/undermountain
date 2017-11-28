@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
 {
     config_init();
 
+start:
     game_init(&game);
     game_new(&game);
 
@@ -24,8 +25,8 @@ int main(int argc, char *argv[])
         if (game.should_restart)
         {
             game_reset(&game);
-            game_init(&game);
-            game_new(&game);
+
+            goto start;
         }
 
         if (game.should_quit)

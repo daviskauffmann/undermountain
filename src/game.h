@@ -94,7 +94,7 @@ void entity_pick(entity_t *entity, entity_t *other);
 void entity_swing(entity_t *entity, int x, int y);
 void entity_shoot(entity_t *entity, int x, int y);
 void entity_attack(entity_t *entity, entity_t *other);
-void entity_die(entity_t *entity);
+void entity_die(entity_t *entity, entity_t *killer);
 void entity_destroy(entity_t *entity);
 
 /* Components */
@@ -256,30 +256,26 @@ typedef struct message_s
     TCOD_color_t color;
 } message_t;
 
-void msg_log(struct game_s *game, position_t *position, TCOD_color_t color, char *text, ...);
+message_t *message_create(char *text, TCOD_color_t color);
+void message_destroy(message_t *message);
 
 /* Game */
-typedef struct state_s
-{
-    map_t maps[NUM_MAPS];
-    entity_t entities[MAX_ENTITIES];
-    component_t components[NUM_COMPONENTS][MAX_ENTITIES];
-    TCOD_list_t messages;
-    int turn;
-} state_t;
-
 typedef struct game_s
 {
-    state_t state;
+    map_t maps[NUM_MAPS];
     tile_common_t tile_common;
     tile_info_t tile_info[NUM_TILES];
+    entity_t entities[MAX_ENTITIES];
+    component_t components[NUM_COMPONENTS][MAX_ENTITIES];
     entity_t *player;
+    TCOD_list_t messages;
+    int turn;
     bool turn_available;
     bool should_update;
     bool should_restart;
     bool should_quit;
     bool game_over;
-    bool msg_visible;
+    bool message_log_visible;
     bool panel_visible;
 } game_t;
 
@@ -288,6 +284,7 @@ void game_new(game_t *game);
 void game_input(game_t *game);
 void game_update(game_t *game);
 void game_render(game_t *game);
+void game_log(struct game_s *game, position_t *position, TCOD_color_t color, char *text, ...);
 void game_reset(game_t *game);
 
 #endif

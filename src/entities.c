@@ -22,590 +22,6 @@ entity_t *entity_create(game_t *game)
     return NULL;
 }
 
-void entity_calc_fov(entity_t *entity, TCOD_list_t lights)
-{
-    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-    fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
-
-    if (position != NULL && fov != NULL)
-    {
-        if (fov->fov_map != NULL)
-        {
-            TCOD_map_delete(fov->fov_map);
-        }
-
-        fov->fov_map = map_to_fov_map(position->map, position->x, position->y, fov->radius);
-
-        if (lights != NULL)
-        {
-            TCOD_map_t los_map = map_to_fov_map(position->map, position->x, position->y, 0);
-
-            for (int x = 0; x < MAP_WIDTH; x++)
-            {
-                for (int y = 0; y < MAP_HEIGHT; y++)
-                {
-                    if (TCOD_map_is_in_fov(los_map, x, y))
-                    {
-                        tile_t *tile = &position->map->tiles[x][y];
-
-                        for (void **iterator = TCOD_list_begin(lights); iterator != TCOD_list_end(lights); iterator++)
-                        {
-                            entity_t *entity = *iterator;
-
-                            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                            light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                            if (position != NULL && light != NULL)
-                            {
-                                if (TCOD_map_is_in_fov(light->fov_map, x, y))
-                                {
-                                    TCOD_map_set_in_fov(fov->fov_map, x, y, true);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            TCOD_map_delete(los_map);
-        }
-    }
-}
-
-bool entity_take_turn(entity_t *entity)
-{
-    bool took_turn = false;
-
-    ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
-
-    if (ai != NULL)
-    {
-        switch (ai->type)
-        {
-        case AI_INPUT:
-        {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-            fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
-            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-            targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
-
-            switch (ev)
-            {
-            case TCOD_EVENT_KEY_PRESS:
-            {
-                switch (key.vk)
-                {
-                case TCODK_KP1:
-                {
-                    if (targeting != NULL && targeting->type != TARGETING_NONE)
-                    {
-                        targeting->x--;
-                        targeting->y++;
-                    }
-                    else
-                    {
-                        took_turn = true;
-
-                        int x = position->x - 1;
-                        int y = position->y + 1;
-
-                        if (key.lctrl)
-                        {
-                            entity_swing(entity, x, y);
-                        }
-                        else
-                        {
-                            entity_move(entity, x, y);
-                        }
-                    }
-
-                    break;
-                }
-                case TCODK_KP2:
-                {
-                    if (targeting != NULL && targeting->type != TARGETING_NONE)
-                    {
-                        targeting->y++;
-                    }
-                    else
-                    {
-                        took_turn = true;
-
-                        int x = position->x;
-                        int y = position->y + 1;
-
-                        if (key.lctrl)
-                        {
-                            entity_swing(entity, x, y);
-                        }
-                        else
-                        {
-                            entity_move(entity, x, y);
-                        }
-                    }
-
-                    break;
-                }
-                case TCODK_KP3:
-                {
-                    if (targeting != NULL && targeting->type != TARGETING_NONE)
-                    {
-                        targeting->x++;
-                        targeting->y++;
-                    }
-                    else
-                    {
-                        took_turn = true;
-
-                        int x = position->x + 1;
-                        int y = position->y + 1;
-
-                        if (key.lctrl)
-                        {
-                            entity_swing(entity, x, y);
-                        }
-                        else
-                        {
-                            entity_move(entity, x, y);
-                        }
-                    }
-
-                    break;
-                }
-                case TCODK_KP4:
-                {
-                    if (targeting != NULL && targeting->type != TARGETING_NONE)
-                    {
-                        targeting->x--;
-                        targeting->y;
-                    }
-                    else
-                    {
-                        took_turn = true;
-
-                        int x = position->x - 1;
-                        int y = position->y;
-
-                        if (key.lctrl)
-                        {
-                            entity_swing(entity, x, y);
-                        }
-                        else
-                        {
-                            entity_move(entity, x, y);
-                        }
-                    }
-
-                    break;
-                }
-                case TCODK_KP5:
-                {
-                    took_turn = true;
-
-                    break;
-                }
-                case TCODK_KP6:
-                {
-                    if (targeting != NULL && targeting->type != TARGETING_NONE)
-                    {
-                        targeting->x++;
-                        targeting->y;
-                    }
-                    else
-                    {
-                        took_turn = true;
-
-                        int x = position->x + 1;
-                        int y = position->y;
-
-                        if (key.lctrl)
-                        {
-                            entity_swing(entity, x, y);
-                        }
-                        else
-                        {
-                            entity_move(entity, x, y);
-                        }
-                    }
-
-                    break;
-                }
-                case TCODK_KP7:
-                {
-                    if (targeting != NULL && targeting->type != TARGETING_NONE)
-                    {
-                        targeting->x--;
-                        targeting->y--;
-                    }
-                    else
-                    {
-                        took_turn = true;
-
-                        int x = position->x - 1;
-                        int y = position->y - 1;
-
-                        if (key.lctrl)
-                        {
-                            entity_swing(entity, x, y);
-                        }
-                        else
-                        {
-                            entity_move(entity, x, y);
-                        }
-                    }
-                    break;
-                }
-                case TCODK_KP8:
-                {
-                    if (targeting != NULL && targeting->type != TARGETING_NONE)
-                    {
-                        targeting->x;
-                        targeting->y--;
-                    }
-                    else
-                    {
-                        took_turn = true;
-
-                        int x = position->x;
-                        int y = position->y - 1;
-
-                        if (key.lctrl)
-                        {
-                            entity_swing(entity, x, y);
-                        }
-                        else
-                        {
-                            entity_move(entity, x, y);
-                        }
-                    }
-
-                    break;
-                }
-                case TCODK_KP9:
-                {
-                    if (targeting != NULL && targeting->type != TARGETING_NONE)
-                    {
-                        targeting->x++;
-                        targeting->y--;
-                    }
-                    else
-                    {
-                        took_turn = true;
-
-                        int x = position->x + 1;
-                        int y = position->y - 1;
-
-                        if (key.lctrl)
-                        {
-                            entity_swing(entity, x, y);
-                        }
-                        else
-                        {
-                            entity_move(entity, x, y);
-                        }
-                    }
-
-                    break;
-                }
-                case TCODK_CHAR:
-                {
-                    switch (key.c)
-                    {
-                    case 'c':
-                    {
-                        entity->game->panel_visible = !entity->game->panel_visible;
-
-                        break;
-                    }
-                    case 'f':
-                    {
-                        if (targeting != NULL)
-                        {
-                            if (targeting->type == TARGETING_SHOOT)
-                            {
-                                took_turn = true;
-
-                                targeting->type = TARGETING_NONE;
-
-                                entity_shoot(entity, targeting->x, targeting->y);
-                            }
-                            else
-                            {
-                                targeting->type = TARGETING_SHOOT;
-
-                                bool target_found = false;
-
-                                if (alignment != NULL)
-                                {
-                                    for (void **iterator = TCOD_list_begin(position->map->entities); iterator != TCOD_list_end(position->map->entities); iterator++)
-                                    {
-                                        entity_t *other = *iterator;
-
-                                        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-                                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                                        if (other_position != NULL && other_alignment != NULL)
-                                        {
-                                            if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                                other_alignment->type != alignment->type)
-                                            {
-                                                target_found = true;
-
-                                                targeting->x = other_position->x;
-                                                targeting->y = other_position->y;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (!target_found)
-                                {
-                                    targeting->x = position->x;
-                                    targeting->y = position->y;
-                                }
-                            }
-                        }
-
-                        break;
-                    }
-                    case 'g':
-                    {
-                        inventory_t *inventory = (inventory_t *)component_get(entity, COMPONENT_INVENTORY);
-
-                        if (inventory != NULL)
-                        {
-                            tile_t *tile = &position->map->tiles[position->x][position->y];
-
-                            bool item_found = false;
-
-                            for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
-                            {
-                                entity_t *other = *iterator;
-
-                                pickable_t *pickable = (pickable_t *)component_get(other, COMPONENT_PICKABLE);
-
-                                if (pickable != NULL)
-                                {
-                                    took_turn = true;
-
-                                    item_found = true;
-
-                                    entity_pick(entity, other);
-
-                                    break;
-                                }
-                            }
-
-                            if (!item_found)
-                            {
-                                msg_log(entity->game, position, TCOD_white, "There is nothing here!");
-                            }
-                        }
-
-                        break;
-                    }
-                    case 'i':
-                    {
-                        entity->game->panel_visible = !entity->game->panel_visible;
-
-                        break;
-                    }
-                    case 'l':
-                    {
-                        if (targeting != NULL)
-                        {
-                            if (targeting->type == TARGETING_LOOK)
-                            {
-                                targeting->type = TARGETING_NONE;
-
-                                msg_log(entity->game, position, TCOD_white, "Look!");
-                            }
-                            else
-                            {
-                                targeting->type = TARGETING_LOOK;
-                                targeting->x = position->x;
-                                targeting->y = position->y;
-                            }
-                        }
-
-                        break;
-                    }
-                    case 'm':
-                    {
-                        entity->game->msg_visible = !entity->game->msg_visible;
-
-                        break;
-                    }
-                    case 't':
-                    {
-                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-                        if (light != NULL)
-                        {
-                            took_turn = true;
-
-                            static bool torch = false;
-
-                            torch = !torch;
-
-                            if (torch)
-                            {
-                                light->radius = 10;
-                                light->color = TCOD_light_amber;
-                                light->flicker = true;
-                                light->priority = LIGHT_PRIORITY_2;
-                            }
-                            else
-                            {
-                                light->radius = 5;
-                                light->color = TCOD_white;
-                                light->flicker = false;
-                                light->priority = LIGHT_PRIORITY_0;
-                            }
-                        }
-
-                        break;
-                    }
-                    case 'z':
-                    {
-                        if (targeting != NULL)
-                        {
-                            if (targeting->type == TARGETING_ZAP)
-                            {
-                                took_turn = true;
-
-                                targeting->type = TARGETING_NONE;
-
-                                msg_log(entity->game, position, TCOD_white, "Zap!");
-                            }
-                            else
-                            {
-                                targeting->type = TARGETING_ZAP;
-
-                                bool target_found = false;
-
-                                if (alignment != NULL)
-                                {
-                                    for (void **iterator = TCOD_list_begin(position->map->entities); iterator != TCOD_list_end(position->map->entities); iterator++)
-                                    {
-                                        entity_t *other = *iterator;
-
-                                        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-                                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                                        if (other_position != NULL && other_alignment != NULL)
-                                        {
-                                            if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                                other_alignment->type != alignment->type)
-                                            {
-                                                target_found = true;
-
-                                                targeting->x = other_position->x;
-                                                targeting->y = other_position->y;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (!target_found)
-                                {
-                                    targeting->x = position->x;
-                                    targeting->y = position->y;
-                                }
-                            }
-                        }
-
-                        break;
-                    }
-                    }
-
-                    break;
-                }
-                }
-            }
-            }
-
-            break;
-        }
-        case AI_GENERIC:
-        {
-            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-
-            if (position != NULL)
-            {
-                bool target_found = false;
-
-                fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
-                alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-
-                if (fov != NULL && alignment != NULL)
-                {
-                    for (void **iterator = TCOD_list_begin(position->map->entities); iterator != TCOD_list_end(position->map->entities); iterator++)
-                    {
-                        entity_t *other = *iterator;
-
-                        if (other->id != ID_UNUSED)
-                        {
-                            position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-                            alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                            if (other_position != NULL && other_alignment != NULL)
-                            {
-                                if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                    other_alignment->type != alignment->type)
-                                {
-                                    target_found = true;
-
-                                    if (distance(position->x, position->y, other_position->x, other_position->y) < 2.0f)
-                                    {
-                                        entity_attack(entity, other);
-                                    }
-                                    else
-                                    {
-                                        entity_path_towards(entity, other_position->x, other_position->y);
-                                    }
-
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (ai->follow_target != NULL)
-                {
-                    position_t *follow_position = (position_t *)component_get(ai->follow_target, COMPONENT_POSITION);
-
-                    if (follow_position != NULL)
-                    {
-                        if (!TCOD_map_is_in_fov(fov->fov_map, follow_position->x, follow_position->y) ||
-                            distance(position->x, position->y, follow_position->x, follow_position->y) > 5.0f)
-                        {
-                            target_found = true;
-
-                            entity_path_towards(entity, follow_position->x, follow_position->y);
-                        }
-                    }
-                }
-
-                if (!target_found)
-                {
-                    entity_move_random(entity);
-                }
-
-                took_turn = true;
-            }
-
-            took_turn = true;
-
-            break;
-        }
-        }
-    }
-
-    return took_turn;
-}
-
 void entity_path_towards(entity_t *entity, int x, int y)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
@@ -642,12 +58,12 @@ void entity_move_towards(entity_t *entity, int x, int y)
     {
         int dx = x - position->x;
         int dy = y - position->y;
-        float distance = distance(position->x, position->y, x, y);
+        float d = distance(position->x, position->y, x, y);
 
-        if (distance > 0)
+        if (d > 0)
         {
-            dx = round(dx / distance);
-            dy = round(dy / distance);
+            dx = round(dx / d);
+            dy = round(dy / d);
 
             entity_move(entity, position->x + dx, position->y + dy);
         }
@@ -839,7 +255,7 @@ void entity_shoot(entity_t *entity, int x, int y)
     {
         if (position->x == x && position->y == y)
         {
-            msg_log(entity->game, position, TCOD_white, "%s tries to shoot himself!", appearance->name);
+            msg_log(entity->game, position, TCOD_white, "%s thinks that's a bad idea!", appearance->name);
         }
         else
         {
@@ -929,6 +345,9 @@ void entity_attack(entity_t *entity, entity_t *other)
 
             other_health->current -= total_damage;
 
+            took_damage_t *other_took_damage = (took_damage_t *)component_add(other, COMPONENT_TOOK_DAMAGE);
+            other_took_damage->fade = 1.0f;
+
             if (other_health->current <= 0)
             {
                 entity_die(other);
@@ -957,61 +376,68 @@ void entity_die(entity_t *entity)
         appearance->layer = LAYER_0;
 
         component_remove(entity, COMPONENT_AI);
-        component_remove(entity, COMPONENT_LIGHT);
         component_remove(entity, COMPONENT_HEALTH);
         component_remove(entity, COMPONENT_ALIGNMENT);
+
+        if (entity == entity->game->player)
+        {
+            entity->game->game_over = true;
+
+            msg_log(entity->game, position, TCOD_white, "Game over! Press 'r' to restart");
+        }
     }
 }
 
 void entity_destroy(entity_t *entity)
 {
-    for (int i = 0; i < NUM_COMPONENTS; i++)
+    if (entity != NULL)
     {
-        component_remove(entity, i);
-    }
+        for (int i = 0; i < NUM_COMPONENTS; i++)
+        {
+            component_remove(entity, i);
+        }
 
-    entity->id = ID_UNUSED;
+        entity->id = ID_UNUSED;
+    }
 }
 
 component_t *component_add(entity_t *entity, component_type_t component_type)
 {
-    if (entity->id == ID_UNUSED)
+    component_t *component = NULL;
+
+    if (entity != NULL && entity->id != ID_UNUSED)
     {
-        return NULL;
+        component = &entity->game->state.components[component_type][entity->id];
+
+        component->id = entity->id;
     }
-
-    component_t *component = &entity->game->state.components[component_type][entity->id];
-
-    component->id = entity->id;
 
     return component;
 }
 
 component_t *component_get(entity_t *entity, component_type_t component_type)
 {
-    if (entity->id == ID_UNUSED)
+    component_t *component = NULL;
+
+    if (entity != NULL && entity->id != ID_UNUSED)
     {
-        return NULL;
+        component = &entity->game->state.components[component_type][entity->id];
+
+        if (component->id == ID_UNUSED)
+        {
+            component = NULL;
+        }
     }
 
-    component_t *component = &entity->game->state.components[component_type][entity->id];
-
-    if (component->id != ID_UNUSED)
-    {
-        return component;
-    }
-
-    return NULL;
+    return component;
 }
 
 void component_remove(entity_t *entity, component_type_t component_type)
 {
-    if (entity->id == ID_UNUSED)
+    if (entity != NULL && entity->id != ID_UNUSED)
     {
-        return;
+        component_t *component = &entity->game->state.components[component_type][entity->id];
+
+        component->id = ID_UNUSED;
     }
-
-    component_t *component = &entity->game->state.components[component_type][entity->id];
-
-    component->id = ID_UNUSED;
 }

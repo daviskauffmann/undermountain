@@ -30,11 +30,11 @@ int main(int argc, char *argv[])
 
         if (game.should_quit)
         {
+            game_reset(&game);
+
             break;
         }
     }
-
-    game_reset(&game);
 
     SDL_Quit();
 

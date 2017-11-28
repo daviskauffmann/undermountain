@@ -115,14 +115,13 @@ void map_init(map_t *map, game_t *game, int level)
         appearance_t *monster_appearance = (appearance_t *)component_add(monster, COMPONENT_APPEARANCE);
         monster_appearance->layer = LAYER_1;
         fov_t *monster_fov = (fov_t *)component_add(monster, COMPONENT_FOV);
-        monster_fov->radius = 5;
+        monster_fov->radius = 1;
         if (monster_fov->fov_map != NULL)
         {
             TCOD_map_delete(monster_fov->fov_map);
         }
         monster_fov->fov_map = NULL;
         ai_t *monster_ai = (ai_t *)component_add(monster, COMPONENT_AI);
-        monster_ai->type = AI_GENERIC;
         monster_ai->energy = 1.0f;
         monster_ai->follow_target = NULL;
         health_t *monster_health = (health_t *)component_add(monster, COMPONENT_HEALTH);
@@ -432,33 +431,6 @@ static void hline_right(map_t *map, int x, int y)
 
         x++;
     }
-}
-
-TCOD_list_t map_get_lights(map_t *map)
-{
-    TCOD_list_t lights = TCOD_list_new();
-
-    for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
-    {
-        entity_t *entity = *iterator;
-
-        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
-
-        if (position != NULL && light != NULL)
-        {
-            if (light->fov_map != NULL)
-            {
-                TCOD_map_delete(light->fov_map);
-            }
-
-            light->fov_map = map_to_fov_map(position->map, position->x, position->y, light->radius);
-
-            TCOD_list_push(lights, entity);
-        }
-    }
-
-    return lights;
 }
 
 bool map_is_inside(int x, int y)

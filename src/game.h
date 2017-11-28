@@ -68,7 +68,6 @@ typedef struct map_s
 } map_t;
 
 void map_init(map_t *map, struct game_s *game, int level);
-TCOD_list_t map_get_lights(map_t *map);
 bool map_is_inside(int x, int y);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
@@ -76,7 +75,7 @@ TCOD_map_t map_to_fov_map(map_t *map, int x, int y, int radius);
 void map_reset(map_t *map);
 
 /* Entities */
-#define MAX_ENTITIES 65536
+#define MAX_ENTITIES 1024
 #define ID_UNUSED -1
 
 typedef struct entity_s
@@ -86,8 +85,6 @@ typedef struct entity_s
 } entity_t;
 
 entity_t *entity_create(struct game_s *game);
-void entity_calc_fov(entity_t *entity, TCOD_list_t lights);
-bool entity_take_turn(entity_t *entity);
 void entity_path_towards(entity_t *entity, int x, int y);
 void entity_move_towards(entity_t *entity, int x, int y);
 void entity_move_random(entity_t *entity);
@@ -113,6 +110,7 @@ typedef enum component_type_e {
     COMPONENT_TARGETING,
     COMPONENT_PICKABLE,
     COMPONENT_INVENTORY,
+    COMPONENT_TOOK_DAMAGE,
 
     NUM_COMPONENTS
 } component_type_t;
@@ -124,14 +122,8 @@ typedef struct position_s
     int y;
 } position_t;
 
-typedef enum ai_type_e {
-    AI_INPUT,
-    AI_GENERIC
-} ai_type_t;
-
 typedef struct ai_s
 {
-    ai_type_t type;
     float energy;
     float energy_per_turn;
     entity_t *follow_target;
@@ -228,6 +220,11 @@ typedef struct inventory_s
     entity_t *off_hand;
 } inventory_t;
 
+typedef struct took_damage_s
+{
+    float fade;
+} took_damage_t;
+
 typedef struct component_s
 {
     int id;
@@ -244,6 +241,7 @@ typedef struct component_s
         targeting_t targeting;
         pickable_t pickable;
         inventory_t inventory;
+        took_damage_t took_damage;
     };
 } component_t;
 
@@ -276,17 +274,14 @@ typedef struct game_s
     tile_common_t tile_common;
     tile_info_t tile_info[NUM_TILES];
     entity_t *player;
-    int current_id;
-    bool should_render;
+    bool turn_available;
+    bool should_update;
     bool should_restart;
     bool should_quit;
+    bool game_over;
     bool msg_visible;
     bool panel_visible;
 } game_t;
-
-TCOD_key_t key;
-TCOD_mouse_t mouse;
-TCOD_event_t ev;
 
 void game_init(game_t *game);
 void game_new(game_t *game);

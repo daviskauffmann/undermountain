@@ -117,10 +117,6 @@ void map_init(map_t *map, game_t *game, int level)
         appearance->layer = LAYER_1;
         fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
         fov->radius = 1;
-        if (fov->fov_map != NULL)
-        {
-            TCOD_map_delete(fov->fov_map);
-        }
         fov->fov_map = NULL;
         ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
         ai->energy = 1.0f;
@@ -178,10 +174,6 @@ void map_init(map_t *map, game_t *game, int level)
             light->color = TCOD_light_amber;
             light->flicker = true;
             light->priority = LIGHT_PRIORITY_2;
-            if (light->fov_map != NULL)
-            {
-                TCOD_map_delete(light->fov_map);
-            }
             light->fov_map = NULL;
         }
     }
@@ -213,14 +205,10 @@ void map_init(map_t *map, game_t *game, int level)
         appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
         appearance->name = "Adventurer";
         appearance->glyph = 'a';
-        appearance->color = TCOD_dark_blue;
+        appearance->color = TCOD_azure;
         appearance->layer = LAYER_1;
         fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
         fov->radius = 1;
-        if (fov->fov_map != NULL)
-        {
-            TCOD_map_delete(fov->fov_map);
-        }
         fov->fov_map = NULL;
         ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
         ai->energy = 1.0f;
@@ -239,10 +227,6 @@ void map_init(map_t *map, game_t *game, int level)
             light->color = TCOD_light_amber;
             light->flicker = true;
             light->priority = LIGHT_PRIORITY_2;
-            if (light->fov_map != NULL)
-            {
-                TCOD_map_delete(light->fov_map);
-            }
             light->fov_map = NULL;
         }
     }
@@ -292,10 +276,6 @@ void map_init(map_t *map, game_t *game, int level)
         brazier_light->color = brazier_appearance->color;
         brazier_light->flicker = false;
         brazier_light->priority = LIGHT_PRIORITY_1;
-        if (brazier_light->fov_map != NULL)
-        {
-            TCOD_map_delete(brazier_light->fov_map);
-        }
         brazier_light->fov_map = NULL;
     }
 }

@@ -1,9 +1,16 @@
 #include <libtcod.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "config.h"
 #include "game.h"
 #include "utils.h"
+
+void entity_init(entity_t *entity, int id, game_t *game)
+{
+    entity->id = id;
+    entity->game = game;
+}
 
 entity_t *entity_create(game_t *game)
 {
@@ -13,7 +20,7 @@ entity_t *entity_create(game_t *game)
 
         if (entity->id == ID_UNUSED)
         {
-            entity->id = i;
+            entity_init(entity, i, game);
 
             return entity;
         }
@@ -335,10 +342,13 @@ void entity_attack(entity_t *entity, entity_t *other)
             }
 
             int total_damage = 0;
-            int bonus_damage = 0;
+            int damage_bonus = 0;
             for (int i = 0; i < damage_rolls; i++)
             {
-                total_damage += roll(weapon_a, weapon_x) + bonus_damage;
+                int damage_roll = roll(weapon_a, weapon_x);
+                int damage = damage_roll + damage_bonus;
+
+                total_damage += damage;
             }
 
             game_log(entity->game, position, crit ? TCOD_yellow : TCOD_white, "%s %s %s for %d", appearance->name, crit ? "crits" : "hits", other_appearance->name, total_damage);
@@ -401,15 +411,27 @@ void entity_die(entity_t *entity, entity_t *killer)
 
 void entity_destroy(entity_t *entity)
 {
-    if (entity != NULL)
+    if (entity != NULL && entity->id != ID_UNUSED)
     {
         for (int i = 0; i < NUM_COMPONENTS; i++)
         {
-            component_remove(entity, (component_type_t)i);
+            component_remove(entity, i);
         }
 
-        entity->id = ID_UNUSED;
+        entity_reset(entity);
     }
+}
+
+void entity_reset(entity_t *entity)
+{
+    entity->id = ID_UNUSED;
+    entity->game = NULL;
+}
+
+void component_init(component_t *component, int id, component_type_t component_type)
+{
+    component->id = id;
+    component->type = component_type;
 }
 
 component_t *component_add(entity_t *entity, component_type_t component_type)
@@ -420,7 +442,7 @@ component_t *component_add(entity_t *entity, component_type_t component_type)
     {
         component = &entity->game->components[component_type][entity->id];
 
-        component->id = entity->id;
+        component_init(component, entity->id, component_type);
     }
 
     return component;
@@ -449,6 +471,11 @@ void component_remove(entity_t *entity, component_type_t component_type)
     {
         component_t *component = &entity->game->components[component_type][entity->id];
 
-        component->id = ID_UNUSED;
+        component_reset(component);
     }
+}
+
+void component_reset(component_t *component)
+{
+    component->id = ID_UNUSED;
 }

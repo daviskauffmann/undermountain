@@ -15,14 +15,13 @@ void game_init(game_t *game)
     {
         entity_t *entity = &game->entities[i];
 
-        entity->id = ID_UNUSED;
-        entity->game = game;
+        entity_init(entity, ID_UNUSED, game);
 
         for (int j = 0; j < NUM_COMPONENTS; j++)
         {
             component_t *component = &game->components[j][i];
 
-            component->id = ID_UNUSED;
+            component_init(component, ID_UNUSED, j);
         }
     }
 
@@ -78,7 +77,6 @@ void game_new(game_t *game)
 
     map_t *map = &game->maps[0];
 
-    // TODO: why assign the player here?
     entity_t *player = entity_create(game);
     game->player = player;
     position_t *player_position = (position_t *)component_add(player, COMPONENT_POSITION);
@@ -95,17 +93,9 @@ void game_new(game_t *game)
     player_light->color = TCOD_white;
     player_light->flicker = false;
     player_light->priority = LIGHT_PRIORITY_0;
-    if (player_light->fov_map != NULL)
-    {
-        TCOD_map_delete(player_light->fov_map);
-    }
     player_light->fov_map = NULL;
     fov_t *player_fov = (fov_t *)component_add(player, COMPONENT_FOV);
     player_fov->radius = 1;
-    if (player_fov->fov_map != NULL)
-    {
-        TCOD_map_delete(player_fov->fov_map);
-    }
     player_fov->fov_map = NULL;
     appearance_t *player_appearance = (appearance_t *)component_add(player, COMPONENT_APPEARANCE);
     player_appearance->name = "Blinky";
@@ -139,17 +129,9 @@ void game_new(game_t *game)
     pet_light->color = TCOD_white;
     pet_light->flicker = false;
     pet_light->priority = LIGHT_PRIORITY_0;
-    if (pet_light->fov_map != NULL)
-    {
-        TCOD_map_delete(pet_light->fov_map);
-    }
     pet_light->fov_map = NULL;
     fov_t *pet_fov = (fov_t *)component_add(pet, COMPONENT_FOV);
     pet_fov->radius = 1;
-    if (pet_fov->fov_map != NULL)
-    {
-        TCOD_map_delete(pet_fov->fov_map);
-    }
     pet_fov->fov_map = NULL;
     appearance_t *pet_appearance = (appearance_t *)component_add(pet, COMPONENT_APPEARANCE);
     pet_appearance->name = "Spot";
@@ -566,6 +548,38 @@ void game_input(game_t *game)
                     }
                     case 'l':
                     {
+                        if (key.lctrl)
+                        {
+                            game_reset(game);
+                            game_init(game);
+
+                            TCOD_zip_t zip = TCOD_zip_new();
+
+                            TCOD_zip_load_from_file(zip, "save.gz");
+
+                            for (int i = 0; i < NUM_MAPS; i++)
+                            {
+                                for (int i = 0; i < NUM_MAPS; i++)
+                                {
+                                    map_t *map = &game->maps[i];
+                                    for (int x = 0; x < MAP_WIDTH; x++)
+                                    {
+                                        for (int y = 0; y < MAP_HEIGHT; y++)
+                                        {
+                                            tile_t *tile = &map->tiles[x][y];
+
+                                            tile->type = TCOD_zip_get_int(zip);
+                                            tile->seen = TCOD_zip_get_int(zip);
+                                        }
+                                    }
+                                }
+                            }
+
+                            TCOD_zip_delete(zip);
+
+                            break;
+                        }
+
                         if (position != NULL && fov != NULL && targeting != NULL)
                         {
                             if (targeting->type == TARGETING_LOOK)
@@ -587,6 +601,38 @@ void game_input(game_t *game)
                     case 'm':
                     {
                         game->message_log_visible = !game->message_log_visible;
+
+                        break;
+                    }
+                    case 's':
+                    {
+                        if (key.lctrl)
+                        {
+                            TCOD_zip_t zip = TCOD_zip_new();
+
+                            for (int i = 0; i < NUM_MAPS; i++)
+                            {
+                                map_t *map = &game->maps[i];
+                                for (int x = 0; x < MAP_WIDTH; x++)
+                                {
+                                    for (int y = 0; y < MAP_HEIGHT; y++)
+                                    {
+                                        tile_t *tile = &map->tiles[x][y];
+
+                                        TCOD_zip_put_int(zip, tile->type);
+                                        TCOD_zip_put_int(zip, tile->seen);
+                                    }
+                                }
+                            }
+
+                            TCOD_zip_save_to_file(zip, "save.gz");
+
+                            TCOD_zip_delete(zip);
+
+                            game_log(game, NULL, TCOD_green, "Game saved!");
+
+                            break;
+                        }
 
                         break;
                     }
@@ -925,8 +971,6 @@ void game_log(game_t *game, position_t *position, TCOD_color_t color, char *text
     }
 }
 
-#define CONSTRAIN_VIEW 1
-
 void game_render(game_t *game)
 {
     TCOD_console_set_default_background(NULL, TCOD_black);
@@ -953,18 +997,19 @@ void game_render(game_t *game)
         int view_x = player_position->x - view_width / 2;
         int view_y = player_position->y - view_height / 2;
 
-#if CONSTRAIN_VIEW
-        view_x = view_x < 0
-                     ? 0
-                     : view_x + view_width > MAP_WIDTH
-                           ? MAP_WIDTH - view_width
-                           : view_x;
-        view_y = view_y < 0
-                     ? 0
-                     : view_y + view_height > MAP_HEIGHT
-                           ? MAP_HEIGHT - view_height
-                           : view_y;
-#endif
+        if (view_width < MAP_WIDTH && view_height < MAP_HEIGHT)
+        {
+            view_x = view_x < 0
+                         ? 0
+                         : view_x + view_width > MAP_WIDTH
+                               ? MAP_WIDTH - view_width
+                               : view_x;
+            view_y = view_y < 0
+                         ? 0
+                         : view_y + view_height > MAP_HEIGHT
+                               ? MAP_HEIGHT - view_height
+                               : view_y;
+        }
 
         static TCOD_noise_t noise = NULL;
         if (noise == NULL)
@@ -1182,6 +1227,20 @@ void game_render(game_t *game)
 
 void game_reset(game_t *game)
 {
+    for (int i = 0; i < MAX_ENTITIES; i++)
+    {
+        entity_t *entity = &game->entities[i];
+
+        entity_reset(entity);
+
+        for (int j = 0; j < NUM_COMPONENTS; j++)
+        {
+            component_t *component = &game->components[j][i];
+
+            component_reset(component);
+        }
+    }
+
     for (int i = 0; i < NUM_MAPS; i++)
     {
         map_t *map = &game->maps[i];

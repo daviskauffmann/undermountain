@@ -84,6 +84,7 @@ typedef struct entity_s
     struct game_s *game;
 } entity_t;
 
+void entity_init(entity_t *entity, int id, struct game_s *game);
 entity_t *entity_create(struct game_s *game);
 void entity_path_towards(entity_t *entity, int x, int y);
 void entity_move_towards(entity_t *entity, int x, int y);
@@ -96,32 +97,9 @@ void entity_shoot(entity_t *entity, int x, int y);
 void entity_attack(entity_t *entity, entity_t *other);
 void entity_die(entity_t *entity, entity_t *killer);
 void entity_destroy(entity_t *entity);
+void entity_reset(entity_t *entity);
 
 /* Components */
-typedef enum component_type_e {
-    COMPONENT_POSITION,
-    COMPONENT_PHYSICS,
-    COMPONENT_LIGHT,
-    COMPONENT_FOV,
-    COMPONENT_APPEARANCE,
-    COMPONENT_AI,
-    COMPONENT_HEALTH,
-    COMPONENT_ALIGNMENT,
-    COMPONENT_TARGETING,
-    COMPONENT_PICKABLE,
-    COMPONENT_INVENTORY,
-    COMPONENT_TOOK_DAMAGE,
-
-    NUM_COMPONENTS
-} component_type_t;
-
-typedef struct position_s
-{
-    struct map_s *map;
-    int x;
-    int y;
-} position_t;
-
 typedef struct ai_s
 {
     float energy;
@@ -129,11 +107,54 @@ typedef struct ai_s
     entity_t *follow_target;
 } ai_t;
 
-typedef struct physics_s
+typedef enum alignment_type_e {
+    ALIGNMENT_GOOD,
+    ALIGNMENT_EVIL,
+} alignment_type_t;
+
+typedef struct alignment_s
 {
-    bool is_walkable;
-    bool is_transparent;
-} physics_t;
+    alignment_type_t type;
+} alignment_t;
+
+typedef enum layer_e {
+    LAYER_0,
+    LAYER_1,
+    LAYER_2,
+
+    NUM_LAYERS,
+} layer_t;
+
+typedef struct appearance_s
+{
+    char *name;
+    unsigned char glyph;
+    TCOD_color_t color;
+    layer_t layer;
+} appearance_t;
+
+typedef struct fov_s
+{
+    int radius;
+    TCOD_map_t fov_map;
+} fov_t;
+
+typedef struct health_s
+{
+    int max;
+    int current;
+} health_t;
+
+typedef struct inventory_s
+{
+    TCOD_list_t items;
+    entity_t *head;
+    entity_t *chest;
+    entity_t *legs;
+    entity_t *feet;
+    entity_t *main_hand;
+    entity_t *off_hand;
+} inventory_t;
 
 typedef enum light_type_e {
     LIGHT_PRIORITY_0,
@@ -152,43 +173,23 @@ typedef struct light_s
     TCOD_map_t fov_map;
 } light_t;
 
-typedef struct fov_s
+typedef struct physics_s
 {
-    int radius;
-    TCOD_map_t fov_map;
-} fov_t;
+    bool is_walkable;
+    bool is_transparent;
+} physics_t;
 
-typedef enum layer_e {
-    LAYER_0,
-    LAYER_1,
-    LAYER_2,
-
-    NUM_LAYERS,
-} layer_t;
-
-typedef struct appearance_s
+typedef struct pickable_s
 {
-    char *name;
-    unsigned char glyph;
-    TCOD_color_t color;
-    layer_t layer;
-} appearance_t;
+    float weight;
+} pickable_t;
 
-typedef struct health_s
+typedef struct position_s
 {
-    int max;
-    int current;
-} health_t;
-
-typedef enum alignment_type_e {
-    ALIGNMENT_GOOD,
-    ALIGNMENT_EVIL,
-} alignment_type_t;
-
-typedef struct alignment_s
-{
-    alignment_type_t type;
-} alignment_t;
+    struct map_s *map;
+    int x;
+    int y;
+} position_t;
 
 typedef enum targeting_type_e {
     TARGETING_NONE,
@@ -204,50 +205,53 @@ typedef struct targeting_s
     int y;
 } targeting_t;
 
-typedef struct pickable_s
-{
-    float weight;
-} pickable_t;
-
-typedef struct inventory_s
-{
-    TCOD_list_t items;
-    entity_t *head;
-    entity_t *chest;
-    entity_t *legs;
-    entity_t *feet;
-    entity_t *main_hand;
-    entity_t *off_hand;
-} inventory_t;
-
 typedef struct took_damage_s
 {
     float fade;
 } took_damage_t;
+
+typedef enum component_type_e {
+    COMPONENT_AI,
+    COMPONENT_ALIGNMENT,
+    COMPONENT_APPEARANCE,
+    COMPONENT_FOV,
+    COMPONENT_HEALTH,
+    COMPONENT_INVENTORY,
+    COMPONENT_LIGHT,
+    COMPONENT_PHYSICS,
+    COMPONENT_PICKABLE,
+    COMPONENT_POSITION,
+    COMPONENT_TARGETING,
+    COMPONENT_TOOK_DAMAGE,
+
+    NUM_COMPONENTS
+} component_type_t;
 
 typedef struct component_s
 {
     int id;
     component_type_t type;
     union {
-        position_t position;
         ai_t ai;
-        physics_t physics;
-        light_t light;
-        fov_t fov;
-        appearance_t appearance;
-        health_t health;
         alignment_t alignment;
-        targeting_t targeting;
-        pickable_t pickable;
+        appearance_t appearance;
+        fov_t fov;
+        health_t health;
         inventory_t inventory;
+        light_t light;
+        physics_t physics;
+        pickable_t pickable;
+        position_t position;
+        targeting_t targeting;
         took_damage_t took_damage;
     };
 } component_t;
 
+void component_init(component_t *component, int id, component_type_t component_type);
 component_t *component_add(entity_t *entity, component_type_t component_type);
 component_t *component_get(entity_t *entity, component_type_t component_type);
 void component_remove(entity_t *entity, component_type_t component_type);
+void component_reset(component_t *component);
 
 /* Messages */
 typedef struct message_s
@@ -281,10 +285,12 @@ typedef struct game_s
 
 void game_init(game_t *game);
 void game_new(game_t *game);
+void game_save(game_t *game);
+void game_load(game_t *game);
 void game_input(game_t *game);
 void game_update(game_t *game);
 void game_render(game_t *game);
-void game_log(struct game_s *game, position_t *position, TCOD_color_t color, char *text, ...);
+void game_log(game_t *game, position_t *position, TCOD_color_t color, char *text, ...);
 void game_reset(game_t *game);
 
 #endif

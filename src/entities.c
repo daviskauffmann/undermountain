@@ -14,7 +14,7 @@ void entity_init(entity_t *entity, int id, game_t *game)
 
 entity_t *entity_create(game_t *game)
 {
-    for (int i = 0; i < MAX_ENTITIES; i++)
+    for (int i = 0; i < NUM_ENTITIES; i++)
     {
         entity_t *entity = &game->entities[i];
 
@@ -432,6 +432,128 @@ void component_init(component_t *component, int id, component_type_t component_t
 {
     component->id = id;
     component->type = component_type;
+
+    switch (component->type)
+    {
+    case COMPONENT_AI:
+    {
+        ai_t *ai = (ai_t *)component;
+
+        ai->energy = 0.0f;
+        ai->energy_per_turn = 0.0f;
+        ai->follow_target = NULL;
+
+        break;
+    }
+    case COMPONENT_ALIGNMENT:
+    {
+        alignment_t *alignment = (alignment_t *)component;
+
+        alignment->type = 0;
+
+        break;
+    }
+    case COMPONENT_APPEARANCE:
+    {
+        appearance_t *appearance = (appearance_t *)component;
+
+        appearance->name = "";
+        appearance->glyph = ' ';
+        appearance->color = TCOD_white;
+        appearance->layer = 0;
+
+        break;
+    }
+    case COMPONENT_FOV:
+    {
+        fov_t *fov = (fov_t *)component;
+
+        fov->radius = 0;
+        fov->fov_map = NULL;
+
+        break;
+    }
+    case COMPONENT_HEALTH:
+    {
+        health_t *health = (health_t *)component;
+
+        health->max = 0;
+        health->current = 0;
+
+        break;
+    }
+    case COMPONENT_INVENTORY:
+    {
+        inventory_t *inventory = (inventory_t *)component;
+
+        inventory->items = NULL;
+        inventory->head = NULL;
+        inventory->chest = NULL;
+        inventory->legs = NULL;
+        inventory->feet = NULL;
+        inventory->main_hand = NULL;
+        inventory->off_hand = NULL;
+
+        break;
+    }
+    case COMPONENT_LIGHT:
+    {
+        light_t *light = (light_t *)component;
+
+        light->radius = 0;
+        light->color = TCOD_white;
+        light->flicker = false;
+        light->priority = 0;
+        light->fov_map = NULL;
+
+        break;
+    }
+    case COMPONENT_PHYSICS:
+    {
+        physics_t *physics = (physics_t *)component;
+
+        physics->is_walkable = false;
+        physics->is_transparent = false;
+
+        break;
+    }
+    case COMPONENT_PICKABLE:
+    {
+        pickable_t *pickable = (pickable_t *)component;
+
+        pickable->weight = 0.0f;
+
+        break;
+    }
+    case COMPONENT_POSITION:
+    {
+        position_t *position = (position_t *)component;
+
+        position->map = NULL;
+        position->x = 0;
+        position->y = 0;
+
+        break;
+    }
+    case COMPONENT_TARGETING:
+    {
+        targeting_t *targeting = (targeting_t *)component;
+
+        targeting->type = 0;
+        targeting->x = 0;
+        targeting->y = 0;
+
+        break;
+    }
+    case COMPONENT_TOOK_DAMAGE:
+    {
+        took_damage_t *took_damage = (took_damage_t *)component;
+
+        took_damage->fade = 0.0f;
+
+        break;
+    }
+    }
 }
 
 component_t *component_add(entity_t *entity, component_type_t component_type)
@@ -478,4 +600,95 @@ void component_remove(entity_t *entity, component_type_t component_type)
 void component_reset(component_t *component)
 {
     component->id = ID_UNUSED;
+
+    switch (component->type)
+    {
+    case COMPONENT_AI:
+    {
+        ai_t *ai = (ai_t *)component;
+
+        break;
+    }
+    case COMPONENT_ALIGNMENT:
+    {
+        alignment_t *alignment = (alignment_t *)component;
+
+        break;
+    }
+    case COMPONENT_APPEARANCE:
+    {
+        appearance_t *appearance = (appearance_t *)component;
+
+        break;
+    }
+    case COMPONENT_FOV:
+    {
+        fov_t *fov = (fov_t *)component;
+
+        if (fov->fov_map != NULL)
+        {
+            TCOD_map_delete(fov->fov_map);
+        }
+
+        break;
+    }
+    case COMPONENT_HEALTH:
+    {
+        health_t *health = (health_t *)component;
+
+        break;
+    }
+    case COMPONENT_INVENTORY:
+    {
+        inventory_t *inventory = (inventory_t *)component;
+
+        if (inventory->items != NULL)
+        {
+            TCOD_list_delete(inventory->items);
+        }
+
+        break;
+    }
+    case COMPONENT_LIGHT:
+    {
+        light_t *light = (light_t *)component;
+
+        if (light->fov_map != NULL)
+        {
+            TCOD_map_delete(light->fov_map);
+        }
+
+        break;
+    }
+    case COMPONENT_PHYSICS:
+    {
+        physics_t *physics = (physics_t *)component;
+
+        break;
+    }
+    case COMPONENT_PICKABLE:
+    {
+        pickable_t *pickable = (pickable_t *)component;
+
+        break;
+    }
+    case COMPONENT_POSITION:
+    {
+        position_t *position = (position_t *)component;
+
+        break;
+    }
+    case COMPONENT_TARGETING:
+    {
+        targeting_t *targeting = (targeting_t *)component;
+
+        break;
+    }
+    case COMPONENT_TOOK_DAMAGE:
+    {
+        took_damage_t *took_damage = (took_damage_t *)component;
+
+        break;
+    }
+    }
 }

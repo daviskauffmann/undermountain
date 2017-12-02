@@ -75,7 +75,7 @@ TCOD_map_t map_to_fov_map(map_t *map, int x, int y, int radius);
 void map_reset(map_t *map);
 
 /* Entities */
-#define MAX_ENTITIES 1024
+#define NUM_ENTITIES 1024
 #define ID_UNUSED -1
 
 typedef struct entity_s
@@ -229,8 +229,6 @@ typedef enum component_type_e {
 
 typedef struct component_s
 {
-    int id;
-    component_type_t type;
     union {
         ai_t ai;
         alignment_t alignment;
@@ -245,6 +243,8 @@ typedef struct component_s
         targeting_t targeting;
         took_damage_t took_damage;
     };
+    int id;
+    component_type_t type;
 } component_t;
 
 void component_init(component_t *component, int id, component_type_t component_type);
@@ -269,8 +269,8 @@ typedef struct game_s
     map_t maps[NUM_MAPS];
     tile_common_t tile_common;
     tile_info_t tile_info[NUM_TILES];
-    entity_t entities[MAX_ENTITIES];
-    component_t components[NUM_COMPONENTS][MAX_ENTITIES];
+    entity_t entities[NUM_ENTITIES];
+    component_t components[NUM_COMPONENTS][NUM_ENTITIES];
     entity_t *player;
     TCOD_list_t messages;
     int turn;

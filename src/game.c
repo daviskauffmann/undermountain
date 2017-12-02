@@ -11,7 +11,7 @@
 
 void game_init(game_t *game)
 {
-    for (int i = 0; i < MAX_ENTITIES; i++)
+    for (int i = 0; i < NUM_ENTITIES; i++)
     {
         entity_t *entity = &game->entities[i];
 
@@ -21,7 +21,7 @@ void game_init(game_t *game)
         {
             component_t *component = &game->components[j][i];
 
-            component_init(component, ID_UNUSED, j);
+            component_init(component, ID_UNUSED, (component_type_t)j);
         }
     }
 
@@ -1227,7 +1227,7 @@ void game_render(game_t *game)
 
 void game_reset(game_t *game)
 {
-    for (int i = 0; i < MAX_ENTITIES; i++)
+    for (int i = 0; i < NUM_ENTITIES; i++)
     {
         entity_t *entity = &game->entities[i];
 

@@ -238,19 +238,19 @@ void map_init(map_t *map, game_t *game, int level)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *item = entity_create(game);
-        position_t *item_position = (position_t *)component_add(item, COMPONENT_POSITION);
-        item_position->map = map;
-        item_position->x = x;
-        item_position->y = y;
-        TCOD_list_push(map->tiles[item_position->x][item_position->y].entities, item);
-        TCOD_list_push(map->entities, item);
-        appearance_t *item_appearance = (appearance_t *)component_add(item, COMPONENT_APPEARANCE);
-        item_appearance->name = "Longsword";
-        item_appearance->glyph = '|';
-        item_appearance->color = TCOD_white;
-        pickable_t *item_pickable = (pickable_t *)component_add(item, COMPONENT_PICKABLE);
-        item_pickable->weight = 10.0f;
+        entity_t *entity = entity_create(game);
+        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+        position->map = map;
+        position->x = x;
+        position->y = y;
+        TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+        TCOD_list_push(map->entities, entity);
+        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+        appearance->name = "Longsword";
+        appearance->glyph = '|';
+        appearance->color = TCOD_white;
+        pickable_t *pickable = (pickable_t *)component_add(entity, COMPONENT_PICKABLE);
+        pickable->weight = 10.0f;
     }
 
     for (int i = 0; i < NUM_BRAZIERS; i++)
@@ -260,23 +260,26 @@ void map_init(map_t *map, game_t *game, int level)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *brazier = entity_create(game);
-        position_t *brazier_position = (position_t *)component_add(brazier, COMPONENT_POSITION);
-        brazier_position->map = map;
-        brazier_position->x = x;
-        brazier_position->y = y;
-        TCOD_list_push(map->tiles[brazier_position->x][brazier_position->y].entities, brazier);
-        TCOD_list_push(map->entities, brazier);
-        appearance_t *brazier_appearance = (appearance_t *)component_add(brazier, COMPONENT_APPEARANCE);
-        brazier_appearance->name = "Brazier";
-        brazier_appearance->glyph = '*';
-        brazier_appearance->color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
-        light_t *brazier_light = (light_t *)component_add(brazier, COMPONENT_LIGHT);
-        brazier_light->radius = 10;
-        brazier_light->color = brazier_appearance->color;
-        brazier_light->flicker = false;
-        brazier_light->priority = LIGHT_PRIORITY_1;
-        brazier_light->fov_map = NULL;
+        entity_t *entity = entity_create(game);
+        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+        position->map = map;
+        position->x = x;
+        position->y = y;
+        TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+        TCOD_list_push(map->entities, entity);
+        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+        appearance->name = "Brazier";
+        appearance->glyph = '*';
+        appearance->color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
+        light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
+        light->radius = 10;
+        light->color = appearance->color;
+        light->flicker = false;
+        light->priority = LIGHT_PRIORITY_1;
+        light->fov_map = NULL;
+        physics_t *physics = (physics_t *)component_add(entity, COMPONENT_PHYSICS);
+        physics->is_walkable = false;
+        physics->is_transparent = false;
     }
 }
 
@@ -496,6 +499,7 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
             tile_t *tile = &map->tiles[x][y];
 
             bool is_walkable = map->game->tile_info[tile->type].is_walkable;
+            bool is_transparent = map->game->tile_info[tile->type].is_transparent;
 
             for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
             {
@@ -507,17 +511,13 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
 
                     if (physics != NULL)
                     {
-                        if (!physics->is_walkable)
-                        {
-                            is_walkable = false;
-
-                            break;
-                        }
+                        is_walkable = physics->is_walkable;
+                        is_transparent = physics->is_transparent;
                     }
                 }
             }
 
-            TCOD_map_set_properties(TCOD_map, x, y, map->game->tile_info[tile->type].is_transparent, is_walkable);
+            TCOD_map_set_properties(TCOD_map, x, y, is_transparent, is_walkable);
         }
     }
 

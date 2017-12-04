@@ -127,7 +127,7 @@ typedef enum layer_e {
 
 typedef struct appearance_s
 {
-    char *name;
+    const char *name;
     unsigned char glyph;
     TCOD_color_t color;
     layer_t layer;
@@ -145,15 +145,21 @@ typedef struct health_s
     int current;
 } health_t;
 
+typedef enum equipment_slot_e {
+    SLOT_HEAD,
+    SLOT_CHEST,
+    SLOT_LEGS,
+    SLOT_FEET,
+    SLOT_MHAND,
+    SLOT_OHAND,
+
+    NUM_EQUIPMENT_SLOTS
+} equipment_slot_t;
+
 typedef struct inventory_s
 {
     TCOD_list_t items;
-    entity_t *head;
-    entity_t *chest;
-    entity_t *legs;
-    entity_t *feet;
-    entity_t *main_hand;
-    entity_t *off_hand;
+    entity_t *equipment[NUM_EQUIPMENT_SLOTS];
 } inventory_t;
 
 typedef enum light_type_e {
@@ -186,7 +192,7 @@ typedef struct pickable_s
 
 typedef struct position_s
 {
-    struct map_s *map;
+    int level;
     int x;
     int y;
 } position_t;
@@ -266,9 +272,9 @@ void message_destroy(message_t *message);
 /* Game */
 typedef struct game_s
 {
-    map_t maps[NUM_MAPS];
     tile_common_t tile_common;
     tile_info_t tile_info[NUM_TILES];
+    map_t maps[NUM_MAPS];
     entity_t entities[NUM_ENTITIES];
     component_t components[NUM_COMPONENTS][NUM_ENTITIES];
     entity_t *player;

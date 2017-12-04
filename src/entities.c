@@ -35,7 +35,7 @@ void entity_path_towards(entity_t *entity, int x, int y)
 
     if (position != NULL)
     {
-        TCOD_map_t TCOD_map = map_to_TCOD_map(position->map);
+        TCOD_map_t TCOD_map = map_to_TCOD_map(&entity->game->maps[position->level]);
         TCOD_map_set_properties(TCOD_map, x, y, TCOD_map_is_transparent(TCOD_map, x, y), true);
 
         TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
@@ -98,8 +98,8 @@ void entity_move(entity_t *entity, int x, int y)
 
         if (position != NULL)
         {
-            tile_t *current_tile = &position->map->tiles[position->x][position->y];
-            tile_t *next_tile = &position->map->tiles[x][y];
+            tile_t *current_tile = &entity->game->maps[position->level].tiles[position->x][position->y];
+            tile_t *next_tile = &entity->game->maps[position->level].tiles[x][y];
 
             bool can_move = true;
 
@@ -176,8 +176,8 @@ void entity_swap(entity_t *entity, entity_t *other)
         {
             game_log(entity->game, position, TCOD_white, "%s swaps with %s", appearance->name, other_appearance->name);
 
-            tile_t *tile = &position->map->tiles[position->x][position->y];
-            tile_t *other_tile = &other_position->map->tiles[other_position->x][other_position->y];
+            tile_t *tile = &entity->game->maps[position->level].tiles[position->x][position->y];
+            tile_t *other_tile = &other->game->maps[other_position->level].tiles[other_position->x][other_position->y];
 
             int x = position->x;
             int y = position->y;
@@ -210,7 +210,7 @@ void entity_pick(entity_t *entity, entity_t *other)
     if (position != NULL && appearance != NULL && inventory != NULL &&
         other_appearance != NULL && other_position != NULL && other_pickable != NULL)
     {
-        TCOD_list_remove(other_position->map->tiles[other_position->x][other_position->y].entities, other);
+        TCOD_list_remove(other->game->maps[other_position->level].tiles[other_position->x][other_position->y].entities, other);
         TCOD_list_push(inventory->items, other);
 
         component_remove(other, COMPONENT_POSITION);
@@ -226,7 +226,7 @@ void entity_swing(entity_t *entity, int x, int y)
 
     if (position != NULL && appearance != NULL)
     {
-        tile_t *other_tile = &position->map->tiles[x][y];
+        tile_t *other_tile = &entity->game->maps[position->level].tiles[x][y];
 
         bool hit = false;
 
@@ -268,7 +268,7 @@ void entity_shoot(entity_t *entity, int x, int y)
         {
             game_log(entity->game, position, TCOD_white, "%s shoots", appearance->name);
 
-            tile_t *other_tile = &position->map->tiles[x][y];
+            tile_t *other_tile = &entity->game->maps[position->level].tiles[x][y];
 
             bool hit = false;
 
@@ -404,6 +404,8 @@ void entity_die(entity_t *entity, entity_t *killer)
         {
             entity->game->game_over = true;
 
+            TCOD_sys_delete_file("../saves/save.gz");
+
             game_log(entity->game, position, TCOD_green, "Game over! Press 'r' to restart");
         }
     }
@@ -457,7 +459,7 @@ void component_init(component_t *component, int id, component_type_t component_t
     {
         appearance_t *appearance = (appearance_t *)component;
 
-        appearance->name = "";
+        appearance->name = NULL;
         appearance->glyph = ' ';
         appearance->color = TCOD_white;
         appearance->layer = 0;
@@ -487,12 +489,10 @@ void component_init(component_t *component, int id, component_type_t component_t
         inventory_t *inventory = (inventory_t *)component;
 
         inventory->items = NULL;
-        inventory->head = NULL;
-        inventory->chest = NULL;
-        inventory->legs = NULL;
-        inventory->feet = NULL;
-        inventory->main_hand = NULL;
-        inventory->off_hand = NULL;
+        for (int i = 0; i < NUM_EQUIPMENT_SLOTS; i++)
+        {
+            inventory->equipment[i] = NULL;
+        }
 
         break;
     }
@@ -529,7 +529,7 @@ void component_init(component_t *component, int id, component_type_t component_t
     {
         position_t *position = (position_t *)component;
 
-        position->map = NULL;
+        position->level = 0;
         position->x = 0;
         position->y = 0;
 

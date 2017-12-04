@@ -12,9 +12,17 @@ int main(int argc, char *argv[])
 {
     config_init();
 
-start:
+game_start:
     game_init(&game);
-    game_new(&game);
+
+    if (TCOD_sys_file_exists("../saves/save.gz"))
+    {
+        game_load(&game);
+    }
+    else
+    {
+        game_new(&game);
+    }
 
     while (!TCOD_console_is_window_closed())
     {
@@ -26,7 +34,7 @@ start:
         {
             game_reset(&game);
 
-            goto start;
+            goto game_start;
         }
 
         if (game.should_quit)

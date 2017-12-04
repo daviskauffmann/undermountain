@@ -105,7 +105,7 @@ void map_init(map_t *map, game_t *game, int level)
 
         entity_t *entity = entity_create(game);
         position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->map = map;
+        position->level = level;
         position->x = x;
         position->y = y;
         TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
@@ -194,7 +194,7 @@ void map_init(map_t *map, game_t *game, int level)
 
         entity_t *entity = entity_create(game);
         position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->map = map;
+        position->level = level;
         position->x = x;
         position->y = y;
         TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
@@ -240,7 +240,7 @@ void map_init(map_t *map, game_t *game, int level)
 
         entity_t *entity = entity_create(game);
         position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->map = map;
+        position->level = level;
         position->x = x;
         position->y = y;
         TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
@@ -262,7 +262,7 @@ void map_init(map_t *map, game_t *game, int level)
 
         entity_t *entity = entity_create(game);
         position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->map = map;
+        position->level = level;
         position->x = x;
         position->y = y;
         TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
@@ -272,7 +272,7 @@ void map_init(map_t *map, game_t *game, int level)
         appearance->glyph = '*';
         appearance->color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
         light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
-        light->radius = 10;
+        light->radius = TCOD_random_get_int(NULL, 10, 20);
         light->color = appearance->color;
         light->flicker = false;
         light->priority = LIGHT_PRIORITY_1;

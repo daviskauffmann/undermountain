@@ -370,6 +370,95 @@ void entity_attack(entity_t *entity, entity_t *other)
     }
 }
 
+void entity_cast_spell(entity_t *entity)
+{
+    caster_t *caster = (caster_t *)component_get(entity, COMPONENT_CASTER);
+
+    if (caster != NULL)
+    {
+        spell_t *spell = &caster->spells[caster->current];
+
+        switch (spell->type)
+        {
+        case SPELL_HEAL_SELF:
+        {
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+            health_t *health = (health_t *)component_get(entity, COMPONENT_HEALTH);
+
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+            if (health != NULL)
+            {
+                int heal_amount = health->max - health->current;
+
+                health->current += heal_amount;
+
+                if (appearance != NULL && position != NULL)
+                {
+                    game_log(entity->game, position, TCOD_purple, "%s casts Heal Self, restoring %d health", appearance->name, heal_amount);
+                }
+            }
+
+            break;
+        }
+        case SPELL_INSTAKILL:
+        {
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+            fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+            targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+
+            if (appearance != NULL && fov != NULL && targeting != NULL && position != NULL)
+            {
+                tile_t *tile = &entity->game->maps[position->level].tiles[targeting->x][targeting->y];
+
+                entity_t *target = NULL;
+
+                for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
+                {
+                    entity_t *other = *iterator;
+
+                    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+
+                    if (other_position != NULL)
+                    {
+                        if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y))
+                        {
+                            target = other;
+                        }
+                    }
+                }
+
+                if (target != NULL)
+                {
+                    if (target == entity)
+                    {
+                        game_log(entity->game, position, TCOD_white, "%s thinks that's a bad idea!", appearance->name);
+                    }
+                    else
+                    {
+                        appearance_t *target_appearance = (appearance_t *)component_get(target, COMPONENT_APPEARANCE);
+
+                        if (target_appearance != NULL)
+                        {
+                            game_log(entity->game, position, TCOD_purple, "%s casts Instakill at %s", appearance->name, target_appearance->name);
+                        }
+
+                        entity_die(target, entity);
+                    }
+                }
+                else
+                {
+                    game_log(entity->game, position, TCOD_purple, "%s casts Instakill", appearance->name);
+                }
+            }
+
+            break;
+        }
+        }
+    }
+}
+
 void entity_die(entity_t *entity, entity_t *killer)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
@@ -465,6 +554,17 @@ void component_init(component_t *component, int id, component_type_t component_t
         appearance->layer = 0;
 
         break;
+    }
+    case COMPONENT_CASTER:
+    {
+        caster_t *caster = (caster_t *)component;
+
+        for (int i = 0; i < NUM_SPELL_TYPES; i++)
+        {
+            caster->spells[i].type = (spell_type_t)i;
+            caster->spells[i].known = false;
+        }
+        caster->current = 0;
     }
     case COMPONENT_FOV:
     {

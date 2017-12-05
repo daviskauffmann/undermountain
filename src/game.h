@@ -74,6 +74,20 @@ TCOD_map_t map_to_TCOD_map(map_t *map);
 TCOD_map_t map_to_fov_map(map_t *map, int x, int y, int radius);
 void map_reset(map_t *map);
 
+/* Spells */
+typedef enum spell_type_e {
+    SPELL_HEAL_SELF,
+    SPELL_INSTAKILL,
+
+    NUM_SPELL_TYPES
+} spell_type_t;
+
+typedef struct spell_s
+{
+    spell_type_t type;
+    bool known;
+} spell_t;
+
 /* Entities */
 #define NUM_ENTITIES 1024
 #define ID_UNUSED -1
@@ -95,6 +109,7 @@ void entity_pick(entity_t *entity, entity_t *other);
 void entity_swing(entity_t *entity, int x, int y);
 void entity_shoot(entity_t *entity, int x, int y);
 void entity_attack(entity_t *entity, entity_t *other);
+void entity_cast_spell(entity_t *entity);
 void entity_die(entity_t *entity, entity_t *killer);
 void entity_destroy(entity_t *entity);
 void entity_reset(entity_t *entity);
@@ -132,6 +147,12 @@ typedef struct appearance_s
     TCOD_color_t color;
     layer_t layer;
 } appearance_t;
+
+typedef struct caster_s
+{
+    spell_t spells[NUM_SPELL_TYPES];
+    spell_type_t current;
+} caster_t;
 
 typedef struct fov_s
 {
@@ -220,6 +241,7 @@ typedef enum component_type_e {
     COMPONENT_AI,
     COMPONENT_ALIGNMENT,
     COMPONENT_APPEARANCE,
+    COMPONENT_CASTER,
     COMPONENT_FOV,
     COMPONENT_HEALTH,
     COMPONENT_INVENTORY,
@@ -248,6 +270,7 @@ typedef struct component_s
         position_t position;
         targeting_t targeting;
         took_damage_t took_damage;
+        caster_t caster;
     };
     int id;
     component_type_t type;

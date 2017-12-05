@@ -106,11 +106,9 @@ void game_new(game_t *game)
     alignment_t *player_alignment = (alignment_t *)component_add(player, COMPONENT_ALIGNMENT);
     player_alignment->type = ALIGNMENT_GOOD;
     targeting_t *player_targeting = (targeting_t *)component_add(player, COMPONENT_TARGETING);
-    player_targeting->type = TARGETING_NONE;
-    player_targeting->x = -1;
-    player_targeting->y = -1;
     inventory_t *player_inventory = (inventory_t *)component_add(player, COMPONENT_INVENTORY);
     player_inventory->items = TCOD_list_new();
+    caster_t *player_caster = (caster_t *)component_add(player, COMPONENT_CASTER);
 
     entity_t *pet = entity_create(game);
     position_t *pet_position = (position_t *)component_add(pet, COMPONENT_POSITION);
@@ -213,6 +211,19 @@ void game_save(game_t *game)
                 TCOD_zip_put_char(zip, appearance->glyph);
                 TCOD_zip_put_color(zip, appearance->color);
                 TCOD_zip_put_int(zip, appearance->layer);
+
+                break;
+            }
+            case COMPONENT_CASTER:
+            {
+                caster_t *caster = (caster_t *)component;
+
+                for (int i = 0; i < NUM_SPELL_TYPES; i++)
+                {
+                    TCOD_zip_put_int(zip, caster->spells[i].type);
+                    TCOD_zip_put_int(zip, caster->spells[i].known);
+                }
+                TCOD_zip_put_int(zip, caster->current);
 
                 break;
             }
@@ -401,6 +412,19 @@ void game_load(game_t *game)
                 appearance->glyph = TCOD_zip_get_char(zip);
                 appearance->color = TCOD_zip_get_color(zip);
                 appearance->layer = TCOD_zip_get_int(zip);
+
+                break;
+            }
+            case COMPONENT_CASTER:
+            {
+                caster_t *caster = (caster_t *)component;
+
+                for (int i = 0; i < NUM_SPELL_TYPES; i++)
+                {
+                    caster->spells[i].type = TCOD_zip_get_int(zip);
+                    caster->spells[i].known = TCOD_zip_get_int(zip);
+                }
+                caster->current = TCOD_zip_get_int(zip);
 
                 break;
             }
@@ -971,50 +995,73 @@ void game_input(game_t *game)
                     }
                     case 'z':
                     {
-                        if (position != NULL && fov != NULL && targeting != NULL)
+                        caster_t *caster = (caster_t *)component_get(entity, COMPONENT_CASTER);
+
+                        if (caster != NULL)
                         {
-                            if (targeting->type == TARGETING_ZAP)
+                            spell_t *spell = &caster->spells[caster->current];
+
+                            switch (spell->type)
+                            {
+                            case SPELL_HEAL_SELF:
                             {
                                 game->should_update = true;
 
-                                targeting->type = TARGETING_NONE;
+                                entity_cast_spell(entity);
 
-                                game_log(entity->game, position, TCOD_white, "Zap!");
+                                break;
                             }
-                            else
+                            case SPELL_INSTAKILL:
                             {
-                                targeting->type = TARGETING_ZAP;
-
-                                bool target_found = false;
-
-                                if (alignment != NULL)
+                                if (position != NULL && fov != NULL && targeting != NULL)
                                 {
-                                    for (void **iterator = TCOD_list_begin(game->maps[position->level].entities); iterator != TCOD_list_end(game->maps[position->level].entities); iterator++)
+                                    if (targeting->type == TARGETING_ZAP)
                                     {
-                                        entity_t *other = *iterator;
+                                        game->should_update = true;
 
-                                        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-                                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+                                        targeting->type = TARGETING_NONE;
 
-                                        if (other_position != NULL && other_alignment != NULL)
+                                        entity_cast_spell(entity);
+                                    }
+                                    else
+                                    {
+                                        targeting->type = TARGETING_ZAP;
+
+                                        bool target_found = false;
+
+                                        if (alignment != NULL)
                                         {
-                                            if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                                other_alignment->type != alignment->type)
+                                            for (void **iterator = TCOD_list_begin(game->maps[position->level].entities); iterator != TCOD_list_end(game->maps[position->level].entities); iterator++)
                                             {
-                                                target_found = true;
+                                                entity_t *other = *iterator;
 
-                                                targeting->x = other_position->x;
-                                                targeting->y = other_position->y;
+                                                position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+                                                alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+
+                                                if (other_position != NULL && other_alignment != NULL)
+                                                {
+                                                    if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
+                                                        other_alignment->type != alignment->type)
+                                                    {
+                                                        target_found = true;
+
+                                                        targeting->x = other_position->x;
+                                                        targeting->y = other_position->y;
+                                                    }
+                                                }
                                             }
+                                        }
+
+                                        if (!target_found)
+                                        {
+                                            targeting->x = position->x;
+                                            targeting->y = position->y;
                                         }
                                     }
                                 }
 
-                                if (!target_found)
-                                {
-                                    targeting->x = position->x;
-                                    targeting->y = position->y;
-                                }
+                                break;
+                            }
                             }
                         }
 

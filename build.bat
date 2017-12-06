@@ -11,9 +11,13 @@ set LIBS=libtcod.lib libtcod-gui.lib SDL2.lib SDL2main.lib
 set COMPILER_OPTS=/Fdpdb\ /Febin\%APP_NAME%.exe /Foobj\ /Zi
 set LINKER_OPTS=/subsystem:console
 
-del bin\* /q
-del obj\* /q
-del pdb\* /q
+rd bin /s /q
+rd obj /s /q 
+rd pdb /s /q
+
+md bin
+md obj
+md pdb
 
 cl %INCLUDE_DIRS% %COMPILER_OPTS% %SRC_DIR% /link %LIB_DIRS% %LINKER_OPTS% %LIBS%
 

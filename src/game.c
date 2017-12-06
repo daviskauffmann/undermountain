@@ -36,21 +36,25 @@ void game_init(game_t *game)
         .shadow_color = TCOD_color_RGB(16, 16, 32)};
 
     game->tile_info[TILE_FLOOR] = (tile_info_t){
+        .name = "Floor",
         .glyph = '.',
         .color = TCOD_white,
         .is_transparent = true,
         .is_walkable = true};
     game->tile_info[TILE_WALL] = (tile_info_t){
+        .name = "Wall",
         .glyph = '#',
         .color = TCOD_white,
         .is_transparent = false,
         .is_walkable = false};
     game->tile_info[TILE_STAIR_DOWN] = (tile_info_t){
+        .name = "Stair Down",
         .glyph = '>',
         .color = TCOD_white,
         .is_transparent = true,
         .is_walkable = true};
     game->tile_info[TILE_STAIR_UP] = (tile_info_t){
+        .name = "Stair Up",
         .glyph = '<',
         .color = TCOD_white,
         .is_transparent = true,
@@ -83,9 +87,7 @@ void game_new(game_t *game)
     player_position->y = game->maps[player_position->level].stair_up_y;
     TCOD_list_push(game->maps[player_position->level].tiles[player_position->x][player_position->y].entities, player);
     TCOD_list_push(game->maps[player_position->level].entities, player);
-    physics_t *player_physics = (physics_t *)component_add(player, COMPONENT_PHYSICS);
-    player_physics->is_walkable = false;
-    player_physics->is_transparent = true;
+    component_add(player, COMPONENT_SOLID);
     light_t *player_light = (light_t *)component_add(player, COMPONENT_LIGHT);
     player_light->radius = 5;
     player_light->color = TCOD_white;
@@ -117,9 +119,7 @@ void game_new(game_t *game)
     pet_position->y = game->maps[pet_position->level].stair_up_y;
     TCOD_list_push(game->maps[pet_position->level].tiles[pet_position->x][pet_position->y].entities, pet);
     TCOD_list_push(game->maps[pet_position->level].entities, pet);
-    physics_t *pet_physics = (physics_t *)component_add(pet, COMPONENT_PHYSICS);
-    pet_physics->is_walkable = false;
-    pet_physics->is_transparent = true;
+    component_add(pet, COMPONENT_SOLID);
     light_t *pet_light = (light_t *)component_add(pet, COMPONENT_LIGHT);
     pet_light->radius = 5;
     pet_light->color = TCOD_white;
@@ -227,6 +227,15 @@ void game_save(game_t *game)
 
                 break;
             }
+            case COMPONENT_FLASH:
+            {
+                flash_t *flash = (flash_t *)component;
+
+                TCOD_zip_put_color(zip, flash->color);
+                TCOD_zip_put_float(zip, flash->fade);
+
+                break;
+            }
             case COMPONENT_FOV:
             {
                 fov_t *fov = (fov_t *)component;
@@ -264,13 +273,8 @@ void game_save(game_t *game)
 
                 break;
             }
-            case COMPONENT_PHYSICS:
+            case COMPONENT_OPAQUE:
             {
-                physics_t *physics = (physics_t *)component;
-
-                TCOD_zip_put_int(zip, physics->is_walkable);
-                TCOD_zip_put_int(zip, physics->is_transparent);
-
                 break;
             }
             case COMPONENT_PICKABLE:
@@ -301,12 +305,8 @@ void game_save(game_t *game)
 
                 break;
             }
-            case COMPONENT_TOOK_DAMAGE:
+            case COMPONENT_SOLID:
             {
-                took_damage_t *took_damage = (took_damage_t *)component;
-
-                TCOD_zip_put_float(zip, took_damage->fade);
-
                 break;
             }
             }
@@ -428,6 +428,15 @@ void game_load(game_t *game)
 
                 break;
             }
+            case COMPONENT_FLASH:
+            {
+                flash_t *flash = (flash_t *)component;
+
+                flash->color = TCOD_zip_get_color(zip);
+                flash->fade = TCOD_zip_get_float(zip);
+
+                break;
+            }
             case COMPONENT_FOV:
             {
                 fov_t *fov = (fov_t *)component;
@@ -462,13 +471,8 @@ void game_load(game_t *game)
 
                 break;
             }
-            case COMPONENT_PHYSICS:
+            case COMPONENT_OPAQUE:
             {
-                physics_t *physics = (physics_t *)component;
-
-                physics->is_walkable = TCOD_zip_get_int(zip);
-                physics->is_transparent = TCOD_zip_get_int(zip);
-
                 break;
             }
             case COMPONENT_PICKABLE:
@@ -502,12 +506,8 @@ void game_load(game_t *game)
 
                 break;
             }
-            case COMPONENT_TOOK_DAMAGE:
+            case COMPONENT_SOLID:
             {
-                took_damage_t *took_damage = (took_damage_t *)component;
-
-                took_damage->fade = TCOD_zip_get_float(zip);
-
                 break;
             }
             }
@@ -1092,15 +1092,15 @@ void game_update(game_t *game)
         {
             entity_t *entity = *iterator;
 
-            took_damage_t *took_damage = (took_damage_t *)component_get(entity, COMPONENT_TOOK_DAMAGE);
+            flash_t *flash = (flash_t *)component_get(entity, COMPONENT_FLASH);
 
-            if (took_damage != NULL)
+            if (flash != NULL)
             {
-                took_damage->fade -= (1.0f / FPS) / 0.25f;
+                flash->fade -= (1.0f / FPS) / 0.25f;
 
-                if (took_damage->fade <= 0)
+                if (flash->fade <= 0)
                 {
-                    component_remove(entity, COMPONENT_TOOK_DAMAGE);
+                    component_remove(entity, COMPONENT_FLASH);
                 }
 
                 fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
@@ -1490,11 +1490,11 @@ void game_render(game_t *game)
                     {
                         TCOD_color_t color = appearance->color;
 
-                        took_damage_t *took_damage = (took_damage_t *)component_get(entity, COMPONENT_TOOK_DAMAGE);
+                        flash_t *flash = (flash_t *)component_get(entity, COMPONENT_FLASH);
 
-                        if (took_damage != NULL)
+                        if (flash != NULL)
                         {
-                            color = TCOD_color_lerp(appearance->color, TCOD_red, took_damage->fade);
+                            color = TCOD_color_lerp(appearance->color, flash->color, flash->fade);
                         }
 
                         TCOD_console_set_char_foreground(NULL, position->x - view_x, position->y - view_y, color);
@@ -1522,6 +1522,41 @@ void game_render(game_t *game)
             {
                 TCOD_console_set_char_foreground(NULL, player_targeting->x - view_x, player_targeting->y - view_y, TCOD_red);
                 TCOD_console_set_char(NULL, player_targeting->x - view_x, player_targeting->y - view_y, 'X');
+            }
+
+            switch (player_targeting->type)
+            {
+            case TARGETING_LOOK:
+            {
+                tile_t *tile = &game->maps[player_position->level].tiles[player_targeting->x][player_targeting->y];
+
+                if (TCOD_map_is_in_fov(player_fov->fov_map, player_targeting->x, player_targeting->y))
+                {
+                    entity_t *entity = TCOD_list_peek(tile->entities);
+                    appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+                    if (entity == NULL && appearance == NULL)
+                    {
+                        TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->tile_info[tile->type].name);
+                    }
+                    else
+                    {
+                        TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, appearance->name);
+                    }
+                }
+                else
+                {
+                    if (tile->seen)
+                    {
+                        TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (remembered)", game->tile_info[tile->type].name);
+                    }
+                    else
+                    {
+                        TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
+                    }
+                }
+                break;
+            }
             }
         }
     }

@@ -20,6 +20,7 @@ typedef struct tile_common_s
 
 typedef struct tile_info_s
 {
+    const char *name;
     unsigned char glyph;
     TCOD_color_t color;
     bool is_walkable;
@@ -154,6 +155,12 @@ typedef struct caster_s
     spell_type_t current;
 } caster_t;
 
+typedef struct flash_s
+{
+    TCOD_color_t color;
+    float fade;
+} flash_t;
+
 typedef struct fov_s
 {
     int radius;
@@ -200,12 +207,6 @@ typedef struct light_s
     TCOD_map_t fov_map;
 } light_t;
 
-typedef struct physics_s
-{
-    bool is_walkable;
-    bool is_transparent;
-} physics_t;
-
 typedef struct pickable_s
 {
     float weight;
@@ -232,25 +233,21 @@ typedef struct targeting_s
     int y;
 } targeting_t;
 
-typedef struct took_damage_s
-{
-    float fade;
-} took_damage_t;
-
 typedef enum component_type_e {
     COMPONENT_AI,
     COMPONENT_ALIGNMENT,
     COMPONENT_APPEARANCE,
     COMPONENT_CASTER,
+    COMPONENT_FLASH,
     COMPONENT_FOV,
     COMPONENT_HEALTH,
     COMPONENT_INVENTORY,
     COMPONENT_LIGHT,
-    COMPONENT_PHYSICS,
+    COMPONENT_OPAQUE,
     COMPONENT_PICKABLE,
     COMPONENT_POSITION,
     COMPONENT_TARGETING,
-    COMPONENT_TOOK_DAMAGE,
+    COMPONENT_SOLID,
 
     NUM_COMPONENTS
 } component_type_t;
@@ -261,16 +258,15 @@ typedef struct component_s
         ai_t ai;
         alignment_t alignment;
         appearance_t appearance;
+        caster_t caster;
+        flash_t took_damage;
         fov_t fov;
         health_t health;
         inventory_t inventory;
         light_t light;
-        physics_t physics;
         pickable_t pickable;
         position_t position;
         targeting_t targeting;
-        took_damage_t took_damage;
-        caster_t caster;
     };
     int id;
     component_type_t type;

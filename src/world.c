@@ -110,9 +110,7 @@ void map_init(map_t *map, game_t *game, int level)
         position->y = y;
         TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
         TCOD_list_push(map->entities, entity);
-        physics_t *physics = (physics_t *)component_add(entity, COMPONENT_PHYSICS);
-        physics->is_walkable = false;
-        physics->is_transparent = true;
+        component_add(entity, COMPONENT_SOLID);
         appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
         appearance->layer = LAYER_1;
         fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
@@ -199,9 +197,7 @@ void map_init(map_t *map, game_t *game, int level)
         position->y = y;
         TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
         TCOD_list_push(map->entities, entity);
-        physics_t *physics = (physics_t *)component_add(entity, COMPONENT_PHYSICS);
-        physics->is_walkable = false;
-        physics->is_transparent = true;
+        component_add(entity, COMPONENT_SOLID);
         appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
         appearance->name = "Adventurer";
         appearance->glyph = 'a';
@@ -277,9 +273,8 @@ void map_init(map_t *map, game_t *game, int level)
         light->flicker = false;
         light->priority = LIGHT_PRIORITY_1;
         light->fov_map = NULL;
-        physics_t *physics = (physics_t *)component_add(entity, COMPONENT_PHYSICS);
-        physics->is_walkable = false;
-        physics->is_transparent = false;
+        component_add(entity, COMPONENT_SOLID);
+        component_add(entity, COMPONENT_OPAQUE);
     }
 }
 
@@ -505,15 +500,18 @@ TCOD_map_t map_to_TCOD_map(map_t *map)
             {
                 entity_t *entity = *iterator;
 
-                if (entity->id != ID_UNUSED)
-                {
-                    physics_t *physics = (physics_t *)component_get(entity, COMPONENT_PHYSICS);
+                component_t *opaque = component_get(entity, COMPONENT_OPAQUE);
 
-                    if (physics != NULL)
-                    {
-                        is_walkable = physics->is_walkable;
-                        is_transparent = physics->is_transparent;
-                    }
+                if (opaque != NULL)
+                {
+                    is_transparent = false;
+                }
+
+                component_t *solid = component_get(entity, COMPONENT_SOLID);
+
+                if (solid != NULL)
+                {
+                    is_walkable = false;
                 }
             }
 

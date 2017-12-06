@@ -7,8 +7,8 @@ void config_init(void)
 {
     screen_width = 1366;
     screen_height = 768;
-    console_width = (screen_width / 16);
-    console_height = (screen_height / 16);
+    console_width = screen_width / 16;
+    console_height = screen_height / 16;
     fullscreen = false;
     renderer = TCOD_RENDERER_SDL;
 

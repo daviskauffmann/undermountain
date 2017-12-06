@@ -112,38 +112,31 @@ void entity_move(entity_t *entity, int x, int y)
             {
                 entity_t *other = *iterator;
 
-                if (other != NULL)
-                {
-                    if (other->id != ID_UNUSED)
-                    {
-                        physics_t *other_physics = (physics_t *)component_get(other, COMPONENT_PHYSICS);
+                component_t *other_solid = component_get(other, COMPONENT_SOLID);
 
-                        if (other_physics != NULL)
+                if (other_solid != NULL)
+                {
+                    can_move = false;
+
+                    health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+
+                    if (other_health != NULL)
+                    {
+                        alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
+                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+
+                        if (alignment != NULL &&
+                            other_alignment != NULL &&
+                            alignment->type == other_alignment->type)
                         {
-                            if (!other_physics->is_walkable)
+                            if (other != entity->game->player)
                             {
-                                can_move = false;
+                                entity_swap(entity, other);
                             }
                         }
-
-                        health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
-
-                        if (other_health != NULL)
+                        else
                         {
-                            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-                            alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                            if (alignment != NULL && other_alignment != NULL && alignment->type != other_alignment->type)
-                            {
-                                entity_attack(entity, other);
-                            }
-                            else
-                            {
-                                if (entity == entity->game->player)
-                                {
-                                    entity_swap(entity, other);
-                                }
-                            }
+                            entity_attack(entity, other);
                         }
                     }
                 }
@@ -355,8 +348,9 @@ void entity_attack(entity_t *entity, entity_t *other)
 
             other_health->current -= total_damage;
 
-            took_damage_t *other_took_damage = (took_damage_t *)component_add(other, COMPONENT_TOOK_DAMAGE);
-            other_took_damage->fade = 1.0f;
+            flash_t *other_flash = (flash_t *)component_add(other, COMPONENT_FLASH);
+            other_flash->color = TCOD_red;
+            other_flash->fade = 1.0f;
 
             if (other_health->current <= 0)
             {
@@ -382,16 +376,20 @@ void entity_cast_spell(entity_t *entity)
         {
         case SPELL_HEAL_SELF:
         {
-            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
             health_t *health = (health_t *)component_get(entity, COMPONENT_HEALTH);
-
-            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
             if (health != NULL)
             {
                 int heal_amount = health->max - health->current;
 
                 health->current += heal_amount;
+
+                flash_t *flash = (flash_t *)component_add(entity, COMPONENT_FLASH);
+                flash->color = TCOD_green;
+                flash->fade = 1.0f;
+
+                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
                 if (appearance != NULL && position != NULL)
                 {
@@ -462,14 +460,11 @@ void entity_cast_spell(entity_t *entity)
 void entity_die(entity_t *entity, entity_t *killer)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-    physics_t *physics = (physics_t *)component_get(entity, COMPONENT_PHYSICS);
     appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
 
-    if (position != NULL && physics != NULL && appearance != NULL)
+    if (position != NULL && appearance != NULL)
     {
         game_log(entity->game, position, TCOD_red, "%s dies", appearance->name);
-
-        physics->is_walkable = true;
 
         appearance->glyph = '%';
         appearance->layer = LAYER_0;
@@ -477,6 +472,7 @@ void entity_die(entity_t *entity, entity_t *killer)
         component_remove(entity, COMPONENT_AI);
         component_remove(entity, COMPONENT_HEALTH);
         component_remove(entity, COMPONENT_ALIGNMENT);
+        component_remove(entity, COMPONENT_SOLID);
 
         if (killer != NULL)
         {
@@ -565,6 +561,17 @@ void component_init(component_t *component, int id, component_type_t component_t
             caster->spells[i].known = false;
         }
         caster->current = 0;
+
+        break;
+    }
+    case COMPONENT_FLASH:
+    {
+        flash_t *flash = (flash_t *)component;
+
+        flash->color = TCOD_white;
+        flash->fade = 0.0f;
+
+        break;
     }
     case COMPONENT_FOV:
     {
@@ -608,13 +615,8 @@ void component_init(component_t *component, int id, component_type_t component_t
 
         break;
     }
-    case COMPONENT_PHYSICS:
+    case COMPONENT_OPAQUE:
     {
-        physics_t *physics = (physics_t *)component;
-
-        physics->is_walkable = false;
-        physics->is_transparent = false;
-
         break;
     }
     case COMPONENT_PICKABLE:
@@ -645,12 +647,8 @@ void component_init(component_t *component, int id, component_type_t component_t
 
         break;
     }
-    case COMPONENT_TOOK_DAMAGE:
+    case COMPONENT_SOLID:
     {
-        took_damage_t *took_damage = (took_damage_t *)component;
-
-        took_damage->fade = 0.0f;
-
         break;
     }
     }
@@ -663,6 +661,11 @@ component_t *component_add(entity_t *entity, component_type_t component_type)
     if (entity != NULL && entity->id != ID_UNUSED)
     {
         component = &entity->game->components[component_type][entity->id];
+
+        if (component->id != ID_UNUSED)
+        {
+            component_remove(entity, component_type);
+        }
 
         component_init(component, entity->id, component_type);
     }
@@ -721,6 +724,12 @@ void component_reset(component_t *component)
 
         break;
     }
+    case COMPONENT_FLASH:
+    {
+        flash_t *flash = (flash_t *)component;
+
+        break;
+    }
     case COMPONENT_FOV:
     {
         fov_t *fov = (fov_t *)component;
@@ -760,10 +769,8 @@ void component_reset(component_t *component)
 
         break;
     }
-    case COMPONENT_PHYSICS:
+    case COMPONENT_OPAQUE:
     {
-        physics_t *physics = (physics_t *)component;
-
         break;
     }
     case COMPONENT_PICKABLE:
@@ -784,10 +791,8 @@ void component_reset(component_t *component)
 
         break;
     }
-    case COMPONENT_TOOK_DAMAGE:
+    case COMPONENT_SOLID:
     {
-        took_damage_t *took_damage = (took_damage_t *)component;
-
         break;
     }
     }

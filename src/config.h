@@ -15,7 +15,7 @@ bool fullscreen;
 int renderer;
 
 /* Fonts */
-char *font_file;
+const char *font_file;
 int font_flags;
 int font_char_horiz;
 int font_char_vertic;

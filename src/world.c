@@ -46,9 +46,9 @@ void room_destroy(room_t *room)
 #define MIN_ROOM_SIZE 5
 #define FULL_ROOMS 1
 #define NUM_MONSTERS 50
-#define NUM_ADVENTURERS 20
+#define NUM_ADVENTURERS 10
 #define NUM_ITEMS 10
-#define NUM_BRAZIERS 5
+#define NUM_BRAZIERS 0
 
 static bool traverse_node(TCOD_bsp_t *node, map_t *map);
 static void vline(map_t *map, int x, int y1, int y2);
@@ -119,8 +119,6 @@ void map_init(map_t *map, game_t *game, int level)
         ai->energy = 1.0f;
         ai->follow_target = NULL;
         health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
-        health->max = TCOD_random_get_int(NULL, 10, 20);
-        health->current = health->max;
         alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
         alignment->type = ALIGNMENT_EVIL;
 
@@ -132,6 +130,8 @@ void map_init(map_t *map, game_t *game, int level)
             appearance->glyph = 's';
             appearance->color = TCOD_white;
             ai->energy_per_turn = 0.5f;
+            health->max = TCOD_random_get_int(NULL, 10, 20);
+            health->current = health->max;
 
             break;
         }
@@ -141,6 +141,8 @@ void map_init(map_t *map, game_t *game, int level)
             appearance->glyph = 'S';
             appearance->color = TCOD_white;
             ai->energy_per_turn = 0.75f;
+            health->max = TCOD_random_get_int(NULL, 15, 25);
+            health->current = health->max;
 
             break;
         }
@@ -150,6 +152,8 @@ void map_init(map_t *map, game_t *game, int level)
             appearance->glyph = 'z';
             appearance->color = TCOD_dark_green;
             ai->energy_per_turn = 0.25f;
+            health->max = TCOD_random_get_int(NULL, 20, 30);
+            health->current = health->max;
 
             break;
         }
@@ -159,6 +163,8 @@ void map_init(map_t *map, game_t *game, int level)
             appearance->glyph = 'j';
             appearance->color = TCOD_dark_orange;
             ai->energy_per_turn = 1.5f;
+            health->max = TCOD_random_get_int(NULL, 5, 10);
+            health->current = health->max;
 
             break;
         }

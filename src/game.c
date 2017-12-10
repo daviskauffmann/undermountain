@@ -595,8 +595,6 @@ void game_input(game_t *game)
 
         if (!game->game_over)
         {
-            entity_t *entity = game->player;
-
             switch (ev)
             {
             case TCOD_EVENT_KEY_PRESS:
@@ -605,223 +603,223 @@ void game_input(game_t *game)
                 {
                 case TCODK_KP1:
                 {
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                    if (targeting)
+                    if (player_targeting)
                     {
-                        targeting->x--;
-                        targeting->y++;
+                        player_targeting->x--;
+                        player_targeting->y++;
                     }
-                    else if (position)
+                    else if (player_position)
                     {
                         game->should_update = true;
 
-                        int x = position->x - 1;
-                        int y = position->y + 1;
+                        int x = player_position->x - 1;
+                        int y = player_position->y + 1;
 
                         if (key.lctrl)
                         {
-                            entity_swing(entity, x, y);
+                            entity_swing(game->player, x, y);
                         }
                         else
                         {
-                            entity_move(entity, x, y);
+                            entity_move(game->player, x, y);
                         }
                     }
                 }
                 break;
                 case TCODK_KP2:
                 {
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                    if (targeting)
+                    if (player_targeting)
                     {
-                        targeting->y++;
+                        player_targeting->y++;
                     }
-                    else if (position)
+                    else if (player_position)
                     {
                         game->should_update = true;
 
-                        int x = position->x;
-                        int y = position->y + 1;
+                        int x = player_position->x;
+                        int y = player_position->y + 1;
 
                         if (key.lctrl)
                         {
-                            entity_swing(entity, x, y);
+                            entity_swing(game->player, x, y);
                         }
                         else
                         {
-                            entity_move(entity, x, y);
+                            entity_move(game->player, x, y);
                         }
                     }
                 }
                 break;
                 case TCODK_KP3:
                 {
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                    if (targeting)
+                    if (player_targeting)
                     {
-                        targeting->x++;
-                        targeting->y++;
+                        player_targeting->x++;
+                        player_targeting->y++;
                     }
-                    else if (position)
+                    else if (player_position)
                     {
                         game->should_update = true;
 
-                        int x = position->x + 1;
-                        int y = position->y + 1;
+                        int x = player_position->x + 1;
+                        int y = player_position->y + 1;
 
                         if (key.lctrl)
                         {
-                            entity_swing(entity, x, y);
+                            entity_swing(game->player, x, y);
                         }
                         else
                         {
-                            entity_move(entity, x, y);
+                            entity_move(game->player, x, y);
                         }
                     }
                 }
                 break;
                 case TCODK_KP4:
                 {
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                    if (targeting)
+                    if (player_targeting)
                     {
-                        targeting->x--;
-                        targeting->y;
+                        player_targeting->x--;
+                        player_targeting->y;
                     }
-                    else if (position)
+                    else if (player_position)
                     {
                         game->should_update = true;
 
-                        int x = position->x - 1;
-                        int y = position->y;
+                        int x = player_position->x - 1;
+                        int y = player_position->y;
 
                         if (key.lctrl)
                         {
-                            entity_swing(entity, x, y);
+                            entity_swing(game->player, x, y);
                         }
                         else
                         {
-                            entity_move(entity, x, y);
+                            entity_move(game->player, x, y);
                         }
                     }
                 }
                 break;
                 case TCODK_KP6:
                 {
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                    if (targeting)
+                    if (player_targeting)
                     {
-                        targeting->x++;
-                        targeting->y;
+                        player_targeting->x++;
+                        player_targeting->y;
                     }
-                    else if (position)
+                    else if (player_position)
                     {
                         game->should_update = true;
 
-                        int x = position->x + 1;
-                        int y = position->y;
+                        int x = player_position->x + 1;
+                        int y = player_position->y;
 
                         if (key.lctrl)
                         {
-                            entity_swing(entity, x, y);
+                            entity_swing(game->player, x, y);
                         }
                         else
                         {
-                            entity_move(entity, x, y);
+                            entity_move(game->player, x, y);
                         }
                     }
                 }
                 break;
                 case TCODK_KP7:
                 {
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                    if (targeting)
+                    if (player_targeting)
                     {
-                        targeting->x--;
-                        targeting->y--;
+                        player_targeting->x--;
+                        player_targeting->y--;
                     }
-                    else if (position)
+                    else if (player_position)
                     {
                         game->should_update = true;
 
-                        int x = position->x - 1;
-                        int y = position->y - 1;
+                        int x = player_position->x - 1;
+                        int y = player_position->y - 1;
 
                         if (key.lctrl)
                         {
-                            entity_swing(entity, x, y);
+                            entity_swing(game->player, x, y);
                         }
                         else
                         {
-                            entity_move(entity, x, y);
+                            entity_move(game->player, x, y);
                         }
                     }
                 }
                 break;
                 case TCODK_KP8:
                 {
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                    if (targeting)
+                    if (player_targeting)
                     {
-                        targeting->x;
-                        targeting->y--;
+                        player_targeting->x;
+                        player_targeting->y--;
                     }
-                    else if (position)
+                    else if (player_position)
                     {
                         game->should_update = true;
 
-                        int x = position->x;
-                        int y = position->y - 1;
+                        int x = player_position->x;
+                        int y = player_position->y - 1;
 
                         if (key.lctrl)
                         {
-                            entity_swing(entity, x, y);
+                            entity_swing(game->player, x, y);
                         }
                         else
                         {
-                            entity_move(entity, x, y);
+                            entity_move(game->player, x, y);
                         }
                     }
                 }
                 break;
                 case TCODK_KP9:
                 {
-                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                    if (targeting)
+                    if (player_targeting)
                     {
-                        targeting->x++;
-                        targeting->y--;
+                        player_targeting->x++;
+                        player_targeting->y--;
                     }
-                    else if (position)
+                    else if (player_position)
                     {
                         game->should_update = true;
 
-                        int x = position->x + 1;
-                        int y = position->y - 1;
+                        int x = player_position->x + 1;
+                        int y = player_position->y - 1;
 
                         if (key.lctrl)
                         {
-                            entity_swing(entity, x, y);
+                            entity_swing(game->player, x, y);
                         }
                         else
                         {
-                            entity_move(entity, x, y);
+                            entity_move(game->player, x, y);
                         }
                     }
                 }
@@ -837,34 +835,34 @@ void game_input(game_t *game)
                     break;
                     case 'f':
                     {
-                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                        position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
 
-                        if (position)
+                        if (player_position)
                         {
-                            targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                            targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                            if (targeting && targeting->type == TARGETING_SHOOT)
+                            if (player_targeting && player_targeting->type == TARGETING_SHOOT)
                             {
                                 game->should_update = true;
 
-                                entity_shoot(entity, targeting->x, targeting->y);
+                                entity_shoot(game->player, player_targeting->x, player_targeting->y);
 
-                                component_remove(entity, COMPONENT_TARGETING);
+                                component_remove(game->player, COMPONENT_TARGETING);
                             }
                             else
                             {
-                                targeting = (targeting_t *)component_add(entity, COMPONENT_TARGETING);
-                                targeting->type = TARGETING_SHOOT;
+                                player_targeting = (targeting_t *)component_add(game->player, COMPONENT_TARGETING);
+                                player_targeting->type = TARGETING_SHOOT;
 
                                 bool target_found = false;
 
                                 {
-                                    alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-                                    fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
+                                    alignment_t *player_alignment = (alignment_t *)component_get(game->player, COMPONENT_ALIGNMENT);
+                                    fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
 
-                                    if (alignment && fov)
+                                    if (player_alignment && player_fov)
                                     {
-                                        for (void **iterator = TCOD_list_begin(game->maps[position->level].entities); iterator != TCOD_list_end(game->maps[position->level].entities); iterator++)
+                                        for (void **iterator = TCOD_list_begin(game->maps[player_position->level].entities); iterator != TCOD_list_end(game->maps[player_position->level].entities); iterator++)
                                         {
                                             entity_t *other = *iterator;
 
@@ -873,13 +871,13 @@ void game_input(game_t *game)
 
                                             if (other_alignment && other_position)
                                             {
-                                                if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                                    other_alignment->type != alignment->type)
+                                                if (TCOD_map_is_in_fov(player_fov->fov_map, other_position->x, other_position->y) &&
+                                                    other_alignment->type != player_alignment->type)
                                                 {
                                                     target_found = true;
 
-                                                    targeting->x = other_position->x;
-                                                    targeting->y = other_position->y;
+                                                    player_targeting->x = other_position->x;
+                                                    player_targeting->y = other_position->y;
 
                                                     break;
                                                 }
@@ -890,8 +888,8 @@ void game_input(game_t *game)
 
                                 if (!target_found)
                                 {
-                                    targeting->x = position->x;
-                                    targeting->y = position->y;
+                                    player_targeting->x = player_position->x;
+                                    player_targeting->y = player_position->y;
                                 }
                             }
                         }
@@ -899,12 +897,12 @@ void game_input(game_t *game)
                     break;
                     case 'g':
                     {
-                        inventory_t *inventory = (inventory_t *)component_get(entity, COMPONENT_INVENTORY);
-                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                        inventory_t *player_inventory = (inventory_t *)component_get(game->player, COMPONENT_INVENTORY);
+                        position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
 
-                        if (inventory && position)
+                        if (player_inventory && player_position)
                         {
-                            tile_t *tile = &game->maps[position->level].tiles[position->x][position->y];
+                            tile_t *tile = &game->maps[player_position->level].tiles[player_position->x][player_position->y];
 
                             bool item_found = false;
 
@@ -920,7 +918,7 @@ void game_input(game_t *game)
 
                                     item_found = true;
 
-                                    entity_pick(entity, other);
+                                    entity_pick(game->player, other);
 
                                     break;
                                 }
@@ -928,7 +926,7 @@ void game_input(game_t *game)
 
                             if (!item_found)
                             {
-                                game_log(entity->game, position, TCOD_white, "There is nothing here!");
+                                game_log(game->player->game, player_position, TCOD_white, "There is nothing here!");
                             }
                         }
                     }
@@ -940,22 +938,22 @@ void game_input(game_t *game)
                     break;
                     case 'l':
                     {
-                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                        position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
 
-                        if (position)
+                        if (player_position)
                         {
-                            targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                            targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                            if (targeting)
+                            if (player_targeting)
                             {
-                                component_remove(entity, COMPONENT_TARGETING);
+                                component_remove(game->player, COMPONENT_TARGETING);
                             }
                             else
                             {
-                                targeting = (targeting_t *)component_add(entity, COMPONENT_TARGETING);
-                                targeting->type = TARGETING_LOOK;
-                                targeting->x = position->x;
-                                targeting->y = position->y;
+                                player_targeting = (targeting_t *)component_add(game->player, COMPONENT_TARGETING);
+                                player_targeting->type = TARGETING_LOOK;
+                                player_targeting->x = player_position->x;
+                                player_targeting->y = player_position->y;
                             }
                         }
                     }
@@ -975,9 +973,9 @@ void game_input(game_t *game)
                     break;
                     case 't':
                     {
-                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+                        light_t *player_light = (light_t *)component_get(game->player, COMPONENT_LIGHT);
 
-                        if (light)
+                        if (player_light)
                         {
                             game->should_update = true;
 
@@ -987,28 +985,28 @@ void game_input(game_t *game)
 
                             if (torch)
                             {
-                                light->radius = 10;
-                                light->color = TCOD_light_amber;
-                                light->flicker = true;
-                                light->priority = LIGHT_PRIORITY_2;
+                                player_light->radius = 10;
+                                player_light->color = TCOD_light_amber;
+                                player_light->flicker = true;
+                                player_light->priority = LIGHT_PRIORITY_2;
                             }
                             else
                             {
-                                light->radius = 5;
-                                light->color = TCOD_white;
-                                light->flicker = false;
-                                light->priority = LIGHT_PRIORITY_0;
+                                player_light->radius = 5;
+                                player_light->color = TCOD_white;
+                                player_light->flicker = false;
+                                player_light->priority = LIGHT_PRIORITY_0;
                             }
                         }
                     }
                     break;
                     case 'z':
                     {
-                        caster_t *caster = (caster_t *)component_get(entity, COMPONENT_CASTER);
+                        caster_t *player_caster = (caster_t *)component_get(game->player, COMPONENT_CASTER);
 
-                        if (caster != NULL)
+                        if (player_caster)
                         {
-                            spell_t *spell = &caster->spells[caster->current];
+                            spell_t *spell = &player_caster->spells[player_caster->current];
 
                             switch (spell->type)
                             {
@@ -1016,39 +1014,39 @@ void game_input(game_t *game)
                             {
                                 game->should_update = true;
 
-                                entity_cast_spell(entity);
+                                entity_cast_spell(game->player);
                             }
                             break;
                             case SPELL_INSTAKILL:
                             {
-                                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+                                position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
 
-                                if (position)
+                                if (player_position)
                                 {
-                                    targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
+                                    targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-                                    if (targeting && targeting->type == TARGETING_ZAP)
+                                    if (player_targeting && player_targeting->type == TARGETING_ZAP)
                                     {
                                         game->should_update = true;
 
-                                        entity_cast_spell(entity);
+                                        entity_cast_spell(game->player);
 
-                                        component_remove(entity, COMPONENT_TARGETING);
+                                        component_remove(game->player, COMPONENT_TARGETING);
                                     }
                                     else
                                     {
-                                        targeting = (targeting_t *)component_add(entity, COMPONENT_TARGETING);
-                                        targeting->type = TARGETING_ZAP;
+                                        player_targeting = (targeting_t *)component_add(game->player, COMPONENT_TARGETING);
+                                        player_targeting->type = TARGETING_ZAP;
 
                                         bool target_found = false;
 
                                         {
-                                            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-                                            fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
+                                            alignment_t *player_alignment = (alignment_t *)component_get(game->player, COMPONENT_ALIGNMENT);
+                                            fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
 
-                                            if (alignment && fov)
+                                            if (player_alignment && player_fov)
                                             {
-                                                for (void **iterator = TCOD_list_begin(game->maps[position->level].entities); iterator != TCOD_list_end(game->maps[position->level].entities); iterator++)
+                                                for (void **iterator = TCOD_list_begin(game->maps[player_position->level].entities); iterator != TCOD_list_end(game->maps[player_position->level].entities); iterator++)
                                                 {
                                                     entity_t *other = *iterator;
 
@@ -1057,13 +1055,13 @@ void game_input(game_t *game)
 
                                                     if (other_alignment && other_position)
                                                     {
-                                                        if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
-                                                            other_alignment->type != alignment->type)
+                                                        if (TCOD_map_is_in_fov(player_fov->fov_map, other_position->x, other_position->y) &&
+                                                            other_alignment->type != player_alignment->type)
                                                         {
                                                             target_found = true;
 
-                                                            targeting->x = other_position->x;
-                                                            targeting->y = other_position->y;
+                                                            player_targeting->x = other_position->x;
+                                                            player_targeting->y = other_position->y;
 
                                                             break;
                                                         }
@@ -1074,8 +1072,8 @@ void game_input(game_t *game)
 
                                         if (!target_found)
                                         {
-                                            targeting->x = position->x;
-                                            targeting->y = position->y;
+                                            player_targeting->x = player_position->x;
+                                            player_targeting->y = player_position->y;
                                         }
                                     }
                                 }
@@ -1187,7 +1185,6 @@ void game_update(game_t *game)
 
                         current_fov->fov_map = map_to_fov_map(current_map, current_position->x, current_position->y, current_fov->radius);
 
-                        if (current == game->player)
                         {
                             TCOD_map_t los_map = map_to_fov_map(current_map, current_position->x, current_position->y, 0);
 

@@ -22,7 +22,3 @@ md pdb
 cl %INCLUDE_DIRS% %COMPILER_OPTS% %SRC_DIR% /link %LIB_DIRS% %LINKER_OPTS% %LIBS%
 
 copy resource\* .\bin
-
-cd bin
-%APP_NAME%.exe
-cd ..\

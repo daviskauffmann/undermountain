@@ -1,7 +1,6 @@
 #include <libtcod.h>
 #include <stdio.h>
 
-#include "CMemLeak.h"
 #include "game.h"
 #include "utils.h"
 
@@ -114,7 +113,7 @@ void map_init(map_t *map, game_t *game, int level)
         appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
         appearance->layer = LAYER_1;
         fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
-        fov->radius = 1;
+        fov->radius = 5;
         fov->fov_map = NULL;
         ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
         ai->energy = 1.0f;

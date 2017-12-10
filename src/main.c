@@ -2,7 +2,6 @@
 #include <libtcod.h>
 #include <stdio.h>
 
-#include "CMemLeak.h"
 #include "config.h"
 #include "game.h"
 
@@ -12,7 +11,6 @@ int main(int argc, char *argv[])
 {
     config_init();
 
-game_start:
     game_init(&game);
 
     if (TCOD_sys_file_exists("../saves/save.gz"))
@@ -33,8 +31,8 @@ game_start:
         if (game.should_restart)
         {
             game_reset(&game);
-
-            goto game_start;
+            game_init(&game);
+            game_new(&game);
         }
 
         if (game.should_quit)

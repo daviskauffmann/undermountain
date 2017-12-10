@@ -1,6 +1,7 @@
+#include <assert.h>
 #include <libtcod.h>
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "config.h"
 #include "game.h"
@@ -14,26 +15,32 @@ void entity_init(entity_t *entity, int id, game_t *game)
 
 entity_t *entity_create(game_t *game)
 {
-    for (int i = 0; i < NUM_ENTITIES; i++)
+    entity_t *entity = NULL;
+
+    for (int id = 0; id < NUM_ENTITIES; id++)
     {
-        entity_t *entity = &game->entities[i];
+        entity_t *current = &game->entities[id];
 
-        if (entity->id == ID_UNUSED)
+        if (current->id == ID_UNUSED)
         {
-            entity_init(entity, i, game);
+            entity_init(current, id, game);
 
-            return entity;
+            entity = current;
+
+            break;
         }
     }
 
-    return NULL;
+    assert(entity);
+
+    return entity;
 }
 
 void entity_path_towards(entity_t *entity, int x, int y)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-    if (position != NULL)
+    if (position)
     {
         TCOD_map_t TCOD_map = map_to_TCOD_map(&entity->game->maps[position->level]);
         TCOD_map_set_properties(TCOD_map, x, y, TCOD_map_is_transparent(TCOD_map, x, y), true);
@@ -41,14 +48,16 @@ void entity_path_towards(entity_t *entity, int x, int y)
         TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
         TCOD_path_compute(path, position->x, position->y, x, y);
 
-        int next_x, next_y;
-        if (!TCOD_path_is_empty(path) && TCOD_path_walk(path, &next_x, &next_y, false))
         {
-            entity_move(entity, next_x, next_y);
-        }
-        else
-        {
-            entity_move_towards(entity, x, y);
+            int next_x, next_y;
+            if (!TCOD_path_is_empty(path) && TCOD_path_walk(path, &next_x, &next_y, false))
+            {
+                entity_move(entity, next_x, next_y);
+            }
+            else
+            {
+                entity_move_towards(entity, x, y);
+            }
         }
 
         TCOD_path_delete(path);
@@ -61,7 +70,7 @@ void entity_move_towards(entity_t *entity, int x, int y)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-    if (position != NULL)
+    if (position)
     {
         int dx = x - position->x;
         int dy = y - position->y;
@@ -81,7 +90,7 @@ void entity_move_random(entity_t *entity)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-    if (position != NULL)
+    if (position)
     {
         int x = position->x + TCOD_random_get_int(NULL, -1, 1);
         int y = position->y + TCOD_random_get_int(NULL, -1, 1);
@@ -96,14 +105,16 @@ void entity_move(entity_t *entity, int x, int y)
     {
         position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-        if (position != NULL)
+        if (position)
         {
-            tile_t *current_tile = &entity->game->maps[position->level].tiles[position->x][position->y];
-            tile_t *next_tile = &entity->game->maps[position->level].tiles[x][y];
+            map_t *map = &entity->game->maps[position->level];
+            tile_t *tile = &map->tiles[position->x][position->y];
+            tile_t *next_tile = &map->tiles[x][y];
+            tile_info_t *next_tile_info = &entity->game->tile_info[next_tile->type];
 
             bool can_move = true;
 
-            if (!entity->game->tile_info[next_tile->type].is_walkable)
+            if (!next_tile_info->is_walkable)
             {
                 can_move = false;
             }
@@ -114,29 +125,33 @@ void entity_move(entity_t *entity, int x, int y)
 
                 component_t *other_solid = component_get(other, COMPONENT_SOLID);
 
-                if (other_solid != NULL)
+                if (other_solid)
                 {
                     can_move = false;
 
-                    health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
-
-                    if (other_health != NULL)
                     {
-                        alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+                        health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
 
-                        if (alignment != NULL &&
-                            other_alignment != NULL &&
-                            alignment->type == other_alignment->type)
+                        if (other_health)
                         {
-                            if (other != entity->game->player)
+                            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
+
+                            alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+
+                            // TODO: what if there are multiple entities on this tile?
+                            if (alignment && other_alignment &&
+                                alignment->type == other_alignment->type)
                             {
-                                entity_swap(entity, other);
+                                // TODO: only the player can swap?
+                                if (entity == entity->game->player)
+                                {
+                                    entity_swap(entity, other);
+                                }
                             }
-                        }
-                        else
-                        {
-                            entity_attack(entity, other);
+                            else
+                            {
+                                entity_attack(entity, other);
+                            }
                         }
                     }
                 }
@@ -147,7 +162,7 @@ void entity_move(entity_t *entity, int x, int y)
                 position->x = x;
                 position->y = y;
 
-                TCOD_list_remove(current_tile->entities, entity);
+                TCOD_list_remove(tile->entities, entity);
                 TCOD_list_push(next_tile->entities, entity);
             }
         }
@@ -159,67 +174,91 @@ void entity_swap(entity_t *entity, entity_t *other)
     if (entity != other)
     {
         position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
 
         position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-        appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
 
-        if (position != NULL && appearance != NULL &&
-            other_position != NULL && other_appearance != NULL)
+        if (position && other_position)
         {
-            game_log(entity->game, position, TCOD_white, "%s swaps with %s", appearance->name, other_appearance->name);
+            {
+                map_t *map = &entity->game->maps[position->level];
+                tile_t *tile = &map->tiles[position->x][position->y];
 
-            tile_t *tile = &entity->game->maps[position->level].tiles[position->x][position->y];
-            tile_t *other_tile = &other->game->maps[other_position->level].tiles[other_position->x][other_position->y];
+                map_t *other_map = &other->game->maps[other_position->level];
+                tile_t *other_tile = &other_map->tiles[other_position->x][other_position->y];
 
-            int x = position->x;
-            int y = position->y;
+                TCOD_list_remove(tile->entities, entity);
+                TCOD_list_push(other_tile->entities, entity);
 
-            position->x = other_position->x;
-            position->y = other_position->y;
+                TCOD_list_remove(other_tile->entities, other);
+                TCOD_list_push(tile->entities, other);
+            }
 
-            other_position->x = x;
-            other_position->y = y;
+            {
+                int x = position->x;
+                int y = position->y;
 
-            TCOD_list_remove(tile->entities, entity);
-            TCOD_list_push(other_tile->entities, entity);
+                position->x = other_position->x;
+                position->y = other_position->y;
 
-            TCOD_list_remove(other_tile->entities, other);
-            TCOD_list_push(tile->entities, other);
+                other_position->x = x;
+                other_position->y = y;
+            }
+
+            {
+                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+                appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
+
+                if (appearance && other_appearance)
+                {
+                    game_log(entity->game, position, TCOD_white, "%s swaps with %s", appearance->name, other_appearance->name);
+                }
+            }
         }
     }
 }
 
 void entity_pick(entity_t *entity, entity_t *other)
 {
-    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-    appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
     inventory_t *inventory = (inventory_t *)component_get(entity, COMPONENT_INVENTORY);
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-    appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
     pickable_t *other_pickable = (pickable_t *)component_get(other, COMPONENT_PICKABLE);
+    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
 
-    if (position != NULL && appearance != NULL && inventory != NULL &&
-        other_appearance != NULL && other_position != NULL && other_pickable != NULL)
+    if (inventory && position && other_pickable && other_position)
     {
-        TCOD_list_remove(other->game->maps[other_position->level].tiles[other_position->x][other_position->y].entities, other);
-        TCOD_list_push(inventory->items, other);
+        {
+            map_t *other_map = &other->game->maps[other_position->level];
+            tile_t *other_tile = &other_map->tiles[other_position->x][other_position->y];
+
+            TCOD_list_remove(other_tile->entities, other);
+            TCOD_list_push(inventory->items, other);
+        }
 
         component_remove(other, COMPONENT_POSITION);
 
-        game_log(entity->game, position, TCOD_white, "%s picks up %s", appearance->name, other_appearance->name);
+        {
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+            appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
+
+            if (appearance && other_appearance)
+            {
+                game_log(entity->game, position, TCOD_white, "%s picks up %s", appearance->name, other_appearance->name);
+            }
+        }
     }
 }
 
 void entity_swing(entity_t *entity, int x, int y)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-    appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
 
-    if (position != NULL && appearance != NULL)
+    if (position)
     {
-        tile_t *other_tile = &entity->game->maps[position->level].tiles[x][y];
+        map_t *map = &entity->game->maps[position->level];
+        tile_t *other_tile = &map->tiles[x][y];
 
         bool hit = false;
 
@@ -229,29 +268,32 @@ void entity_swing(entity_t *entity, int x, int y)
 
             health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
 
-            if (other_health != NULL)
+            if (other_health)
             {
                 hit = true;
 
                 entity_attack(entity, other);
-
-                break;
             }
         }
 
         if (!hit)
         {
-            game_log(entity->game, position, TCOD_white, "%s swings at the air", appearance->name);
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+            if (appearance)
+            {
+                game_log(entity->game, position, TCOD_white, "%s swings at the air", appearance->name);
+            }
         }
     }
 }
 
 void entity_shoot(entity_t *entity, int x, int y)
 {
-    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
     appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-    if (position != NULL && appearance != NULL)
+    if (appearance && position)
     {
         if (position->x == x && position->y == y)
         {
@@ -271,13 +313,11 @@ void entity_shoot(entity_t *entity, int x, int y)
 
                 health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
 
-                if (other_health != NULL)
+                if (other_health)
                 {
                     hit = true;
 
                     entity_attack(entity, other);
-
-                    break;
                 }
             }
 
@@ -291,15 +331,14 @@ void entity_shoot(entity_t *entity, int x, int y)
 
 void entity_attack(entity_t *entity, entity_t *other)
 {
-    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
     appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
     appearance_t *other_appearance = (appearance_t *)component_get(other, COMPONENT_APPEARANCE);
     health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
 
-    if (position != NULL && appearance != NULL &&
-        other_position != NULL && other_appearance != NULL && other_health != NULL)
+    if (appearance && position && other_appearance && other_health && other_position)
     {
         int attack_roll = roll(1, 20);
         int attack_bonus = 1;
@@ -368,7 +407,7 @@ void entity_cast_spell(entity_t *entity)
 {
     caster_t *caster = (caster_t *)component_get(entity, COMPONENT_CASTER);
 
-    if (caster != NULL)
+    if (caster)
     {
         spell_t *spell = &caster->spells[caster->current];
 
@@ -378,7 +417,7 @@ void entity_cast_spell(entity_t *entity)
         {
             health_t *health = (health_t *)component_get(entity, COMPONENT_HEALTH);
 
-            if (health != NULL)
+            if (health)
             {
                 int heal_amount = health->max - health->current;
 
@@ -396,9 +435,8 @@ void entity_cast_spell(entity_t *entity)
                     game_log(entity->game, position, TCOD_purple, "%s casts Heal Self, restoring %d health", appearance->name, heal_amount);
                 }
             }
-
-            break;
         }
+        break;
         case SPELL_INSTAKILL:
         {
             appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
@@ -406,7 +444,7 @@ void entity_cast_spell(entity_t *entity)
             position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
             targeting_t *targeting = (targeting_t *)component_get(entity, COMPONENT_TARGETING);
 
-            if (appearance != NULL && fov != NULL && targeting != NULL && position != NULL)
+            if (appearance && fov && targeting && position)
             {
                 tile_t *tile = &entity->game->maps[position->level].tiles[targeting->x][targeting->y];
 
@@ -418,7 +456,7 @@ void entity_cast_spell(entity_t *entity)
 
                     position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
 
-                    if (other_position != NULL)
+                    if (other_position)
                     {
                         if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y))
                         {
@@ -427,7 +465,7 @@ void entity_cast_spell(entity_t *entity)
                     }
                 }
 
-                if (target != NULL)
+                if (target)
                 {
                     if (target == entity)
                     {
@@ -435,13 +473,6 @@ void entity_cast_spell(entity_t *entity)
                     }
                     else
                     {
-                        appearance_t *target_appearance = (appearance_t *)component_get(target, COMPONENT_APPEARANCE);
-
-                        if (target_appearance != NULL)
-                        {
-                            game_log(entity->game, position, TCOD_purple, "%s casts Instakill at %s", appearance->name, target_appearance->name);
-                        }
-
                         entity_die(target, entity);
                     }
                 }
@@ -450,36 +481,35 @@ void entity_cast_spell(entity_t *entity)
                     game_log(entity->game, position, TCOD_purple, "%s casts Instakill", appearance->name);
                 }
             }
-
-            break;
         }
+        break;
         }
     }
 }
 
 void entity_die(entity_t *entity, entity_t *killer)
 {
-    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
     appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-    if (position != NULL && appearance != NULL)
+    if (appearance && position)
     {
         game_log(entity->game, position, TCOD_red, "%s dies", appearance->name);
 
         appearance->glyph = '%';
         appearance->layer = LAYER_0;
 
+        component_remove(entity, COMPONENT_ALIGNMENT);
         component_remove(entity, COMPONENT_AI);
         component_remove(entity, COMPONENT_HEALTH);
-        component_remove(entity, COMPONENT_ALIGNMENT);
         component_remove(entity, COMPONENT_SOLID);
 
-        if (killer != NULL)
+        if (killer)
         {
-            position_t *killer_position = (position_t *)component_get(killer, COMPONENT_POSITION);
             appearance_t *killer_appearance = (appearance_t *)component_get(killer, COMPONENT_APPEARANCE);
+            position_t *killer_position = (position_t *)component_get(killer, COMPONENT_POSITION);
 
-            if (killer_position != NULL && killer_appearance != NULL)
+            if (killer_appearance && killer_position)
             {
                 game_log(killer->game, killer_position, TCOD_azure, "%s gains %d experience", killer_appearance->name, TCOD_random_get_int(NULL, 50, 100));
             }
@@ -498,11 +528,11 @@ void entity_die(entity_t *entity, entity_t *killer)
 
 void entity_destroy(entity_t *entity)
 {
-    if (entity != NULL && entity->id != ID_UNUSED)
+    if (entity && entity->id != ID_UNUSED)
     {
-        for (int i = 0; i < NUM_COMPONENTS; i++)
+        for (component_type_t component_type = 0; component_type < NUM_COMPONENTS; component_type++)
         {
-            component_remove(entity, i);
+            component_remove(entity, component_type);
         }
 
         entity_reset(entity);
@@ -529,17 +559,15 @@ void component_init(component_t *component, int id, component_type_t component_t
         ai->energy = 0.0f;
         ai->energy_per_turn = 0.0f;
         ai->follow_target = NULL;
-
-        break;
     }
+    break;
     case COMPONENT_ALIGNMENT:
     {
         alignment_t *alignment = (alignment_t *)component;
 
         alignment->type = 0;
-
-        break;
     }
+    break;
     case COMPONENT_APPEARANCE:
     {
         appearance_t *appearance = (appearance_t *)component;
@@ -548,61 +576,56 @@ void component_init(component_t *component, int id, component_type_t component_t
         appearance->glyph = ' ';
         appearance->color = TCOD_white;
         appearance->layer = 0;
-
-        break;
     }
+    break;
     case COMPONENT_CASTER:
     {
         caster_t *caster = (caster_t *)component;
 
-        for (int i = 0; i < NUM_SPELL_TYPES; i++)
+        for (spell_type_t spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
         {
-            caster->spells[i].type = (spell_type_t)i;
-            caster->spells[i].known = false;
+            // TODO: why
+            caster->spells[spell_type].type = spell_type;
+            caster->spells[spell_type].known = false;
         }
         caster->current = 0;
-
-        break;
     }
+    break;
     case COMPONENT_FLASH:
     {
         flash_t *flash = (flash_t *)component;
 
         flash->color = TCOD_white;
         flash->fade = 0.0f;
-
-        break;
     }
+    break;
     case COMPONENT_FOV:
     {
         fov_t *fov = (fov_t *)component;
 
         fov->radius = 0;
         fov->fov_map = NULL;
-
-        break;
     }
+    break;
     case COMPONENT_HEALTH:
     {
         health_t *health = (health_t *)component;
 
         health->max = 0;
         health->current = 0;
-
-        break;
     }
+    break;
     case COMPONENT_INVENTORY:
     {
         inventory_t *inventory = (inventory_t *)component;
 
-        inventory->items = NULL;
-        for (int i = 0; i < NUM_EQUIPMENT_SLOTS; i++)
+        inventory->items = TCOD_list_new();
+        for (equipment_slot_t equipment_slot = 0; equipment_slot < NUM_EQUIPMENT_SLOTS; equipment_slot++)
         {
-            inventory->equipment[i] = NULL;
+            inventory->equipment[equipment_slot] = NULL;
         }
-
-        break;
     }
+    break;
     case COMPONENT_LIGHT:
     {
         light_t *light = (light_t *)component;
@@ -612,21 +635,19 @@ void component_init(component_t *component, int id, component_type_t component_t
         light->flicker = false;
         light->priority = 0;
         light->fov_map = NULL;
-
-        break;
     }
+    break;
     case COMPONENT_OPAQUE:
     {
-        break;
     }
+    break;
     case COMPONENT_PICKABLE:
     {
         pickable_t *pickable = (pickable_t *)component;
 
         pickable->weight = 0.0f;
-
-        break;
     }
+    break;
     case COMPONENT_POSITION:
     {
         position_t *position = (position_t *)component;
@@ -634,9 +655,8 @@ void component_init(component_t *component, int id, component_type_t component_t
         position->level = 0;
         position->x = 0;
         position->y = 0;
-
-        break;
     }
+    break;
     case COMPONENT_TARGETING:
     {
         targeting_t *targeting = (targeting_t *)component;
@@ -644,13 +664,12 @@ void component_init(component_t *component, int id, component_type_t component_t
         targeting->type = 0;
         targeting->x = 0;
         targeting->y = 0;
-
-        break;
     }
+    break;
     case COMPONENT_SOLID:
     {
-        break;
     }
+    break;
     }
 }
 
@@ -658,7 +677,7 @@ component_t *component_add(entity_t *entity, component_type_t component_type)
 {
     component_t *component = NULL;
 
-    if (entity != NULL && entity->id != ID_UNUSED)
+    if (entity && entity->id != ID_UNUSED)
     {
         component = &entity->game->components[component_type][entity->id];
 
@@ -677,7 +696,7 @@ component_t *component_get(entity_t *entity, component_type_t component_type)
 {
     component_t *component = NULL;
 
-    if (entity != NULL && entity->id != ID_UNUSED)
+    if (entity && entity->id != ID_UNUSED)
     {
         component = &entity->game->components[component_type][entity->id];
 
@@ -692,7 +711,7 @@ component_t *component_get(entity_t *entity, component_type_t component_type)
 
 void component_remove(entity_t *entity, component_type_t component_type)
 {
-    if (entity != NULL && entity->id != ID_UNUSED)
+    if (entity && entity->id != ID_UNUSED)
     {
         component_t *component = &entity->game->components[component_type][entity->id];
 
@@ -709,9 +728,8 @@ void component_reset(component_t *component)
     case COMPONENT_AI:
     {
         ai_t *ai = (ai_t *)component;
-
-        break;
     }
+    break;
     case COMPONENT_ALIGNMENT:
     {
         alignment_t *alignment = (alignment_t *)component;
@@ -721,15 +739,13 @@ void component_reset(component_t *component)
     case COMPONENT_APPEARANCE:
     {
         appearance_t *appearance = (appearance_t *)component;
-
-        break;
     }
+    break;
     case COMPONENT_FLASH:
     {
         flash_t *flash = (flash_t *)component;
-
-        break;
     }
+    break;
     case COMPONENT_FOV:
     {
         fov_t *fov = (fov_t *)component;
@@ -738,15 +754,13 @@ void component_reset(component_t *component)
         {
             TCOD_map_delete(fov->fov_map);
         }
-
-        break;
     }
+    break;
     case COMPONENT_HEALTH:
     {
         health_t *health = (health_t *)component;
-
-        break;
     }
+    break;
     case COMPONENT_INVENTORY:
     {
         inventory_t *inventory = (inventory_t *)component;
@@ -755,9 +769,8 @@ void component_reset(component_t *component)
         {
             TCOD_list_delete(inventory->items);
         }
-
-        break;
     }
+    break;
     case COMPONENT_LIGHT:
     {
         light_t *light = (light_t *)component;
@@ -766,34 +779,30 @@ void component_reset(component_t *component)
         {
             TCOD_map_delete(light->fov_map);
         }
-
-        break;
     }
+    break;
     case COMPONENT_OPAQUE:
     {
-        break;
     }
+    break;
     case COMPONENT_PICKABLE:
     {
         pickable_t *pickable = (pickable_t *)component;
-
-        break;
     }
+    break;
     case COMPONENT_POSITION:
     {
         position_t *position = (position_t *)component;
-
-        break;
     }
+    break;
     case COMPONENT_TARGETING:
     {
         targeting_t *targeting = (targeting_t *)component;
-
-        break;
     }
+    break;
     case COMPONENT_SOLID:
     {
-        break;
     }
+    break;
     }
 }

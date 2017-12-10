@@ -1,6 +1,5 @@
 #include <libtcod.h>
 
-#include "CMemLeak.h"
 #include "config.h"
 
 void config_init(void)

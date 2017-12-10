@@ -3,6 +3,8 @@
 
 #include <libtcod.h>
 
+typedef struct game_s game_t;
+
 /* Tiles */
 typedef enum tile_type_e {
     TILE_FLOOR,
@@ -51,13 +53,13 @@ void room_get_random_pos(room_t *room, int *x, int *y);
 void room_destroy(room_t *room);
 
 /* Maps */
-#define NUM_MAPS 1
+#define NUM_MAPS 10
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
 
 typedef struct map_s
 {
-    struct game_s *game;
+    game_t *game;
     int level;
     int stair_down_x;
     int stair_down_y;
@@ -68,7 +70,7 @@ typedef struct map_s
     TCOD_list_t entities;
 } map_t;
 
-void map_init(map_t *map, struct game_s *game, int level);
+void map_init(map_t *map, game_t *game, int level);
 bool map_is_inside(int x, int y);
 room_t *map_get_random_room(map_t *map);
 TCOD_map_t map_to_TCOD_map(map_t *map);
@@ -184,6 +186,11 @@ typedef enum equipment_slot_e {
     NUM_EQUIPMENT_SLOTS
 } equipment_slot_t;
 
+typedef struct equipable_s
+{
+    equipment_slot_t slot;
+} equipable_t;
+
 typedef struct inventory_s
 {
     TCOD_list_t items;
@@ -220,7 +227,6 @@ typedef struct position_s
 } position_t;
 
 typedef enum targeting_type_e {
-    TARGETING_NONE,
     TARGETING_LOOK,
     TARGETING_SHOOT,
     TARGETING_ZAP

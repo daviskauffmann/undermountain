@@ -260,6 +260,7 @@ struct projectile_s
     float y;
     float dx;
     float dy;
+    entity_t *shooter;
 };
 
 enum targeting_type_e
@@ -338,7 +339,6 @@ struct game_s
     int turn;
     bool turn_available;
     bool should_update;
-    bool should_render;
     bool should_restart;
     bool should_quit;
     bool game_over;
@@ -396,6 +396,12 @@ map_get_random_room(map_t *map);
 
 internal TCOD_map_t
 map_to_TCOD_map(map_t *map);
+
+internal bool
+map_is_transparent(map_t *map, int x, int y);
+
+internal bool
+map_is_walkable(map_t *map, int x, int y);
 
 internal TCOD_map_t
 map_to_fov_map(map_t *map, int x, int y, int radius);
@@ -993,6 +999,54 @@ map_get_random_room(map_t *map)
     return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
 }
 
+internal bool
+map_is_transparent(map_t *map, int x, int y)
+{
+    tile_t *tile = &map->tiles[x][y];
+
+    bool is_transparent = map->game->tile_info[tile->type].is_transparent;
+
+    for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
+    {
+        entity_t *entity = *iterator;
+
+        component_t *opaque = component_get(entity, COMPONENT_OPAQUE);
+
+        if (opaque)
+        {
+            is_transparent = false;
+
+            break;
+        }
+    }
+
+    return is_transparent;
+}
+
+internal bool
+map_is_walkable(map_t *map, int x, int y)
+{
+    tile_t *tile = &map->tiles[x][y];
+
+    bool is_walkable = map->game->tile_info[tile->type].is_walkable;
+
+    for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
+    {
+        entity_t *entity = *iterator;
+
+        component_t *solid = component_get(entity, COMPONENT_SOLID);
+
+        if (solid)
+        {
+            is_walkable = false;
+
+            break;
+        }
+    }
+
+    return is_walkable;
+}
+
 internal TCOD_map_t
 map_to_TCOD_map(map_t *map)
 {
@@ -1002,31 +1056,7 @@ map_to_TCOD_map(map_t *map)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
-            tile_t *tile = &map->tiles[x][y];
-
-            bool is_walkable = map->game->tile_info[tile->type].is_walkable;
-            bool is_transparent = map->game->tile_info[tile->type].is_transparent;
-
-            for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
-            {
-                entity_t *entity = *iterator;
-
-                component_t *opaque = component_get(entity, COMPONENT_OPAQUE);
-
-                if (opaque != NULL)
-                {
-                    is_transparent = false;
-                }
-
-                component_t *solid = component_get(entity, COMPONENT_SOLID);
-
-                if (solid != NULL)
-                {
-                    is_walkable = false;
-                }
-            }
-
-            TCOD_map_set_properties(TCOD_map, x, y, is_transparent, is_walkable);
+            TCOD_map_set_properties(TCOD_map, x, y, map_is_transparent(map, x, y), map_is_walkable(map, x, y));
         }
     }
 
@@ -1368,27 +1398,41 @@ entity_shoot(entity_t *entity, int x, int y)
 
     if (position)
     {
-        entity_t *arrow = entity_create(entity->game);
+        if (position->x == x && position->y == y)
+        {
+        }
+        else
+        {
+            entity_t *arrow = entity_create(entity->game);
 
-        projectile_t *arrow_projectile = (projectile_t *)component_add(arrow, COMPONENT_PROJECTILE);
-        arrow_projectile->x = position->x;
-        arrow_projectile->y = position->y;
-        // calculate unit vector from entity pos to dest
-        arrow_projectile->dx = 0.5f;
-        arrow_projectile->dy = 0.0f;
+            projectile_t *arrow_projectile = (projectile_t *)component_add(arrow, COMPONENT_PROJECTILE);
+            arrow_projectile->x = position->x;
+            arrow_projectile->y = position->y;
+            float dx = x - position->x;
+            float dy = y - position->y;
+            float d = distance(position->x, position->y, x, y);
+            if (d > 0)
+            {
+                dx = dx / d;
+                dy = dy / d;
+            }
+            arrow_projectile->dx = CLAMP(-1.0f, 1.0f, dx);
+            arrow_projectile->dy = CLAMP(-1.0f, 1.0f, dy);
+            arrow_projectile->shooter = entity;
 
-        appearance_t *arrow_appearance = (appearance_t *)component_add(arrow, COMPONENT_APPEARANCE);
-        arrow_appearance->name = "Arrow";
-        arrow_appearance->glyph = '|';
-        arrow_appearance->color = TCOD_white;
-        arrow_appearance->layer = LAYER_2;
+            appearance_t *arrow_appearance = (appearance_t *)component_add(arrow, COMPONENT_APPEARANCE);
+            arrow_appearance->name = "Arrow";
+            arrow_appearance->glyph = '|';
+            arrow_appearance->color = TCOD_white;
+            arrow_appearance->layer = LAYER_2;
 
-        position_t *arrow_position = (position_t *)component_add(arrow, COMPONENT_POSITION);
-        arrow_position->level = position->level;
-        map_t *arrow_map = &arrow->game->maps[arrow_position->level];
-        TCOD_list_push(arrow_map->entities, arrow);
-        arrow_position->x = position->x;
-        arrow_position->y = position->y;
+            position_t *arrow_position = (position_t *)component_add(arrow, COMPONENT_POSITION);
+            arrow_position->level = position->level;
+            map_t *arrow_map = &arrow->game->maps[arrow_position->level];
+            TCOD_list_push(arrow_map->entities, arrow);
+            arrow_position->x = position->x;
+            arrow_position->y = position->y;
+        }
     }
 }
 
@@ -1718,6 +1762,17 @@ component_init(component_t *component, int id, component_type_t component_type)
         pickable->weight = 0.0f;
     }
     break;
+    case COMPONENT_PROJECTILE:
+    {
+        projectile_t *projectile = (projectile_t *)component;
+
+        projectile->x = 0.0f;
+        projectile->y = 0.0f;
+        projectile->dx = 0.0f;
+        projectile->dy = 0.0f;
+        projectile->shooter = NULL;
+    }
+    break;
     case COMPONENT_POSITION:
     {
         position_t *position = (position_t *)component;
@@ -1864,6 +1919,11 @@ component_reset(component_t *component)
         pickable_t *pickable = (pickable_t *)component;
     }
     break;
+    case COMPONENT_PROJECTILE:
+    {
+        projectile_t *projectile = (projectile_t *)component;
+    }
+    break;
     case COMPONENT_POSITION:
     {
         position_t *position = (position_t *)component;
@@ -1995,7 +2055,6 @@ game_init(game_t *game)
     game->turn = 0;
     game->turn_available = true;
     game->should_update = true;
-    game->should_render = true;
     game->should_restart = false;
     game->should_quit = false;
     game->game_over = false;
@@ -2518,7 +2577,6 @@ game_update(game_t *game)
             case TCODK_KP5:
             {
                 game->should_update = true;
-                game->should_render = true;
             }
             break;
             }
@@ -2541,15 +2599,12 @@ game_update(game_t *game)
 
                     if (player_targeting)
                     {
-                        game->should_render = true;
-
                         player_targeting->x--;
                         player_targeting->y++;
                     }
                     else if (player_position)
                     {
                         game->should_update = true;
-                        game->should_render = true;
 
                         int x = player_position->x - 1;
                         int y = player_position->y + 1;
@@ -2572,14 +2627,11 @@ game_update(game_t *game)
 
                     if (player_targeting)
                     {
-                        game->should_render = true;
-
                         player_targeting->y++;
                     }
                     else if (player_position)
                     {
                         game->should_update = true;
-                        game->should_render = true;
 
                         int x = player_position->x;
                         int y = player_position->y + 1;
@@ -2602,15 +2654,12 @@ game_update(game_t *game)
 
                     if (player_targeting)
                     {
-                        game->should_render = true;
-
                         player_targeting->x++;
                         player_targeting->y++;
                     }
                     else if (player_position)
                     {
                         game->should_update = true;
-                        game->should_render = true;
 
                         int x = player_position->x + 1;
                         int y = player_position->y + 1;
@@ -2633,15 +2682,12 @@ game_update(game_t *game)
 
                     if (player_targeting)
                     {
-                        game->should_render = true;
-
                         player_targeting->x--;
                         player_targeting->y;
                     }
                     else if (player_position)
                     {
                         game->should_update = true;
-                        game->should_render = true;
 
                         int x = player_position->x - 1;
                         int y = player_position->y;
@@ -2664,16 +2710,12 @@ game_update(game_t *game)
 
                     if (player_targeting)
                     {
-                        game->should_render = true;
-
                         player_targeting->x++;
                         player_targeting->y;
                     }
                     else if (player_position)
                     {
                         game->should_update = true;
-                        game->should_render = true;
-
                         int x = player_position->x + 1;
                         int y = player_position->y;
 
@@ -2695,15 +2737,12 @@ game_update(game_t *game)
 
                     if (player_targeting)
                     {
-                        game->should_render = true;
-
                         player_targeting->x--;
                         player_targeting->y--;
                     }
                     else if (player_position)
                     {
                         game->should_update = true;
-                        game->should_render = true;
 
                         int x = player_position->x - 1;
                         int y = player_position->y - 1;
@@ -2726,15 +2765,12 @@ game_update(game_t *game)
 
                     if (player_targeting)
                     {
-                        game->should_render = true;
-
                         player_targeting->x;
                         player_targeting->y--;
                     }
                     else if (player_position)
                     {
                         game->should_update = true;
-                        game->should_render = true;
 
                         int x = player_position->x;
                         int y = player_position->y - 1;
@@ -2757,15 +2793,12 @@ game_update(game_t *game)
 
                     if (player_targeting)
                     {
-                        game->should_render = true;
-
                         player_targeting->x++;
                         player_targeting->y--;
                     }
                     else if (player_position)
                     {
                         game->should_update = true;
-                        game->should_render = true;
 
                         int x = player_position->x + 1;
                         int y = player_position->y - 1;
@@ -2787,16 +2820,12 @@ game_update(game_t *game)
                     {
                     case 'c':
                     {
-                        game->should_render = true;
-
                         game->panel_visible = !game->panel_visible;
                     }
                     break;
                     case 'f':
                     {
                         position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
-
-                        game->should_render = true;
 
                         if (player_position)
                         {
@@ -2863,8 +2892,6 @@ game_update(game_t *game)
 
                         if (player_inventory && player_position)
                         {
-                            game->should_render = true;
-
                             tile_t *tile = &game->maps[player_position->level].tiles[player_position->x][player_position->y];
 
                             bool item_found = false;
@@ -2896,16 +2923,12 @@ game_update(game_t *game)
                     break;
                     case 'i':
                     {
-                        game->should_render = true;
-
                         game->panel_visible = !game->panel_visible;
                     }
                     break;
                     case 'l':
                     {
                         position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
-
-                        game->should_render = true;
 
                         if (player_position)
                         {
@@ -2927,8 +2950,6 @@ game_update(game_t *game)
                     break;
                     case 'm':
                     {
-                        game->should_render = true;
-
                         game->message_log_visible = !game->message_log_visible;
                     }
                     break;
@@ -2936,8 +2957,6 @@ game_update(game_t *game)
                     {
                         if (key.lctrl)
                         {
-                            game->should_render = true;
-
                             game_save(game);
                         }
                     }
@@ -2949,7 +2968,6 @@ game_update(game_t *game)
                         if (player_light)
                         {
                             game->should_update = true;
-                            game->should_render = true;
 
                             local bool torch = false;
 
@@ -2985,7 +3003,6 @@ game_update(game_t *game)
                             case SPELL_HEAL_SELF:
                             {
                                 game->should_update = true;
-                                game->should_render = true;
 
                                 entity_cast_spell(game->player);
                             }
@@ -2997,8 +3014,6 @@ game_update(game_t *game)
                                 if (player_position)
                                 {
                                     targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
-
-                                    game->should_render = true;
 
                                     if (player_targeting && player_targeting->type == TARGETING_ZAP)
                                     {
@@ -3075,6 +3090,84 @@ game_update(game_t *game)
     if (player_position)
     {
         map_t *player_map = &game->maps[player_position->level];
+
+        for (void **iterator = TCOD_list_begin(player_map->entities); iterator != TCOD_list_end(player_map->entities); iterator++)
+        {
+            entity_t *current = *iterator;
+
+            fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
+
+            {
+                flash_t *current_flash = (flash_t *)component_get(current, COMPONENT_FLASH);
+
+                if (current_flash)
+                {
+                    current_flash->fade -= (1.0f / FPS) / 0.25f;
+
+                    if (current_flash->fade <= 0)
+                    {
+                        component_remove(current, COMPONENT_FLASH);
+                    }
+
+                    {
+                        position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
+
+                        if (player_fov && current_position)
+                        {
+                            if (TCOD_map_is_in_fov(player_fov->fov_map, current_position->x, current_position->y))
+                            {
+                                game->turn_available = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            {
+                position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
+                projectile_t *current_projectile = (projectile_t *)component_get(current, COMPONENT_PROJECTILE);
+
+                if (current_position && current_projectile)
+                {
+                    float x = current_projectile->x + current_projectile->dx;
+                    float y = current_projectile->y + current_projectile->dy;
+
+                    bool should_move = true;
+
+                    map_t *current_map = &game->maps[current_position->level];
+                    tile_t *next_tile = &current_map->tiles[(int)x][(int)y];
+                    tile_info_t *next_tile_info = &game->tile_info[next_tile->type];
+
+                    if (!next_tile_info->is_walkable)
+                    {
+                        should_move = false;
+
+                        current_projectile->dx = 0.0f;
+                        current_projectile->dy = 0.0f;
+                    }
+
+                    for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
+                    {
+                        entity_t *other = *iterator;
+
+                        entity_attack(current_projectile->shooter, other);
+                    }
+
+                    if (should_move)
+                    {
+                        current_projectile->x = x;
+                        current_projectile->y = y;
+
+                        current_position->x = (int)current_projectile->x;
+                        current_position->y = (int)current_projectile->y;
+                    }
+                    else
+                    {
+                        game->turn_available = false;
+                    }
+                }
+            }
+        }
 
         if (game->should_update)
         {
@@ -3236,67 +3329,7 @@ game_update(game_t *game)
             TCOD_list_delete(lights);
         }
 
-        for (void **iterator = TCOD_list_begin(player_map->entities); iterator != TCOD_list_end(player_map->entities); iterator++)
         {
-            entity_t *current = *iterator;
-
-            fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
-
-            {
-                flash_t *current_flash = (flash_t *)component_get(current, COMPONENT_FLASH);
-
-                if (current_flash)
-                {
-                    current_flash->fade -= (1.0f / FPS) / 0.25f;
-
-                    if (current_flash->fade <= 0)
-                    {
-                        component_remove(current, COMPONENT_FLASH);
-                    }
-
-                    {
-                        position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
-
-                        if (player_fov && current_position)
-                        {
-                            if (TCOD_map_is_in_fov(player_fov->fov_map, current_position->x, current_position->y))
-                            {
-                                game->turn_available = false;
-                                game->should_render = true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            {
-                position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
-                projectile_t *current_projectile = (projectile_t *)component_get(current, COMPONENT_PROJECTILE);
-
-                if (current_position && current_projectile)
-                {
-                    current_projectile->x += current_projectile->dx;
-                    current_projectile->y += current_projectile->dy;
-
-                    current_position->x = (int)current_projectile->x;
-                    current_position->y = (int)current_projectile->y;
-
-                    if (player_fov)
-                    {
-                        if (TCOD_map_is_in_fov(player_fov->fov_map, current_position->x, current_position->y))
-                        {
-                            game->turn_available = false;
-                            game->should_render = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (game->should_render)
-        {
-            game->should_render = false;
-
             TCOD_console_set_default_background(NULL, TCOD_black);
             TCOD_console_set_default_foreground(NULL, TCOD_white);
             TCOD_console_clear(NULL);
@@ -3370,42 +3403,36 @@ game_update(game_t *game)
                         }
                     }
 
-                    for (int x = view_x; x < view_x + view_width; x++)
                     {
-                        for (int y = view_y; y < view_y + view_height; y++)
+                        local TCOD_noise_t noise = NULL;
+                        if (noise == NULL)
                         {
-                            if (map_is_inside(x, y))
+                            noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
+                        }
+
+                        local float noise_x = 0.0f;
+
+                        noise_x += 0.2f;
+                        float noise_dx = noise_x + 20.0f;
+                        float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+                        noise_dx += 30.0f;
+                        float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+                        float di = 0.2f * TCOD_noise_get(noise, &noise_x);
+
+                        for (int x = view_x; x < view_x + view_width; x++)
+                        {
+                            for (int y = view_y; y < view_y + view_height; y++)
                             {
-                                tile_t *tile = &player_map->tiles[x][y];
-                                tile_info_t *tile_info = &game->tile_info[tile->type];
-
-                                if (TCOD_map_is_in_fov(player_fov->fov_map, x, y))
+                                if (map_is_inside(x, y))
                                 {
-                                    tile->seen = true;
-                                }
+                                    tile_t *tile = &player_map->tiles[x][y];
+                                    tile_info_t *tile_info = &game->tile_info[tile->type];
 
-                                for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
-                                {
-                                    for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
+                                    if (TCOD_map_is_in_fov(player_fov->fov_map, x, y))
                                     {
-                                        entity_t *current = *iterator;
-
-                                        light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
-
-                                        if (current_light)
-                                        {
-                                            if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
-                                            {
-                                                tile->seen = true;
-                                            }
-                                        }
+                                        tile->seen = true;
                                     }
-                                }
 
-                                TCOD_color_t color = game->tile_common.shadow_color;
-
-                                if (TCOD_map_is_in_fov(player_fov->fov_map, x, y) || tile->seen)
-                                {
                                     for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
                                     {
                                         for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
@@ -3413,32 +3440,56 @@ game_update(game_t *game)
                                             entity_t *current = *iterator;
 
                                             light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
-                                            position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
 
-                                            if (current_light && current_position)
+                                            if (current_light)
                                             {
                                                 if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
                                                 {
-                                                    float r2 = pow(current_light->radius, 2);
-                                                    float d = pow(x - current_position->x, 2) + pow(y - current_position->y, 2);
-                                                    float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
-
-                                                    color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, current_light->color, l), l);
+                                                    tile->seen = true;
                                                 }
                                             }
                                         }
                                     }
-                                }
-                                else
-                                {
-                                    if (!tile->seen)
-                                    {
-                                        continue;
-                                    }
-                                }
 
-                                TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
-                                TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info->glyph);
+                                    TCOD_color_t color = game->tile_common.shadow_color;
+
+                                    if (TCOD_map_is_in_fov(player_fov->fov_map, x, y) || tile->seen)
+                                    {
+                                        for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+                                        {
+                                            for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
+                                            {
+                                                entity_t *current = *iterator;
+
+                                                light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
+                                                position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
+
+                                                if (current_light && current_position)
+                                                {
+                                                    if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
+                                                    {
+                                                        float r2 = pow(current_light->radius, 2);
+                                                        // float d = distance_sq(x, y, current_position->x + (current_light->flicker ? dx : 0), current_position->y + (current_light->flicker ? dy : 0));
+                                                        float d = pow(x - current_position->x + (current_light->flicker ? dx : 0), 2) + pow(y - current_position->y + (current_light->flicker ? dy : 0), 2);
+                                                        float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (current_light->flicker ? di : 0));
+
+                                                        color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, current_light->color, l), l);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!tile->seen)
+                                        {
+                                            continue;
+                                        }
+                                    }
+
+                                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
+                                    TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info->glyph);
+                                }
                             }
                         }
                     }

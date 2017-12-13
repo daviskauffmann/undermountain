@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <malloc.h>
 
 #include "engine.h"
 #include "game.h"
@@ -67,8 +68,11 @@ typedef struct game_s game_t;
 /* Tile Definitions */
 enum tile_type_e
 {
+    TILE_EMPTY,
     TILE_FLOOR,
     TILE_WALL,
+    TILE_DOOR_CLOSED,
+    TILE_DOOR_OPEN,
     TILE_STAIR_DOWN,
     TILE_STAIR_UP,
 
@@ -140,6 +144,12 @@ struct entity_s
     int id;
     game_t *game;
 };
+
+typedef enum choosing_action_e {
+    ACTION_NONE,
+    ACTION_OPEN_DOOR,
+    ACTION_CLOSE_DOOR
+} choosing_action_t;
 
 /* Component Definitions */
 struct ai_s
@@ -370,27 +380,6 @@ internal void
 map_init(map_t *map, game_t *game, int level);
 
 internal bool
-traverse_node(TCOD_bsp_t *node, map_t *map);
-
-internal void
-vline(map_t *map, int x, int y1, int y2);
-
-internal void
-vline_up(map_t *map, int x, int y);
-
-internal void
-vline_down(map_t *map, int x, int y);
-
-internal void
-hline(map_t *map, int x1, int y, int x2);
-
-internal void
-hline_left(map_t *map, int x, int y);
-
-internal void
-hline_right(map_t *map, int x, int y);
-
-internal bool
 map_is_inside(int x, int y);
 
 internal room_t *
@@ -429,8 +418,17 @@ entity_move_towards(entity_t *entity, int x, int y);
 internal void
 entity_move_random(entity_t *entity);
 
-internal void
+internal bool
 entity_move(entity_t *entity, int x, int y);
+
+internal bool
+entity_interact(entity_t *entity, int x, int y, choosing_action_t action);
+
+internal bool
+entity_close_door(entity_t *entity, tile_t *tile);
+
+internal bool
+entity_open_door(entity_t *entity, tile_t *tile);
 
 internal void
 entity_swap(entity_t *entity, entity_t *other);
@@ -438,7 +436,7 @@ entity_swap(entity_t *entity, entity_t *other);
 internal void
 entity_pick(entity_t *entity, entity_t *other);
 
-internal void
+internal bool
 entity_swing(entity_t *entity, int x, int y);
 
 internal void
@@ -529,7 +527,7 @@ tile_reset(tile_t *tile)
 internal room_t *
 room_create(int x, int y, int w, int h)
 {
-    room_t *room = (room_t *)malloc(sizeof(room_t));
+    room_t *room = malloc(sizeof(room_t));
 
     room->x = x;
     room->y = y;
@@ -559,13 +557,15 @@ room_destroy(room_t *room)
 }
 
 /* Map Function Definitions */
-#define BSP_DEPTH 10
+#define NUM_ROOM_ATTEMPTS 20
 #define MIN_ROOM_SIZE 5
-#define FULL_ROOMS 1
-#define NUM_MONSTERS 50
-#define NUM_ADVENTURERS 10
-#define NUM_ITEMS 10
-#define NUM_BRAZIERS 0
+#define MAX_ROOM_SIZE 15
+#define PREVENT_OVERLAP 0
+#define DOOR_CHANCE 0.5f
+#define NUM_MONSTERS 5
+#define NUM_ADVENTURERS 5
+#define NUM_ITEMS 5
+#define NUM_BRAZIERS 5
 
 internal void
 map_init(map_t *map, game_t *game, int level)
@@ -581,14 +581,179 @@ map_init(map_t *map, game_t *game, int level)
         {
             tile_t *tile = &map->tiles[x][y];
 
-            tile_init(tile, TILE_WALL, false);
+            tile_init(tile, TILE_EMPTY, false);
         }
     }
 
-    TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    TCOD_bsp_split_recursive(bsp, NULL, BSP_DEPTH, MIN_ROOM_SIZE + 1, MIN_ROOM_SIZE + 1, 1.5f, 1.5f);
-    TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
-    TCOD_bsp_delete(bsp);
+    for (int i = 0; i < NUM_ROOM_ATTEMPTS; i++)
+    {
+        room_t *room = room_create(
+            TCOD_random_get_int(NULL, 0, MAP_WIDTH),
+            TCOD_random_get_int(NULL, 0, MAP_HEIGHT),
+            TCOD_random_get_int(NULL, MIN_ROOM_SIZE, MAX_ROOM_SIZE),
+            TCOD_random_get_int(NULL, MIN_ROOM_SIZE, MAX_ROOM_SIZE));
+
+        if (room->x < 2 ||
+            room->x + room->w > MAP_WIDTH - 2 ||
+            room->y < 2 ||
+            room->y + room->h > MAP_HEIGHT - 2)
+        {
+            continue;
+        }
+
+#if PREVENT_OVERLAP
+        bool overlap = false;
+
+        for (int x = room->x - 2; x < room->x + room->w + 2; x++)
+        {
+            for (int y = room->y - 2; y < room->y + room->h + 2; y++)
+            {
+                if (map->tiles[x][y].type == TILE_FLOOR)
+                {
+                    overlap = true;
+                }
+            }
+        }
+
+        if (overlap)
+        {
+            continue;
+        }
+#endif
+
+        for (int x = room->x; x < room->x + room->w; x++)
+        {
+            for (int y = room->y; y < room->y + room->h; y++)
+            {
+                map->tiles[x][y].type = TILE_FLOOR;
+            }
+        }
+
+        TCOD_list_push(map->rooms, room);
+    }
+
+    for (int i = 0; i < TCOD_list_size(map->rooms) - 1; i++)
+    {
+        room_t *room = TCOD_list_get(map->rooms, i);
+        room_t *next_room = TCOD_list_get(map->rooms, i + 1);
+
+        int x1 = TCOD_random_get_int(NULL, room->x, room->x + room->w);
+        int y1 = TCOD_random_get_int(NULL, room->y, room->y + room->h);
+        int x2 = TCOD_random_get_int(NULL, next_room->x, next_room->x + next_room->w);
+        int y2 = TCOD_random_get_int(NULL, next_room->y, next_room->y + next_room->h);
+
+        if (x1 > x2)
+        {
+            int t = x1;
+            x1 = x2;
+            x2 = t;
+        }
+        if (y1 > y2)
+        {
+            int t = y1;
+            y1 = y2;
+            y2 = t;
+        }
+
+        for (int x = x1; x <= x2; x++)
+        {
+            for (int y = y1; y <= y2; y++)
+            {
+                if (x == x1 || x == x2 || y == y1 || y == y2)
+                {
+                    map->tiles[x][y].type = TILE_FLOOR;
+                }
+            }
+        }
+    }
+
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            if (map->tiles[x][y].type == TILE_FLOOR)
+            {
+                if (map->tiles[x][y - 1].type == TILE_EMPTY)
+                {
+                    map->tiles[x][y - 1].type = TILE_WALL;
+                }
+
+                if (map->tiles[x + 1][y - 1].type == TILE_EMPTY)
+                {
+                    map->tiles[x + 1][y - 1].type = TILE_WALL;
+                }
+
+                if (map->tiles[x + 1][y].type == TILE_EMPTY)
+                {
+                    map->tiles[x + 1][y].type = TILE_WALL;
+                }
+
+                if (map->tiles[x + 1][y + 1].type == TILE_EMPTY)
+                {
+                    map->tiles[x + 1][y + 1].type = TILE_WALL;
+                }
+
+                if (map->tiles[x][y + 1].type == TILE_EMPTY)
+                {
+                    map->tiles[x][y + 1].type = TILE_WALL;
+                }
+
+                if (map->tiles[x - 1][y - 1].type == TILE_EMPTY)
+                {
+                    map->tiles[x - 1][y - 1].type = TILE_WALL;
+                }
+
+                if (map->tiles[x - 1][y].type == TILE_EMPTY)
+                {
+                    map->tiles[x - 1][y].type = TILE_WALL;
+                }
+
+                if (map->tiles[x - 1][y + 1].type == TILE_EMPTY)
+                {
+                    map->tiles[x - 1][y + 1].type = TILE_WALL;
+                }
+            }
+        }
+    }
+
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            if (map->tiles[x][y].type == TILE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < DOOR_CHANCE)
+            {
+
+                if (map->tiles[x][y - 1].type == TILE_FLOOR && map->tiles[x + 1][y - 1].type == TILE_FLOOR && map->tiles[x - 1][y - 1].type == TILE_FLOOR)
+                {
+                    if (map->tiles[x - 1][y].type == TILE_WALL && map->tiles[x + 1][y].type == TILE_WALL)
+                    {
+                        map->tiles[x][y].type = TILE_DOOR_CLOSED;
+                    }
+                }
+                if (map->tiles[x + 1][y].type == TILE_FLOOR && map->tiles[x + 1][y - 1].type == TILE_FLOOR && map->tiles[x + 1][y + 1].type == TILE_FLOOR)
+                {
+                    if (map->tiles[x][y + 1].type == TILE_WALL && map->tiles[x][y - 1].type == TILE_WALL)
+                    {
+                        map->tiles[x][y].type = TILE_DOOR_CLOSED;
+                    }
+                }
+                if (map->tiles[x][y + 1].type == TILE_FLOOR && map->tiles[x + 1][y + 1].type == TILE_FLOOR && map->tiles[x - 1][y + 1].type == TILE_FLOOR)
+                {
+                    if (map->tiles[x - 1][y].type == TILE_WALL && map->tiles[x + 1][y].type == TILE_WALL)
+                    {
+                        map->tiles[x][y].type = TILE_DOOR_CLOSED;
+                    }
+                }
+                if (map->tiles[x - 1][y].type == TILE_FLOOR && map->tiles[x - 1][y - 1].type == TILE_FLOOR && map->tiles[x - 1][y + 1].type == TILE_FLOOR)
+                {
+                    if (map->tiles[x][y + 1].type == TILE_WALL && map->tiles[x][y - 1].type == TILE_WALL)
+                    {
+                        map->tiles[x][y].type = TILE_DOOR_CLOSED;
+                    }
+                }
+            }
+        }
+    }
 
     room_t *stair_down_room = map_get_random_room(map);
     room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
@@ -790,208 +955,6 @@ map_init(map_t *map, game_t *game, int level)
         light->fov_map = NULL;
         component_add(entity, COMPONENT_SOLID);
         component_add(entity, COMPONENT_OPAQUE);
-    }
-}
-
-internal bool
-traverse_node(TCOD_bsp_t *node, map_t *map)
-{
-    if (TCOD_bsp_is_leaf(node))
-    {
-        int min_x = node->x + 1;
-        int max_x = node->x + node->w - 1;
-        int min_y = node->y + 1;
-        int max_y = node->y + node->h - 1;
-
-        if (max_x == MAP_WIDTH - 1)
-        {
-            max_x--;
-        }
-        if (max_y == MAP_HEIGHT - 1)
-        {
-            max_y--;
-        }
-
-#if !FULL_ROOMS
-        min_x = TCOD_random_get_int(NULL, min_x, max_x - MIN_ROOM_SIZE + 1);
-        min_y = TCOD_random_get_int(NULL, min_y, max_y - MIN_ROOM_SIZE + 1);
-        max_x = TCOD_random_get_int(NULL, min_x + MIN_ROOM_SIZE - 2, max_x);
-        max_y = TCOD_random_get_int(NULL, min_y + MIN_ROOM_SIZE - 2, max_y);
-#endif
-
-        node->x = min_x;
-        node->y = min_y;
-        node->w = max_x - min_x + 1;
-        node->h = max_y - min_y + 1;
-
-        for (int x = min_x; x < max_x + 1; x++)
-        {
-            for (int y = min_y; y < max_y + 1; y++)
-            {
-                tile_t *tile = &map->tiles[x][y];
-
-                tile->type = TILE_FLOOR;
-            }
-        }
-
-        room_t *room = room_create(node->x, node->y, node->w, node->h);
-
-        TCOD_list_push(map->rooms, room);
-    }
-    else
-    {
-        TCOD_bsp_t *left = TCOD_bsp_left(node);
-        TCOD_bsp_t *right = TCOD_bsp_right(node);
-
-        node->x = MIN(left->x, right->x);
-        node->y = MIN(left->y, right->y);
-        node->w = MAX(left->x + left->w, right->x + right->w) - node->x;
-        node->h = MAX(left->y + left->h, right->y + right->h) - node->y;
-
-        if (node->horizontal)
-        {
-            if (left->x + left->w - 1 < right->x || right->x + right->w - 1 < left->x)
-            {
-                int x1 = TCOD_random_get_int(NULL, left->x, left->x + left->w - 1);
-                int x2 = TCOD_random_get_int(NULL, right->x, right->x + right->w - 1);
-                int y = TCOD_random_get_int(NULL, left->y + left->h, right->y);
-
-                vline_up(map, x1, y - 1);
-                hline(map, x1, y, x2);
-                vline_down(map, x2, y + 1);
-            }
-            else
-            {
-                int min_x = MAX(left->x, right->x);
-                int max_x = MIN(left->x + left->w - 1, right->x + right->w - 1);
-                int x = TCOD_random_get_int(NULL, min_x, max_x);
-
-                while (x > MAP_WIDTH - 1)
-                {
-                    x--;
-                }
-
-                vline_down(map, x, right->y);
-                vline_up(map, x, right->y - 1);
-            }
-        }
-        else
-        {
-            if (left->y + left->h - 1 < right->y || right->y + right->h - 1 < left->y)
-            {
-                int y1 = TCOD_random_get_int(NULL, left->y, left->y + left->h - 1);
-                int y2 = TCOD_random_get_int(NULL, right->y, right->y + right->h - 1);
-                int x = TCOD_random_get_int(NULL, left->x + left->w, right->x);
-
-                hline_left(map, x - 1, y1);
-                vline(map, x, y1, y2);
-                hline_right(map, x + 1, y2);
-            }
-            else
-            {
-                int min_y = MAX(left->y, right->y);
-                int max_y = MIN(left->y + left->h - 1, right->y + right->h - 1);
-                int y = TCOD_random_get_int(NULL, min_y, max_y);
-
-                while (y > MAP_HEIGHT - 1)
-                {
-                    y--;
-                }
-
-                hline_left(map, right->x - 1, y);
-                hline_right(map, right->x, y);
-            }
-        }
-    }
-
-    return true;
-}
-
-internal void
-vline(map_t *map, int x, int y1, int y2)
-{
-    if (y1 > y2)
-    {
-        int t = y1;
-        y1 = y2;
-        y2 = t;
-    }
-
-    for (int y = y1; y < y2 + 1; y++)
-    {
-        tile_t *tile = &map->tiles[x][y];
-
-        tile->type = TILE_FLOOR;
-    }
-}
-
-internal void
-vline_up(map_t *map, int x, int y)
-{
-    tile_t *tile = &map->tiles[x][y];
-
-    while (y >= 0 && tile->type != TILE_FLOOR)
-    {
-        tile->type = TILE_FLOOR;
-
-        y--;
-    }
-}
-
-internal void
-vline_down(map_t *map, int x, int y)
-{
-    tile_t *tile = &map->tiles[x][y];
-
-    while (y < MAP_HEIGHT && tile->type != TILE_FLOOR)
-    {
-        tile->type = TILE_FLOOR;
-
-        y++;
-    }
-}
-
-internal void
-hline(map_t *map, int x1, int y, int x2)
-{
-    if (x1 > x2)
-    {
-        int t = x1;
-        x1 = x2;
-        x2 = t;
-    }
-
-    for (int x = x1; x < x2 + 1; x++)
-    {
-        tile_t *tile = &map->tiles[x][y];
-
-        tile->type = TILE_FLOOR;
-    }
-}
-
-internal void
-hline_left(map_t *map, int x, int y)
-{
-    tile_t *tile = &map->tiles[x][y];
-
-    while (x >= 0 && tile->type != TILE_FLOOR)
-    {
-        tile->type = TILE_FLOOR;
-
-        x--;
-    }
-}
-
-internal void
-hline_right(map_t *map, int x, int y)
-{
-    tile_t *tile = &map->tiles[x][y];
-
-    while (x < MAP_WIDTH && tile->type != TILE_FLOOR)
-    {
-        tile->type = TILE_FLOOR;
-
-        x++;
     }
 }
 
@@ -1206,9 +1169,11 @@ entity_move_random(entity_t *entity)
     }
 }
 
-internal void
+internal bool
 entity_move(entity_t *entity, int x, int y)
 {
+    bool success = false;
+
     if (map_is_inside(x, y))
     {
         position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
@@ -1220,11 +1185,18 @@ entity_move(entity_t *entity, int x, int y)
             tile_t *next_tile = &map->tiles[x][y];
             tile_info_t *next_tile_info = &entity->game->tile_info[next_tile->type];
 
-            bool can_move = true;
+            if (next_tile->type == TILE_DOOR_CLOSED)
+            {
+                success = true;
+
+                entity_open_door(entity, next_tile);
+
+                goto skip_move;
+            }
 
             if (!next_tile_info->is_walkable)
             {
-                can_move = false;
+                goto skip_move;
             }
 
             for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
@@ -1235,46 +1207,142 @@ entity_move(entity_t *entity, int x, int y)
 
                 if (other_solid)
                 {
-                    can_move = false;
+                    health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
 
+                    if (other_health)
                     {
-                        health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+                        alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
 
-                        if (other_health)
+                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+
+                        if (alignment && other_alignment &&
+                            alignment->type == other_alignment->type)
                         {
-                            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-
-                            alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                            // TODO: what if there are multiple entities on this tile?
-                            if (alignment && other_alignment &&
-                                alignment->type == other_alignment->type)
+                            // TODO: only the player can swap?
+                            if (entity == entity->game->player)
                             {
-                                // TODO: only the player can swap?
-                                if (entity == entity->game->player)
-                                {
-                                    entity_swap(entity, other);
-                                }
-                            }
-                            else
-                            {
-                                entity_attack(entity, other);
+                                entity_swap(entity, other);
                             }
                         }
+                        else
+                        {
+                            entity_attack(entity, other);
+                        }
                     }
+
+                    goto skip_move;
                 }
             }
 
-            if (can_move)
-            {
-                position->x = x;
-                position->y = y;
+            position->x = x;
+            position->y = y;
 
-                TCOD_list_remove(tile->entities, entity);
-                TCOD_list_push(next_tile->entities, entity);
-            }
+            TCOD_list_remove(tile->entities, entity);
+            TCOD_list_push(next_tile->entities, entity);
+
+            success = true;
+
+        skip_move:;
         }
     }
+
+    return success;
+}
+
+internal bool
+entity_interact(entity_t *entity, int x, int y, choosing_action_t action)
+{
+    bool success = false;
+
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+    if (position)
+    {
+        map_t *map = &entity->game->maps[position->level];
+        tile_t *tile = &map->tiles[x][y];
+
+        switch (action)
+        {
+        case ACTION_CLOSE_DOOR:
+        {
+            success = entity_close_door(entity, tile);
+        }
+        break;
+        case ACTION_OPEN_DOOR:
+        {
+            success = entity_open_door(entity, tile);
+        }
+        break;
+        }
+    }
+
+    return success;
+}
+
+internal bool
+entity_close_door(entity_t *entity, tile_t *tile)
+{
+    bool success = false;
+
+    if (tile->type == TILE_DOOR_OPEN)
+    {
+        success = true;
+
+        tile->type = TILE_DOOR_CLOSED;
+
+        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+        if (appearance && position)
+        {
+            game_log(entity->game, position, TCOD_white, "%s closes the door", appearance->name);
+        }
+    }
+    else
+    {
+        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+        if (appearance && position)
+        {
+            game_log(entity->game, position, TCOD_white, "%s can't close that", appearance->name);
+        }
+    }
+
+    return success;
+}
+
+internal bool
+entity_open_door(entity_t *entity, tile_t *tile)
+{
+    bool success = false;
+
+    if (tile->type == TILE_DOOR_CLOSED)
+    {
+        success = true;
+
+        tile->type = TILE_DOOR_OPEN;
+
+        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+        if (appearance && position)
+        {
+            game_log(entity->game, position, TCOD_white, "%s opens the door", appearance->name);
+        }
+    }
+    else
+    {
+        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+        if (appearance && position)
+        {
+            game_log(entity->game, position, TCOD_white, "%s can't open that", appearance->name);
+        }
+    }
+
+    return success;
 }
 
 internal void
@@ -1361,13 +1429,17 @@ entity_pick(entity_t *entity, entity_t *other)
     }
 }
 
-internal void
+internal bool
 entity_swing(entity_t *entity, int x, int y)
 {
+    bool success = false;
+
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
     if (position)
     {
+        success = true;
+
         map_t *map = &entity->game->maps[position->level];
         tile_t *other_tile = &map->tiles[x][y];
 
@@ -1384,6 +1456,8 @@ entity_swing(entity_t *entity, int x, int y)
                 hit = true;
 
                 entity_attack(entity, other);
+
+                break;
             }
         }
 
@@ -1397,6 +1471,8 @@ entity_swing(entity_t *entity, int x, int y)
             }
         }
     }
+
+    return success;
 }
 
 internal void
@@ -2060,6 +2136,12 @@ game_init(game_t *game)
     game->tile_common = (tile_common_t){
         .shadow_color = TCOD_color_RGB(16, 16, 32)};
 
+    game->tile_info[TILE_EMPTY] = (tile_info_t){
+        .name = "Empty",
+        .glyph = ' ',
+        .color = TCOD_white,
+        .is_transparent = true,
+        .is_walkable = true};
     game->tile_info[TILE_FLOOR] = (tile_info_t){
         .name = "Floor",
         .glyph = '.',
@@ -2072,6 +2154,18 @@ game_init(game_t *game)
         .color = TCOD_white,
         .is_transparent = false,
         .is_walkable = false};
+    game->tile_info[TILE_DOOR_CLOSED] = (tile_info_t){
+        .name = "Closed Door",
+        .glyph = '+',
+        .color = TCOD_white,
+        .is_transparent = false,
+        .is_walkable = false};
+    game->tile_info[TILE_DOOR_OPEN] = (tile_info_t){
+        .name = "Open Door",
+        .glyph = '-',
+        .color = TCOD_white,
+        .is_transparent = true,
+        .is_walkable = true};
     game->tile_info[TILE_STAIR_DOWN] = (tile_info_t){
         .name = "Stair Down",
         .glyph = '>',
@@ -2625,6 +2719,8 @@ game_update(game_t *game)
             {
             case TCOD_EVENT_KEY_PRESS:
             {
+                local choosing_action_t choosing_action = ACTION_NONE;
+
                 switch (key.vk)
                 {
                 case TCODK_KP1:
@@ -2639,18 +2735,25 @@ game_update(game_t *game)
                     }
                     else if (player_position)
                     {
-                        game->should_update = true;
-
                         int x = player_position->x - 1;
                         int y = player_position->y + 1;
 
-                        if (key.lctrl)
+                        if (choosing_action == ACTION_NONE)
                         {
-                            entity_swing(game->player, x, y);
+                            if (key.lctrl)
+                            {
+                                game->should_update = entity_swing(game->player, x, y);
+                            }
+                            else
+                            {
+                                game->should_update = entity_move(game->player, x, y);
+                            }
                         }
                         else
                         {
-                            entity_move(game->player, x, y);
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
                         }
                     }
                 }
@@ -2666,18 +2769,25 @@ game_update(game_t *game)
                     }
                     else if (player_position)
                     {
-                        game->should_update = true;
-
                         int x = player_position->x;
                         int y = player_position->y + 1;
 
-                        if (key.lctrl)
+                        if (choosing_action == ACTION_NONE)
                         {
-                            entity_swing(game->player, x, y);
+                            if (key.lctrl)
+                            {
+                                game->should_update = entity_swing(game->player, x, y);
+                            }
+                            else
+                            {
+                                game->should_update = entity_move(game->player, x, y);
+                            }
                         }
                         else
                         {
-                            entity_move(game->player, x, y);
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
                         }
                     }
                 }
@@ -2694,18 +2804,25 @@ game_update(game_t *game)
                     }
                     else if (player_position)
                     {
-                        game->should_update = true;
-
                         int x = player_position->x + 1;
                         int y = player_position->y + 1;
 
-                        if (key.lctrl)
+                        if (choosing_action == ACTION_NONE)
                         {
-                            entity_swing(game->player, x, y);
+                            if (key.lctrl)
+                            {
+                                game->should_update = entity_swing(game->player, x, y);
+                            }
+                            else
+                            {
+                                game->should_update = entity_move(game->player, x, y);
+                            }
                         }
                         else
                         {
-                            entity_move(game->player, x, y);
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
                         }
                     }
                 }
@@ -2722,18 +2839,43 @@ game_update(game_t *game)
                     }
                     else if (player_position)
                     {
-                        game->should_update = true;
-
                         int x = player_position->x - 1;
                         int y = player_position->y;
 
-                        if (key.lctrl)
+                        if (choosing_action == ACTION_NONE)
                         {
-                            entity_swing(game->player, x, y);
+                            if (key.lctrl)
+                            {
+                                game->should_update = entity_swing(game->player, x, y);
+                            }
+                            else
+                            {
+                                game->should_update = entity_move(game->player, x, y);
+                            }
                         }
                         else
                         {
-                            entity_move(game->player, x, y);
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
+                        }
+                    }
+                }
+                break;
+                case TCODK_KP5:
+                {
+                    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+
+                    if (player_position)
+                    {
+                        int x = player_position->x;
+                        int y = player_position->y;
+
+                        if (choosing_action != ACTION_NONE)
+                        {
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
                         }
                     }
                 }
@@ -2750,17 +2892,25 @@ game_update(game_t *game)
                     }
                     else if (player_position)
                     {
-                        game->should_update = true;
                         int x = player_position->x + 1;
                         int y = player_position->y;
 
-                        if (key.lctrl)
+                        if (choosing_action == ACTION_NONE)
                         {
-                            entity_swing(game->player, x, y);
+                            if (key.lctrl)
+                            {
+                                game->should_update = entity_swing(game->player, x, y);
+                            }
+                            else
+                            {
+                                game->should_update = entity_move(game->player, x, y);
+                            }
                         }
                         else
                         {
-                            entity_move(game->player, x, y);
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
                         }
                     }
                 }
@@ -2777,18 +2927,25 @@ game_update(game_t *game)
                     }
                     else if (player_position)
                     {
-                        game->should_update = true;
-
                         int x = player_position->x - 1;
                         int y = player_position->y - 1;
 
-                        if (key.lctrl)
+                        if (choosing_action == ACTION_NONE)
                         {
-                            entity_swing(game->player, x, y);
+                            if (key.lctrl)
+                            {
+                                game->should_update = entity_swing(game->player, x, y);
+                            }
+                            else
+                            {
+                                game->should_update = entity_move(game->player, x, y);
+                            }
                         }
                         else
                         {
-                            entity_move(game->player, x, y);
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
                         }
                     }
                 }
@@ -2805,18 +2962,25 @@ game_update(game_t *game)
                     }
                     else if (player_position)
                     {
-                        game->should_update = true;
-
                         int x = player_position->x;
                         int y = player_position->y - 1;
 
-                        if (key.lctrl)
+                        if (choosing_action == ACTION_NONE)
                         {
-                            entity_swing(game->player, x, y);
+                            if (key.lctrl)
+                            {
+                                game->should_update = entity_swing(game->player, x, y);
+                            }
+                            else
+                            {
+                                game->should_update = entity_move(game->player, x, y);
+                            }
                         }
                         else
                         {
-                            entity_move(game->player, x, y);
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
                         }
                     }
                 }
@@ -2833,18 +2997,25 @@ game_update(game_t *game)
                     }
                     else if (player_position)
                     {
-                        game->should_update = true;
-
                         int x = player_position->x + 1;
                         int y = player_position->y - 1;
 
-                        if (key.lctrl)
+                        if (choosing_action == ACTION_NONE)
                         {
-                            entity_swing(game->player, x, y);
+                            if (key.lctrl)
+                            {
+                                game->should_update = entity_swing(game->player, x, y);
+                            }
+                            else
+                            {
+                                game->should_update = entity_move(game->player, x, y);
+                            }
                         }
                         else
                         {
-                            entity_move(game->player, x, y);
+                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+
+                            choosing_action = ACTION_NONE;
                         }
                     }
                 }
@@ -2855,7 +3026,16 @@ game_update(game_t *game)
                     {
                     case 'c':
                     {
-                        game->panel_visible = !game->panel_visible;
+                        if (key.shift)
+                        {
+                            game->panel_visible = !game->panel_visible;
+                        }
+                        else
+                        {
+                            choosing_action = ACTION_CLOSE_DOOR;
+
+                            game_log(game, NULL, TCOD_white, "Choose a direction");
+                        }
                     }
                     break;
                     case 'f':
@@ -2984,6 +3164,13 @@ game_update(game_t *game)
                     case 'm':
                     {
                         game->message_log_visible = !game->message_log_visible;
+                    }
+                    break;
+                    case 'o':
+                    {
+                        choosing_action = ACTION_OPEN_DOOR;
+
+                        game_log(game, NULL, TCOD_white, "Choose a direction");
                     }
                     break;
                     case 's':
@@ -3164,33 +3351,42 @@ game_update(game_t *game)
                 {
                     float x = current_projectile->x + current_projectile->dx;
                     float y = current_projectile->y + current_projectile->dy;
+                    int next_x = (int)x;
+                    int next_y = (int)y;
 
                     bool should_move = true;
 
-                    map_t *current_map = &game->maps[current_position->level];
-                    tile_t *next_tile = &current_map->tiles[(int)x][(int)y];
-                    tile_info_t *next_tile_info = &game->tile_info[next_tile->type];
-
-                    if (!next_tile_info->is_walkable)
+                    if (map_is_inside(next_x, next_y))
                     {
-                        should_move = false;
-                    }
+                        map_t *current_map = &game->maps[current_position->level];
+                        tile_t *next_tile = &current_map->tiles[next_x][next_y];
+                        tile_info_t *next_tile_info = &game->tile_info[next_tile->type];
 
-                    for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
-                    {
-                        entity_t *other = *iterator;
-
-                        if (other != current_projectile->shooter)
+                        if (!next_tile_info->is_walkable)
                         {
-                            health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+                            should_move = false;
+                        }
 
-                            if (other_health)
+                        for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
+                        {
+                            entity_t *other = *iterator;
+
+                            if (other != current_projectile->shooter)
                             {
-                                should_move = false;
+                                health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
 
-                                entity_attack(current_projectile->shooter, other);
+                                if (other_health)
+                                {
+                                    should_move = false;
+
+                                    entity_attack(current_projectile->shooter, other);
+                                }
                             }
                         }
+                    }
+                    else
+                    {
+                        should_move = false;
                     }
 
                     if (should_move)
@@ -3203,8 +3399,8 @@ game_update(game_t *game)
                         current_projectile->x = x;
                         current_projectile->y = y;
 
-                        current_position->x = (int)current_projectile->x;
-                        current_position->y = (int)current_projectile->y;
+                        current_position->x = next_x;
+                        current_position->y = next_y;
                     }
                     else
                     {

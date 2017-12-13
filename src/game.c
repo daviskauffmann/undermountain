@@ -261,6 +261,8 @@ struct projectile_s
     float dx;
     float dy;
     entity_t *shooter;
+    void (*on_hit)(void *on_hit_params);
+    void *on_hit_params;
 };
 
 enum targeting_type_e
@@ -440,7 +442,7 @@ internal void
 entity_swing(entity_t *entity, int x, int y);
 
 internal void
-entity_shoot(entity_t *entity, int x, int y);
+entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params);
 
 internal void
 entity_attack(entity_t *entity, entity_t *other);
@@ -501,6 +503,12 @@ game_log(game_t *game, position_t *position, TCOD_color_t color, char *text, ...
 
 internal void
 game_reset(game_t *game);
+
+internal void
+game_should_update(game_t *game)
+{
+    game->should_update = true;
+}
 
 /* Tile Function Definitions */
 internal void
@@ -1392,7 +1400,7 @@ entity_swing(entity_t *entity, int x, int y)
 }
 
 internal void
-entity_shoot(entity_t *entity, int x, int y)
+entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
@@ -1416,15 +1424,41 @@ entity_shoot(entity_t *entity, int x, int y)
                 dx = dx / d;
                 dy = dy / d;
             }
-            arrow_projectile->dx = CLAMP(-1.0f, 1.0f, dx);
-            arrow_projectile->dy = CLAMP(-1.0f, 1.0f, dy);
+            arrow_projectile->dx = CLAMP(-0.5f, 0.5f, dx);
+            arrow_projectile->dy = CLAMP(-0.5f, 0.5f, dy);
             arrow_projectile->shooter = entity;
+            arrow_projectile->on_hit = on_hit;
+            arrow_projectile->on_hit_params = on_hit_params;
 
             appearance_t *arrow_appearance = (appearance_t *)component_add(arrow, COMPONENT_APPEARANCE);
             arrow_appearance->name = "Arrow";
-            arrow_appearance->glyph = '|';
             arrow_appearance->color = TCOD_white;
-            arrow_appearance->layer = LAYER_2;
+            arrow_appearance->layer = LAYER_0;
+            float a = angle(position->x, position->y, x, y);
+            if ((a >= 0.0f && a <= 30.0f) ||
+                (a >= 150.0f && a <= 180.0f) ||
+                (a >= 180.0f && a <= 210.0f) ||
+                (a >= 330.0f && a <= 360.0f))
+            {
+                arrow_appearance->glyph = '-';
+            }
+            else if ((a >= 30.0f && a <= 60.0f) ||
+                     (a >= 210.0f && a <= 240.0f))
+            {
+                arrow_appearance->glyph = '/';
+            }
+            else if ((a >= 60.0f && a <= 90.0f) ||
+                     (a >= 90.0f && a <= 120.0f) ||
+                     (a >= 240.0f && a <= 270.0f) ||
+                     (a >= 270.0f && a <= 300.0f))
+            {
+                arrow_appearance->glyph = '|';
+            }
+            else if ((a >= 120.0f && a <= 150.0f) ||
+                     (a >= 300.0f && a <= 330.0f))
+            {
+                arrow_appearance->glyph = '\\';
+            }
 
             position_t *arrow_position = (position_t *)component_add(arrow, COMPONENT_POSITION);
             arrow_position->level = position->level;
@@ -1771,6 +1805,7 @@ component_init(component_t *component, int id, component_type_t component_type)
         projectile->dx = 0.0f;
         projectile->dy = 0.0f;
         projectile->shooter = NULL;
+        projectile->on_hit = NULL;
     }
     break;
     case COMPONENT_POSITION:
@@ -2833,9 +2868,7 @@ game_update(game_t *game)
 
                             if (player_targeting && player_targeting->type == TARGETING_SHOOT)
                             {
-                                game->should_update = true;
-
-                                entity_shoot(game->player, player_targeting->x, player_targeting->y);
+                                entity_shoot(game->player, player_targeting->x, player_targeting->y, &game_should_update, game);
 
                                 component_remove(game->player, COMPONENT_TARGETING);
                             }
@@ -3141,20 +3174,32 @@ game_update(game_t *game)
                     if (!next_tile_info->is_walkable)
                     {
                         should_move = false;
-
-                        current_projectile->dx = 0.0f;
-                        current_projectile->dy = 0.0f;
                     }
 
                     for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
                     {
                         entity_t *other = *iterator;
 
-                        entity_attack(current_projectile->shooter, other);
+                        if (other != current_projectile->shooter)
+                        {
+                            health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+
+                            if (other_health)
+                            {
+                                should_move = false;
+
+                                entity_attack(current_projectile->shooter, other);
+                            }
+                        }
                     }
 
                     if (should_move)
                     {
+                        if (TCOD_map_is_in_fov(player_fov->fov_map, current_position->x, current_position->y))
+                        {
+                            game->turn_available = false;
+                        }
+
                         current_projectile->x = x;
                         current_projectile->y = y;
 
@@ -3163,7 +3208,14 @@ game_update(game_t *game)
                     }
                     else
                     {
-                        game->turn_available = false;
+                        if (current_projectile->on_hit)
+                        {
+                            current_projectile->on_hit(current_projectile->on_hit_params);
+                        }
+
+                        // TODO: destroying the projectile crashes the game
+                        component_remove(current, COMPONENT_PROJECTILE);
+                        component_remove(current, COMPONENT_APPEARANCE);
                     }
                 }
             }
@@ -3215,7 +3267,7 @@ game_update(game_t *game)
 
                     if (current_fov)
                     {
-                        if (current_fov->fov_map != NULL)
+                        if (current_fov->fov_map)
                         {
                             TCOD_map_delete(current_fov->fov_map);
                         }

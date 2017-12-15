@@ -562,7 +562,7 @@ room_destroy(room_t *room)
 #define MAX_ROOM_SIZE 15
 #define PREVENT_OVERLAP 0
 #define DOOR_CHANCE 0.5f
-#define NUM_MONSTERS 5
+#define NUM_MONSTERS 10
 #define NUM_ADVENTURERS 5
 #define NUM_ITEMS 5
 #define NUM_BRAZIERS 5
@@ -1221,11 +1221,15 @@ entity_move(entity_t *entity, int x, int y)
                             // TODO: only the player can swap?
                             if (entity == entity->game->player)
                             {
+                                success = true;
+
                                 entity_swap(entity, other);
                             }
                         }
                         else
                         {
+                            success = true;
+
                             entity_attack(entity, other);
                         }
                     }
@@ -3115,7 +3119,7 @@ game_update(game_t *game)
 
                                 pickable_t *pickable = (pickable_t *)component_get(other, COMPONENT_PICKABLE);
 
-                                if (pickable != NULL)
+                                if (pickable)
                                 {
                                     game->should_update = true;
 

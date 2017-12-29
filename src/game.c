@@ -62,6 +62,10 @@ typedef struct component_s component_t;
 /* Message Declarations */
 typedef struct message_s message_t;
 
+/* Panel Declarations */
+typedef enum panel_type_e panel_type_t;
+typedef struct panel_info_s panel_info_t;
+
 /* Game Declarations */
 typedef struct game_s game_t;
 
@@ -145,11 +149,13 @@ struct entity_s
     game_t *game;
 };
 
-typedef enum choosing_action_e {
+typedef enum action_e {
     ACTION_NONE,
+    ACTION_DESCEND,
+    ACTION_ASCEND,
     ACTION_OPEN_DOOR,
     ACTION_CLOSE_DOOR
-} choosing_action_t;
+} action_t;
 
 /* Component Definitions */
 struct ai_s
@@ -338,6 +344,21 @@ struct message_s
     TCOD_color_t color;
 };
 
+/* Panel Definitions */
+enum panel_type_e
+{
+    PANEL_INVENTORY,
+    PANEL_CHARACTER,
+
+    NUM_PANELS
+};
+
+struct panel_info_s
+{
+    int current;
+    int scroll;
+};
+
 /* Game Definitions */
 struct game_s
 {
@@ -348,6 +369,8 @@ struct game_s
     component_t components[NUM_COMPONENTS][NUM_ENTITIES];
     entity_t *player;
     TCOD_list_t messages;
+    panel_type_t current_panel;
+    panel_info_t panel_info[NUM_PANELS];
     int turn;
     bool turn_available;
     bool should_update;
@@ -422,7 +445,13 @@ internal bool
 entity_move(entity_t *entity, int x, int y);
 
 internal bool
-entity_interact(entity_t *entity, int x, int y, choosing_action_t action);
+entity_interact(entity_t *entity, int x, int y, action_t action);
+
+internal bool
+entity_descend(entity_t *entity);
+
+internal bool
+entity_ascend(entity_t *entity);
 
 internal bool
 entity_close_door(entity_t *entity, tile_t *tile);
@@ -565,7 +594,7 @@ room_destroy(room_t *room)
 #define NUM_MONSTERS 10
 #define NUM_ADVENTURERS 5
 #define NUM_ITEMS 5
-#define NUM_BRAZIERS 5
+#define NUM_BRAZIERS 0
 
 internal void
 map_init(map_t *map, game_t *game, int level)
@@ -1254,7 +1283,7 @@ entity_move(entity_t *entity, int x, int y)
 }
 
 internal bool
-entity_interact(entity_t *entity, int x, int y, choosing_action_t action)
+entity_interact(entity_t *entity, int x, int y, action_t action)
 {
     bool success = false;
 
@@ -1267,6 +1296,16 @@ entity_interact(entity_t *entity, int x, int y, choosing_action_t action)
 
         switch (action)
         {
+        case ACTION_DESCEND:
+        {
+            success = entity_descend(entity);
+        }
+        break;
+        case ACTION_ASCEND:
+        {
+            success = entity_ascend(entity);
+        }
+        break;
         case ACTION_CLOSE_DOOR:
         {
             success = entity_close_door(entity, tile);
@@ -1277,6 +1316,140 @@ entity_interact(entity_t *entity, int x, int y, choosing_action_t action)
             success = entity_open_door(entity, tile);
         }
         break;
+        }
+    }
+
+    return success;
+}
+
+internal bool
+entity_descend(entity_t *entity)
+{
+    bool success = false;
+
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+    if (position)
+    {
+        map_t *map = &entity->game->maps[position->level];
+        tile_t *tile = &map->tiles[position->x][position->y];
+
+        if (tile->type == TILE_STAIR_DOWN)
+        {
+            if (position->level < NUM_MAPS)
+            {
+                position->level++;
+
+                map_t *next_map = &entity->game->maps[position->level];
+
+                position->x = next_map->stair_up_x;
+                position->y = next_map->stair_up_y;
+
+                tile_t *next_tile = &next_map->tiles[position->x][position->y];
+
+                TCOD_list_remove(map->entities, entity);
+                TCOD_list_push(next_map->entities, entity);
+
+                TCOD_list_remove(tile->entities, entity);
+                TCOD_list_push(next_tile->entities, entity);
+
+                {
+                    appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+                    if (appearance)
+                    {
+                        game_log(entity->game, position, TCOD_white, "%s descends", appearance->name);
+                    }
+                }
+
+                success = true;
+            }
+            else
+            {
+                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+                if (appearance)
+                {
+                    game_log(entity->game, position, TCOD_white, "%s has reached the end", appearance->name);
+                }
+            }
+        }
+        else
+        {
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+            if (appearance)
+            {
+                game_log(entity->game, position, TCOD_white, "%s can't descend here", appearance->name);
+            }
+        }
+    }
+
+    return success;
+}
+
+internal bool
+entity_ascend(entity_t *entity)
+{
+    bool success = false;
+
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+    if (position)
+    {
+        map_t *map = &entity->game->maps[position->level];
+        tile_t *tile = &map->tiles[position->x][position->y];
+
+        if (tile->type == TILE_STAIR_UP)
+        {
+            if (position->level > 0)
+            {
+                position->level--;
+
+                map_t *next_map = &entity->game->maps[position->level];
+
+                position->x = next_map->stair_down_x;
+                position->y = next_map->stair_down_y;
+
+                tile_t *next_tile = &next_map->tiles[position->x][position->y];
+
+                TCOD_list_remove(map->entities, entity);
+                TCOD_list_push(next_map->entities, entity);
+
+                TCOD_list_remove(tile->entities, entity);
+                TCOD_list_push(next_tile->entities, entity);
+
+                {
+                    appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+                    if (appearance)
+                    {
+                        game_log(entity->game, position, TCOD_white, "%s ascends", appearance->name);
+                    }
+                }
+
+                success = true;
+            }
+            else
+            {
+                // TODO: end game
+                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+                if (appearance)
+                {
+                    game_log(entity->game, position, TCOD_white, "%s can't go any higher", appearance->name);
+                }
+            }
+        }
+        else
+        {
+            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+            if (appearance && position)
+            {
+                game_log(entity->game, position, TCOD_white, "%s can't ascend here", appearance->name);
+            }
         }
     }
 
@@ -1496,6 +1669,7 @@ entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_params)
             projectile_t *arrow_projectile = (projectile_t *)component_add(arrow, COMPONENT_PROJECTILE);
             arrow_projectile->x = position->x;
             arrow_projectile->y = position->y;
+            // TODO: this is somewhat inacurate
             float dx = x - position->x;
             float dy = y - position->y;
             float d = distance(position->x, position->y, x, y);
@@ -1504,8 +1678,8 @@ entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_params)
                 dx = dx / d;
                 dy = dy / d;
             }
-            arrow_projectile->dx = CLAMP(-0.5f, 0.5f, dx);
-            arrow_projectile->dy = CLAMP(-0.5f, 0.5f, dy);
+            arrow_projectile->dx = dx;
+            arrow_projectile->dy = dy;
             arrow_projectile->shooter = entity;
             arrow_projectile->on_hit = on_hit;
             arrow_projectile->on_hit_params = on_hit_params;
@@ -2185,6 +2359,14 @@ game_init(game_t *game)
 
     game->player = NULL;
 
+    game->current_panel = 0;
+    game->panel_info[PANEL_CHARACTER] = (panel_info_t){
+        .current = 0,
+        .scroll = 0};
+    game->panel_info[PANEL_INVENTORY] = (panel_info_t){
+        .current = 0,
+        .scroll = 0};
+
     game->turn = 0;
     game->turn_available = true;
     game->should_update = true;
@@ -2654,6 +2836,8 @@ game_load(game_t *game)
     TCOD_zip_delete(zip);
 }
 
+#define FLASH_BLOCKS_TURN 0
+
 internal void
 game_update(game_t *game)
 {
@@ -2723,7 +2907,7 @@ game_update(game_t *game)
             {
             case TCOD_EVENT_KEY_PRESS:
             {
-                local choosing_action_t choosing_action = ACTION_NONE;
+                local action_t action = ACTION_NONE;
 
                 switch (key.vk)
                 {
@@ -2742,7 +2926,7 @@ game_update(game_t *game)
                         int x = player_position->x - 1;
                         int y = player_position->y + 1;
 
-                        if (choosing_action == ACTION_NONE)
+                        if (action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -2755,9 +2939,9 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -2776,7 +2960,7 @@ game_update(game_t *game)
                         int x = player_position->x;
                         int y = player_position->y + 1;
 
-                        if (choosing_action == ACTION_NONE)
+                        if (action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -2789,9 +2973,9 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -2811,7 +2995,7 @@ game_update(game_t *game)
                         int x = player_position->x + 1;
                         int y = player_position->y + 1;
 
-                        if (choosing_action == ACTION_NONE)
+                        if (action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -2824,9 +3008,9 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -2846,7 +3030,7 @@ game_update(game_t *game)
                         int x = player_position->x - 1;
                         int y = player_position->y;
 
-                        if (choosing_action == ACTION_NONE)
+                        if (action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -2859,9 +3043,9 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -2875,11 +3059,11 @@ game_update(game_t *game)
                         int x = player_position->x;
                         int y = player_position->y;
 
-                        if (choosing_action != ACTION_NONE)
+                        if (action != ACTION_NONE)
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -2899,7 +3083,7 @@ game_update(game_t *game)
                         int x = player_position->x + 1;
                         int y = player_position->y;
 
-                        if (choosing_action == ACTION_NONE)
+                        if (action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -2912,9 +3096,9 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -2934,7 +3118,7 @@ game_update(game_t *game)
                         int x = player_position->x - 1;
                         int y = player_position->y - 1;
 
-                        if (choosing_action == ACTION_NONE)
+                        if (action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -2947,9 +3131,9 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -2969,7 +3153,7 @@ game_update(game_t *game)
                         int x = player_position->x;
                         int y = player_position->y - 1;
 
-                        if (choosing_action == ACTION_NONE)
+                        if (action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -2982,9 +3166,9 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -3004,7 +3188,7 @@ game_update(game_t *game)
                         int x = player_position->x + 1;
                         int y = player_position->y - 1;
 
-                        if (choosing_action == ACTION_NONE)
+                        if (action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -3017,9 +3201,9 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            game->should_update = entity_interact(game->player, x, y, choosing_action);
+                            game->should_update = entity_interact(game->player, x, y, action);
 
-                            choosing_action = ACTION_NONE;
+                            action = ACTION_NONE;
                         }
                     }
                 }
@@ -3028,6 +3212,22 @@ game_update(game_t *game)
                 {
                     switch (key.c)
                     {
+                    case ',':
+                    {
+                        if (key.shift)
+                        {
+                            game->should_update = entity_ascend(game->player);
+                        }
+                    }
+                    break;
+                    case '.':
+                    {
+                        if (key.shift)
+                        {
+                            game->should_update = entity_descend(game->player);
+                        }
+                    }
+                    break;
                     case 'c':
                     {
                         if (key.shift)
@@ -3036,7 +3236,7 @@ game_update(game_t *game)
                         }
                         else
                         {
-                            choosing_action = ACTION_CLOSE_DOOR;
+                            action = ACTION_CLOSE_DOOR;
 
                             game_log(game, NULL, TCOD_white, "Choose a direction");
                         }
@@ -3140,6 +3340,7 @@ game_update(game_t *game)
                     break;
                     case 'i':
                     {
+                        game->current_panel = PANEL_INVENTORY;
                         game->panel_visible = !game->panel_visible;
                     }
                     break;
@@ -3172,7 +3373,7 @@ game_update(game_t *game)
                     break;
                     case 'o':
                     {
-                        choosing_action = ACTION_OPEN_DOOR;
+                        action = ACTION_OPEN_DOOR;
 
                         game_log(game, NULL, TCOD_white, "Choose a direction");
                     }
@@ -3333,6 +3534,7 @@ game_update(game_t *game)
                         component_remove(current, COMPONENT_FLASH);
                     }
 
+#if FLASH_BLOCKS_TURN
                     {
                         position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
 
@@ -3344,6 +3546,7 @@ game_update(game_t *game)
                             }
                         }
                     }
+#endif
                 }
             }
 
@@ -3520,34 +3723,36 @@ game_update(game_t *game)
 
                             bool target_found = false;
 
-                            alignment_t *current_alignment = (alignment_t *)component_get(current, COMPONENT_ALIGNMENT);
-
-                            if (current_alignment && current_fov)
                             {
-                                for (void **iterator = TCOD_list_begin(current_map->entities); iterator != TCOD_list_end(current_map->entities); iterator++)
+                                alignment_t *current_alignment = (alignment_t *)component_get(current, COMPONENT_ALIGNMENT);
+
+                                if (current_alignment && current_fov)
                                 {
-                                    entity_t *other = *iterator;
-
-                                    alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-                                    position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-
-                                    if (other_alignment && other_position)
+                                    for (void **iterator = TCOD_list_begin(current_map->entities); iterator != TCOD_list_end(current_map->entities); iterator++)
                                     {
-                                        if (TCOD_map_is_in_fov(current_fov->fov_map, other_position->x, other_position->y) &&
-                                            other_alignment->type != current_alignment->type)
+                                        entity_t *other = *iterator;
+
+                                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+                                        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+
+                                        if (other_alignment && other_position)
                                         {
-                                            target_found = true;
-
-                                            if (distance(current_position->x, current_position->y, other_position->x, other_position->y) < 2.0f)
+                                            if (TCOD_map_is_in_fov(current_fov->fov_map, other_position->x, other_position->y) &&
+                                                other_alignment->type != current_alignment->type)
                                             {
-                                                entity_attack(current, other);
-                                            }
-                                            else
-                                            {
-                                                entity_path_towards(current, other_position->x, other_position->y);
-                                            }
+                                                target_found = true;
 
-                                            break;
+                                                if (distance(current_position->x, current_position->y, other_position->x, other_position->y) < 2.0f)
+                                                {
+                                                    entity_attack(current, other);
+                                                }
+                                                else
+                                                {
+                                                    entity_path_towards(current, other_position->x, other_position->y);
+                                                }
+
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -3571,7 +3776,28 @@ game_update(game_t *game)
 
                             if (!target_found)
                             {
-                                entity_move_random(current);
+                                tile_t *current_tile = &current_map->tiles[current_position->x][current_position->y];
+
+                                bool took_action = false;
+
+                                switch (current_tile->type)
+                                {
+                                case TILE_STAIR_DOWN:
+                                {
+                                    took_action = entity_descend(current);
+                                }
+                                break;
+                                case TILE_STAIR_UP:
+                                {
+                                    took_action = entity_ascend(current);
+                                }
+                                break;
+                                }
+
+                                if (!took_action)
+                                {
+                                    entity_move_random(current);
+                                }
                             }
                         }
                     }
@@ -3870,7 +4096,18 @@ game_update(game_t *game)
                     panel = TCOD_console_new(console_height, console_width);
                 }
 
-                TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Panel");
+                switch (game->current_panel)
+                {
+                case PANEL_CHARACTER:
+                {
+                }
+                break;
+                case PANEL_INVENTORY:
+                {
+                    TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
+                }
+                break;
+                }
 
                 TCOD_console_blit(panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
             }

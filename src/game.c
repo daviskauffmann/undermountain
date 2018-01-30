@@ -402,6 +402,9 @@ room_destroy(room_t *room);
 internal void
 map_init(map_t *map, game_t *game, int level);
 
+internal void
+map_generate(map_t *map);
+
 internal bool
 map_is_inside(int x, int y);
 
@@ -502,6 +505,34 @@ component_remove(entity_t *entity, component_type_t component_type);
 internal void
 component_reset(component_t *component);
 
+/* Assemblage Function Declarations */
+internal entity_t *
+create_player(game_t *game);
+
+internal entity_t *
+create_pet(game_t *game);
+
+internal entity_t *
+create_skeleton(map_t *map, int x, int y);
+
+internal entity_t *
+create_skeleton_captain(map_t *map, int x, int y);
+
+internal entity_t *
+create_zombie(map_t *map, int x, int y);
+
+internal entity_t *
+create_jackal(map_t *map, int x, int y);
+
+internal entity_t *
+create_adventurer(map_t *map, int x, int y);
+
+internal entity_t *
+create_longsword(map_t *map, int x, int y);
+
+internal entity_t *
+create_brazier(map_t *map, int x, int y);
+
 /* Message Function Declarations */
 internal message_t *
 message_create(char *text, TCOD_color_t color);
@@ -586,16 +617,6 @@ room_destroy(room_t *room)
 }
 
 /* Map Function Definitions */
-#define NUM_ROOM_ATTEMPTS 20
-#define MIN_ROOM_SIZE 5
-#define MAX_ROOM_SIZE 15
-#define PREVENT_OVERLAP 0
-#define DOOR_CHANCE 0.5f
-#define NUM_MONSTERS 10
-#define NUM_ADVENTURERS 5
-#define NUM_ITEMS 5
-#define NUM_BRAZIERS 0
-
 internal void
 map_init(map_t *map, game_t *game, int level)
 {
@@ -613,7 +634,21 @@ map_init(map_t *map, game_t *game, int level)
             tile_init(tile, TILE_EMPTY, false);
         }
     }
+}
 
+#define NUM_ROOM_ATTEMPTS 20
+#define MIN_ROOM_SIZE 5
+#define MAX_ROOM_SIZE 15
+#define PREVENT_OVERLAP 0
+#define DOOR_CHANCE 0.5f
+#define NUM_MONSTERS 5
+#define NUM_ADVENTURERS 5
+#define NUM_ITEMS 5
+#define NUM_BRAZIERS 5
+
+internal void
+map_generate(map_t *map)
+{
     for (int i = 0; i < NUM_ROOM_ATTEMPTS; i++)
     {
         room_t *room = room_create(
@@ -806,69 +841,31 @@ map_init(map_t *map, game_t *game, int level)
             continue;
         }
 
-        entity_t *entity = entity_create(game);
-        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->level = level;
-        position->x = x;
-        position->y = y;
-        TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-        TCOD_list_push(map->entities, entity);
-        component_add(entity, COMPONENT_SOLID);
-        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
-        appearance->layer = LAYER_1;
-        fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
-        fov->radius = 5;
-        fov->fov_map = NULL;
-        ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
-        ai->energy = 1.0f;
-        ai->follow_target = NULL;
-        health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
-        alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
-        alignment->type = ALIGNMENT_EVIL;
+        entity_t *monster;
 
         switch (TCOD_random_get_int(NULL, 0, 3))
         {
         case 0:
         {
-            appearance->name = "Skeleton";
-            appearance->glyph = 's';
-            appearance->color = TCOD_white;
-            ai->energy_per_turn = 0.5f;
-            health->max = TCOD_random_get_int(NULL, 10, 20);
-            health->current = health->max;
+            monster = create_skeleton(map, x, y);
 
             break;
         }
         case 1:
         {
-            appearance->name = "Skeleton Captain";
-            appearance->glyph = 'S';
-            appearance->color = TCOD_white;
-            ai->energy_per_turn = 0.75f;
-            health->max = TCOD_random_get_int(NULL, 15, 25);
-            health->current = health->max;
+            monster = create_skeleton_captain(map, x, y);
 
             break;
         }
         case 2:
         {
-            appearance->name = "Zombie";
-            appearance->glyph = 'z';
-            appearance->color = TCOD_dark_green;
-            ai->energy_per_turn = 0.25f;
-            health->max = TCOD_random_get_int(NULL, 20, 30);
-            health->current = health->max;
+            monster = create_zombie(map, x, y);
 
             break;
         }
         case 3:
         {
-            appearance->name = "Jackal";
-            appearance->glyph = 'j';
-            appearance->color = TCOD_dark_orange;
-            ai->energy_per_turn = 1.5f;
-            health->max = TCOD_random_get_int(NULL, 5, 10);
-            health->current = health->max;
+            monster = create_jackal(map, x, y);
 
             break;
         }
@@ -876,7 +873,7 @@ map_init(map_t *map, game_t *game, int level)
 
         if (TCOD_random_get_int(NULL, 0, 100) == 0)
         {
-            light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
+            light_t *light = (light_t *)component_add(monster, COMPONENT_LIGHT);
             light->radius = 10;
             light->color = TCOD_light_amber;
             light->flicker = true;
@@ -899,35 +896,11 @@ map_init(map_t *map, game_t *game, int level)
             continue;
         }
 
-        entity_t *entity = entity_create(game);
-        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->level = level;
-        position->x = x;
-        position->y = y;
-        TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-        TCOD_list_push(map->entities, entity);
-        component_add(entity, COMPONENT_SOLID);
-        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
-        appearance->name = "Adventurer";
-        appearance->glyph = 'a';
-        appearance->color = TCOD_azure;
-        appearance->layer = LAYER_1;
-        fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
-        fov->radius = 1;
-        fov->fov_map = NULL;
-        ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
-        ai->energy = 1.0f;
-        ai->energy_per_turn = 0.5f;
-        ai->follow_target = NULL;
-        health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
-        health->max = TCOD_random_get_int(NULL, 10, 20);
-        health->current = health->max;
-        alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
-        alignment->type = ALIGNMENT_GOOD;
+        entity_t *adventurer = create_adventurer(map, x, y);
 
         if (TCOD_random_get_int(NULL, 0, 100) == 0)
         {
-            light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
+            light_t *light = (light_t *)component_add(adventurer, COMPONENT_LIGHT);
             light->radius = 10;
             light->color = TCOD_light_amber;
             light->flicker = true;
@@ -943,19 +916,7 @@ map_init(map_t *map, game_t *game, int level)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *entity = entity_create(game);
-        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->level = level;
-        position->x = x;
-        position->y = y;
-        TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-        TCOD_list_push(map->entities, entity);
-        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
-        appearance->name = "Longsword";
-        appearance->glyph = '|';
-        appearance->color = TCOD_white;
-        pickable_t *pickable = (pickable_t *)component_add(entity, COMPONENT_PICKABLE);
-        pickable->weight = 10.0f;
+        create_longsword(map, x, y);
     }
 
     for (int i = 0; i < NUM_BRAZIERS; i++)
@@ -965,25 +926,7 @@ map_init(map_t *map, game_t *game, int level)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *entity = entity_create(game);
-        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->level = level;
-        position->x = x;
-        position->y = y;
-        TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-        TCOD_list_push(map->entities, entity);
-        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
-        appearance->name = "Brazier";
-        appearance->glyph = '*';
-        appearance->color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
-        light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
-        light->radius = TCOD_random_get_int(NULL, 10, 20);
-        light->color = appearance->color;
-        light->flicker = false;
-        light->priority = LIGHT_PRIORITY_1;
-        light->fov_map = NULL;
-        component_add(entity, COMPONENT_SOLID);
-        component_add(entity, COMPONENT_OPAQUE);
+        create_brazier(map, x, y);
     }
 }
 
@@ -2230,6 +2173,347 @@ component_reset(component_t *component)
     }
 }
 
+/* Assemblage Function Definitions */
+internal entity_t *
+create_player(game_t *game)
+{
+    entity_t *entity = entity_create(game);
+
+    alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
+    alignment->type = ALIGNMENT_GOOD;
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Blinky";
+    appearance->glyph = '@';
+    appearance->color = TCOD_white;
+    appearance->layer = LAYER_1;
+
+    component_add(entity, COMPONENT_CASTER);
+
+    fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
+    fov->radius = 1;
+
+    health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
+    health->max = 20;
+    health->current = health->max;
+
+    component_add(entity, COMPONENT_INVENTORY);
+
+    light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
+    light->radius = 5;
+    light->color = TCOD_white;
+    light->flicker = false;
+    light->priority = LIGHT_PRIORITY_0;
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = 0;
+    map_t *map = &game->maps[position->level];
+    TCOD_list_push(map->entities, entity);
+    position->x = map->stair_up_x;
+    position->y = map->stair_up_y;
+    tile_t *tile = &map->tiles[position->x][position->y];
+    TCOD_list_push(tile->entities, entity);
+
+    component_add(entity, COMPONENT_SOLID);
+
+    return entity;
+}
+
+internal entity_t *
+create_pet(game_t *game)
+{
+    entity_t *entity = entity_create(game);
+
+    ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
+    ai->energy = 1.0f;
+    ai->energy_per_turn = 0.5f;
+    ai->follow_target = game->player;
+
+    alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
+    alignment->type = ALIGNMENT_GOOD;
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Spot";
+    appearance->glyph = 'd';
+    appearance->color = TCOD_white;
+    appearance->layer = LAYER_1;
+
+    fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
+    fov->radius = 1;
+
+    health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
+    health->max = 20;
+    health->current = health->max;
+
+    light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
+    light->radius = 5;
+    light->color = TCOD_white;
+    light->flicker = false;
+    light->priority = LIGHT_PRIORITY_0;
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = 0;
+    map_t *map = &game->maps[position->level];
+    TCOD_list_push(map->entities, entity);
+    position->x = map->stair_up_x + 1;
+    position->y = map->stair_up_y;
+    tile_t *tile = &map->tiles[position->x][position->y];
+    TCOD_list_push(tile->entities, entity);
+
+    component_add(entity, COMPONENT_SOLID);
+
+    return entity;
+}
+
+internal entity_t *
+create_skeleton(map_t *map, int x, int y)
+{
+    entity_t *entity = entity_create(map->game);
+
+    ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
+    ai->energy = 1.0f;
+    ai->energy_per_turn = 0.5f;
+    ai->follow_target = NULL;
+
+    alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
+    alignment->type = ALIGNMENT_EVIL;
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Skeleton";
+    appearance->glyph = 's';
+    appearance->color = TCOD_white;
+    appearance->layer = LAYER_1;
+
+    fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
+    fov->radius = 5;
+    fov->fov_map = NULL;
+
+    health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
+    health->max = TCOD_random_get_int(NULL, 10, 20);
+    health->current = health->max;
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = map->level;
+    position->x = x;
+    position->y = y;
+    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+    TCOD_list_push(map->entities, entity);
+
+    component_add(entity, COMPONENT_SOLID);
+
+    return entity;
+}
+
+internal entity_t *
+create_skeleton_captain(map_t *map, int x, int y)
+{
+    entity_t *entity = entity_create(map->game);
+
+    ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
+    ai->energy = 1.0f;
+    ai->energy_per_turn = 0.75f;
+    ai->follow_target = NULL;
+
+    alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
+    alignment->type = ALIGNMENT_EVIL;
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Skeleton Captain";
+    appearance->glyph = 'S';
+    appearance->color = TCOD_white;
+    appearance->layer = LAYER_1;
+
+    fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
+    fov->radius = 5;
+    fov->fov_map = NULL;
+
+    health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
+    health->max = TCOD_random_get_int(NULL, 15, 25);
+    health->current = health->max;
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = map->level;
+    position->x = x;
+    position->y = y;
+    TCOD_list_push(map->entities, entity);
+    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+
+    component_add(entity, COMPONENT_SOLID);
+
+    return entity;
+}
+
+internal entity_t *
+create_zombie(map_t *map, int x, int y)
+{
+    entity_t *entity = entity_create(map->game);
+
+    ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
+    ai->energy = 1.0f;
+    ai->energy_per_turn = 0.25f;
+    ai->follow_target = NULL;
+
+    alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
+    alignment->type = ALIGNMENT_EVIL;
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Zombie";
+    appearance->glyph = 'z';
+    appearance->color = TCOD_dark_green;
+    appearance->layer = LAYER_1;
+
+    fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
+    fov->radius = 5;
+    fov->fov_map = NULL;
+
+    health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
+    health->max = TCOD_random_get_int(NULL, 20, 30);
+    health->current = health->max;
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = map->level;
+    position->x = x;
+    position->y = y;
+    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+    TCOD_list_push(map->entities, entity);
+
+    component_add(entity, COMPONENT_SOLID);
+
+    return entity;
+}
+
+internal entity_t *
+create_jackal(map_t *map, int x, int y)
+{
+    entity_t *entity = entity_create(map->game);
+
+    ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
+    ai->energy = 1.0f;
+    ai->energy_per_turn = 1.5f;
+    ai->follow_target = NULL;
+
+    alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
+    alignment->type = ALIGNMENT_EVIL;
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Jackal";
+    appearance->glyph = 'j';
+    appearance->color = TCOD_dark_orange;
+    appearance->layer = LAYER_1;
+
+    fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
+    fov->radius = 5;
+    fov->fov_map = NULL;
+
+    health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
+    health->max = TCOD_random_get_int(NULL, 5, 10);
+    health->current = health->max;
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = map->level;
+    position->x = x;
+    position->y = y;
+    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+    TCOD_list_push(map->entities, entity);
+
+    component_add(entity, COMPONENT_SOLID);
+
+    return entity;
+}
+
+internal entity_t *
+create_adventurer(map_t *map, int x, int y)
+{
+    entity_t *entity = entity_create(map->game);
+
+    ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
+    ai->energy = 1.0f;
+    ai->energy_per_turn = 0.5f;
+    ai->follow_target = NULL;
+
+    alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
+    alignment->type = ALIGNMENT_GOOD;
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Adventurer";
+    appearance->glyph = 'a';
+    appearance->color = TCOD_azure;
+    appearance->layer = LAYER_1;
+
+    fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
+    fov->radius = 5;
+    fov->fov_map = NULL;
+
+    health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
+    health->max = TCOD_random_get_int(NULL, 10, 20);
+    health->current = health->max;
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = map->level;
+    position->x = x;
+    position->y = y;
+    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+    TCOD_list_push(map->entities, entity);
+
+    component_add(entity, COMPONENT_SOLID);
+
+    return entity;
+}
+
+internal entity_t *
+create_longsword(map_t *map, int x, int y)
+{
+    entity_t *entity = entity_create(map->game);
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Longsword";
+    appearance->glyph = '|';
+    appearance->color = TCOD_white;
+
+    pickable_t *pickable = (pickable_t *)component_add(entity, COMPONENT_PICKABLE);
+    pickable->weight = 10.0f;
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = map->level;
+    position->x = x;
+    position->y = y;
+    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+    TCOD_list_push(map->entities, entity);
+
+    return entity;
+}
+
+internal entity_t *
+create_brazier(map_t *map, int x, int y)
+{
+    entity_t *entity = entity_create(map->game);
+
+    appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
+    appearance->name = "Brazier";
+    appearance->glyph = '*';
+    appearance->color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
+
+    light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
+    light->radius = TCOD_random_get_int(NULL, 10, 20);
+    light->color = appearance->color;
+    light->flicker = false;
+    light->priority = LIGHT_PRIORITY_1;
+    light->fov_map = NULL;
+
+    component_add(entity, COMPONENT_OPAQUE);
+
+    position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
+    position->level = map->level;
+    position->x = x;
+    position->y = y;
+    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+    TCOD_list_push(map->entities, entity);
+
+    component_add(entity, COMPONENT_SOLID);
+
+    return entity;
+}
+
 /* Message Function Definitions */
 internal message_t *
 message_create(char *text, TCOD_color_t color)
@@ -2385,89 +2669,15 @@ game_new(game_t *game)
 {
     TCOD_sys_delete_file("../saves/save.gz");
 
+    for (int level = 0; level < NUM_MAPS; level++)
     {
-        entity_t *entity = entity_create(game);
-        game->player = entity;
+        map_t *map = &game->maps[level];
 
-        alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
-        alignment->type = ALIGNMENT_GOOD;
-
-        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
-        appearance->name = "Blinky";
-        appearance->glyph = '@';
-        appearance->color = TCOD_white;
-        appearance->layer = LAYER_1;
-
-        component_add(entity, COMPONENT_CASTER);
-
-        fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
-        fov->radius = 1;
-
-        health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
-        health->max = 20;
-        health->current = health->max;
-
-        component_add(entity, COMPONENT_INVENTORY);
-
-        light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
-        light->radius = 5;
-        light->color = TCOD_white;
-        light->flicker = false;
-        light->priority = LIGHT_PRIORITY_0;
-
-        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->level = 0;
-        map_t *map = &game->maps[position->level];
-        TCOD_list_push(map->entities, entity);
-        position->x = map->stair_up_x;
-        position->y = map->stair_up_y;
-        tile_t *tile = &map->tiles[position->x][position->y];
-        TCOD_list_push(tile->entities, entity);
-
-        component_add(entity, COMPONENT_SOLID);
+        map_generate(map);
     }
 
-    {
-        entity_t *entity = entity_create(game);
-
-        ai_t *ai = (ai_t *)component_add(entity, COMPONENT_AI);
-        ai->energy = 1.0f;
-        ai->energy_per_turn = 0.5f;
-        ai->follow_target = game->player;
-
-        alignment_t *alignment = (alignment_t *)component_add(entity, COMPONENT_ALIGNMENT);
-        alignment->type = ALIGNMENT_GOOD;
-
-        appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
-        appearance->name = "Spot";
-        appearance->glyph = 'd';
-        appearance->color = TCOD_white;
-        appearance->layer = LAYER_1;
-
-        fov_t *fov = (fov_t *)component_add(entity, COMPONENT_FOV);
-        fov->radius = 1;
-
-        health_t *health = (health_t *)component_add(entity, COMPONENT_HEALTH);
-        health->max = 20;
-        health->current = health->max;
-
-        light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
-        light->radius = 5;
-        light->color = TCOD_white;
-        light->flicker = false;
-        light->priority = LIGHT_PRIORITY_0;
-
-        position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
-        position->level = 0;
-        map_t *map = &game->maps[position->level];
-        TCOD_list_push(map->entities, entity);
-        position->x = map->stair_up_x + 1;
-        position->y = map->stair_up_y;
-        tile_t *tile = &map->tiles[position->x][position->y];
-        TCOD_list_push(tile->entities, entity);
-
-        component_add(entity, COMPONENT_SOLID);
-    }
+    game->player = create_player(game);
+    create_pet(game);
 
     {
         appearance_t *player_appearance = (appearance_t *)component_get(game->player, COMPONENT_APPEARANCE);

@@ -1,5 +1,7 @@
+.vs
 .vscode
 
 bin
 obj
 pdb
+saves

@@ -1,28 +1,11 @@
-#include <stdio.h>
-#include <SDL.h>
-#include <libtcod.h>
-
-#include "CMemLeak.h"
-#include "system.h"
+#include "engine.h"
 #include "game.h"
 
 int main(int argc, char *argv[])
 {
-    system_init();
-
-    game_init();
-    game_new();
-
-    while (!TCOD_console_is_window_closed() && game_status != GAME_STATUS_QUIT)
-    {
-        game_input();
-        game_update();
-        game_draw();
-    }
-
-    game_uninit();
-
-    SDL_Quit();
+    engine_init();
+    game_run();
+    engine_quit();
 
     return 0;
 }

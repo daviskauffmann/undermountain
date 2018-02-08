@@ -1,4 +1,3 @@
-#include <SDL.h>
 #include <libtcod.h>
 
 #include "engine.h"
@@ -20,13 +19,13 @@ void engine_init(void)
     // TODO: external config file
     screen_width = 1366;
     screen_height = 768;
-    console_width = screen_width / 16;
-    console_height = screen_height / 16;
+    console_width = 80;
+    console_height = 50;
     fullscreen = false;
     renderer = TCOD_RENDERER_SDL;
 
-    font_file = "Anikki_square_16x16.png";
-    font_flags = TCOD_FONT_LAYOUT_ASCII_INROW;
+    font_file = "terminal.png";
+    font_flags = TCOD_FONT_LAYOUT_ASCII_INCOL;
     font_char_horiz = 16;
     font_char_vertic = 16;
 
@@ -38,5 +37,4 @@ void engine_init(void)
 
 void engine_quit(void)
 {
-    SDL_Quit();
 }

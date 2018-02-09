@@ -403,7 +403,34 @@ internal void
 map_init(map_t *map, game_t *game, int level);
 
 internal void
-map_generate(map_t *map);
+map_generate_custom(map_t *map);
+
+internal void
+map_generate_bsp(map_t *map);
+
+internal void
+hline(map_t *map, int x1, int y, int x2);
+
+internal void
+hline_left(map_t *map, int x, int y);
+
+internal void
+hline_right(map_t *map, int x, int y);
+
+internal void
+vline(map_t *map, int x, int y1, int y2);
+
+internal void
+vline_up(map_t *map, int x, int y);
+
+internal void
+vline_down(map_t *map, int x, int y);
+
+internal bool
+traverse_node(TCOD_bsp_t *node, map_t *map);
+
+internal void
+map_populate(map_t *map);
 
 internal bool
 map_is_inside(int x, int y);
@@ -636,26 +663,22 @@ map_init(map_t *map, game_t *game, int level)
     }
 }
 
-#define NUM_ROOM_ATTEMPTS 20
-#define MIN_ROOM_SIZE 5
-#define MAX_ROOM_SIZE 15
-#define PREVENT_OVERLAP 0
-#define DOOR_CHANCE 0.5f
-#define NUM_MONSTERS 5
-#define NUM_ADVENTURERS 5
-#define NUM_ITEMS 5
-#define NUM_BRAZIERS 5
+#define CUSTOM_NUM_ROOM_ATTEMPTS 20
+#define CUSTOM_MIN_ROOM_SIZE 5
+#define CUSTOM_MAX_ROOM_SIZE 15
+#define CUSTOM_PREVENT_OVERLAP false
+#define CUSTOM_DOOR_CHANCE 0.5f
 
 internal void
-map_generate(map_t *map)
+map_generate_custom(map_t *map)
 {
-    for (int i = 0; i < NUM_ROOM_ATTEMPTS; i++)
+    for (int i = 0; i < CUSTOM_NUM_ROOM_ATTEMPTS; i++)
     {
         room_t *room = room_create(
             TCOD_random_get_int(NULL, 0, MAP_WIDTH),
             TCOD_random_get_int(NULL, 0, MAP_HEIGHT),
-            TCOD_random_get_int(NULL, MIN_ROOM_SIZE, MAX_ROOM_SIZE),
-            TCOD_random_get_int(NULL, MIN_ROOM_SIZE, MAX_ROOM_SIZE));
+            TCOD_random_get_int(NULL, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE),
+            TCOD_random_get_int(NULL, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE));
 
         if (room->x < 2 ||
             room->x + room->w > MAP_WIDTH - 2 ||
@@ -665,25 +688,26 @@ map_generate(map_t *map)
             continue;
         }
 
-#if PREVENT_OVERLAP
-        bool overlap = false;
-
-        for (int x = room->x - 2; x < room->x + room->w + 2; x++)
+        if (CUSTOM_PREVENT_OVERLAP)
         {
-            for (int y = room->y - 2; y < room->y + room->h + 2; y++)
+            bool overlap = false;
+
+            for (int x = room->x - 2; x < room->x + room->w + 2; x++)
             {
-                if (map->tiles[x][y].type == TILE_FLOOR)
+                for (int y = room->y - 2; y < room->y + room->h + 2; y++)
                 {
-                    overlap = true;
+                    if (map->tiles[x][y].type == TILE_FLOOR)
+                    {
+                        overlap = true;
+                    }
                 }
             }
-        }
 
-        if (overlap)
-        {
-            continue;
+            if (overlap)
+            {
+                continue;
+            }
         }
-#endif
 
         for (int x = room->x; x < room->x + room->w; x++)
         {
@@ -784,7 +808,7 @@ map_generate(map_t *map)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
-            if (map->tiles[x][y].type == TILE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < DOOR_CHANCE)
+            if (map->tiles[x][y].type == TILE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < CUSTOM_DOOR_CHANCE)
             {
 
                 if (map->tiles[x][y - 1].type == TILE_FLOOR && map->tiles[x + 1][y - 1].type == TILE_FLOOR && map->tiles[x - 1][y - 1].type == TILE_FLOOR)
@@ -826,20 +850,260 @@ map_generate(map_t *map)
     room_t *stair_up_room = map_get_random_room(map);
     room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
     map->tiles[map->stair_up_x][map->stair_up_y].type = TILE_STAIR_UP;
+}
 
+#define BSP_MIN_ROOM_SIZE 4
+#define BSP_DEPTH 8
+#define BSP_RANDOM_ROOMS false
+#define BSP_ROOM_WALLS true
+
+internal void
+map_generate_bsp(map_t *map)
+{
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            tile_t *tile = &map->tiles[x][y];
+
+            tile->type = TILE_WALL;
+        }
+    }
+
+    TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    TCOD_bsp_split_recursive(
+        bsp,
+        NULL,
+        BSP_DEPTH,
+        BSP_MIN_ROOM_SIZE + (BSP_ROOM_WALLS ? 1 : 0),
+        BSP_MIN_ROOM_SIZE + (BSP_ROOM_WALLS ? 1 : 0),
+        1.5f,
+        1.5f);
+    TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
+    TCOD_bsp_delete(bsp);
+
+    room_t *stair_down_room = map_get_random_room(map);
+    room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
+    map->tiles[map->stair_down_x][map->stair_down_y].type = TILE_STAIR_DOWN;
+
+    room_t *stair_up_room = map_get_random_room(map);
+    room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
+    map->tiles[map->stair_up_x][map->stair_up_y].type = TILE_STAIR_UP;
+}
+
+internal void
+hline(map_t *map, int x1, int y, int x2)
+{
+    int x = x1;
+    int dx = (x1 > x2 ? -1 : 1);
+
+    map->tiles[x][y].type = TILE_FLOOR;
+
+    if (x1 != x2)
+    {
+        do
+        {
+            x += dx;
+
+            map->tiles[x][y].type = TILE_FLOOR;
+        } while (x != x2);
+    }
+}
+
+internal void
+hline_left(map_t *map, int x, int y)
+{
+    while (x >= 0 && map->tiles[x][y].type != TILE_FLOOR)
+    {
+        map->tiles[x][y].type = TILE_FLOOR;
+
+        x--;
+    }
+}
+
+internal void
+hline_right(map_t *map, int x, int y)
+{
+    while (x < MAP_WIDTH && map->tiles[x][y].type != TILE_FLOOR)
+    {
+        map->tiles[x][y].type = TILE_FLOOR;
+
+        x++;
+    }
+}
+
+internal void
+vline(map_t *map, int x, int y1, int y2)
+{
+    int y = y1;
+    int dy = (y1 > y2 ? -1 : 1);
+
+    map->tiles[x][y].type = TILE_FLOOR;
+
+    if (y1 != y2)
+    {
+        do
+        {
+            y += dy;
+
+            map->tiles[x][y].type = TILE_FLOOR;
+        } while (y != y2);
+    }
+}
+
+internal void
+vline_up(map_t *map, int x, int y)
+{
+    while (y >= 0 && map->tiles[x][y].type != TILE_FLOOR)
+    {
+        map->tiles[x][y].type = TILE_FLOOR;
+
+        y--;
+    }
+}
+
+internal void
+vline_down(map_t *map, int x, int y)
+{
+    while (y < MAP_HEIGHT && map->tiles[x][y].type != TILE_FLOOR)
+    {
+        map->tiles[x][y].type = TILE_FLOOR;
+
+        y++;
+    }
+}
+
+internal bool
+traverse_node(TCOD_bsp_t *node, map_t *map)
+{
+    if (TCOD_bsp_is_leaf(node))
+    {
+        int minx = node->x + 1;
+        int maxx = node->x + node->w - 1;
+        int miny = node->y + 1;
+        int maxy = node->y + node->h - 1;
+
+        if (!BSP_ROOM_WALLS)
+        {
+            if (minx > 1)
+            {
+                minx--;
+            }
+
+            if (miny > 1)
+            {
+                miny--;
+            }
+        }
+
+        if (maxx == MAP_WIDTH - 1)
+        {
+            maxx--;
+        }
+
+        if (maxy == MAP_HEIGHT - 1)
+        {
+            maxy--;
+        }
+
+        if (BSP_RANDOM_ROOMS)
+        {
+            minx = TCOD_random_get_int(NULL, minx, maxx - BSP_MIN_ROOM_SIZE + 1);
+            miny = TCOD_random_get_int(NULL, miny, maxy - BSP_MIN_ROOM_SIZE + 1);
+            maxx = TCOD_random_get_int(NULL, minx + BSP_MIN_ROOM_SIZE - 1, maxx);
+            maxy = TCOD_random_get_int(NULL, miny + BSP_MIN_ROOM_SIZE - 1, maxy);
+        }
+
+        node->x = minx;
+        node->y = miny;
+        node->w = maxx - minx + 1;
+        node->h = maxy - miny + 1;
+
+        for (int x = minx; x <= maxx; x++)
+        {
+            for (int y = miny; y <= maxy; y++)
+            {
+                map->tiles[x][y].type = TILE_FLOOR;
+            }
+        }
+
+        room_t *room = room_create(node->x, node->y, node->w, node->h);
+
+        TCOD_list_push(map->rooms, room);
+    }
+    else
+    {
+        TCOD_bsp_t *left = TCOD_bsp_left(node);
+        TCOD_bsp_t *right = TCOD_bsp_right(node);
+
+        node->x = MIN(left->x, right->x);
+        node->y = MIN(left->y, right->y);
+        node->w = MAX(left->x + left->w, right->x + right->w) - node->x;
+        node->h = MAX(left->y + left->h, right->y + right->h) - node->y;
+
+        if (node->horizontal)
+        {
+            if (left->x + left->w - 1 < right->x || right->x + right->w - 1 < left->x)
+            {
+                int x1 = TCOD_random_get_int(NULL, left->x, left->x + left->w - 1);
+                int x2 = TCOD_random_get_int(NULL, right->x, right->x + right->w - 1);
+                int y = TCOD_random_get_int(NULL, left->y + left->h, right->y);
+
+                vline_up(map, x1, y - 1);
+                hline(map, x1, y, x2);
+                vline_down(map, x2, y + 1);
+            }
+            else
+            {
+                int minx = MAX(left->x, right->x);
+                int maxx = MIN(left->x + left->w - 1, right->x + right->w - 1);
+                int x = TCOD_random_get_int(NULL, minx, maxx);
+
+                vline_down(map, x, right->y);
+                vline_up(map, x, right->y - 1);
+            }
+        }
+        else
+        {
+            if (left->y + left->h - 1 < right->y || right->y + right->h - 1 < left->y)
+            {
+                int y1 = TCOD_random_get_int(NULL, left->y, left->y + left->h - 1);
+                int y2 = TCOD_random_get_int(NULL, right->y, right->y + right->h - 1);
+                int x = TCOD_random_get_int(NULL, left->x + left->w, right->x);
+
+                hline_left(map, x - 1, y1);
+                vline(map, x, y1, y2);
+                hline_right(map, x + 1, y2);
+            }
+            else
+            {
+                int miny = MAX(left->y, right->y);
+                int maxy = MIN(left->y + left->h - 1, right->y + right->h - 1);
+                int y = TCOD_random_get_int(NULL, miny, maxy);
+
+                hline_left(map, right->x - 1, y);
+                hline_right(map, right->x, y);
+            }
+        }
+    }
+
+    return true;
+}
+
+#define NUM_MONSTERS 5
+#define NUM_ADVENTURERS 5
+#define NUM_ITEMS 5
+#define NUM_BRAZIERS 5
+
+internal void
+map_populate(map_t *map)
+{
     for (int i = 0; i < NUM_MONSTERS; i++)
     {
         room_t *room = map_get_random_room(map);
 
         int x, y;
         room_get_random_pos(room, &x, &y);
-
-        if (room == stair_up_room)
-        {
-            i--;
-
-            continue;
-        }
 
         entity_t *monster;
 
@@ -889,13 +1153,6 @@ map_generate(map_t *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        if (room == stair_up_room)
-        {
-            i--;
-
-            continue;
-        }
-
         entity_t *adventurer = create_adventurer(map, x, y);
 
         if (TCOD_random_get_int(NULL, 0, 100) == 0)
@@ -916,7 +1173,7 @@ map_generate(map_t *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        create_longsword(map, x, y);
+        entity_t *longsword = create_longsword(map, x, y);
     }
 
     for (int i = 0; i < NUM_BRAZIERS; i++)
@@ -926,7 +1183,7 @@ map_generate(map_t *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        create_brazier(map, x, y);
+        entity_t *brazier = create_brazier(map, x, y);
     }
 }
 
@@ -2673,7 +2930,9 @@ game_new(game_t *game)
     {
         map_t *map = &game->maps[level];
 
-        map_generate(map);
+        // map_generate_custom(map);
+        map_generate_bsp(map);
+        map_populate(map);
     }
 
     game->player = create_player(game);
@@ -3422,34 +3681,26 @@ game_update(game_t *game)
                 {
                     switch (key.c)
                     {
-                    case ',':
+                    case '<':
                     {
-                        if (key.shift)
-                        {
-                            game->should_update = entity_ascend(game->player);
-                        }
+                        game->should_update = entity_ascend(game->player);
                     }
                     break;
-                    case '.':
+                    case '>':
                     {
-                        if (key.shift)
-                        {
-                            game->should_update = entity_descend(game->player);
-                        }
+                        game->should_update = entity_descend(game->player);
+                    }
+                    break;
+                    case 'C':
+                    {
+                        game->panel_visible = !game->panel_visible;
                     }
                     break;
                     case 'c':
                     {
-                        if (key.shift)
-                        {
-                            game->panel_visible = !game->panel_visible;
-                        }
-                        else
-                        {
-                            action = ACTION_CLOSE_DOOR;
+                        action = ACTION_CLOSE_DOOR;
 
-                            game_log(game, NULL, TCOD_white, "Choose a direction");
-                        }
+                        game_log(game, NULL, TCOD_white, "Choose a direction");
                     }
                     break;
                     case 'f':
@@ -4270,7 +4521,6 @@ game_update(game_t *game)
             if (game->message_log_visible)
             {
                 local TCOD_console_t message_log = NULL;
-
                 if (message_log == NULL)
                 {
                     message_log = TCOD_console_new(console_width, console_height);
@@ -4300,20 +4550,26 @@ game_update(game_t *game)
             if (game->panel_visible)
             {
                 local TCOD_console_t panel = NULL;
-
                 if (panel == NULL)
                 {
-                    panel = TCOD_console_new(console_height, console_width);
+                    panel = TCOD_console_new(console_width, console_height);
                 }
+
+                TCOD_console_set_default_background(panel, TCOD_black);
+                TCOD_console_set_default_foreground(panel, TCOD_white);
+                TCOD_console_clear(panel);
 
                 switch (game->current_panel)
                 {
                 case PANEL_CHARACTER:
                 {
+                    TCOD_console_set_default_foreground(panel, TCOD_white);
+                    TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");
                 }
                 break;
                 case PANEL_INVENTORY:
                 {
+                    TCOD_console_set_default_foreground(panel, TCOD_white);
                     TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
                 }
                 break;

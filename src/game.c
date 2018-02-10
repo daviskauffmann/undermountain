@@ -163,6 +163,8 @@ struct ai_s
     float energy;
     float energy_per_turn;
     entity_t *follow_target;
+    int last_seen_x;
+    int last_seen_y;
 };
 
 enum alignment_type_e
@@ -1090,7 +1092,7 @@ traverse_node(TCOD_bsp_t *node, map_t *map)
     return true;
 }
 
-#define NUM_MONSTERS 5
+#define NUM_MONSTERS 20
 #define NUM_ADVENTURERS 5
 #define NUM_ITEMS 5
 #define NUM_BRAZIERS 5
@@ -2161,6 +2163,8 @@ component_init(component_t *component, int id, component_type_t component_type)
         ai->energy = 0.0f;
         ai->energy_per_turn = 0.0f;
         ai->follow_target = NULL;
+        ai->last_seen_x = -1;
+        ai->last_seen_y = -1;
     }
     break;
     case COMPONENT_ALIGNMENT:
@@ -2936,7 +2940,7 @@ game_new(game_t *game)
     }
 
     game->player = create_player(game);
-    create_pet(game);
+    entity_t *pet = create_pet(game);
 
     {
         appearance_t *player_appearance = (appearance_t *)component_get(game->player, COMPONENT_APPEARANCE);
@@ -4182,8 +4186,9 @@ game_update(game_t *game)
                         {
                             current_ai->energy -= 1.0f;
 
-                            bool target_found = false;
+                            bool took_action = false;
 
+                            if (!took_action)
                             {
                                 alignment_t *current_alignment = (alignment_t *)component_get(current, COMPONENT_ALIGNMENT);
 
@@ -4201,7 +4206,10 @@ game_update(game_t *game)
                                             if (TCOD_map_is_in_fov(current_fov->fov_map, other_position->x, other_position->y) &&
                                                 other_alignment->type != current_alignment->type)
                                             {
-                                                target_found = true;
+                                                took_action = true;
+
+                                                current_ai->last_seen_x = other_position->x;
+                                                current_ai->last_seen_y = other_position->y;
 
                                                 if (distance(current_position->x, current_position->y, other_position->x, other_position->y) < 2.0f)
                                                 {
@@ -4219,7 +4227,7 @@ game_update(game_t *game)
                                 }
                             }
 
-                            if (current_fov && current_ai->follow_target)
+                            if (!took_action && current_fov && current_ai->follow_target)
                             {
                                 position_t *follow_position = (position_t *)component_get(current_ai->follow_target, COMPONENT_POSITION);
 
@@ -4228,18 +4236,31 @@ game_update(game_t *game)
                                     if (!TCOD_map_is_in_fov(current_fov->fov_map, follow_position->x, follow_position->y) ||
                                         distance(current_position->x, current_position->y, follow_position->x, follow_position->y) > 5.0f)
                                     {
-                                        target_found = true;
+                                        took_action = true;
 
                                         entity_path_towards(current, follow_position->x, follow_position->y);
                                     }
                                 }
                             }
 
-                            if (!target_found)
+                            if (!took_action && current_ai->last_seen_x != -1 && current_ai->last_seen_y != -1)
+                            {
+                                took_action = true;
+
+                                if (current_position->x == current_ai->last_seen_x && current_position->y == current_ai->last_seen_y)
+                                {
+                                    current_ai->last_seen_x = -1;
+                                    current_ai->last_seen_y = -1;
+                                }
+                                else
+                                {
+                                    entity_path_towards(current, current_ai->last_seen_x, current_ai->last_seen_y);
+                                }
+                            }
+
+                            if (!took_action)
                             {
                                 tile_t *current_tile = &current_map->tiles[current_position->x][current_position->y];
-
-                                bool took_action = false;
 
                                 switch (current_tile->type)
                                 {
@@ -4254,11 +4275,11 @@ game_update(game_t *game)
                                 }
                                 break;
                                 }
+                            }
 
-                                if (!took_action)
-                                {
-                                    entity_move_random(current);
-                                }
+                            if (!took_action)
+                            {
+                                entity_move_random(current);
                             }
                         }
                     }

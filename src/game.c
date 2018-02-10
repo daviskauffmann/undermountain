@@ -1,14 +1,16 @@
 #include <assert.h>
 #include <libtcod.h>
+#include <malloc.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 
 #include "engine.h"
 #include "game.h"
 #include "utils.h"
+
+#pragma region Declarations
 
 /* Tile Declarations */
 typedef enum tile_type_e tile_type_t;
@@ -68,6 +70,10 @@ typedef struct panel_info_s panel_info_t;
 
 /* Game Declarations */
 typedef struct game_s game_t;
+
+#pragma endregion
+
+#pragma region Definitions
 
 /* Tile Definitions */
 enum tile_type_e
@@ -383,6 +389,10 @@ struct game_s
     bool panel_visible;
 };
 
+#pragma endregion
+
+#pragma region Function Declarations
+
 /* Tile Function Declarations */
 internal void
 tile_init(tile_t *tile, tile_type_t type, bool seen);
@@ -596,6 +606,10 @@ game_should_update(game_t *game)
 {
     game->should_update = true;
 }
+
+#pragma endregion
+
+#pragma region Function Definitions
 
 /* Tile Function Definitions */
 internal void
@@ -1092,7 +1106,7 @@ traverse_node(TCOD_bsp_t *node, map_t *map)
     return true;
 }
 
-#define NUM_MONSTERS 20
+#define NUM_MONSTERS 5
 #define NUM_ADVENTURERS 5
 #define NUM_ITEMS 5
 #define NUM_BRAZIERS 5
@@ -2387,10 +2401,7 @@ component_reset(component_t *component)
     {
         inventory_t *inventory = (inventory_t *)component;
 
-        if (inventory->items != NULL)
-        {
-            TCOD_list_delete(inventory->items);
-        }
+        TCOD_list_clear(inventory->items);
     }
     break;
     case COMPONENT_LIGHT:
@@ -2934,8 +2945,8 @@ game_new(game_t *game)
     {
         map_t *map = &game->maps[level];
 
-        // map_generate_custom(map);
-        map_generate_bsp(map);
+        map_generate_custom(map);
+        // map_generate_bsp(map);
         map_populate(map);
     }
 
@@ -4038,20 +4049,22 @@ game_update(game_t *game)
                         {
                             should_move = false;
                         }
-
-                        for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
+                        else
                         {
-                            entity_t *other = *iterator;
-
-                            if (other != current_projectile->shooter)
+                            for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
                             {
-                                health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+                                entity_t *other = *iterator;
 
-                                if (other_health)
+                                if (other != current_projectile->shooter)
                                 {
-                                    should_move = false;
+                                    health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
 
-                                    entity_attack(current_projectile->shooter, other);
+                                    if (other_health)
+                                    {
+                                        should_move = false;
+
+                                        entity_attack(current_projectile->shooter, other);
+                                    }
                                 }
                             }
                         }
@@ -4081,9 +4094,7 @@ game_update(game_t *game)
                             current_projectile->on_hit(current_projectile->on_hit_params);
                         }
 
-                        // TODO: destroying the projectile crashes the game
-                        component_remove(current, COMPONENT_PROJECTILE);
-                        component_remove(current, COMPONENT_APPEARANCE);
+                        entity_destroy(current);
                     }
                 }
             }
@@ -4689,3 +4700,5 @@ game_reset(game_t *game)
 
     TCOD_list_delete(game->messages);
 }
+
+#pragma endregion

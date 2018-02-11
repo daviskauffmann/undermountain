@@ -17,9 +17,16 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-float distance_sq(int x1, int y1, int x2, int y2);
-float distance(int x1, int y1, int x2, int y2);
-float angle(int x1, int y1, int x2, int y2);
-int roll(int a, int x);
+extern float
+distance_sq(int x1, int y1, int x2, int y2);
+
+extern float
+distance(int x1, int y1, int x2, int y2);
+
+extern float
+angle(int x1, int y1, int x2, int y2);
+
+extern int
+roll(int a, int x);
 
 #endif

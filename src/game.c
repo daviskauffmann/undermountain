@@ -469,19 +469,36 @@ map_reset(map_t *map);
 
 /* Entity Function Declarations */
 internal void
-entity_init(entity_t *entity, int id, struct game_s *game);
+entity_init(entity_t *entity, int id, game_t *game);
 
 internal entity_t *
-entity_create(struct game_s *game);
+entity_create(game_t *game);
+
+internal void
+entity_map_place(entity_t *entity);
+
+internal void
+entity_map_remove(entity_t *entity);
+
+internal void entity_update_flash(entity_t *entity, bool flash_blocks_turn);
+
+internal void
+entity_update_projectile(entity_t *entity);
+
+internal void
+entity_update_light(entity_t *entity);
+
+internal void
+entity_update_fov(entity_t *entity, TCOD_list_t lights);
+
+internal void
+entity_ai(entity_t *entity);
 
 internal void
 entity_path_towards(entity_t *entity, int x, int y);
 
 internal void
 entity_move_towards(entity_t *entity, int x, int y);
-
-internal void
-entity_move_random(entity_t *entity);
 
 internal bool
 entity_move(entity_t *entity, int x, int y);
@@ -593,7 +610,13 @@ internal void
 game_load(game_t *game);
 
 internal void
+game_input(game_t *game);
+
+internal void
 game_update(game_t *game);
+
+internal void
+game_render(game_t *game);
 
 internal void
 game_log(game_t *game, position_t *position, TCOD_color_t color, char *text, ...);
@@ -1349,6 +1372,365 @@ entity_create(game_t *game)
 }
 
 internal void
+entity_map_place(entity_t *entity)
+{
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+    if (position)
+    {
+        map_t *map = &entity->game->maps[position->level];
+        tile_t *tile = &map->tiles[position->x][position->y];
+
+        TCOD_list_push(map->entities, entity);
+        TCOD_list_push(tile->entities, entity);
+    }
+}
+
+internal void
+entity_map_remove(entity_t *entity)
+{
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+    if (position)
+    {
+        map_t *map = &entity->game->maps[position->level];
+        tile_t *tile = &map->tiles[position->x][position->y];
+
+        TCOD_list_remove(map->entities, entity);
+        TCOD_list_remove(tile->entities, entity);
+    }
+}
+
+internal void
+entity_update_flash(entity_t *entity, bool flash_blocks_turn)
+{
+    flash_t *flash = (flash_t *)component_get(entity, COMPONENT_FLASH);
+
+    if (flash)
+    {
+        flash->fade -= (1.0f / FPS) / 0.25f;
+
+        if (flash->fade <= 0)
+        {
+            component_remove(entity, COMPONENT_FLASH);
+        }
+
+        if (flash_blocks_turn)
+        {
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+            fov_t *player_fov = (fov_t *)component_get(entity->game->player, COMPONENT_FOV);
+
+            if (position && player_fov)
+            {
+                if (TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))
+                {
+                    entity->game->turn_available = false;
+                }
+            }
+        }
+    }
+}
+
+internal void
+entity_update_projectile(entity_t *entity)
+{
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+    projectile_t *projectile = (projectile_t *)component_get(entity, COMPONENT_PROJECTILE);
+
+    if (position && projectile)
+    {
+        float x = projectile->x + projectile->dx;
+        float y = projectile->y + projectile->dy;
+        int next_x = (int)x;
+        int next_y = (int)y;
+
+        bool should_move = true;
+
+        if (map_is_inside(next_x, next_y))
+        {
+            map_t *map = &entity->game->maps[position->level];
+            tile_t *tile = &map->tiles[next_x][next_y];
+            tile_info_t *tile_info = &entity->game->tile_info[tile->type];
+
+            if (!tile_info->is_walkable)
+            {
+                should_move = false;
+            }
+            else
+            {
+                for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
+                {
+                    entity_t *other = *iterator;
+
+                    if (other != projectile->shooter)
+                    {
+                        health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+
+                        if (other_health)
+                        {
+                            should_move = false;
+
+                            entity_attack(projectile->shooter, other);
+
+                            inventory_t *other_inventory = (inventory_t *)component_get(other, COMPONENT_INVENTORY);
+
+                            if (other_inventory)
+                            {
+                                // TODO: add the arrow to their inventory?
+                                // also set a flag to not put the arrow on the ground
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            should_move = false;
+        }
+
+        if (should_move)
+        {
+            projectile->x = x;
+            projectile->y = y;
+
+            position->x = next_x;
+            position->y = next_y;
+
+            fov_t *player_fov = (fov_t *)component_get(entity->game->player, COMPONENT_FOV);
+
+            if (player_fov)
+            {
+                if (TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))
+                {
+                    entity->game->turn_available = false;
+                }
+            }
+        }
+        else
+        {
+            if (projectile->on_hit)
+            {
+                projectile->on_hit(projectile->on_hit_params);
+            }
+
+            // TODO:
+            // destroying the arrow makes subsequent arrows travel increasingly faster... wtf?
+            // but maybe we want arrows not to be destroyed, but to fall to the ground
+            // or even be added to the inventory of whatever it hit (if it has one)
+            // entity_destroy(entity);
+            component_remove(entity, COMPONENT_PROJECTILE);
+
+            entity_map_place(entity);
+
+            pickable_t *pickable = (pickable_t *)component_add(entity, COMPONENT_PICKABLE);
+        }
+    }
+}
+
+internal void
+entity_update_light(entity_t *entity)
+{
+    light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+    if (light && position)
+    {
+        if (light->fov_map != NULL)
+        {
+            TCOD_map_delete(light->fov_map);
+        }
+
+        map_t *map = &entity->game->maps[position->level];
+
+        light->fov_map = map_to_fov_map(map, position->x, position->y, light->radius);
+    }
+}
+
+internal void
+entity_update_fov(entity_t *entity, TCOD_list_t lights)
+{
+    fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
+    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+    if (fov && position)
+    {
+        map_t *map = &entity->game->maps[position->level];
+
+        if (fov->fov_map)
+        {
+            TCOD_map_delete(fov->fov_map);
+        }
+
+        fov->fov_map = map_to_fov_map(map, position->x, position->y, fov->radius);
+
+        TCOD_map_t los_map = map_to_fov_map(map, position->x, position->y, 0);
+
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            for (int y = 0; y < MAP_HEIGHT; y++)
+            {
+                if (TCOD_map_is_in_fov(los_map, x, y))
+                {
+                    tile_t *tile = &map->tiles[x][y];
+
+                    for (void **iterator = TCOD_list_begin(lights); iterator != TCOD_list_end(lights); iterator++)
+                    {
+                        entity_t *other = *iterator;
+
+                        light_t *other_light = (light_t *)component_get(other, COMPONENT_LIGHT);
+                        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+
+                        if (other_light && other_position)
+                        {
+                            if (TCOD_map_is_in_fov(other_light->fov_map, x, y))
+                            {
+                                TCOD_map_set_in_fov(fov->fov_map, x, y, true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        TCOD_map_delete(los_map);
+    }
+}
+
+internal void
+entity_ai(entity_t *entity)
+{
+    ai_t *ai = (ai_t *)component_get(entity, COMPONENT_AI);
+
+    if (ai)
+    {
+        ai->energy += ai->energy_per_turn;
+
+        while (ai->energy >= 1.0f)
+        {
+            ai->energy -= 1.0f;
+
+            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+            if (position)
+            {
+                fov_t *fov = (fov_t *)component_get(entity, COMPONENT_FOV);
+
+                map_t *map = &entity->game->maps[position->level];
+
+                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+
+                bool took_action = false;
+
+                if (!took_action)
+                {
+                    alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
+
+                    if (alignment && fov)
+                    {
+                        for (void **iterator = TCOD_list_begin(map->entities); iterator != TCOD_list_end(map->entities); iterator++)
+                        {
+                            entity_t *other = *iterator;
+
+                            alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+                            position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+
+                            if (other_alignment && other_position)
+                            {
+                                if (TCOD_map_is_in_fov(fov->fov_map, other_position->x, other_position->y) &&
+                                    other_alignment->type != alignment->type)
+                                {
+                                    took_action = true;
+
+                                    ai->last_seen_x = other_position->x;
+                                    ai->last_seen_y = other_position->y;
+
+                                    if (distance(position->x, position->y, other_position->x, other_position->y) < 2.0f)
+                                    {
+                                        entity_attack(entity, other);
+                                    }
+                                    else
+                                    {
+                                        entity_path_towards(entity, other_position->x, other_position->y);
+                                    }
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!took_action)
+                {
+                    if (ai->last_seen_x != -1 && ai->last_seen_y != -1)
+                    {
+                        if (position->x == ai->last_seen_x && position->y == ai->last_seen_y)
+                        {
+                            ai->last_seen_x = -1;
+                            ai->last_seen_y = -1;
+                        }
+                        else
+                        {
+                            took_action = true;
+
+                            entity_path_towards(entity, ai->last_seen_x, ai->last_seen_y);
+                        }
+                    }
+                }
+
+                if (!took_action)
+                {
+                    if (fov && ai->follow_target)
+                    {
+                        position_t *follow_position = (position_t *)component_get(ai->follow_target, COMPONENT_POSITION);
+
+                        if (follow_position)
+                        {
+                            if (!TCOD_map_is_in_fov(fov->fov_map, follow_position->x, follow_position->y) ||
+                                distance(position->x, position->y, follow_position->x, follow_position->y) > 5.0f)
+                            {
+                                took_action = true;
+
+                                entity_path_towards(entity, follow_position->x, follow_position->y);
+                            }
+                        }
+                    }
+                }
+
+                if (!took_action)
+                {
+                    tile_t *tile = &map->tiles[position->x][position->y];
+
+                    switch (tile->type)
+                    {
+                    case TILE_STAIR_DOWN:
+                    {
+                        took_action = entity_descend(entity);
+                    }
+                    break;
+                    case TILE_STAIR_UP:
+                    {
+                        took_action = entity_ascend(entity);
+                    }
+                    break;
+                    }
+                }
+
+                if (!took_action)
+                {
+                    int x = position->x + TCOD_random_get_int(NULL, -1, 1);
+                    int y = position->y + TCOD_random_get_int(NULL, -1, 1);
+
+                    entity_move(entity, x, y);
+                }
+            }
+        }
+    }
+}
+
+internal void
 entity_path_towards(entity_t *entity, int x, int y)
 {
     position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
@@ -1400,20 +1782,6 @@ entity_move_towards(entity_t *entity, int x, int y)
     }
 }
 
-internal void
-entity_move_random(entity_t *entity)
-{
-    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
-
-    if (position)
-    {
-        int x = position->x + TCOD_random_get_int(NULL, -1, 1);
-        int y = position->y + TCOD_random_get_int(NULL, -1, 1);
-
-        entity_move(entity, x, y);
-    }
-}
-
 internal bool
 entity_move(entity_t *entity, int x, int y)
 {
@@ -1426,25 +1794,24 @@ entity_move(entity_t *entity, int x, int y)
         if (position)
         {
             map_t *map = &entity->game->maps[position->level];
-            tile_t *tile = &map->tiles[position->x][position->y];
-            tile_t *next_tile = &map->tiles[x][y];
-            tile_info_t *next_tile_info = &entity->game->tile_info[next_tile->type];
+            tile_t *tile = &map->tiles[x][y];
+            tile_info_t *tile_info = &entity->game->tile_info[tile->type];
 
-            if (next_tile->type == TILE_DOOR_CLOSED)
+            if (tile->type == TILE_DOOR_CLOSED)
             {
                 success = true;
 
-                entity_open_door(entity, next_tile);
+                entity_open_door(entity, tile);
 
                 goto skip_move;
             }
 
-            if (!next_tile_info->is_walkable)
+            if (!tile_info->is_walkable)
             {
                 goto skip_move;
             }
 
-            for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
+            for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
             {
                 entity_t *other = *iterator;
 
@@ -1483,11 +1850,10 @@ entity_move(entity_t *entity, int x, int y)
                 }
             }
 
+            entity_map_remove(entity);
             position->x = x;
             position->y = y;
-
-            TCOD_list_remove(tile->entities, entity);
-            TCOD_list_push(next_tile->entities, entity);
+            entity_map_place(entity);
 
             success = true;
 
@@ -1554,20 +1920,13 @@ entity_descend(entity_t *entity)
         {
             if (position->level < NUM_MAPS)
             {
+                map_t *next_map = &entity->game->maps[position->level + 1];
+
+                entity_map_remove(entity);
                 position->level++;
-
-                map_t *next_map = &entity->game->maps[position->level];
-
                 position->x = next_map->stair_up_x;
                 position->y = next_map->stair_up_y;
-
-                tile_t *next_tile = &next_map->tiles[position->x][position->y];
-
-                TCOD_list_remove(map->entities, entity);
-                TCOD_list_push(next_map->entities, entity);
-
-                TCOD_list_remove(tile->entities, entity);
-                TCOD_list_push(next_tile->entities, entity);
+                entity_map_place(entity);
 
                 {
                     appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
@@ -1620,20 +1979,13 @@ entity_ascend(entity_t *entity)
         {
             if (position->level > 0)
             {
+                map_t *next_map = &entity->game->maps[position->level - 1];
+
+                entity_map_remove(entity);
                 position->level--;
-
-                map_t *next_map = &entity->game->maps[position->level];
-
                 position->x = next_map->stair_down_x;
                 position->y = next_map->stair_down_y;
-
-                tile_t *next_tile = &next_map->tiles[position->x][position->y];
-
-                TCOD_list_remove(map->entities, entity);
-                TCOD_list_push(next_map->entities, entity);
-
-                TCOD_list_remove(tile->entities, entity);
-                TCOD_list_push(next_tile->entities, entity);
+                entity_map_place(entity);
 
                 {
                     appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
@@ -1749,30 +2101,18 @@ entity_swap(entity_t *entity, entity_t *other)
 
         if (position && other_position)
         {
-            {
-                map_t *map = &entity->game->maps[position->level];
-                tile_t *tile = &map->tiles[position->x][position->y];
+            int temp_x = position->x;
+            int temp_y = position->y;
 
-                map_t *other_map = &other->game->maps[other_position->level];
-                tile_t *other_tile = &other_map->tiles[other_position->x][other_position->y];
+            entity_map_remove(entity);
+            position->x = other_position->x;
+            position->y = other_position->y;
+            entity_map_place(entity);
 
-                TCOD_list_remove(tile->entities, entity);
-                TCOD_list_push(other_tile->entities, entity);
-
-                TCOD_list_remove(other_tile->entities, other);
-                TCOD_list_push(tile->entities, other);
-            }
-
-            {
-                int x = position->x;
-                int y = position->y;
-
-                position->x = other_position->x;
-                position->y = other_position->y;
-
-                other_position->x = x;
-                other_position->y = y;
-            }
+            entity_map_remove(other);
+            other_position->x = temp_x;
+            other_position->y = temp_y;
+            entity_map_place(other);
 
             {
                 appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
@@ -1885,14 +2225,14 @@ entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_params)
             projectile_t *arrow_projectile = (projectile_t *)component_add(arrow, COMPONENT_PROJECTILE);
             arrow_projectile->x = position->x;
             arrow_projectile->y = position->y;
-            // TODO: this is somewhat inacurate
+            // TODO: this is somewhat inaccurate
             float dx = x - position->x;
             float dy = y - position->y;
             float d = distance(position->x, position->y, x, y);
             if (d > 0)
             {
-                dx = dx / d;
-                dy = dy / d;
+                dx /= d;
+                dy /= d;
             }
             arrow_projectile->dx = dx;
             arrow_projectile->dy = dy;
@@ -1932,10 +2272,9 @@ entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_params)
 
             position_t *arrow_position = (position_t *)component_add(arrow, COMPONENT_POSITION);
             arrow_position->level = position->level;
-            map_t *arrow_map = &arrow->game->maps[arrow_position->level];
-            TCOD_list_push(arrow_map->entities, arrow);
             arrow_position->x = position->x;
             arrow_position->y = position->y;
+            entity_map_place(arrow);
         }
     }
 }
@@ -2480,11 +2819,9 @@ create_player(game_t *game)
     position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
     position->level = 0;
     map_t *map = &game->maps[position->level];
-    TCOD_list_push(map->entities, entity);
     position->x = map->stair_up_x;
     position->y = map->stair_up_y;
-    tile_t *tile = &map->tiles[position->x][position->y];
-    TCOD_list_push(tile->entities, entity);
+    entity_map_place(entity);
 
     component_add(entity, COMPONENT_SOLID);
 
@@ -2526,11 +2863,9 @@ create_pet(game_t *game)
     position_t *position = (position_t *)component_add(entity, COMPONENT_POSITION);
     position->level = 0;
     map_t *map = &game->maps[position->level];
-    TCOD_list_push(map->entities, entity);
     position->x = map->stair_up_x + 1;
     position->y = map->stair_up_y;
-    tile_t *tile = &map->tiles[position->x][position->y];
-    TCOD_list_push(tile->entities, entity);
+    entity_map_place(entity);
 
     component_add(entity, COMPONENT_SOLID);
 
@@ -2568,8 +2903,7 @@ create_skeleton(map_t *map, int x, int y)
     position->level = map->level;
     position->x = x;
     position->y = y;
-    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-    TCOD_list_push(map->entities, entity);
+    entity_map_place(entity);
 
     component_add(entity, COMPONENT_SOLID);
 
@@ -2607,8 +2941,7 @@ create_skeleton_captain(map_t *map, int x, int y)
     position->level = map->level;
     position->x = x;
     position->y = y;
-    TCOD_list_push(map->entities, entity);
-    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
+    entity_map_place(entity);
 
     component_add(entity, COMPONENT_SOLID);
 
@@ -2646,8 +2979,7 @@ create_zombie(map_t *map, int x, int y)
     position->level = map->level;
     position->x = x;
     position->y = y;
-    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-    TCOD_list_push(map->entities, entity);
+    entity_map_place(entity);
 
     component_add(entity, COMPONENT_SOLID);
 
@@ -2685,8 +3017,7 @@ create_jackal(map_t *map, int x, int y)
     position->level = map->level;
     position->x = x;
     position->y = y;
-    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-    TCOD_list_push(map->entities, entity);
+    entity_map_place(entity);
 
     component_add(entity, COMPONENT_SOLID);
 
@@ -2724,8 +3055,7 @@ create_adventurer(map_t *map, int x, int y)
     position->level = map->level;
     position->x = x;
     position->y = y;
-    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-    TCOD_list_push(map->entities, entity);
+    entity_map_place(entity);
 
     component_add(entity, COMPONENT_SOLID);
 
@@ -2749,8 +3079,7 @@ create_longsword(map_t *map, int x, int y)
     position->level = map->level;
     position->x = x;
     position->y = y;
-    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-    TCOD_list_push(map->entities, entity);
+    entity_map_place(entity);
 
     return entity;
 }
@@ -2778,8 +3107,7 @@ create_brazier(map_t *map, int x, int y)
     position->level = map->level;
     position->x = x;
     position->y = y;
-    TCOD_list_push(map->tiles[position->x][position->y].entities, entity);
-    TCOD_list_push(map->entities, entity);
+    entity_map_place(entity);
 
     component_add(entity, COMPONENT_SOLID);
 
@@ -2825,7 +3153,9 @@ game_run(void)
 
     while (!TCOD_console_is_window_closed())
     {
+        game_input(&game);
         game_update(&game);
+        game_render(&game);
 
         if (game.should_restart)
         {
@@ -2945,8 +3275,8 @@ game_new(game_t *game)
     {
         map_t *map = &game->maps[level];
 
-        map_generate_custom(map);
-        // map_generate_bsp(map);
+        // map_generate_custom(map);
+        map_generate_bsp(map);
         map_populate(map);
     }
 
@@ -3282,8 +3612,7 @@ game_load(game_t *game)
                 position->x = TCOD_zip_get_int(zip);
                 position->y = TCOD_zip_get_int(zip);
 
-                TCOD_list_push(game->maps[position->level].entities, entity);
-                TCOD_list_push(game->maps[position->level].tiles[position->x][position->y].entities, entity);
+                entity_map_place(entity);
             }
             break;
             case COMPONENT_TARGETING:
@@ -3320,10 +3649,8 @@ game_load(game_t *game)
     TCOD_zip_delete(zip);
 }
 
-#define FLASH_BLOCKS_TURN 0
-
 internal void
-game_update(game_t *game)
+game_input(game_t *game)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;
@@ -3983,7 +4310,11 @@ game_update(game_t *game)
             }
         }
     }
+}
 
+internal void
+game_update(game_t *game)
+{
     game->turn_available = true;
 
     position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
@@ -3994,110 +4325,10 @@ game_update(game_t *game)
 
         for (void **iterator = TCOD_list_begin(player_map->entities); iterator != TCOD_list_end(player_map->entities); iterator++)
         {
-            entity_t *current = *iterator;
+            entity_t *entity = *iterator;
 
-            fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
-
-            {
-                flash_t *current_flash = (flash_t *)component_get(current, COMPONENT_FLASH);
-
-                if (current_flash)
-                {
-                    current_flash->fade -= (1.0f / FPS) / 0.25f;
-
-                    if (current_flash->fade <= 0)
-                    {
-                        component_remove(current, COMPONENT_FLASH);
-                    }
-
-#if FLASH_BLOCKS_TURN
-                    {
-                        position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
-
-                        if (player_fov && current_position)
-                        {
-                            if (TCOD_map_is_in_fov(player_fov->fov_map, current_position->x, current_position->y))
-                            {
-                                game->turn_available = false;
-                            }
-                        }
-                    }
-#endif
-                }
-            }
-
-            {
-                position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
-                projectile_t *current_projectile = (projectile_t *)component_get(current, COMPONENT_PROJECTILE);
-
-                if (current_position && current_projectile)
-                {
-                    float x = current_projectile->x + current_projectile->dx;
-                    float y = current_projectile->y + current_projectile->dy;
-                    int next_x = (int)x;
-                    int next_y = (int)y;
-
-                    bool should_move = true;
-
-                    if (map_is_inside(next_x, next_y))
-                    {
-                        map_t *current_map = &game->maps[current_position->level];
-                        tile_t *next_tile = &current_map->tiles[next_x][next_y];
-                        tile_info_t *next_tile_info = &game->tile_info[next_tile->type];
-
-                        if (!next_tile_info->is_walkable)
-                        {
-                            should_move = false;
-                        }
-                        else
-                        {
-                            for (void **iterator = TCOD_list_begin(next_tile->entities); iterator != TCOD_list_end(next_tile->entities); iterator++)
-                            {
-                                entity_t *other = *iterator;
-
-                                if (other != current_projectile->shooter)
-                                {
-                                    health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
-
-                                    if (other_health)
-                                    {
-                                        should_move = false;
-
-                                        entity_attack(current_projectile->shooter, other);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        should_move = false;
-                    }
-
-                    if (should_move)
-                    {
-                        if (TCOD_map_is_in_fov(player_fov->fov_map, current_position->x, current_position->y))
-                        {
-                            game->turn_available = false;
-                        }
-
-                        current_projectile->x = x;
-                        current_projectile->y = y;
-
-                        current_position->x = next_x;
-                        current_position->y = next_y;
-                    }
-                    else
-                    {
-                        if (current_projectile->on_hit)
-                        {
-                            current_projectile->on_hit(current_projectile->on_hit_params);
-                        }
-
-                        entity_destroy(current);
-                    }
-                }
-            }
+            entity_update_flash(entity, false);
+            entity_update_projectile(entity);
         }
 
         if (game->should_update)
@@ -4109,512 +4340,350 @@ game_update(game_t *game)
 
             for (void **iterator = TCOD_list_begin(player_map->entities); iterator != TCOD_list_end(player_map->entities); iterator++)
             {
-                entity_t *current = *iterator;
+                entity_t *entity = *iterator;
 
-                position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
+                entity_update_light(entity);
 
+                light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
+
+                if (light && position)
                 {
-                    light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
-
-                    if (current_light && current_position)
-                    {
-                        if (current_light->fov_map != NULL)
-                        {
-                            TCOD_map_delete(current_light->fov_map);
-                        }
-
-                        map_t *current_map = &game->maps[current_position->level];
-
-                        current_light->fov_map = map_to_fov_map(current_map, current_position->x, current_position->y, current_light->radius);
-
-                        TCOD_list_push(lights, current);
-                    }
+                    TCOD_list_push(lights, entity);
                 }
+            }
+
+            for (void **iterator = TCOD_list_begin(player_map->entities); iterator != TCOD_list_end(player_map->entities); iterator++)
+            {
+                entity_t *entity = *iterator;
+
+                entity_update_fov(entity, lights);
+                entity_ai(entity);
+            }
+
+            TCOD_list_delete(lights);
+        }
+    }
+}
+
+internal void
+game_render(game_t *game)
+{
+    TCOD_console_set_default_background(NULL, TCOD_black);
+    TCOD_console_set_default_foreground(NULL, TCOD_white);
+    TCOD_console_clear(NULL);
+
+    int message_log_x = 0;
+    int message_log_height = console_height / 4;
+    int message_log_y = console_height - message_log_height;
+    int message_log_width = console_width;
+
+    int panel_width = console_width / 2;
+    int panel_x = console_width - panel_width;
+    int panel_y = 0;
+    int panel_height = console_height - (game->message_log_visible ? message_log_height : 0);
+
+    fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
+    position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+
+    if (player_fov && player_position)
+    {
+        map_t *player_map = &game->maps[player_position->level];
+
+        int view_width = console_width - (game->panel_visible ? panel_width : 0);
+        int view_height = console_height - (game->message_log_visible ? message_log_height : 0);
+        int view_x = player_position->x - view_width / 2;
+        int view_y = player_position->y - view_height / 2;
+
+        if (view_width < MAP_WIDTH && view_height < MAP_HEIGHT)
+        {
+            view_x = view_x < 0
+                         ? 0
+                         : view_x + view_width > MAP_WIDTH
+                               ? MAP_WIDTH - view_width
+                               : view_x;
+            view_y = view_y < 0
+                         ? 0
+                         : view_y + view_height > MAP_HEIGHT
+                               ? MAP_HEIGHT - view_height
+                               : view_y;
+        }
+
+        {
+            TCOD_list_t entities_by_layer[NUM_LAYERS];
+            TCOD_list_t lights_by_priority[NUM_LIGHT_PRIORITIES];
+
+            for (int i = 0; i < NUM_LAYERS; i++)
+            {
+                entities_by_layer[i] = TCOD_list_new();
+            }
+
+            for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+            {
+                lights_by_priority[i] = TCOD_list_new();
             }
 
             for (void **iterator = TCOD_list_begin(player_map->entities); iterator != TCOD_list_end(player_map->entities); iterator++)
             {
                 entity_t *current = *iterator;
 
-                position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
+                appearance_t *current_appearance = (appearance_t *)component_get(current, COMPONENT_APPEARANCE);
 
-                if (current_position)
+                if (current_appearance)
                 {
-                    map_t *current_map = &game->maps[current_position->level];
+                    TCOD_list_push(entities_by_layer[current_appearance->layer], current);
+                }
 
-                    fov_t *current_fov = (fov_t *)component_get(current, COMPONENT_FOV);
+                light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
+                position_t *position = (position_t *)component_get(current, COMPONENT_POSITION);
 
-                    if (current_fov)
+                if (current_light && position)
+                {
+                    TCOD_list_push(lights_by_priority[current_light->priority], current);
+                }
+            }
+
+            {
+                local TCOD_noise_t noise = NULL;
+                if (noise == NULL)
+                {
+                    noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
+                }
+
+                local float noise_x = 0.0f;
+
+                noise_x += 0.2f;
+                float noise_dx = noise_x + 20.0f;
+                float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+                noise_dx += 30.0f;
+                float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+                float di = 0.2f * TCOD_noise_get(noise, &noise_x);
+
+                for (int x = view_x; x < view_x + view_width; x++)
+                {
+                    for (int y = view_y; y < view_y + view_height; y++)
                     {
-                        if (current_fov->fov_map)
+                        if (map_is_inside(x, y))
                         {
-                            TCOD_map_delete(current_fov->fov_map);
-                        }
+                            tile_t *tile = &player_map->tiles[x][y];
+                            tile_info_t *tile_info = &game->tile_info[tile->type];
 
-                        current_fov->fov_map = map_to_fov_map(current_map, current_position->x, current_position->y, current_fov->radius);
-
-                        {
-                            TCOD_map_t los_map = map_to_fov_map(current_map, current_position->x, current_position->y, 0);
-
-                            for (int x = 0; x < MAP_WIDTH; x++)
+                            if (TCOD_map_is_in_fov(player_fov->fov_map, x, y))
                             {
-                                for (int y = 0; y < MAP_HEIGHT; y++)
+                                tile->seen = true;
+                            }
+
+                            for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+                            {
+                                for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
                                 {
-                                    if (TCOD_map_is_in_fov(los_map, x, y))
+                                    entity_t *current = *iterator;
+
+                                    light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
+
+                                    if (current_light)
                                     {
-                                        tile_t *tile = &current_map->tiles[x][y];
-
-                                        for (void **iterator = TCOD_list_begin(lights); iterator != TCOD_list_end(lights); iterator++)
+                                        if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
                                         {
-                                            entity_t *other = *iterator;
-
-                                            light_t *other_light = (light_t *)component_get(other, COMPONENT_LIGHT);
-                                            position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-
-                                            if (other_light && other_position)
-                                            {
-                                                if (TCOD_map_is_in_fov(other_light->fov_map, x, y))
-                                                {
-                                                    TCOD_map_set_in_fov(current_fov->fov_map, x, y, true);
-                                                }
-                                            }
+                                            tile->seen = true;
                                         }
                                     }
                                 }
                             }
 
-                            TCOD_map_delete(los_map);
-                        }
-                    }
+                            TCOD_color_t color = game->tile_common.shadow_color;
 
-                    ai_t *current_ai = (ai_t *)component_get(current, COMPONENT_AI);
-
-                    if (current_ai)
-                    {
-                        current_ai->energy += current_ai->energy_per_turn;
-
-                        while (current_ai->energy >= 1.0f)
-                        {
-                            current_ai->energy -= 1.0f;
-
-                            bool took_action = false;
-
-                            if (!took_action)
+                            if (TCOD_map_is_in_fov(player_fov->fov_map, x, y) || tile->seen)
                             {
-                                alignment_t *current_alignment = (alignment_t *)component_get(current, COMPONENT_ALIGNMENT);
-
-                                if (current_alignment && current_fov)
+                                for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
                                 {
-                                    for (void **iterator = TCOD_list_begin(current_map->entities); iterator != TCOD_list_end(current_map->entities); iterator++)
+                                    for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
                                     {
-                                        entity_t *other = *iterator;
+                                        entity_t *current = *iterator;
 
-                                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-                                        position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+                                        light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
+                                        position_t *position = (position_t *)component_get(current, COMPONENT_POSITION);
 
-                                        if (other_alignment && other_position)
+                                        if (current_light && position)
                                         {
-                                            if (TCOD_map_is_in_fov(current_fov->fov_map, other_position->x, other_position->y) &&
-                                                other_alignment->type != current_alignment->type)
+                                            if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
                                             {
-                                                took_action = true;
+                                                float r2 = pow(current_light->radius, 2);
+                                                // float d = distance_sq(x, y, position->x + (current_light->flicker ? dx : 0), position->y + (current_light->flicker ? dy : 0));
+                                                float d = pow(x - position->x + (current_light->flicker ? dx : 0), 2) + pow(y - position->y + (current_light->flicker ? dy : 0), 2);
+                                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (current_light->flicker ? di : 0));
 
-                                                current_ai->last_seen_x = other_position->x;
-                                                current_ai->last_seen_y = other_position->y;
-
-                                                if (distance(current_position->x, current_position->y, other_position->x, other_position->y) < 2.0f)
-                                                {
-                                                    entity_attack(current, other);
-                                                }
-                                                else
-                                                {
-                                                    entity_path_towards(current, other_position->x, other_position->y);
-                                                }
-
-                                                break;
+                                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, current_light->color, l), l);
                                             }
                                         }
                                     }
                                 }
                             }
-
-                            if (!took_action && current_fov && current_ai->follow_target)
+                            else
                             {
-                                position_t *follow_position = (position_t *)component_get(current_ai->follow_target, COMPONENT_POSITION);
-
-                                if (follow_position)
+                                if (!tile->seen)
                                 {
-                                    if (!TCOD_map_is_in_fov(current_fov->fov_map, follow_position->x, follow_position->y) ||
-                                        distance(current_position->x, current_position->y, follow_position->x, follow_position->y) > 5.0f)
-                                    {
-                                        took_action = true;
-
-                                        entity_path_towards(current, follow_position->x, follow_position->y);
-                                    }
+                                    continue;
                                 }
                             }
 
-                            if (!took_action && current_ai->last_seen_x != -1 && current_ai->last_seen_y != -1)
-                            {
-                                took_action = true;
-
-                                if (current_position->x == current_ai->last_seen_x && current_position->y == current_ai->last_seen_y)
-                                {
-                                    current_ai->last_seen_x = -1;
-                                    current_ai->last_seen_y = -1;
-                                }
-                                else
-                                {
-                                    entity_path_towards(current, current_ai->last_seen_x, current_ai->last_seen_y);
-                                }
-                            }
-
-                            if (!took_action)
-                            {
-                                tile_t *current_tile = &current_map->tiles[current_position->x][current_position->y];
-
-                                switch (current_tile->type)
-                                {
-                                case TILE_STAIR_DOWN:
-                                {
-                                    took_action = entity_descend(current);
-                                }
-                                break;
-                                case TILE_STAIR_UP:
-                                {
-                                    took_action = entity_ascend(current);
-                                }
-                                break;
-                                }
-                            }
-
-                            if (!took_action)
-                            {
-                                entity_move_random(current);
-                            }
+                            TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
+                            TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info->glyph);
                         }
                     }
                 }
             }
 
-            TCOD_list_delete(lights);
+            for (int i = 0; i < NUM_LAYERS; i++)
+            {
+                for (void **iterator = TCOD_list_begin(entities_by_layer[i]); iterator != TCOD_list_end(entities_by_layer[i]); iterator++)
+                {
+                    entity_t *current = *iterator;
+
+                    appearance_t *current_appearance = (appearance_t *)component_get(current, COMPONENT_APPEARANCE);
+                    position_t *position = (position_t *)component_get(current, COMPONENT_POSITION);
+
+                    if (current_appearance && position)
+                    {
+                        if (position->level == player_position->level &&
+                            TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))
+                        {
+                            TCOD_color_t color = current_appearance->color;
+
+                            flash_t *flash = (flash_t *)component_get(current, COMPONENT_FLASH);
+
+                            if (flash)
+                            {
+                                color = TCOD_color_lerp(current_appearance->color, flash->color, flash->fade);
+                            }
+
+                            TCOD_console_set_char_foreground(NULL, position->x - view_x, position->y - view_y, color);
+                            TCOD_console_set_char(NULL, position->x - view_x, position->y - view_y, current_appearance->glyph);
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
+            {
+                TCOD_list_delete(lights_by_priority[i]);
+            }
+
+            for (int i = 0; i < NUM_LAYERS; i++)
+            {
+                TCOD_list_delete(entities_by_layer[i]);
+            }
         }
 
         {
-            TCOD_console_set_default_background(NULL, TCOD_black);
-            TCOD_console_set_default_foreground(NULL, TCOD_white);
-            TCOD_console_clear(NULL);
+            targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
 
-            int message_log_x = 0;
-            int message_log_height = console_height / 4;
-            int message_log_y = console_height - message_log_height;
-            int message_log_width = console_width;
-
-            int panel_width = console_width / 2;
-            int panel_x = console_width - panel_width;
-            int panel_y = 0;
-            int panel_height = console_height - (game->message_log_visible ? message_log_height : 0);
-
-            fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
-
-            if (player_fov)
+            if (player_targeting)
             {
-                map_t *player_map = &game->maps[player_position->level];
+                TCOD_console_set_char_foreground(NULL, player_targeting->x - view_x, player_targeting->y - view_y, TCOD_red);
+                TCOD_console_set_char(NULL, player_targeting->x - view_x, player_targeting->y - view_y, 'X');
 
-                int view_width = console_width - (game->panel_visible ? panel_width : 0);
-                int view_height = console_height - (game->message_log_visible ? message_log_height : 0);
-                int view_x = player_position->x - view_width / 2;
-                int view_y = player_position->y - view_height / 2;
-
-                if (view_width < MAP_WIDTH && view_height < MAP_HEIGHT)
+                switch (player_targeting->type)
                 {
-                    view_x = view_x < 0
-                                 ? 0
-                                 : view_x + view_width > MAP_WIDTH
-                                       ? MAP_WIDTH - view_width
-                                       : view_x;
-                    view_y = view_y < 0
-                                 ? 0
-                                 : view_y + view_height > MAP_HEIGHT
-                                       ? MAP_HEIGHT - view_height
-                                       : view_y;
-                }
-
+                case TARGETING_LOOK:
                 {
-                    TCOD_list_t entities_by_layer[NUM_LAYERS];
-                    TCOD_list_t lights_by_priority[NUM_LIGHT_PRIORITIES];
+                    tile_t *tile = &game->maps[player_position->level].tiles[player_targeting->x][player_targeting->y];
 
-                    for (int i = 0; i < NUM_LAYERS; i++)
+                    if (TCOD_map_is_in_fov(player_fov->fov_map, player_targeting->x, player_targeting->y))
                     {
-                        entities_by_layer[i] = TCOD_list_new();
-                    }
+                        entity_t *entity = TCOD_list_peek(tile->entities);
+                        appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
 
-                    for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
-                    {
-                        lights_by_priority[i] = TCOD_list_new();
-                    }
-
-                    for (void **iterator = TCOD_list_begin(player_map->entities); iterator != TCOD_list_end(player_map->entities); iterator++)
-                    {
-                        entity_t *current = *iterator;
-
-                        appearance_t *current_appearance = (appearance_t *)component_get(current, COMPONENT_APPEARANCE);
-
-                        if (current_appearance)
+                        if (entity == NULL && appearance == NULL)
                         {
-                            TCOD_list_push(entities_by_layer[current_appearance->layer], current);
-                        }
-
-                        light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
-                        position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
-
-                        if (current_light && current_position)
-                        {
-                            TCOD_list_push(lights_by_priority[current_light->priority], current);
-                        }
-                    }
-
-                    {
-                        local TCOD_noise_t noise = NULL;
-                        if (noise == NULL)
-                        {
-                            noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
-                        }
-
-                        local float noise_x = 0.0f;
-
-                        noise_x += 0.2f;
-                        float noise_dx = noise_x + 20.0f;
-                        float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-                        noise_dx += 30.0f;
-                        float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-                        float di = 0.2f * TCOD_noise_get(noise, &noise_x);
-
-                        for (int x = view_x; x < view_x + view_width; x++)
-                        {
-                            for (int y = view_y; y < view_y + view_height; y++)
-                            {
-                                if (map_is_inside(x, y))
-                                {
-                                    tile_t *tile = &player_map->tiles[x][y];
-                                    tile_info_t *tile_info = &game->tile_info[tile->type];
-
-                                    if (TCOD_map_is_in_fov(player_fov->fov_map, x, y))
-                                    {
-                                        tile->seen = true;
-                                    }
-
-                                    for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
-                                    {
-                                        for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
-                                        {
-                                            entity_t *current = *iterator;
-
-                                            light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
-
-                                            if (current_light)
-                                            {
-                                                if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
-                                                {
-                                                    tile->seen = true;
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    TCOD_color_t color = game->tile_common.shadow_color;
-
-                                    if (TCOD_map_is_in_fov(player_fov->fov_map, x, y) || tile->seen)
-                                    {
-                                        for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
-                                        {
-                                            for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
-                                            {
-                                                entity_t *current = *iterator;
-
-                                                light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
-                                                position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
-
-                                                if (current_light && current_position)
-                                                {
-                                                    if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
-                                                    {
-                                                        float r2 = pow(current_light->radius, 2);
-                                                        // float d = distance_sq(x, y, current_position->x + (current_light->flicker ? dx : 0), current_position->y + (current_light->flicker ? dy : 0));
-                                                        float d = pow(x - current_position->x + (current_light->flicker ? dx : 0), 2) + pow(y - current_position->y + (current_light->flicker ? dy : 0), 2);
-                                                        float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (current_light->flicker ? di : 0));
-
-                                                        color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, current_light->color, l), l);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (!tile->seen)
-                                        {
-                                            continue;
-                                        }
-                                    }
-
-                                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
-                                    TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info->glyph);
-                                }
-                            }
-                        }
-                    }
-
-                    for (int i = 0; i < NUM_LAYERS; i++)
-                    {
-                        for (void **iterator = TCOD_list_begin(entities_by_layer[i]); iterator != TCOD_list_end(entities_by_layer[i]); iterator++)
-                        {
-                            entity_t *current = *iterator;
-
-                            appearance_t *current_appearance = (appearance_t *)component_get(current, COMPONENT_APPEARANCE);
-                            position_t *current_position = (position_t *)component_get(current, COMPONENT_POSITION);
-
-                            if (current_appearance && current_position)
-                            {
-                                if (current_position->level == player_position->level &&
-                                    TCOD_map_is_in_fov(player_fov->fov_map, current_position->x, current_position->y))
-                                {
-                                    TCOD_color_t color = current_appearance->color;
-
-                                    flash_t *current_flash = (flash_t *)component_get(current, COMPONENT_FLASH);
-
-                                    if (current_flash)
-                                    {
-                                        color = TCOD_color_lerp(current_appearance->color, current_flash->color, current_flash->fade);
-                                    }
-
-                                    TCOD_console_set_char_foreground(NULL, current_position->x - view_x, current_position->y - view_y, color);
-                                    TCOD_console_set_char(NULL, current_position->x - view_x, current_position->y - view_y, current_appearance->glyph);
-                                }
-                            }
-                        }
-                    }
-
-                    for (int i = 0; i < NUM_LIGHT_PRIORITIES; i++)
-                    {
-                        TCOD_list_delete(lights_by_priority[i]);
-                    }
-
-                    for (int i = 0; i < NUM_LAYERS; i++)
-                    {
-                        TCOD_list_delete(entities_by_layer[i]);
-                    }
-                }
-
-                targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
-
-                if (player_targeting)
-                {
-                    TCOD_console_set_char_foreground(NULL, player_targeting->x - view_x, player_targeting->y - view_y, TCOD_red);
-                    TCOD_console_set_char(NULL, player_targeting->x - view_x, player_targeting->y - view_y, 'X');
-
-                    switch (player_targeting->type)
-                    {
-                    case TARGETING_LOOK:
-                    {
-                        tile_t *tile = &game->maps[player_position->level].tiles[player_targeting->x][player_targeting->y];
-
-                        if (TCOD_map_is_in_fov(player_fov->fov_map, player_targeting->x, player_targeting->y))
-                        {
-                            entity_t *entity = TCOD_list_peek(tile->entities);
-                            appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
-
-                            if (entity == NULL && appearance == NULL)
-                            {
-                                TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->tile_info[tile->type].name);
-                            }
-                            else
-                            {
-                                TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, appearance->name);
-                            }
+                            TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->tile_info[tile->type].name);
                         }
                         else
                         {
-                            if (tile->seen)
-                            {
-                                TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (remembered)", game->tile_info[tile->type].name);
-                            }
-                            else
-                            {
-                                TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
-                            }
+                            TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, appearance->name);
                         }
-                        break;
                     }
+                    else
+                    {
+                        if (tile->seen)
+                        {
+                            TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (remembered)", game->tile_info[tile->type].name);
+                        }
+                        else
+                        {
+                            TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
+                        }
                     }
+                    break;
+                }
                 }
             }
-
-            if (game->message_log_visible)
-            {
-                local TCOD_console_t message_log = NULL;
-                if (message_log == NULL)
-                {
-                    message_log = TCOD_console_new(console_width, console_height);
-                }
-
-                TCOD_console_set_default_background(message_log, TCOD_black);
-                TCOD_console_set_default_foreground(message_log, TCOD_white);
-                TCOD_console_clear(message_log);
-
-                int y = 1;
-                for (void **i = TCOD_list_begin(game->messages); i != TCOD_list_end(game->messages); i++)
-                {
-                    message_t *message = *i;
-
-                    TCOD_console_set_default_foreground(message_log, message->color);
-                    TCOD_console_print(message_log, message_log_x + 1, y, message->text);
-
-                    y++;
-                }
-
-                TCOD_console_set_default_foreground(message_log, TCOD_white);
-                TCOD_console_print_frame(message_log, 0, 0, message_log_width, message_log_height, false, TCOD_BKGND_SET, "Log");
-
-                TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
-            }
-
-            if (game->panel_visible)
-            {
-                local TCOD_console_t panel = NULL;
-                if (panel == NULL)
-                {
-                    panel = TCOD_console_new(console_width, console_height);
-                }
-
-                TCOD_console_set_default_background(panel, TCOD_black);
-                TCOD_console_set_default_foreground(panel, TCOD_white);
-                TCOD_console_clear(panel);
-
-                switch (game->current_panel)
-                {
-                case PANEL_CHARACTER:
-                {
-                    TCOD_console_set_default_foreground(panel, TCOD_white);
-                    TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");
-                }
-                break;
-                case PANEL_INVENTORY:
-                {
-                    TCOD_console_set_default_foreground(panel, TCOD_white);
-                    TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
-                }
-                break;
-                }
-
-                TCOD_console_blit(panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
-            }
-
-            TCOD_console_print(NULL, 0, 0, "Turn: %d", game->turn);
-
-            TCOD_console_flush();
         }
     }
+
+    if (game->message_log_visible)
+    {
+        local TCOD_console_t message_log = NULL;
+        if (message_log == NULL)
+        {
+            message_log = TCOD_console_new(console_width, console_height);
+        }
+
+        TCOD_console_set_default_background(message_log, TCOD_black);
+        TCOD_console_set_default_foreground(message_log, TCOD_white);
+        TCOD_console_clear(message_log);
+
+        int y = 1;
+        for (void **i = TCOD_list_begin(game->messages); i != TCOD_list_end(game->messages); i++)
+        {
+            message_t *message = *i;
+
+            TCOD_console_set_default_foreground(message_log, message->color);
+            TCOD_console_print(message_log, message_log_x + 1, y, message->text);
+
+            y++;
+        }
+
+        TCOD_console_set_default_foreground(message_log, TCOD_white);
+        TCOD_console_print_frame(message_log, 0, 0, message_log_width, message_log_height, false, TCOD_BKGND_SET, "Log");
+
+        TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
+    }
+
+    if (game->panel_visible)
+    {
+        local TCOD_console_t panel = NULL;
+        if (panel == NULL)
+        {
+            panel = TCOD_console_new(console_width, console_height);
+        }
+
+        TCOD_console_set_default_background(panel, TCOD_black);
+        TCOD_console_set_default_foreground(panel, TCOD_white);
+        TCOD_console_clear(panel);
+
+        switch (game->current_panel)
+        {
+        case PANEL_CHARACTER:
+        {
+            TCOD_console_set_default_foreground(panel, TCOD_white);
+            TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");
+        }
+        break;
+        case PANEL_INVENTORY:
+        {
+            TCOD_console_set_default_foreground(panel, TCOD_white);
+            TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
+        }
+        break;
+        }
+
+        TCOD_console_blit(panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
+    }
+
+    TCOD_console_print(NULL, 0, 0, "Turn: %d", game->turn);
+
+    TCOD_console_flush();
 }
 
 internal void

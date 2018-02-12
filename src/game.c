@@ -1737,7 +1737,9 @@ entity_path_towards(entity_t *entity, int x, int y)
 
     if (position)
     {
-        TCOD_map_t TCOD_map = map_to_TCOD_map(&entity->game->maps[position->level]);
+        map_t *map = &entity->game->maps[position->level];
+
+        TCOD_map_t TCOD_map = map_to_TCOD_map(map);
         TCOD_map_set_properties(TCOD_map, x, y, TCOD_map_is_transparent(TCOD_map, x, y), true);
 
         TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);

@@ -1,24 +1,18 @@
 @echo off
 
-set APP_NAME=roguelike
-
 set SRC_DIR=src\*.c
 
-set INCLUDE_DIRS=/Iinclude\libtcod-1.5.1
-set LIB_DIRS=/libpath:lib\libtcod-1.5.1
+set COMPILER_OPTS=/Fdbuild\ /Febin\roguelike.exe /Fobuild\ /Iinclude /W4 /Zi
+set LINKER_OPTS=/libpath:lib /subsystem:console
 set LIBS=libtcod-gui-VS.lib libtcod-VS.lib
 
-set COMPILER_OPTS=/Fdpdb\ /Febin\%APP_NAME%.exe /Foobj\ /Zi
-set LINKER_OPTS=/subsystem:console
+del bin\roguelike.exe
+del bin\roguelike.exp
+del bin\roguelike.ilk
+del bin\roguelike.lib
+del bin\roguelike.pdb
 
-rd bin /s /q
-rd obj /s /q 
-rd pdb /s /q
+rd build /s /q 
+md build
 
-md bin
-md obj
-md pdb
-
-cl %INCLUDE_DIRS% %COMPILER_OPTS% %SRC_DIR% /link %LIB_DIRS% %LINKER_OPTS% %LIBS%
-
-copy resource\* .\bin
+cl %COMPILER_OPTS% %SRC_DIR% /link %LINKER_OPTS% %LIBS%

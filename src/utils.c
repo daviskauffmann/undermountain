@@ -1,4 +1,4 @@
-#include <libtcod.h>
+#include <libtcod/libtcod.h>
 #include <math.h>
 
 #include "utils.h"

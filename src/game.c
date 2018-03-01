@@ -1,5 +1,5 @@
 #include <assert.h>
-#include <libtcod.h>
+#include <libtcod/libtcod.h>
 #include <malloc.h>
 #include <math.h>
 #include <stdarg.h>
@@ -4427,21 +4427,21 @@ game_render(game_t *game)
 
             for (void **iterator = TCOD_list_begin(player_map->entities); iterator != TCOD_list_end(player_map->entities); iterator++)
             {
-                entity_t *current = *iterator;
+                entity_t *entity = *iterator;
 
-                appearance_t *current_appearance = (appearance_t *)component_get(current, COMPONENT_APPEARANCE);
+                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
 
-                if (current_appearance)
+                if (appearance)
                 {
-                    TCOD_list_push(entities_by_layer[current_appearance->layer], current);
+                    TCOD_list_push(entities_by_layer[appearance->layer], entity);
                 }
 
-                light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
-                position_t *position = (position_t *)component_get(current, COMPONENT_POSITION);
+                light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+                position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-                if (current_light && position)
+                if (light && position)
                 {
-                    TCOD_list_push(lights_by_priority[current_light->priority], current);
+                    TCOD_list_push(lights_by_priority[light->priority], entity);
                 }
             }
 
@@ -4479,13 +4479,13 @@ game_render(game_t *game)
                             {
                                 for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
                                 {
-                                    entity_t *current = *iterator;
+                                    entity_t *entity = *iterator;
 
-                                    light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
+                                    light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
 
-                                    if (current_light)
+                                    if (light)
                                     {
-                                        if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
+                                        if (TCOD_map_is_in_fov(light->fov_map, x, y))
                                         {
                                             tile->seen = true;
                                         }
@@ -4501,21 +4501,20 @@ game_render(game_t *game)
                                 {
                                     for (void **iterator = TCOD_list_begin(lights_by_priority[i]); iterator != TCOD_list_end(lights_by_priority[i]); iterator++)
                                     {
-                                        entity_t *current = *iterator;
+                                        entity_t *entity = *iterator;
 
-                                        light_t *current_light = (light_t *)component_get(current, COMPONENT_LIGHT);
-                                        position_t *position = (position_t *)component_get(current, COMPONENT_POSITION);
+                                        light_t *light = (light_t *)component_get(entity, COMPONENT_LIGHT);
+                                        position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-                                        if (current_light && position)
+                                        if (light && position)
                                         {
-                                            if (TCOD_map_is_in_fov(current_light->fov_map, x, y))
+                                            if (TCOD_map_is_in_fov(light->fov_map, x, y))
                                             {
-                                                float r2 = pow(current_light->radius, 2);
-                                                // float d = distance_sq(x, y, position->x + (current_light->flicker ? dx : 0), position->y + (current_light->flicker ? dy : 0));
-                                                float d = pow(x - position->x + (current_light->flicker ? dx : 0), 2) + pow(y - position->y + (current_light->flicker ? dy : 0), 2);
-                                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (current_light->flicker ? di : 0));
+                                                float r2 = pow(light->radius, 2);
+                                                float d = pow(x - position->x + (light->flicker ? dx : 0), 2) + pow(y - position->y + (light->flicker ? dy : 0), 2);
+                                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (light->flicker ? di : 0));
 
-                                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, current_light->color, l), l);
+                                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, light->color, l), l);
                                             }
                                         }
                                     }
@@ -4540,27 +4539,27 @@ game_render(game_t *game)
             {
                 for (void **iterator = TCOD_list_begin(entities_by_layer[i]); iterator != TCOD_list_end(entities_by_layer[i]); iterator++)
                 {
-                    entity_t *current = *iterator;
+                    entity_t *entity = *iterator;
 
-                    appearance_t *current_appearance = (appearance_t *)component_get(current, COMPONENT_APPEARANCE);
-                    position_t *position = (position_t *)component_get(current, COMPONENT_POSITION);
+                    appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+                    position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-                    if (current_appearance && position)
+                    if (appearance && position)
                     {
                         if (position->level == player_position->level &&
                             TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))
                         {
-                            TCOD_color_t color = current_appearance->color;
+                            TCOD_color_t color = appearance->color;
 
-                            flash_t *flash = (flash_t *)component_get(current, COMPONENT_FLASH);
+                            flash_t *flash = (flash_t *)component_get(entity, COMPONENT_FLASH);
 
                             if (flash)
                             {
-                                color = TCOD_color_lerp(current_appearance->color, flash->color, flash->fade);
+                                color = TCOD_color_lerp(appearance->color, flash->color, flash->fade);
                             }
 
                             TCOD_console_set_char_foreground(NULL, position->x - view_x, position->y - view_y, color);
-                            TCOD_console_set_char(NULL, position->x - view_x, position->y - view_y, current_appearance->glyph);
+                            TCOD_console_set_char(NULL, position->x - view_x, position->y - view_y, appearance->glyph);
                         }
                     }
                 }
@@ -4701,13 +4700,14 @@ game_log(game_t *game, position_t *position, TCOD_color_t color, char *text, ...
              ((position->x == player_position->x && position->y == player_position->y) ||
               TCOD_map_is_in_fov(player_fov->fov_map, position->x, position->y))))
         {
+            char buffer[128];
+
             va_list ap;
-            char buf[128];
             va_start(ap, text);
-            vsprintf(buf, text, ap);
+            vsprintf(buffer, text, ap);
             va_end(ap);
 
-            char *line_begin = buf;
+            char *line_begin = buffer;
             char *line_end;
 
             do

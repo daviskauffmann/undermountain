@@ -1,7 +1,11 @@
 .vs
 .vscode
 
-bin
-obj
-pdb
+build
 saves
+
+roguelike.exe
+roguelike.exp
+roguelike.ilk
+roguelike.lib
+roguelike.pdb

@@ -326,7 +326,7 @@ enum component_type_e
 
 struct component_s
 {
-    union {
+    union data_s {
         ai_t ai;
         alignment_t alignment;
         appearance_t appearance;
@@ -340,7 +340,7 @@ struct component_s
         projectile_t projectile;
         position_t position;
         targeting_t targeting;
-    };
+    } data_t;
     int id;
     component_type_t type;
 };
@@ -705,7 +705,7 @@ map_init(map_t *map, game_t *game, int level)
 #define CUSTOM_NUM_ROOM_ATTEMPTS 20
 #define CUSTOM_MIN_ROOM_SIZE 5
 #define CUSTOM_MAX_ROOM_SIZE 15
-#define CUSTOM_PREVENT_OVERLAP false
+#define CUSTOM_PREVENT_OVERLAP 0
 #define CUSTOM_DOOR_CHANCE 0.5f
 
 internal void
@@ -727,26 +727,25 @@ map_generate_custom(map_t *map)
             continue;
         }
 
-        if (CUSTOM_PREVENT_OVERLAP)
-        {
-            bool overlap = false;
+#if CUSTOM_PREVENT_OVERLAP
+        bool overlap = false;
 
-            for (int x = room->x - 2; x < room->x + room->w + 2; x++)
+        for (int x = room->x - 2; x < room->x + room->w + 2; x++)
+        {
+            for (int y = room->y - 2; y < room->y + room->h + 2; y++)
             {
-                for (int y = room->y - 2; y < room->y + room->h + 2; y++)
+                if (map->tiles[x][y].type == TILE_FLOOR)
                 {
-                    if (map->tiles[x][y].type == TILE_FLOOR)
-                    {
-                        overlap = true;
-                    }
+                    overlap = true;
                 }
             }
-
-            if (overlap)
-            {
-                continue;
-            }
         }
+
+        if (overlap)
+        {
+            continue;
+        }
+#endif
 
         for (int x = room->x; x < room->x + room->w; x++)
         {
@@ -893,8 +892,8 @@ map_generate_custom(map_t *map)
 
 #define BSP_MIN_ROOM_SIZE 4
 #define BSP_DEPTH 8
-#define BSP_RANDOM_ROOMS false
-#define BSP_ROOM_WALLS true
+#define BSP_RANDOM_ROOMS 0
+#define BSP_ROOM_WALLS 1
 
 internal void
 map_generate_bsp(map_t *map)
@@ -1022,18 +1021,17 @@ traverse_node(TCOD_bsp_t *node, map_t *map)
         int miny = node->y + 1;
         int maxy = node->y + node->h - 1;
 
-        if (!BSP_ROOM_WALLS)
+#if !BSP_ROOM_WALLS
+        if (minx > 1)
         {
-            if (minx > 1)
-            {
-                minx--;
-            }
-
-            if (miny > 1)
-            {
-                miny--;
-            }
+            minx--;
         }
+
+        if (miny > 1)
+        {
+            miny--;
+        }
+#endif
 
         if (maxx == MAP_WIDTH - 1)
         {
@@ -1045,13 +1043,12 @@ traverse_node(TCOD_bsp_t *node, map_t *map)
             maxy--;
         }
 
-        if (BSP_RANDOM_ROOMS)
-        {
-            minx = TCOD_random_get_int(NULL, minx, maxx - BSP_MIN_ROOM_SIZE + 1);
-            miny = TCOD_random_get_int(NULL, miny, maxy - BSP_MIN_ROOM_SIZE + 1);
-            maxx = TCOD_random_get_int(NULL, minx + BSP_MIN_ROOM_SIZE - 1, maxx);
-            maxy = TCOD_random_get_int(NULL, miny + BSP_MIN_ROOM_SIZE - 1, maxy);
-        }
+#if BSP_RANDOM_ROOMS
+        minx = TCOD_random_get_int(NULL, minx, maxx - BSP_MIN_ROOM_SIZE + 1);
+        miny = TCOD_random_get_int(NULL, miny, maxy - BSP_MIN_ROOM_SIZE + 1);
+        maxx = TCOD_random_get_int(NULL, minx + BSP_MIN_ROOM_SIZE - 1, maxx);
+        maxy = TCOD_random_get_int(NULL, miny + BSP_MIN_ROOM_SIZE - 1, maxy);
+#endif
 
         node->x = minx;
         node->y = miny;
@@ -1129,7 +1126,7 @@ traverse_node(TCOD_bsp_t *node, map_t *map)
     return true;
 }
 
-#define NUM_MONSTERS 5
+#define NUM_MONSTERS 20
 #define NUM_ADVENTURERS 5
 #define NUM_ITEMS 5
 #define NUM_BRAZIERS 5
@@ -1144,8 +1141,7 @@ map_populate(map_t *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *monster;
-
+        entity_t *monster = NULL;
         switch (TCOD_random_get_int(NULL, 0, 3))
         {
         case 0:
@@ -1619,8 +1615,6 @@ entity_ai(entity_t *entity)
 
                 map_t *map = &entity->game->maps[position->level];
 
-                appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
-
                 bool took_action = false;
 
                 if (!took_action)
@@ -1776,8 +1770,8 @@ entity_move_towards(entity_t *entity, int x, int y)
 
         if (d > 0)
         {
-            dx = round(dx / d);
-            dy = round(dy / d);
+            dx = (int)round(dx / d);
+            dy = (int)round(dy / d);
 
             entity_move(entity, position->x + dx, position->y + dy);
         }
@@ -2225,8 +2219,8 @@ entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_params)
             entity_t *arrow = entity_create(entity->game);
 
             projectile_t *arrow_projectile = (projectile_t *)component_add(arrow, COMPONENT_PROJECTILE);
-            arrow_projectile->x = position->x;
-            arrow_projectile->y = position->y;
+            arrow_projectile->x = (float)position->x;
+            arrow_projectile->y = (float)position->y;
             // TODO: this is somewhat inaccurate
             float dx = x - position->x;
             float dy = y - position->y;

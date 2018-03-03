@@ -17,13 +17,13 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-extern float
+extern double
 distance_sq(int x1, int y1, int x2, int y2);
 
-extern float
+extern double
 distance(int x1, int y1, int x2, int y2);
 
-extern float
+extern double
 angle(int x1, int y1, int x2, int y2);
 
 extern int

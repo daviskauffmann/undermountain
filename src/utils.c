@@ -3,21 +3,21 @@
 
 #include "utils.h"
 
-float distance_sq(int x1, int y1, int x2, int y2)
+double distance_sq(int x1, int y1, int x2, int y2)
 {
     return pow(x1 - x2, 2) + pow(y1 - y2, 2);
 }
 
-float distance(int x1, int y1, int x2, int y2)
+double distance(int x1, int y1, int x2, int y2)
 {
     return sqrt(distance_sq(x1, y1, x2, y2));
 }
 
-float angle(int x1, int y1, int x2, int y2)
+double angle(int x1, int y1, int x2, int y2)
 {
-    float a = atan2(y1 - y2, -(x1 - x2)) * 57.2957795f;
+    double a = atan2(y1 - y2, -(x1 - x2)) * 57.2957795;
 
-    a = a < 0 ? a + 360.0f : a;
+    a = a < 0 ? a + 360.0 : a;
 
     return a;
 }

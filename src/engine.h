@@ -16,10 +16,7 @@ extern int font_flags;
 extern int font_char_horiz;
 extern int font_char_vertic;
 
-extern void
-engine_init(void);
-
-extern void
-engine_quit(void);
+void engine_init(void);
+void engine_quit(void);
 
 #endif

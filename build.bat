@@ -2,7 +2,7 @@
 
 set SRC_DIR=src\*.c
 
-set COMPILER_OPTS=/Fdbuild\ /Febin\roguelike.exe /Fobuild\ /Iinclude /W4 /Zi
+set COMPILER_OPTS=/Fdbuild\ /Febin\roguelike.exe /Fobuild\ /Iinclude /Zi
 set LINKER_OPTS=/libpath:lib /subsystem:console
 set LIBS=libtcod-gui-VS.lib libtcod-VS.lib
 

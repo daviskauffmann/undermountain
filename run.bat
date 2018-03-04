@@ -1,5 +1,7 @@
 @echo off
 
+set APP_NAME=roguelike
+
 cd bin
-roguelike.exe
+%APP_NAME%.exe
 cd ..\

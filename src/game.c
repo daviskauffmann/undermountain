@@ -23,39 +23,41 @@ internal void fn_should_update(game_t *game);
 
 void game_run(void)
 {
-    local game_t game;
+    game_t *game = malloc(sizeof(game_t));
 
-    game_init(&game);
+    game_init(game);
 
     if (TCOD_sys_file_exists("../saves/save.gz"))
     {
-        game_load(&game);
+        game_load(game);
     }
     else
     {
-        game_new(&game);
+        game_new(game);
     }
 
     while (!TCOD_console_is_window_closed())
     {
-        game_input(&game);
-        game_update(&game);
-        game_render(&game);
+        game_input(game);
+        game_update(game);
+        game_render(game);
 
-        if (game.should_restart)
+        if (game->should_restart)
         {
-            game_reset(&game);
-            game_init(&game);
-            game_new(&game);
+            game_reset(game);
+            game_init(game);
+            game_new(game);
         }
 
-        if (game.should_quit)
+        if (game->should_quit)
         {
-            game_reset(&game);
+            game_reset(game);
 
             break;
         }
     }
+
+    free(game);
 }
 
 void game_init(game_t *game)

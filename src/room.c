@@ -5,7 +5,7 @@
 
 room_t *room_create(int x, int y, int w, int h)
 {
-    room_t *room = (room_t *)malloc(sizeof(room_t));
+    room_t *room = malloc(sizeof(room_t));
 
     room->x = x;
     room->y = y;

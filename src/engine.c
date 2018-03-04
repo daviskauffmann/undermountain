@@ -6,7 +6,7 @@ int screen_width;
 int screen_height;
 int console_width;
 int console_height;
-int fullscreen;
+bool fullscreen;
 int renderer;
 
 const char *font_file;

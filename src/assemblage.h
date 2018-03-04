@@ -1,9 +1,9 @@
 #ifndef ASSEMBLAGE_H
 #define ASSEMBLAGE_H
 
-typedef struct map_s map_t;
 typedef struct entity_s entity_t;
 typedef struct game_s game_t;
+typedef struct map_s map_t;
 
 entity_t *create_player(map_t *map, int x, int y);
 entity_t *create_pet(map_t *map, int x, int y);

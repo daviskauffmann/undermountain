@@ -4,17 +4,15 @@
 #include <libtcod/libtcod.h>
 
 #include "tile.h"
-#include "room.h"
 
 typedef struct game_s game_t;
+typedef struct room_s room_t;
 
 #define NUM_MAPS 256
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
 
-typedef struct map_s map_t;
-
-struct map_s
+typedef struct map_s
 {
     game_t *game;
     int level;
@@ -25,7 +23,7 @@ struct map_s
     tile_t tiles[MAP_WIDTH][MAP_HEIGHT];
     TCOD_list_t rooms;
     TCOD_list_t entities;
-};
+} map_t;
 
 void map_init(map_t *map, game_t *game, int level);
 void map_generate_custom(map_t *map);

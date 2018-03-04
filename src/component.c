@@ -1,9 +1,10 @@
+#include <libtcod/libtcod.h>
+
 #include "component.h"
 #include "entity.h"
 #include "game.h"
 
-void
-component_init(component_t *component, int id, component_type_t component_type)
+void component_init(component_t *component, int id, component_type_t component_type)
 {
     component->id = id;
     component->type = component_type;
@@ -44,7 +45,7 @@ component_init(component_t *component, int id, component_type_t component_type)
 
         for (spell_type_t spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
         {
-            // TODO: why
+            // FIXME: why
             caster->spells[spell_type].type = spell_type;
             caster->spells[spell_type].known = false;
         }
@@ -145,8 +146,7 @@ component_init(component_t *component, int id, component_type_t component_type)
     }
 }
 
-component_t *
-component_add(entity_t *entity, component_type_t component_type)
+component_t *component_add(entity_t *entity, component_type_t component_type)
 {
     component_t *component = NULL;
 
@@ -165,8 +165,7 @@ component_add(entity_t *entity, component_type_t component_type)
     return component;
 }
 
-component_t *
-component_get(entity_t *entity, component_type_t component_type)
+component_t *component_get(entity_t *entity, component_type_t component_type)
 {
     component_t *component = NULL;
 
@@ -183,8 +182,7 @@ component_get(entity_t *entity, component_type_t component_type)
     return component;
 }
 
-void
-component_remove(entity_t *entity, component_type_t component_type)
+void component_remove(entity_t *entity, component_type_t component_type)
 {
     if (entity && entity->id != ID_UNUSED)
     {
@@ -194,8 +192,7 @@ component_remove(entity_t *entity, component_type_t component_type)
     }
 }
 
-void
-component_reset(component_t *component)
+void component_reset(component_t *component)
 {
     component->id = ID_UNUSED;
 
@@ -203,23 +200,23 @@ component_reset(component_t *component)
     {
     case COMPONENT_AI:
     {
-        ai_t *ai = (ai_t *)component;
+        // ai_t *ai = (ai_t *)component;
     }
     break;
     case COMPONENT_ALIGNMENT:
     {
-        alignment_t *alignment = (alignment_t *)component;
+        // alignment_t *alignment = (alignment_t *)component;
 
         break;
     }
     case COMPONENT_APPEARANCE:
     {
-        appearance_t *appearance = (appearance_t *)component;
+        // appearance_t *appearance = (appearance_t *)component;
     }
     break;
     case COMPONENT_FLASH:
     {
-        flash_t *flash = (flash_t *)component;
+        // flash_t *flash = (flash_t *)component;
     }
     break;
     case COMPONENT_FOV:
@@ -234,7 +231,7 @@ component_reset(component_t *component)
     break;
     case COMPONENT_HEALTH:
     {
-        health_t *health = (health_t *)component;
+        // health_t *health = (health_t *)component;
     }
     break;
     case COMPONENT_INVENTORY:
@@ -260,22 +257,22 @@ component_reset(component_t *component)
     break;
     case COMPONENT_PICKABLE:
     {
-        pickable_t *pickable = (pickable_t *)component;
+        // pickable_t *pickable = (pickable_t *)component;
     }
     break;
     case COMPONENT_PROJECTILE:
     {
-        projectile_t *projectile = (projectile_t *)component;
+        // projectile_t *projectile = (projectile_t *)component;
     }
     break;
     case COMPONENT_POSITION:
     {
-        position_t *position = (position_t *)component;
+        // position_t *position = (position_t *)component;
     }
     break;
     case COMPONENT_TARGETING:
     {
-        targeting_t *targeting = (targeting_t *)component;
+        // targeting_t *targeting = (targeting_t *)component;
     }
     break;
     case COMPONENT_SOLID:

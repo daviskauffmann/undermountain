@@ -1,6 +1,8 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include <libtcod/libtcod.h>
+
 #define WINDOW_TITLE "Roguelike v0.1"
 #define FPS 60
 
@@ -8,7 +10,7 @@ extern int screen_width;
 extern int screen_height;
 extern int console_width;
 extern int console_height;
-extern int fullscreen;
+extern bool fullscreen;
 extern int renderer;
 
 extern const char *font_file;

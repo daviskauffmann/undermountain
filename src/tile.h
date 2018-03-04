@@ -3,13 +3,7 @@
 
 #include <libtcod/libtcod.h>
 
-typedef enum tile_type_e tile_type_t;
-typedef struct tile_common_s tile_common_t;
-typedef struct tile_info_s tile_info_t;
-typedef struct tile_s tile_t;
-
-enum tile_type_e
-{
+typedef enum tile_type_e {
     TILE_EMPTY,
     TILE_FLOOR,
     TILE_WALL,
@@ -19,28 +13,28 @@ enum tile_type_e
     TILE_STAIR_UP,
 
     NUM_TILES
-};
+} tile_type_t;
 
-struct tile_common_s
+typedef struct tile_common_s
 {
     TCOD_color_t shadow_color;
-};
+} tile_common_t;
 
-struct tile_info_s
+typedef struct tile_info_s
 {
     const char *name;
     unsigned char glyph;
     TCOD_color_t color;
     bool is_walkable;
     bool is_transparent;
-};
+} tile_info_t;
 
-struct tile_s
+typedef struct tile_s
 {
     tile_type_t type;
     bool seen;
     TCOD_list_t entities;
-};
+} tile_t;
 
 void tile_init(tile_t *tile, tile_type_t type, bool seen);
 void tile_reset(tile_t *tile);

@@ -1,11 +1,27 @@
 #include <libtcod/libtcod.h>
 
-#include "map.h"
-#include "tile.h"
-#include "room.h"
-#include "entity.h"
 #include "assemblage.h"
+#include "entity.h"
 #include "game.h"
+#include "map.h"
+#include "room.h"
+#include "tile.h"
+
+#define CUSTOM_NUM_ROOM_ATTEMPTS 20
+#define CUSTOM_MIN_ROOM_SIZE 5
+#define CUSTOM_MAX_ROOM_SIZE 15
+#define CUSTOM_PREVENT_OVERLAP 0
+#define CUSTOM_DOOR_CHANCE 0.5f
+
+#define BSP_MIN_ROOM_SIZE 4
+#define BSP_DEPTH 8
+#define BSP_RANDOM_ROOMS 0
+#define BSP_ROOM_WALLS 1
+
+#define NUM_MONSTERS 20
+#define NUM_ADVENTURERS 5
+#define NUM_ITEMS 5
+#define NUM_BRAZIERS 5
 
 void map_init(map_t *map, game_t *game, int level)
 {
@@ -24,12 +40,6 @@ void map_init(map_t *map, game_t *game, int level)
         }
     }
 }
-
-#define CUSTOM_NUM_ROOM_ATTEMPTS 20
-#define CUSTOM_MIN_ROOM_SIZE 5
-#define CUSTOM_MAX_ROOM_SIZE 15
-#define CUSTOM_PREVENT_OVERLAP 0
-#define CUSTOM_DOOR_CHANCE 0.5f
 
 void map_generate_custom(map_t *map)
 {
@@ -170,7 +180,6 @@ void map_generate_custom(map_t *map)
         {
             if (map->tiles[x][y].type == TILE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < CUSTOM_DOOR_CHANCE)
             {
-
                 if (map->tiles[x][y - 1].type == TILE_FLOOR && map->tiles[x + 1][y - 1].type == TILE_FLOOR && map->tiles[x - 1][y - 1].type == TILE_FLOOR)
                 {
                     if (map->tiles[x - 1][y].type == TILE_WALL && map->tiles[x + 1][y].type == TILE_WALL)
@@ -211,11 +220,6 @@ void map_generate_custom(map_t *map)
     room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
     map->tiles[map->stair_up_x][map->stair_up_y].type = TILE_STAIR_UP;
 }
-
-#define BSP_MIN_ROOM_SIZE 4
-#define BSP_DEPTH 8
-#define BSP_RANDOM_ROOMS 0
-#define BSP_ROOM_WALLS 1
 
 void map_generate_bsp(map_t *map)
 {
@@ -440,11 +444,6 @@ bool traverse_node(TCOD_bsp_t *node, map_t *map)
     return true;
 }
 
-#define NUM_MONSTERS 20
-#define NUM_ADVENTURERS 5
-#define NUM_ITEMS 5
-#define NUM_BRAZIERS 5
-
 void map_populate(map_t *map)
 {
     for (int i = 0; i < NUM_MONSTERS; i++)
@@ -521,7 +520,7 @@ void map_populate(map_t *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *longsword = create_longsword(map, x, y);
+        create_longsword(map, x, y);
     }
 
     for (int i = 0; i < NUM_BRAZIERS; i++)
@@ -531,7 +530,7 @@ void map_populate(map_t *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        entity_t *brazier = create_brazier(map, x, y);
+        create_brazier(map, x, y);
     }
 }
 
@@ -540,8 +539,7 @@ bool map_is_inside(int x, int y)
     return x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT;
 }
 
-room_t *
-map_get_random_room(map_t *map)
+room_t *map_get_random_room(map_t *map)
 {
     return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
 }
@@ -592,8 +590,7 @@ bool map_is_walkable(map_t *map, int x, int y)
     return is_walkable;
 }
 
-TCOD_map_t
-map_to_TCOD_map(map_t *map)
+TCOD_map_t map_to_TCOD_map(map_t *map)
 {
     TCOD_map_t TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
 
@@ -608,8 +605,7 @@ map_to_TCOD_map(map_t *map)
     return TCOD_map;
 }
 
-TCOD_map_t
-map_to_fov_map(map_t *map, int x, int y, int radius)
+TCOD_map_t map_to_fov_map(map_t *map, int x, int y, int radius)
 {
     TCOD_map_t fov_map = map_to_TCOD_map(map);
 

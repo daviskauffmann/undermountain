@@ -2,11 +2,11 @@
 #include <libtcod/libtcod.h>
 #include <math.h>
 
-#include "utils.h"
-#include "entity.h"
 #include "engine.h"
-#include "map.h"
+#include "entity.h"
 #include "game.h"
+#include "map.h"
+#include "utils.h"
 
 void entity_init(entity_t *entity, int id, game_t *game)
 {
@@ -71,7 +71,7 @@ void entity_update_flash(entity_t *entity, bool flash_blocks_turn)
 
     if (flash)
     {
-        flash->fade -= (1.0f / FPS) / 0.25f;
+        flash->fade -= (1.0f / (float)FPS) * 4.0f;
 
         if (flash->fade <= 0)
         {
@@ -186,7 +186,7 @@ void entity_update_projectile(entity_t *entity)
 
             entity_map_place(entity);
 
-            pickable_t *pickable = (pickable_t *)component_add(entity, COMPONENT_PICKABLE);
+            component_add(entity, COMPONENT_PICKABLE);
         }
     }
 }
@@ -233,8 +233,6 @@ void entity_update_fov(entity_t *entity, TCOD_list_t lights)
             {
                 if (TCOD_map_is_in_fov(los_map, x, y))
                 {
-                    tile_t *tile = &map->tiles[x][y];
-
                     for (void **iterator = TCOD_list_begin(lights); iterator != TCOD_list_end(lights); iterator++)
                     {
                         entity_t *other = *iterator;
@@ -429,10 +427,10 @@ void entity_move_towards(entity_t *entity, int x, int y)
         int dy = y - position->y;
         float d = distance(position->x, position->y, x, y);
 
-        if (d > 0)
+        if (d > 0.0f)
         {
-            dx = (int)round(dx / d);
-            dy = (int)round(dy / d);
+            dx = (int)roundf(dx / d);
+            dy = (int)roundf(dy / d);
 
             entity_move(entity, position->x + dx, position->y + dy);
         }
@@ -665,9 +663,8 @@ bool entity_ascend(entity_t *entity)
         else
         {
             appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
-            position_t *position = (position_t *)component_get(entity, COMPONENT_POSITION);
 
-            if (appearance && position)
+            if (appearance)
             {
                 game_log(entity->game, position, TCOD_white, "%s can't ascend here", appearance->name);
             }
@@ -873,10 +870,10 @@ void entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_pa
             arrow_projectile->x = (float)position->x;
             arrow_projectile->y = (float)position->y;
             // TODO: this is somewhat inaccurate
-            float dx = x - position->x;
-            float dy = y - position->y;
+            float dx = (float)x - (float)position->x;
+            float dy = (float)y - (float)position->y;
             float d = distance(position->x, position->y, x, y);
-            if (d > 0)
+            if (d > 0.0f)
             {
                 dx /= d;
                 dy /= d;

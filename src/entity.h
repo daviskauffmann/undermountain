@@ -3,13 +3,11 @@
 
 #include <libtcod/libtcod.h>
 
-#include "tile.h"
-#include "component.h"
-
 #define NUM_ENTITIES 65536
 #define ID_UNUSED -1
 
 typedef struct game_s game_t;
+typedef struct tile_s tile_t;
 
 typedef struct entity_s
 {

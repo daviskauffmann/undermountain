@@ -6,23 +6,20 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "engine.h"
-#include "utils.h"
-#include "message.h"
-#include "tile.h"
-#include "room.h"
-#include "map.h"
-#include "spell.h"
-#include "entity.h"
-#include "component.h"
 #include "assemblage.h"
-#include "panel.h"
+#include "component.h"
+#include "engine.h"
+#include "entity.h"
 #include "game.h"
+#include "map.h"
+#include "message.h"
+#include "panel.h"
+#include "room.h"
+#include "spell.h"
+#include "tile.h"
+#include "utils.h"
 
-void fn_should_update(game_t *game)
-{
-    game->should_update = true;
-}
+internal void fn_should_update(game_t *game);
 
 void game_run(void)
 {
@@ -84,61 +81,59 @@ void game_init(game_t *game)
         map_init(map, game, level);
     }
 
-    game->tile_common = (tile_common_t){
-        .shadow_color = TCOD_color_RGB(16, 16, 32)};
+    game->tile_common.shadow_color = TCOD_color_RGB(16, 16, 32);
 
-    game->tile_info[TILE_EMPTY] = (tile_info_t){
-        .name = "Empty",
-        .glyph = ' ',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    game->tile_info[TILE_FLOOR] = (tile_info_t){
-        .name = "Floor",
-        .glyph = '.',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    game->tile_info[TILE_WALL] = (tile_info_t){
-        .name = "Wall",
-        .glyph = '#',
-        .color = TCOD_white,
-        .is_transparent = false,
-        .is_walkable = false};
-    game->tile_info[TILE_DOOR_CLOSED] = (tile_info_t){
-        .name = "Closed Door",
-        .glyph = '+',
-        .color = TCOD_white,
-        .is_transparent = false,
-        .is_walkable = false};
-    game->tile_info[TILE_DOOR_OPEN] = (tile_info_t){
-        .name = "Open Door",
-        .glyph = '-',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    game->tile_info[TILE_STAIR_DOWN] = (tile_info_t){
-        .name = "Stair Down",
-        .glyph = '>',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
-    game->tile_info[TILE_STAIR_UP] = (tile_info_t){
-        .name = "Stair Up",
-        .glyph = '<',
-        .color = TCOD_white,
-        .is_transparent = true,
-        .is_walkable = true};
+    game->tile_info[TILE_EMPTY].name = "Empty";
+    game->tile_info[TILE_EMPTY].glyph = ' ';
+    game->tile_info[TILE_EMPTY].color = TCOD_white;
+    game->tile_info[TILE_EMPTY].is_transparent = true;
+    game->tile_info[TILE_EMPTY].is_walkable = true;
+
+    game->tile_info[TILE_FLOOR].name = "Floor";
+    game->tile_info[TILE_FLOOR].glyph = '.';
+    game->tile_info[TILE_FLOOR].color = TCOD_white;
+    game->tile_info[TILE_FLOOR].is_transparent = true;
+    game->tile_info[TILE_FLOOR].is_walkable = true;
+
+    game->tile_info[TILE_WALL].name = "Wall";
+    game->tile_info[TILE_WALL].glyph = '#';
+    game->tile_info[TILE_WALL].color = TCOD_white;
+    game->tile_info[TILE_WALL].is_transparent = false;
+    game->tile_info[TILE_WALL].is_walkable = false;
+
+    game->tile_info[TILE_DOOR_CLOSED].name = "Closed Door";
+    game->tile_info[TILE_DOOR_CLOSED].glyph = '+';
+    game->tile_info[TILE_DOOR_CLOSED].color = TCOD_white;
+    game->tile_info[TILE_DOOR_CLOSED].is_transparent = false;
+    game->tile_info[TILE_DOOR_CLOSED].is_walkable = false;
+
+    game->tile_info[TILE_DOOR_OPEN].name = "Open Door";
+    game->tile_info[TILE_DOOR_OPEN].glyph = '-';
+    game->tile_info[TILE_DOOR_OPEN].color = TCOD_white;
+    game->tile_info[TILE_DOOR_OPEN].is_transparent = true;
+    game->tile_info[TILE_DOOR_OPEN].is_walkable = true;
+
+    game->tile_info[TILE_STAIR_DOWN].name = "Stair Down";
+    game->tile_info[TILE_STAIR_DOWN].glyph = '>';
+    game->tile_info[TILE_STAIR_DOWN].color = TCOD_white;
+    game->tile_info[TILE_STAIR_DOWN].is_transparent = true;
+    game->tile_info[TILE_STAIR_DOWN].is_walkable = true;
+
+    game->tile_info[TILE_STAIR_UP].name = "Stair Up";
+    game->tile_info[TILE_STAIR_UP].glyph = '<';
+    game->tile_info[TILE_STAIR_UP].color = TCOD_white;
+    game->tile_info[TILE_STAIR_UP].is_transparent = true;
+    game->tile_info[TILE_STAIR_UP].is_walkable = true;
 
     game->player = NULL;
 
     game->current_panel = 0;
-    game->panel_info[PANEL_CHARACTER] = (panel_info_t){
-        .current = 0,
-        .scroll = 0};
-    game->panel_info[PANEL_INVENTORY] = (panel_info_t){
-        .current = 0,
-        .scroll = 0};
+
+    game->panel_status[PANEL_CHARACTER].current = 0;
+    game->panel_status[PANEL_CHARACTER].scroll = 0;
+
+    game->panel_status[PANEL_INVENTORY].current = 0;
+    game->panel_status[PANEL_INVENTORY].scroll = 0;
 
     game->turn = 0;
     game->turn_available = true;
@@ -167,7 +162,7 @@ void game_new(game_t *game)
     }
 
     game->player = create_player(&game->maps[0], game->maps[0].stair_up_x, game->maps[0].stair_up_y);
-    entity_t *pet = create_pet(&game->maps[0], game->maps[0].stair_up_x + 1, game->maps[0].stair_up_y);
+    create_pet(&game->maps[0], game->maps[0].stair_up_x + 1, game->maps[0].stair_up_y);
 
     {
         appearance_t *player_appearance = (appearance_t *)component_get(game->player, COMPONENT_APPEARANCE);
@@ -281,7 +276,7 @@ void game_save(game_t *game)
             break;
             case COMPONENT_INVENTORY:
             {
-                inventory_t *inventory = (inventory_t *)component;
+                // inventory_t *inventory = (inventory_t *)component;
             }
             break;
             case COMPONENT_LIGHT:
@@ -378,7 +373,7 @@ void game_load(game_t *game)
                 tile_t *tile = &map->tiles[x][y];
 
                 tile->type = TCOD_zip_get_int(zip);
-                tile->seen = TCOD_zip_get_int(zip);
+                tile->seen = (bool)TCOD_zip_get_int(zip);
             }
         }
     }
@@ -434,7 +429,7 @@ void game_load(game_t *game)
                 for (spell_type_t spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
                 {
                     caster->spells[spell_type].type = TCOD_zip_get_int(zip);
-                    caster->spells[spell_type].known = TCOD_zip_get_int(zip);
+                    caster->spells[spell_type].known = (bool)TCOD_zip_get_int(zip);
                 }
                 caster->current = TCOD_zip_get_int(zip);
             }
@@ -464,7 +459,7 @@ void game_load(game_t *game)
             break;
             case COMPONENT_INVENTORY:
             {
-                inventory_t *inventory = (inventory_t *)component;
+                // inventory_t *inventory = (inventory_t *)component;
             }
             break;
             case COMPONENT_LIGHT:
@@ -473,7 +468,7 @@ void game_load(game_t *game)
 
                 light->radius = TCOD_zip_get_int(zip);
                 light->color = TCOD_zip_get_color(zip);
-                light->flicker = TCOD_zip_get_int(zip);
+                light->flicker = (bool)TCOD_zip_get_int(zip);
                 light->priority = TCOD_zip_get_int(zip);
             }
             break;
@@ -1389,8 +1384,8 @@ void game_render(game_t *game)
                                         {
                                             if (TCOD_map_is_in_fov(light->fov_map, x, y))
                                             {
-                                                float r2 = pow(light->radius, 2);
-                                                float d = pow(x - position->x + (light->flicker ? dx : 0), 2) + pow(y - position->y + (light->flicker ? dy : 0), 2);
+                                                float r2 = powf((float)light->radius, 2);
+                                                float d = powf(x - position->x + (light->flicker ? dx : 0), 2) + powf(y - position->y + (light->flicker ? dy : 0), 2);
                                                 float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (light->flicker ? di : 0));
 
                                                 color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, light->color, l), l);
@@ -1624,9 +1619,9 @@ void game_reset(game_t *game)
 
         entity_reset(entity);
 
-        for (int j = 0; j < NUM_COMPONENTS; j++)
+        for (component_type_t component_type = 0; component_type < NUM_COMPONENTS; component_type++)
         {
-            component_t *component = &game->components[j][i];
+            component_t *component = &game->components[component_type][i];
 
             component_reset(component);
         }
@@ -1647,4 +1642,9 @@ void game_reset(game_t *game)
     }
 
     TCOD_list_delete(game->messages);
+}
+
+internal void fn_should_update(game_t *game)
+{
+    game->should_update = true;
 }

@@ -3,11 +3,11 @@
 
 #include <libtcod/libtcod.h>
 
-#include "tile.h"
-#include "map.h"
-#include "entity.h"
 #include "component.h"
+#include "entity.h"
+#include "map.h"
 #include "panel.h"
+#include "tile.h"
 
 typedef struct game_s
 {
@@ -19,7 +19,7 @@ typedef struct game_s
     entity_t *player;
     TCOD_list_t messages;
     panel_type_t current_panel;
-    panel_info_t panel_info[NUM_PANELS];
+    panel_status_t panel_status[NUM_PANELS];
     int turn;
     bool turn_available;
     bool should_update;

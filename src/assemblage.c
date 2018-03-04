@@ -1,10 +1,10 @@
 #include <libtcod/libtcod.h>
 
 #include "assemblage.h"
-#include "entity.h"
 #include "component.h"
-#include "map.h"
+#include "entity.h"
 #include "game.h"
+#include "map.h"
 
 entity_t *create_player(map_t *map, int x, int y)
 {
@@ -89,8 +89,7 @@ entity_t *create_pet(map_t *map, int x, int y)
     return entity;
 }
 
-entity_t *
-create_skeleton(map_t *map, int x, int y)
+entity_t *create_skeleton(map_t *map, int x, int y)
 {
     entity_t *entity = entity_create(map->game);
 
@@ -127,8 +126,7 @@ create_skeleton(map_t *map, int x, int y)
     return entity;
 }
 
-entity_t *
-create_skeleton_captain(map_t *map, int x, int y)
+entity_t *create_skeleton_captain(map_t *map, int x, int y)
 {
     entity_t *entity = entity_create(map->game);
 
@@ -165,8 +163,7 @@ create_skeleton_captain(map_t *map, int x, int y)
     return entity;
 }
 
-entity_t *
-create_zombie(map_t *map, int x, int y)
+entity_t *create_zombie(map_t *map, int x, int y)
 {
     entity_t *entity = entity_create(map->game);
 
@@ -203,8 +200,7 @@ create_zombie(map_t *map, int x, int y)
     return entity;
 }
 
-entity_t *
-create_jackal(map_t *map, int x, int y)
+entity_t *create_jackal(map_t *map, int x, int y)
 {
     entity_t *entity = entity_create(map->game);
 
@@ -241,8 +237,7 @@ create_jackal(map_t *map, int x, int y)
     return entity;
 }
 
-entity_t *
-create_adventurer(map_t *map, int x, int y)
+entity_t *create_adventurer(map_t *map, int x, int y)
 {
     entity_t *entity = entity_create(map->game);
 
@@ -279,8 +274,7 @@ create_adventurer(map_t *map, int x, int y)
     return entity;
 }
 
-entity_t *
-create_longsword(map_t *map, int x, int y)
+entity_t *create_longsword(map_t *map, int x, int y)
 {
     entity_t *entity = entity_create(map->game);
 
@@ -301,15 +295,17 @@ create_longsword(map_t *map, int x, int y)
     return entity;
 }
 
-entity_t *
-create_brazier(map_t *map, int x, int y)
+entity_t *create_brazier(map_t *map, int x, int y)
 {
     entity_t *entity = entity_create(map->game);
 
     appearance_t *appearance = (appearance_t *)component_add(entity, COMPONENT_APPEARANCE);
     appearance->name = "Brazier";
     appearance->glyph = '*';
-    appearance->color = TCOD_color_RGB(TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255), TCOD_random_get_int(NULL, 0, 255));
+    appearance->color = TCOD_color_RGB(
+        (uint8)TCOD_random_get_int(NULL, 0, 255),
+        (uint8)TCOD_random_get_int(NULL, 0, 255),
+        (uint8)TCOD_random_get_int(NULL, 0, 255));
 
     light_t *light = (light_t *)component_add(entity, COMPONENT_LIGHT);
     light->radius = TCOD_random_get_int(NULL, 10, 20);

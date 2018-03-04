@@ -1,4 +1,5 @@
 #include <libtcod/libtcod.h>
+#include <malloc.h>
 
 #include "room.h"
 

@@ -888,7 +888,7 @@ void entity_shoot(entity_t *entity, int x, int y, void (*on_hit)(void *on_hit_pa
             arrow_appearance->name = "Arrow";
             arrow_appearance->color = TCOD_white;
             arrow_appearance->layer = LAYER_0;
-            double a = angle(position->x, position->y, x, y);
+            float a = angle(position->x, position->y, x, y);
             if ((a >= 0.0f && a <= 30.0f) ||
                 (a >= 150.0f && a <= 180.0f) ||
                 (a >= 180.0f && a <= 210.0f) ||

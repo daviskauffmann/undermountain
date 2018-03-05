@@ -21,6 +21,8 @@ float angle(int x1, int y1, int x2, int y2)
     float dx = (float)(x1 - x2);
     float dy = (float)(y1 - y2);
 
+    // return atan2f(dy, dx);
+
     float a = atan2f(dy, -dx) * 57.2957795f;
 
     a = a < 0 ? a + 360.0f : a;

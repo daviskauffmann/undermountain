@@ -119,6 +119,7 @@ void component_init(component_t *component, int id, component_type_t component_t
         projectile->dy = 0.0f;
         projectile->shooter = NULL;
         projectile->on_hit = NULL;
+        projectile->on_hit_params = NULL;
     }
     break;
     case COMPONENT_POSITION:

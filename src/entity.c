@@ -179,14 +179,15 @@ void entity_update_projectile(entity_t *entity)
 
             // TODO:
             // destroying the arrow makes subsequent arrows travel increasingly faster... wtf?
+            // SOLVED: we need to delete the arrow from the map's entity list
             // but maybe we want arrows not to be destroyed, but to fall to the ground
             // or even be added to the inventory of whatever it hit (if it has one)
-            // entity_destroy(entity);
-            component_remove(entity, COMPONENT_PROJECTILE);
+            entity_destroy(entity);
+            // component_remove(entity, COMPONENT_PROJECTILE);
 
-            entity_map_place(entity);
+            // entity_map_place(entity);
 
-            component_add(entity, COMPONENT_PICKABLE);
+            // component_add(entity, COMPONENT_PICKABLE);
         }
     }
 }
@@ -451,67 +452,80 @@ bool entity_move(entity_t *entity, int x, int y)
             tile_t *tile = &map->tiles[x][y];
             tile_info_t *tile_info = &entity->game->tile_info[tile->type];
 
-            if (tile->type == TILE_DOOR_CLOSED)
+            bool skip_move = false;
+
+            if (!skip_move)
             {
-                success = true;
-
-                entity_open_door(entity, tile);
-
-                goto skip_move;
-            }
-
-            if (!tile_info->is_walkable)
-            {
-                goto skip_move;
-            }
-
-            for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
-            {
-                entity_t *other = *iterator;
-
-                component_t *other_solid = component_get(other, COMPONENT_SOLID);
-
-                if (other_solid)
+                if (tile->type == TILE_DOOR_CLOSED)
                 {
-                    health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+                    skip_move = true;
+                    success = true;
 
-                    if (other_health)
-                    {
-                        alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
-
-                        alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-
-                        if (alignment && other_alignment &&
-                            alignment->type == other_alignment->type)
-                        {
-                            // TODO: only the player can swap?
-                            if (entity == entity->game->player)
-                            {
-                                success = true;
-
-                                entity_swap(entity, other);
-                            }
-                        }
-                        else
-                        {
-                            success = true;
-
-                            entity_attack(entity, other);
-                        }
-                    }
-
-                    goto skip_move;
+                    entity_open_door(entity, tile);
                 }
             }
 
-            entity_map_remove(entity);
-            position->x = x;
-            position->y = y;
-            entity_map_place(entity);
+            if (!skip_move)
+            {
+                if (!tile_info->is_walkable)
+                {
+                    skip_move = true;
+                }
+            }
 
-            success = true;
+            if (!skip_move)
+            {
+                for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
+                {
+                    entity_t *other = *iterator;
 
-        skip_move:;
+                    component_t *other_solid = component_get(other, COMPONENT_SOLID);
+
+                    if (other_solid)
+                    {
+                        skip_move = true;
+
+                        health_t *other_health = (health_t *)component_get(other, COMPONENT_HEALTH);
+
+                        if (other_health)
+                        {
+                            alignment_t *alignment = (alignment_t *)component_get(entity, COMPONENT_ALIGNMENT);
+
+                            alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
+
+                            if (alignment && other_alignment &&
+                                alignment->type == other_alignment->type)
+                            {
+                                // TODO: only the player can swap?
+                                if (entity == entity->game->player)
+                                {
+                                    success = true;
+
+                                    entity_swap(entity, other);
+                                }
+                            }
+                            else
+                            {
+                                success = true;
+
+                                entity_attack(entity, other);
+                            }
+                        }
+
+                        break;
+                    }
+                }
+            }
+
+            if (!skip_move)
+            {
+                entity_map_remove(entity);
+                position->x = x;
+                position->y = y;
+                entity_map_place(entity);
+
+                success = true;
+            }
         }
     }
 

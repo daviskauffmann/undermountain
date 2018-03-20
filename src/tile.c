@@ -2,14 +2,18 @@
 
 #include "tile.h"
 
-void tile_init(tile_t *tile, tile_type_t type, bool seen)
+void tile_init(Tile *tile, TileType type, bool seen)
 {
     tile->type = type;
     tile->seen = seen;
-    tile->entities = TCOD_list_new();
+    tile->objects = TCOD_list_new();
+    tile->actors = TCOD_list_new();
+    tile->items = TCOD_list_new();
 }
 
-void tile_reset(tile_t *tile)
+void tile_reset(Tile *tile)
 {
-    TCOD_list_delete(tile->entities);
+    TCOD_list_delete(tile->objects);
+    TCOD_list_delete(tile->actors);
+    TCOD_list_delete(tile->items);
 }

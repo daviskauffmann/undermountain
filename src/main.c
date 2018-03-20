@@ -1,14 +1,11 @@
-#include "engine.h"
-#include "game.h"
+#include <stdio.h>
 
 int main(int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
 
-    engine_init();
-    game_run();
-    engine_quit();
+    printf("Hello, World!\n");
 
     return 0;
 }

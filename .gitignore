@@ -1,11 +1,12 @@
 .vs
 .vscode
 
-build
-saves
+Thumbs.db
 
-roguelike.exe
-roguelike.exp
-roguelike.ilk
-roguelike.lib
-roguelike.pdb
+build
+
+bin/**/*.exe
+bin/**/*.exp
+bin/**/*.ilk
+bin/**/*.lib
+bin/**/*.pdb

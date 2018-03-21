@@ -2,7 +2,7 @@
 
 #include "tile.h"
 
-void tile_init(Tile *tile, TileType type, bool seen)
+void tile_init(struct tile *tile, enum tile_type type, bool seen)
 {
     tile->type = type;
     tile->seen = seen;
@@ -11,7 +11,7 @@ void tile_init(Tile *tile, TileType type, bool seen)
     tile->items = TCOD_list_new();
 }
 
-void tile_reset(Tile *tile)
+void tile_reset(struct tile *tile)
 {
     TCOD_list_delete(tile->objects);
     TCOD_list_delete(tile->actors);

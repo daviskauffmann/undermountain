@@ -2,11 +2,14 @@
 #include <stdio.h>
 
 #include "game.h"
+#include "window.h"
 
 int main(int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
+
+    window_init();
 
     struct game *game = game_create();
 

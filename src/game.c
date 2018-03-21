@@ -1,19 +1,17 @@
 #include <libtcod/libtcod.h>
 #include <malloc.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "game.h"
 #include "map.h"
+#include "message.h"
+#include "window.h"
 
 struct game *game_create(void)
 {
     struct game *game = malloc(sizeof(struct game));
-
-    for (int level = 0; level < NUM_MAPS; level++)
-    {
-        struct map *map = &game->maps[level];
-
-        map_init(map, game, level);
-    }
 
     game->tile_common.shadow_color = TCOD_color_RGB(16, 16, 32);
 
@@ -102,6 +100,13 @@ struct game *game_create(void)
     game->item_info[ITEM_SWORD].glyph = '|';
     game->item_info[ITEM_SWORD].color = TCOD_white;
 
+    for (int level = 0; level < NUM_MAPS; level++)
+    {
+        struct map *map = &game->maps[level];
+
+        map_init(map, game, level);
+    }
+
     game->player = NULL;
 
     game->turn = 0;
@@ -123,6 +128,8 @@ struct game *game_create(void)
 
     game->message_log_visible = true;
     game->panel_visible = false;
+
+    return game;
 }
 
 void game_new(struct game *game)
@@ -138,9 +145,19 @@ void game_new(struct game *game)
         map_populate(map);
     }
 
-    game->player = actor_create(ACTOR_PLAYER, &game->maps[0], game->maps[0].stair_up_x, game->maps[0].stair_up_y, 20, FACTION_GOOD);
+    {
+        int level = 0;
+        struct map *map = &game->maps[level];
+        int x = map->stair_up_x;
+        int y = map->stair_up_y;
+        struct tile *tile = &map->tiles[x + y * MAP_WIDTH];
 
-    game_log(game, game->player->x, game->player->y, TCOD_white, "Hail, %s", game->actor_info[ACTOR_PLAYER].name);
+        game->player = actor_create(ACTOR_PLAYER, game, level, x, y, 20, FACTION_GOOD);
+        TCOD_list_push(map->actors, game->player);
+        TCOD_list_push(tile->actors, game->player);
+    }
+
+    game_log(game, game->player->level, game->player->x, game->player->y, TCOD_white, "Hail, %s", game->actor_info[ACTOR_PLAYER].name);
 }
 
 void game_save(struct game *game)
@@ -153,6 +170,47 @@ void game_load(struct game *game)
 
 void game_input(struct game *game)
 {
+    TCOD_key_t key;
+    TCOD_mouse_t mouse;
+    TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
+
+    switch (ev)
+    {
+    case TCOD_EVENT_KEY_PRESS:
+    {
+        switch (key.vk)
+        {
+        case TCODK_ESCAPE:
+        {
+            game->should_quit = true;
+        }
+        break;
+        case TCODK_ENTER:
+        {
+            if (key.lalt)
+            {
+                fullscreen = !fullscreen;
+
+                TCOD_console_set_fullscreen(fullscreen);
+            }
+        }
+        break;
+        case TCODK_CHAR:
+        {
+            switch (key.c)
+            {
+            case 'r':
+            {
+                game->should_restart = true;
+            }
+            break;
+            }
+        }
+        break;
+        }
+    }
+    break;
+    }
 }
 
 void game_update(struct game *game)
@@ -163,10 +221,59 @@ void game_render(struct game *game)
 {
 }
 
-void game_log(struct game *game, int x, int y, TCOD_color_t color, char *text, ...)
+void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
+    char buffer[128];
+
+    va_list args;
+    va_start(args, fmt);
+    vsprintf_s(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+
+    char *line_begin = buffer;
+    char *line_end;
+
+    do
+    {
+        if (TCOD_list_size(game->messages) == (console_height / 4) - 2)
+        {
+            struct message *message = TCOD_list_get(game->messages, 0);
+
+            TCOD_list_remove(game->messages, message);
+
+            message_destroy(message);
+        }
+
+        line_end = strchr(line_begin, '\n');
+
+        if (line_end)
+        {
+            *line_end = '\0';
+        }
+
+        struct message *message = message_create(line_begin, color);
+
+        TCOD_list_push(game->messages, message);
+
+        line_begin = line_end + 1;
+    } while (line_end);
 }
 
 void game_destroy(struct game *game)
 {
+    for (int i = 0; i < NUM_MAPS; i++)
+    {
+        struct map *map = &game->maps[i];
+
+        map_reset(map);
+    }
+
+    for (void **iterator = TCOD_list_begin(game->messages); iterator != TCOD_list_end(game->messages); iterator++)
+    {
+        struct message *message = *iterator;
+
+        message_destroy(message);
+    }
+
+    TCOD_list_delete(game->messages);
 }

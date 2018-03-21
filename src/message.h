@@ -5,11 +5,11 @@
 
 struct message
 {
-    const char *text;
+    char *text;
     TCOD_color_t color;
 };
 
-struct message *message_create(const char *text, TCOD_color_t color);
+struct message *message_create(char *text, TCOD_color_t color);
 void message_destroy(struct message *message);
 
 #endif

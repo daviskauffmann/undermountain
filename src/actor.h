@@ -38,7 +38,8 @@ enum faction
 struct actor
 {
     enum actor_type type;
-    struct map *map;
+    struct game *game;
+    int level;
     int x;
     int y;
     int health;
@@ -46,9 +47,11 @@ struct actor
     TCOD_map_t torch_fov;
     enum faction faction;
     TCOD_list_t items;
+    TCOD_color_t flash_color;
+    double flash_fade;
 };
 
-struct actor *actor_create(enum actor_type type, struct map *map, int x, int y, int health, enum faction faction);
+struct actor *actor_create(enum actor_type type, struct game *game, int level, int x, int y, int health, enum faction faction);
 void actor_destroy(struct actor *actor);
 
 #endif

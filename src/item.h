@@ -25,11 +25,13 @@ struct item_info
 struct item
 {
     enum item_type type;
+    struct game *game;
+    int level;
     int x;
     int y;
 };
 
-struct item *item_create(enum item_type type, int x, int y);
+struct item *item_create(enum item_type type, struct game *game, int level, int x, int y);
 void item_destroy(struct item *item);
 
 #endif

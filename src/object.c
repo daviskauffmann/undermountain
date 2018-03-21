@@ -3,11 +3,13 @@
 
 #include "object.h"
 
-struct object *object_create(enum object_type type, int x, int y)
+struct object *object_create(enum object_type type, struct game *game, int level, int x, int y)
 {
     struct object *object = malloc(sizeof(struct object));
 
     object->type = type;
+    object->game = game;
+    object->level = level;
     object->x = x;
     object->y = y;
     object->light_fov = NULL;

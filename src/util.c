@@ -21,7 +21,7 @@ double angle(int x1, int y1, int x2, int y2)
     double dx = (double)(x1 - x2);
     double dy = (double)(y1 - y2);
 
-    return atan2f(dy, dx);
+    return atan2(dy, dx);
 }
 
 int roll(int a, int x)

@@ -14,7 +14,6 @@
 
 struct game
 {
-    struct map maps[NUM_MAPS];
     struct tile_common tile_common;
     struct tile_info tile_info[NUM_TILE_TYPES];
     struct object_common object_common;
@@ -23,6 +22,7 @@ struct game
     struct actor_info actor_info[NUM_ACTOR_TYPES];
     struct item_common item_common;
     struct item_info item_info[NUM_ITEM_TYPES];
+    struct map maps[NUM_MAPS];
     struct actor *player;
     int turn;
     bool turn_available;
@@ -44,7 +44,7 @@ void game_load(struct game *game);
 void game_input(struct game *game);
 void game_update(struct game *game);
 void game_render(struct game *game);
-void game_log(struct game *game, int x, int y, TCOD_color_t color, char *text, ...);
+void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, char *fmt, ...);
 void game_destroy(struct game *game);
 
 #endif

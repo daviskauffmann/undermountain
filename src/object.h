@@ -29,12 +29,14 @@ struct object_info
 struct object
 {
     enum object_type type;
+    struct game *game;
+    int level;
     int x;
     int y;
     TCOD_map_t light_fov;
 };
 
-struct object *object_create(enum object_type type, int x, int y);
+struct object *object_create(enum object_type type, struct game *game, int level, int x, int y);
 void object_destroy(struct object *object);
 
 #endif

@@ -14,7 +14,7 @@ struct map
     int stair_down_y;
     int stair_up_x;
     int stair_up_y;
-    struct tile tiles[MAP_WIDTH * MAP_HEIGHT];
+    struct tile tiles[MAP_WIDTH][MAP_HEIGHT];
     TCOD_list_t rooms;
     TCOD_list_t objects;
     TCOD_list_t actors;

@@ -24,8 +24,8 @@ struct item_info
 
 struct item
 {
-    enum item_type type;
     struct game *game;
+    enum item_type type;
     int level;
     int x;
     int y;

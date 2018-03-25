@@ -19,13 +19,17 @@ struct game
     struct object_common object_common;
     struct object_info object_info[NUM_OBJECT_TYPES];
     struct actor_common actor_common;
-    struct actor_info actor_info[NUM_ACTOR_TYPES];
+    struct race_info race_info[NUM_RACES];
+    struct class_info class_info[NUM_CLASSES];
     struct item_common item_common;
     struct item_info item_info[NUM_ITEM_TYPES];
     struct map maps[NUM_MAPS];
     struct actor *player;
     int turn;
     bool turn_available;
+    bool targeting;
+    int target_x;
+    int target_y;
     bool should_update;
     bool should_restart;
     bool should_quit;

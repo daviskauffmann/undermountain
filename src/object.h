@@ -10,7 +10,9 @@ struct object_common
 
 enum object_type
 {
-    OBJECT_BRAZIER,
+    OBJECT_ALTAR,
+    OBJECT_FOUNTAIN,
+    OBJECT_TORCH,
 
     NUM_OBJECT_TYPES
 };
@@ -24,6 +26,7 @@ struct object_info
     bool is_transparent;
     int light_radius;
     TCOD_color_t light_color;
+    bool light_flicker;
 };
 
 struct object
@@ -37,6 +40,7 @@ struct object
 };
 
 struct object *object_create(enum object_type type, struct game *game, int level, int x, int y);
+void object_calc_light(struct object *object);
 void object_destroy(struct object *object);
 
 #endif

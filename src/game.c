@@ -11,6 +11,8 @@
 #include "message.h"
 #include "window.h"
 
+static void fn_should_update(struct game *game);
+
 struct game *game_create(void)
 {
     struct game *game = malloc(sizeof(struct game));
@@ -39,7 +41,7 @@ struct game *game_create(void)
     game->tile_info[TILE_DOOR_CLOSED].glyph = '+';
     game->tile_info[TILE_DOOR_CLOSED].color = TCOD_white;
     game->tile_info[TILE_DOOR_CLOSED].is_transparent = false;
-    game->tile_info[TILE_DOOR_CLOSED].is_walkable = false;
+    game->tile_info[TILE_DOOR_CLOSED].is_walkable = true;
 
     game->tile_info[TILE_DOOR_OPEN].name = "Open Door";
     game->tile_info[TILE_DOOR_OPEN].glyph = '-';
@@ -61,13 +63,32 @@ struct game *game_create(void)
 
     game->object_common.__placeholder = 0;
 
-    game->object_info[OBJECT_BRAZIER].name = "Brazier";
-    game->object_info[OBJECT_BRAZIER].glyph = '*';
-    game->object_info[OBJECT_BRAZIER].color = TCOD_white;
-    game->object_info[OBJECT_BRAZIER].is_transparent = false;
-    game->object_info[OBJECT_BRAZIER].is_walkable = false;
-    game->object_info[OBJECT_BRAZIER].light_radius = 10;
-    game->object_info[OBJECT_BRAZIER].light_color = TCOD_white;
+    game->object_info[OBJECT_ALTAR].name = "Altar";
+    game->object_info[OBJECT_ALTAR].glyph = '_';
+    game->object_info[OBJECT_ALTAR].color = TCOD_white;
+    game->object_info[OBJECT_ALTAR].is_transparent = false;
+    game->object_info[OBJECT_ALTAR].is_walkable = false;
+    game->object_info[OBJECT_ALTAR].light_radius = -1;
+    game->object_info[OBJECT_ALTAR].light_color = TCOD_white;
+    game->object_info[OBJECT_ALTAR].light_flicker = false;
+
+    game->object_info[OBJECT_FOUNTAIN].name = "Fountain";
+    game->object_info[OBJECT_FOUNTAIN].glyph = '~';
+    game->object_info[OBJECT_FOUNTAIN].color = TCOD_white;
+    game->object_info[OBJECT_FOUNTAIN].is_transparent = false;
+    game->object_info[OBJECT_FOUNTAIN].is_walkable = false;
+    game->object_info[OBJECT_FOUNTAIN].light_radius = -1;
+    game->object_info[OBJECT_FOUNTAIN].light_color = TCOD_white;
+    game->object_info[OBJECT_FOUNTAIN].light_flicker = false;
+
+    game->object_info[OBJECT_TORCH].name = "Torch";
+    game->object_info[OBJECT_TORCH].glyph = '*';
+    game->object_info[OBJECT_TORCH].color = TCOD_light_amber;
+    game->object_info[OBJECT_TORCH].is_transparent = false;
+    game->object_info[OBJECT_TORCH].is_walkable = false;
+    game->object_info[OBJECT_TORCH].light_radius = 10;
+    game->object_info[OBJECT_TORCH].light_color = TCOD_light_amber;
+    game->object_info[OBJECT_TORCH].light_flicker = true;
 
     game->actor_common.glow_radius = 5;
     game->actor_common.glow_color = TCOD_white;
@@ -76,24 +97,31 @@ struct game *game_create(void)
 
     game->race_info[RACE_HUMAN].name = "Human";
     game->race_info[RACE_HUMAN].glyph = '@';
+    game->race_info[RACE_HUMAN].energy_per_turn = 0.5f;
 
     game->race_info[RACE_ELF].name = "Elf";
     game->race_info[RACE_ELF].glyph = '@';
+    game->race_info[RACE_ELF].energy_per_turn = 0.6f;
 
     game->race_info[RACE_DWARF].name = "Dwarf";
     game->race_info[RACE_DWARF].glyph = '@';
+    game->race_info[RACE_DWARF].energy_per_turn = 0.4f;
 
     game->race_info[RACE_DOG].name = "Dog";
     game->race_info[RACE_DOG].glyph = 'd';
+    game->race_info[RACE_DOG].energy_per_turn = 0.7f;
 
     game->race_info[RACE_ORC].name = "Orc";
     game->race_info[RACE_ORC].glyph = 'o';
+    game->race_info[RACE_ORC].energy_per_turn = 0.5f;
 
     game->race_info[RACE_BUGBEAR].name = "Bugbear";
     game->race_info[RACE_BUGBEAR].glyph = 'b';
+    game->race_info[RACE_BUGBEAR].energy_per_turn = 0.5f;
 
     game->race_info[RACE_ZOMBIE].name = "Zombie";
     game->race_info[RACE_ZOMBIE].glyph = 'z';
+    game->race_info[RACE_ZOMBIE].energy_per_turn = 0.3f;
 
     game->class_info[CLASS_FIGHTER].name = "Fighter";
     game->class_info[CLASS_FIGHTER].color = TCOD_white;
@@ -109,6 +137,26 @@ struct game *game_create(void)
 
     game->item_common.__placeholder = 0;
 
+    game->item_info[ITEM_BOW].name = "Bow";
+    game->item_info[ITEM_BOW].glyph = '}';
+    game->item_info[ITEM_BOW].color = TCOD_white;
+
+    game->item_info[ITEM_POTION].name = "Potion";
+    game->item_info[ITEM_POTION].glyph = '!';
+    game->item_info[ITEM_POTION].color = TCOD_white;
+
+    game->item_info[ITEM_SCROLL].name = "Scroll";
+    game->item_info[ITEM_SCROLL].glyph = '?';
+    game->item_info[ITEM_SCROLL].color = TCOD_white;
+
+    game->item_info[ITEM_SHIELD].name = "Shield";
+    game->item_info[ITEM_SHIELD].glyph = ')';
+    game->item_info[ITEM_SHIELD].color = TCOD_white;
+
+    game->item_info[ITEM_SPEAR].name = "Spear";
+    game->item_info[ITEM_SPEAR].glyph = '/';
+    game->item_info[ITEM_SPEAR].color = TCOD_white;
+
     game->item_info[ITEM_SWORD].name = "Sword";
     game->item_info[ITEM_SWORD].glyph = '|';
     game->item_info[ITEM_SWORD].color = TCOD_white;
@@ -121,6 +169,10 @@ struct game *game_create(void)
     }
 
     game->player = NULL;
+    game->action = ACTION_NONE;
+    game->targeting = TARGETING_NONE;
+    game->target_x = -1;
+    game->target_y = -1;
 
     game->turn = 0;
     game->turn_available = true;
@@ -251,13 +303,11 @@ void game_input(struct game *game)
             {
             case TCOD_EVENT_KEY_PRESS:
             {
-                static enum action action = ACTION_NONE;
-
                 switch (key.vk)
                 {
                 case TCODK_KP1:
                 {
-                    if (game->targeting)
+                    if (game->targeting != TARGETING_NONE)
                     {
                         game->target_x--;
                         game->target_y++;
@@ -267,7 +317,7 @@ void game_input(struct game *game)
                         int x = game->player->x - 1;
                         int y = game->player->y + 1;
 
-                        if (action == ACTION_NONE)
+                        if (game->action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -280,16 +330,16 @@ void game_input(struct game *game)
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, action);
+                            game->should_update = actor_interact(game->player, x, y, game->action);
 
-                            action = ACTION_NONE;
+                            game->action = ACTION_NONE;
                         }
                     }
                 }
                 break;
                 case TCODK_KP2:
                 {
-                    if (game->targeting)
+                    if (game->targeting != TARGETING_NONE)
                     {
                         game->target_x;
                         game->target_y++;
@@ -299,7 +349,7 @@ void game_input(struct game *game)
                         int x = game->player->x;
                         int y = game->player->y + 1;
 
-                        if (action == ACTION_NONE)
+                        if (game->action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -312,16 +362,16 @@ void game_input(struct game *game)
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, action);
+                            game->should_update = actor_interact(game->player, x, y, game->action);
 
-                            action = ACTION_NONE;
+                            game->action = ACTION_NONE;
                         }
                     }
                 }
                 break;
                 case TCODK_KP3:
                 {
-                    if (game->targeting)
+                    if (game->targeting != TARGETING_NONE)
                     {
                         game->target_x++;
                         game->target_y++;
@@ -331,7 +381,7 @@ void game_input(struct game *game)
                         int x = game->player->x + 1;
                         int y = game->player->y + 1;
 
-                        if (action == ACTION_NONE)
+                        if (game->action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -344,16 +394,16 @@ void game_input(struct game *game)
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, action);
+                            game->should_update = actor_interact(game->player, x, y, game->action);
 
-                            action = ACTION_NONE;
+                            game->action = ACTION_NONE;
                         }
                     }
                 }
                 break;
                 case TCODK_KP4:
                 {
-                    if (game->targeting)
+                    if (game->targeting != TARGETING_NONE)
                     {
                         game->target_x--;
                         game->target_y;
@@ -363,7 +413,7 @@ void game_input(struct game *game)
                         int x = game->player->x - 1;
                         int y = game->player->y;
 
-                        if (action == ACTION_NONE)
+                        if (game->action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -376,16 +426,16 @@ void game_input(struct game *game)
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, action);
+                            game->should_update = actor_interact(game->player, x, y, game->action);
 
-                            action = ACTION_NONE;
+                            game->action = ACTION_NONE;
                         }
                     }
                 }
                 break;
                 case TCODK_KP6:
                 {
-                    if (game->targeting)
+                    if (game->targeting != TARGETING_NONE)
                     {
                         game->target_x++;
                         game->target_y;
@@ -395,7 +445,7 @@ void game_input(struct game *game)
                         int x = game->player->x + 1;
                         int y = game->player->y;
 
-                        if (action == ACTION_NONE)
+                        if (game->action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -408,16 +458,16 @@ void game_input(struct game *game)
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, action);
+                            game->should_update = actor_interact(game->player, x, y, game->action);
 
-                            action = ACTION_NONE;
+                            game->action = ACTION_NONE;
                         }
                     }
                 }
                 break;
                 case TCODK_KP7:
                 {
-                    if (game->targeting)
+                    if (game->targeting != TARGETING_NONE)
                     {
                         game->target_x--;
                         game->target_y--;
@@ -427,7 +477,7 @@ void game_input(struct game *game)
                         int x = game->player->x - 1;
                         int y = game->player->y - 1;
 
-                        if (action == ACTION_NONE)
+                        if (game->action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -440,16 +490,16 @@ void game_input(struct game *game)
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, action);
+                            game->should_update = actor_interact(game->player, x, y, game->action);
 
-                            action = ACTION_NONE;
+                            game->action = ACTION_NONE;
                         }
                     }
                 }
                 break;
                 case TCODK_KP8:
                 {
-                    if (game->targeting)
+                    if (game->targeting != TARGETING_NONE)
                     {
                         game->target_x;
                         game->target_y--;
@@ -459,7 +509,7 @@ void game_input(struct game *game)
                         int x = game->player->x;
                         int y = game->player->y - 1;
 
-                        if (action == ACTION_NONE)
+                        if (game->action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -472,16 +522,16 @@ void game_input(struct game *game)
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, action);
+                            game->should_update = actor_interact(game->player, x, y, game->action);
 
-                            action = ACTION_NONE;
+                            game->action = ACTION_NONE;
                         }
                     }
                 }
                 break;
                 case TCODK_KP9:
                 {
-                    if (game->targeting)
+                    if (game->targeting != TARGETING_NONE)
                     {
                         game->target_x++;
                         game->target_y--;
@@ -491,7 +541,7 @@ void game_input(struct game *game)
                         int x = game->player->x + 1;
                         int y = game->player->y - 1;
 
-                        if (action == ACTION_NONE)
+                        if (game->action == ACTION_NONE)
                         {
                             if (key.lctrl)
                             {
@@ -504,9 +554,9 @@ void game_input(struct game *game)
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, action);
+                            game->should_update = actor_interact(game->player, x, y, game->action);
 
-                            action = ACTION_NONE;
+                            game->action = ACTION_NONE;
                         }
                     }
                 }
@@ -532,105 +582,62 @@ void game_input(struct game *game)
                     break;
                     case 'c':
                     {
-                        action = ACTION_CLOSE_DOOR;
+                        game->action = ACTION_CLOSE_DOOR;
 
-                        game_log(game, game->player->level, game->player->x, game->player->y, TCOD_white, "Choose a direction");
+                        game_log(
+                            game,
+                            game->player->level,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_white,
+                            "Choose a direction");
                     }
                     break;
                     case 'f':
                     {
-                        // position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                        if (game->targeting == TARGETING_SHOOT)
+                        {
+                            actor_shoot(game->player, game->target_x, game->target_y, &fn_should_update, game);
 
-                        // if (player_position)
-                        // {
-                        //     targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
+                            game->targeting = TARGETING_NONE;
+                        }
+                        else
+                        {
+                            game->targeting = TARGETING_SHOOT;
 
-                        //     if (player_targeting && player_targeting->type == TARGETING_SHOOT)
-                        //     {
-                        //         entity_shoot(game->player, player_targeting->x, player_targeting->y, &fn_should_update, game);
+                            bool target_found = false;
 
-                        //         component_remove(game->player, COMPONENT_TARGETING);
-                        //     }
-                        //     else
-                        //     {
-                        //         player_targeting = (targeting_t *)component_add(game->player, COMPONENT_TARGETING);
-                        //         player_targeting->type = TARGETING_SHOOT;
+                            {
+                                struct map *map = &game->maps[game->player->level];
 
-                        //         bool target_found = false;
+                                for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                                {
+                                    struct actor *actor = *iterator;
 
-                        //         {
-                        //             alignment_t *player_alignment = (alignment_t *)component_get(game->player, COMPONENT_ALIGNMENT);
-                        //             fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
+                                    if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
+                                        actor->faction != game->player->faction)
+                                    {
+                                        target_found = true;
 
-                        //             if (player_alignment && player_fov)
-                        //             {
-                        //                 for (void **iterator = TCOD_list_begin(game->maps[player_position->level].entities); iterator != TCOD_list_end(game->maps[player_position->level].entities); iterator++)
-                        //                 {
-                        //                     entity_t *other = *iterator;
+                                        game->target_x = actor->x;
+                                        game->target_y = actor->y;
 
-                        //                     alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-                        //                     position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
+                                        break;
+                                    }
+                                }
+                            }
 
-                        //                     if (other_alignment && other_position)
-                        //                     {
-                        //                         if (TCOD_map_is_in_fov(player_fov->fov_map, other_position->x, other_position->y) &&
-                        //                             other_alignment->type != player_alignment->type)
-                        //                         {
-                        //                             target_found = true;
-
-                        //                             player_targeting->x = other_position->x;
-                        //                             player_targeting->y = other_position->y;
-
-                        //                             break;
-                        //                         }
-                        //                     }
-                        //                 }
-                        //             }
-                        //         }
-
-                        //         if (!target_found)
-                        //         {
-                        //             player_targeting->x = player_position->x;
-                        //             player_targeting->y = player_position->y;
-                        //         }
-                        //     }
-                        // }
+                            if (!target_found)
+                            {
+                                game->target_x = game->player->x;
+                                game->target_y = game->player->y;
+                            }
+                        }
                     }
                     break;
                     case 'g':
                     {
-                        // inventory_t *player_inventory = (inventory_t *)component_get(game->player, COMPONENT_INVENTORY);
-                        // position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
-
-                        // if (player_inventory && player_position)
-                        // {
-                        //     tile_t *tile = &game->maps[player_position->level].tiles[player_position->x][player_position->y];
-
-                        //     bool item_found = false;
-
-                        //     for (void **iterator = TCOD_list_begin(tile->entities); iterator != TCOD_list_end(tile->entities); iterator++)
-                        //     {
-                        //         entity_t *other = *iterator;
-
-                        //         pickable_t *pickable = (pickable_t *)component_get(other, COMPONENT_PICKABLE);
-
-                        //         if (pickable)
-                        //         {
-                        //             game->should_update = true;
-
-                        //             item_found = true;
-
-                        //             entity_pick(game->player, other);
-
-                        //             break;
-                        //         }
-                        //     }
-
-                        //     if (!item_found)
-                        //     {
-                        //         game_log(game->player->game, player_position, TCOD_white, "There is nothing here!");
-                        //     }
-                        // }
+                        game->should_update = actor_grab(game->player, game->player->x, game->player->y);
                     }
                     break;
                     case 'i':
@@ -641,24 +648,17 @@ void game_input(struct game *game)
                     break;
                     case 'l':
                     {
-                        // position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
+                        if (game->targeting == TARGETING_LOOK)
+                        {
+                            game->targeting = TARGETING_NONE;
+                        }
+                        else
+                        {
+                            game->targeting = TARGETING_LOOK;
 
-                        // if (player_position)
-                        // {
-                        //     targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
-
-                        //     if (player_targeting)
-                        //     {
-                        //         component_remove(game->player, COMPONENT_TARGETING);
-                        //     }
-                        //     else
-                        //     {
-                        //         player_targeting = (targeting_t *)component_add(game->player, COMPONENT_TARGETING);
-                        //         player_targeting->type = TARGETING_LOOK;
-                        //         player_targeting->x = player_position->x;
-                        //         player_targeting->y = player_position->y;
-                        //     }
-                        // }
+                            game->target_x = game->player->x;
+                            game->target_y = game->player->y;
+                        }
                     }
                     break;
                     case 'm':
@@ -668,9 +668,15 @@ void game_input(struct game *game)
                     break;
                     case 'o':
                     {
-                        action = ACTION_OPEN_DOOR;
+                        game->action = ACTION_OPEN_DOOR;
 
-                        game_log(game, game->player->level, game->player->x, game->player->y, TCOD_white, "Choose a direction");
+                        game_log(
+                            game,
+                            game->player->level,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_white,
+                            "Choose a direction");
                     }
                     break;
                     case 's':
@@ -690,85 +696,7 @@ void game_input(struct game *game)
                     break;
                     case 'z':
                     {
-                        // caster_t *player_caster = (caster_t *)component_get(game->player, COMPONENT_CASTER);
-
-                        // if (player_caster)
-                        // {
-                        //     spell_t *spell = &player_caster->spells[player_caster->current];
-
-                        //     switch (spell->type)
-                        //     {
-                        //     case SPELL_HEAL_SELF:
-                        //     {
-                        //         game->should_update = true;
-
-                        //         entity_cast_spell(game->player);
-                        //     }
-                        //     break;
-                        //     case SPELL_INSTAKILL:
-                        //     {
-                        //         position_t *player_position = (position_t *)component_get(game->player, COMPONENT_POSITION);
-
-                        //         if (player_position)
-                        //         {
-                        //             targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
-
-                        //             if (player_targeting && player_targeting->type == TARGETING_ZAP)
-                        //             {
-                        //                 game->should_update = true;
-
-                        //                 entity_cast_spell(game->player);
-
-                        //                 component_remove(game->player, COMPONENT_TARGETING);
-                        //             }
-                        //             else
-                        //             {
-                        //                 player_targeting = (targeting_t *)component_add(game->player, COMPONENT_TARGETING);
-                        //                 player_targeting->type = TARGETING_ZAP;
-
-                        //                 bool target_found = false;
-
-                        //                 {
-                        //                     alignment_t *player_alignment = (alignment_t *)component_get(game->player, COMPONENT_ALIGNMENT);
-                        //                     fov_t *player_fov = (fov_t *)component_get(game->player, COMPONENT_FOV);
-
-                        //                     if (player_alignment && player_fov)
-                        //                     {
-                        //                         for (void **iterator = TCOD_list_begin(game->maps[player_position->level].entities); iterator != TCOD_list_end(game->maps[player_position->level].entities); iterator++)
-                        //                         {
-                        //                             entity_t *other = *iterator;
-
-                        //                             alignment_t *other_alignment = (alignment_t *)component_get(other, COMPONENT_ALIGNMENT);
-                        //                             position_t *other_position = (position_t *)component_get(other, COMPONENT_POSITION);
-
-                        //                             if (other_alignment && other_position)
-                        //                             {
-                        //                                 if (TCOD_map_is_in_fov(player_fov->fov_map, other_position->x, other_position->y) &&
-                        //                                     other_alignment->type != player_alignment->type)
-                        //                                 {
-                        //                                     target_found = true;
-
-                        //                                     player_targeting->x = other_position->x;
-                        //                                     player_targeting->y = other_position->y;
-
-                        //                                     break;
-                        //                                 }
-                        //                             }
-                        //                         }
-                        //                     }
-                        //                 }
-
-                        //                 if (!target_found)
-                        //                 {
-                        //                     player_targeting->x = player_position->x;
-                        //                     player_targeting->y = player_position->y;
-                        //                 }
-                        //             }
-                        //         }
-                        //     }
-                        //     break;
-                        //     }
-                        // }
+                        // TODO: spells
                     }
                     break;
                     }
@@ -784,19 +712,53 @@ void game_input(struct game *game)
 
 void game_update(struct game *game)
 {
+    game->turn_available = true;
+
+    struct map *map = &game->maps[game->player->level];
+
+    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    {
+        struct actor *actor = *iterator;
+
+        actor_update_flash(actor);
+    }
+
     if (game->should_update)
     {
         game->should_update = false;
+        game->turn++;
 
-        struct map *map = &game->maps[game->player->level];
+        for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+        {
+            struct object *object = *iterator;
+
+            object_calc_light(object);
+        }
 
         for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
         {
             struct actor *actor = *iterator;
 
             actor_calc_light(actor);
+        }
+
+        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+        {
+            struct actor *actor = *iterator;
+
             actor_calc_fov(actor);
-            actor_ai(actor);
+
+            if (!actor->dead)
+            {
+                actor_ai(actor);
+            }
+        }
+
+        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+        {
+            struct actor *actor = *iterator;
+
+            actor_update_inventory(actor);
         }
     }
 }
@@ -893,14 +855,9 @@ void game_render(struct game *game)
                         }
                     }
 
-                    if (!tile->seen)
-                    {
-                        continue;
-                    }
-
                     TCOD_color_t color = game->tile_common.shadow_color;
 
-                    if (TCOD_map_is_in_fov(game->player->fov, x, y))
+                    if (TCOD_map_is_in_fov(game->player->fov, x, y) || tile->seen)
                     {
                         for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
                         {
@@ -909,8 +866,8 @@ void game_render(struct game *game)
                             if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                             {
                                 float r2 = powf((float)game->object_info[object->type].light_radius, 2);
-                                float d = powf((float)(x - object->x), 2) + powf((float)(y - object->y), 2);
-                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+                                float d = powf((float)(x - object->x + (game->object_info[object->type].light_flicker ? dx : 0)), 2) + powf((float)(y - object->y + (game->object_info[object->type].light_flicker ? dy : 0)), 2);
+                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (game->object_info[object->type].light_flicker ? di : 0));
 
                                 color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, game->object_info[object->type].light_color, l), l);
                             }
@@ -939,6 +896,13 @@ void game_render(struct game *game)
                             }
                         }
                     }
+                    else
+                    {
+                        if (!tile->seen)
+                        {
+                            continue;
+                        }
+                    }
 
                     TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
                     TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info->glyph);
@@ -957,75 +921,97 @@ void game_render(struct game *game)
             }
         }
 
+        for (void **iterator = TCOD_list_begin(map->items); iterator != TCOD_list_end(map->items); iterator++)
+        {
+            struct item *item = *iterator;
+
+            if (TCOD_map_is_in_fov(game->player->fov, item->x, item->y))
+            {
+                TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, game->item_info[item->type].color);
+                TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, game->item_info[item->type].glyph);
+            }
+        }
+
         for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
         {
             struct actor *actor = *iterator;
 
             if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
             {
-                TCOD_color_t color = game->class_info[actor->class].color;
+                unsigned char glyph = actor->dead ? '%' : game->race_info[actor->race].glyph;
+                TCOD_color_t color = actor->dead ? TCOD_red : game->class_info[actor->class].color;
 
-                // flash_t *flash = (flash_t *)component_get(entity, COMPONENT_FLASH);
-
-                // if (flash)
-                // {
-                //     color = TCOD_color_lerp(appearance->color, flash->color, flash->fade);
-                // }
+                if (actor->flash_fade > 0)
+                {
+                    color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade);
+                }
 
                 TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, color);
-                TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, game->race_info[actor->race].glyph);
+                TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, glyph);
             }
         }
     }
 
-    // {
-    //     targeting_t *player_targeting = (targeting_t *)component_get(game->player, COMPONENT_TARGETING);
+    if (game->targeting != TARGETING_NONE)
+    {
+        TCOD_console_set_char_foreground(NULL, game->target_x - view_x, game->target_y - view_y, TCOD_red);
+        TCOD_console_set_char(NULL, game->target_x - view_x, game->target_y - view_y, 'X');
 
-    //     if (player_targeting)
-    //     {
-    //         TCOD_console_set_char_foreground(NULL, player_targeting->x - view_x, player_targeting->y - view_y, TCOD_red);
-    //         TCOD_console_set_char(NULL, player_targeting->x - view_x, player_targeting->y - view_y, 'X');
+        switch (game->targeting)
+        {
+        case TARGETING_LOOK:
+        {
+            struct tile *tile = &map->tiles[game->target_x][game->target_y];
 
-    //         switch (player_targeting->type)
-    //         {
-    //         case TARGETING_LOOK:
-    //         {
-    //             tile_t *tile = &game->maps[player_position->level].tiles[player_targeting->x][player_targeting->y];
+            if (TCOD_map_is_in_fov(game->player->fov, game->target_x, game->target_y))
+            {
+                struct object *object = TCOD_list_peek(tile->objects);
+                struct actor *actor = TCOD_list_peek(tile->actors);
+                struct item *item = TCOD_list_peek(tile->items);
 
-    //             if (TCOD_map_is_in_fov(player_fov->fov_map, player_targeting->x, player_targeting->y))
-    //             {
-    //                 entity_t *entity = TCOD_list_peek(tile->entities);
-    //                 appearance_t *appearance = (appearance_t *)component_get(entity, COMPONENT_APPEARANCE);
+                if (object)
+                {
+                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->object_info[object->type].name);
 
-    //                 if (entity == NULL && appearance == NULL)
-    //                 {
-    //                     TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->tile_info[tile->type].name);
-    //                 }
-    //                 else
-    //                 {
-    //                     TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, appearance->name);
-    //                 }
-    //             }
-    //             else
-    //             {
-    //                 if (tile->seen)
-    //                 {
-    //                     TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (remembered)", game->tile_info[tile->type].name);
-    //                 }
-    //                 else
-    //                 {
-    //                     TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
-    //                 }
-    //             }
-    //             break;
-    //         }
-    //         }
-    //     }
-    // }
+                    break;
+                }
+
+                if (actor)
+                {
+                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s %s", game->race_info[actor->race].name, game->class_info[actor->class].name);
+
+                    break;
+                }
+
+                if (item)
+                {
+                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->item_info[item->type].name);
+
+                    break;
+                }
+
+                TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->tile_info[tile->type].name);
+            }
+            else
+            {
+                if (tile->seen)
+                {
+                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (known)", game->tile_info[tile->type].name);
+                }
+                else
+                {
+                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
+                }
+            }
+            break;
+        }
+        }
+    }
 
     if (game->message_log_visible)
     {
         static TCOD_console_t message_log = NULL;
+
         if (message_log == NULL)
         {
             message_log = TCOD_console_new(console_width, console_height);
@@ -1055,6 +1041,7 @@ void game_render(struct game *game)
     if (game->panel_visible)
     {
         static TCOD_console_t panel = NULL;
+
         if (panel == NULL)
         {
             panel = TCOD_console_new(console_width, console_height);
@@ -1152,4 +1139,9 @@ void game_destroy(struct game *game)
     TCOD_list_delete(game->messages);
 
     free(game);
+}
+
+static void fn_should_update(struct game *game)
+{
+    game->should_update = true;
 }

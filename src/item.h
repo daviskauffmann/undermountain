@@ -10,6 +10,11 @@ struct item_common
 
 enum item_type
 {
+    ITEM_BOW,
+    ITEM_POTION,
+    ITEM_SCROLL,
+    ITEM_SHIELD,
+    ITEM_SPEAR,
     ITEM_SWORD,
 
     NUM_ITEM_TYPES

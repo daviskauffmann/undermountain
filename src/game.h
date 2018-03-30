@@ -10,7 +10,7 @@
 #include "panel.h"
 #include "tile.h"
 
-#define NUM_MAPS 10
+#define NUM_MAPS 60
 
 struct game
 {
@@ -25,11 +25,12 @@ struct game
     struct item_info item_info[NUM_ITEM_TYPES];
     struct map maps[NUM_MAPS];
     struct actor *player;
-    int turn;
-    bool turn_available;
-    bool targeting;
+    enum action action;
+    enum targeting targeting;
     int target_x;
     int target_y;
+    int turn;
+    bool turn_available;
     bool should_update;
     bool should_restart;
     bool should_quit;

@@ -6,7 +6,9 @@
 #include "game.h"
 #include "item.h"
 #include "map.h"
+#include "tile.h"
 #include "util.h"
+#include "window.h"
 
 struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, int level, int x, int y)
 {
@@ -20,26 +22,83 @@ struct actor *actor_create(struct game *game, enum race race, enum class class, 
     actor->x = x;
     actor->y = y;
     actor->health = 20;
+    actor->energy = 1.0f;
+    actor->last_seen_x = -1;
+    actor->last_seen_y = -1;
     actor->glow = false;
     actor->glow_fov = NULL;
-    actor->torch = false;
+    actor->torch = TCOD_random_get_int(NULL, 0, 10) == 0;
     actor->torch_fov = NULL;
     actor->fov = NULL;
     actor->items = TCOD_list_new();
+    actor->dead = false;
 
     return actor;
 }
 
+void actor_update_inventory(struct actor *actor)
+{
+    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+    {
+        struct item *item = *iterator;
+
+        item->x = actor->x;
+        item->y = actor->y;
+    }
+}
+
+void actor_update_flash(struct actor *actor)
+{
+    if (actor->flash_fade > 0)
+    {
+        actor->flash_fade -= (1.0f / (float)FPS) * 4.0f;
+    }
+    else
+    {
+        actor->flash_fade = 0.0f;
+    }
+}
+
+void actor_calc_light(struct actor *actor)
+{
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+
+    if (actor->glow_fov)
+    {
+        TCOD_map_delete(actor->glow_fov);
+
+        actor->glow_fov = NULL;
+    }
+
+    if (actor->torch_fov)
+    {
+        TCOD_map_delete(actor->torch_fov);
+
+        actor->torch_fov = NULL;
+    }
+
+    if (actor->torch)
+    {
+        actor->torch_fov = map_to_fov_map(map, actor->x, actor->y, game->actor_common.torch_radius);
+    }
+    else if (actor->glow)
+    {
+        actor->glow_fov = map_to_fov_map(map, actor->x, actor->y, game->actor_common.glow_radius);
+    }
+}
+
 void actor_calc_fov(struct actor *actor)
 {
-    struct map *map = &actor->game->maps[actor->level];
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
 
     if (actor->fov)
     {
         TCOD_map_delete(actor->fov);
     }
 
-    actor->fov = map_to_fov_map(map, actor->x, actor->y, 1);
+    actor->fov = map_to_TCOD_map(map);
 
     TCOD_map_t los_map = map_to_fov_map(map, actor->x, actor->y, 0);
 
@@ -80,58 +139,100 @@ void actor_calc_fov(struct actor *actor)
     TCOD_map_delete(los_map);
 }
 
-void actor_calc_light(struct actor *actor)
-{
-    struct map *map = &actor->game->maps[actor->level];
-
-    if (actor->glow_fov)
-    {
-        TCOD_map_delete(actor->glow_fov);
-
-        actor->glow_fov = NULL;
-    }
-
-    if (actor->torch_fov)
-    {
-        TCOD_map_delete(actor->torch_fov);
-
-        actor->torch_fov = NULL;
-    }
-
-    if (actor->torch)
-    {
-        actor->torch_fov = map_to_fov_map(map, actor->x, actor->y, actor->game->actor_common.torch_radius);
-    }
-    else if (actor->glow)
-    {
-        actor->glow_fov = map_to_fov_map(map, actor->x, actor->y, actor->game->actor_common.glow_radius);
-    }
-}
-
 void actor_ai(struct actor *actor)
 {
-    if (actor == actor->game->player)
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[actor->x][actor->y];
+
+    if (actor == game->player)
     {
         return;
     }
 
-    int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
-    int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
+    actor->energy += game->race_info[actor->race].energy_per_turn;
 
-    actor_move(actor, x, y);
+    while (actor->energy >= 1.0f)
+    {
+        actor->energy -= 1.0f;
+
+        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+        {
+            struct actor *other = *iterator;
+
+            if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) && other->faction != actor->faction && !other->dead)
+            {
+                actor->last_seen_x = other->x;
+                actor->last_seen_y = other->y;
+
+                if (distance(actor->x, actor->y, other->x, other->y) < 2.0f)
+                {
+                    actor_attack(actor, other);
+                }
+                else
+                {
+                    actor_path_towards(actor, other->x, other->y);
+                }
+
+                goto done;
+            }
+        }
+
+        if (actor->last_seen_x != -1 && actor->last_seen_y != -1)
+        {
+            if (actor->x == actor->last_seen_x && actor->y == actor->last_seen_y)
+            {
+                actor->last_seen_x = -1;
+                actor->last_seen_y = -1;
+            }
+            else
+            {
+                actor_path_towards(actor, actor->last_seen_x, actor->last_seen_y);
+
+                goto done;
+            }
+        }
+
+        switch (tile->type)
+        {
+        case TILE_STAIR_DOWN:
+        {
+            if (actor_descend(actor))
+            {
+                goto done;
+            }
+        }
+        break;
+        case TILE_STAIR_UP:
+        {
+            if (actor_ascend(actor))
+            {
+                goto done;
+            }
+        }
+        break;
+        }
+
+        int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
+        int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
+
+        actor_move(actor, x, y);
+    done:;
+    }
 }
 
 bool actor_path_towards(struct actor *actor, int x, int y)
 {
-    bool success = false;
-
-    struct map *map = &actor->game->maps[actor->level];
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
 
     TCOD_map_t TCOD_map = map_to_TCOD_map(map);
     TCOD_map_set_properties(TCOD_map, x, y, TCOD_map_is_transparent(TCOD_map, x, y), true);
 
     TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
     TCOD_path_compute(path, actor->x, actor->y, x, y);
+
+    bool success = false;
 
     {
         int next_x, next_y;
@@ -149,7 +250,7 @@ bool actor_path_towards(struct actor *actor, int x, int y)
 
     TCOD_map_delete(TCOD_map);
 
-    return success;
+    return true;
 }
 
 bool actor_move_towards(struct actor *actor, int x, int y)
@@ -176,13 +277,14 @@ bool actor_move(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct map *map = &actor->game->maps[actor->level];
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
-    struct tile_info *tile_info = &actor->game->tile_info[tile->type];
+    struct tile_info *tile_info = &game->tile_info[tile->type];
 
     if (tile->type == TILE_DOOR_CLOSED)
     {
-        return actor_open_door(actor, tile);
+        return actor_open_door(actor, x, y);
     }
 
     if (!tile_info->is_walkable)
@@ -209,9 +311,19 @@ bool actor_move(struct actor *actor, int x, int y)
             continue;
         }
 
-        actor_attack(actor, other);
+        if (other->dead)
+        {
+            continue;
+        }
 
-        return true;
+        if (other->faction == actor->faction)
+        {
+            return actor_swap(actor, other);
+        }
+        else
+        {
+            return actor_attack(actor, other);
+        }
     }
 
     struct tile *current_tile = &map->tiles[actor->x][actor->y];
@@ -226,44 +338,405 @@ bool actor_move(struct actor *actor, int x, int y)
     return true;
 }
 
+bool actor_swap(struct actor *actor, struct actor *other)
+{
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+
+    if (other == game->player)
+    {
+        return false;
+    }
+
+    struct tile *tile = &map->tiles[actor->x][actor->y];
+    struct tile *other_tile = &map->tiles[other->x][other->y];
+
+    TCOD_list_remove(tile->actors, actor);
+    TCOD_list_remove(other_tile->actors, other);
+
+    int temp_x = actor->x;
+    int temp_y = actor->y;
+
+    actor->x = other->x;
+    actor->y = other->y;
+
+    other->x = temp_x;
+    other->y = temp_y;
+
+    TCOD_list_push(other_tile->actors, actor);
+    TCOD_list_push(tile->actors, other);
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s %s swaps with %s %s",
+        game->race_info[actor->race].name,
+        game->class_info[actor->class].name,
+        game->race_info[other->race].name,
+        game->class_info[other->class].name);
+
+    return false;
+}
+
 bool actor_interact(struct actor *actor, int x, int y, enum action action)
 {
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    switch (action)
+    {
+    case ACTION_DESCEND:
+        return actor_descend(actor);
+    case ACTION_ASCEND:
+        return actor_ascend(actor);
+    case ACTION_CLOSE_DOOR:
+        return actor_close_door(actor, x, y);
+    case ACTION_OPEN_DOOR:
+        return actor_open_door(actor, x, y);
+    }
+
+    return false;
 }
 
-bool actor_open_door(struct actor *actor, struct tile *tile)
+bool actor_open_door(struct actor *actor, int x, int y)
 {
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[x][y];
+
+    if (tile->type == TILE_DOOR_CLOSED)
+    {
+        tile->type = TILE_DOOR_OPEN;
+
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s opens the door",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
+
+        return true;
+    }
+    else
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s can't open that",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
+    }
+
+    return false;
 }
 
-bool actor_close_door(struct actor *actor, struct tile *tile)
+bool actor_close_door(struct actor *actor, int x, int y)
 {
-}
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
 
-bool actor_ascend(struct actor *actor)
-{
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[x][y];
+
+    if (tile->type == TILE_DOOR_OPEN)
+    {
+        tile->type = TILE_DOOR_CLOSED;
+
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s closes the door",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
+
+        return true;
+    }
+    else
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s can't close that",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
+    }
+
+    return false;
 }
 
 bool actor_descend(struct actor *actor)
 {
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[actor->x][actor->y];
+
+    if (tile->type == TILE_STAIR_DOWN)
+    {
+        if (actor->level < NUM_MAPS)
+        {
+            struct map *next_map = &game->maps[actor->level + 1];
+            struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
+
+            TCOD_list_remove(map->actors, actor);
+            TCOD_list_remove(tile->actors, actor);
+
+            actor->level++;
+            actor->x = next_map->stair_up_x;
+            actor->y = next_map->stair_up_y;
+
+            TCOD_list_push(next_map->actors, actor);
+            TCOD_list_push(next_tile->actors, actor);
+
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s %s descends",
+                game->race_info[actor->race].name,
+                game->class_info[actor->class].name);
+
+            return true;
+        }
+        else
+        {
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s %s has reached the end",
+                game->race_info[actor->race].name,
+                game->class_info[actor->class].name);
+        }
+    }
+    else
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s can't descend here",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
+    }
+
+    return false;
 }
 
-void actor_swap(struct actor *actor, struct actor *other)
+bool actor_ascend(struct actor *actor)
 {
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[actor->x][actor->y];
+
+    if (tile->type == TILE_STAIR_UP)
+    {
+        if (actor->level > 0)
+        {
+            struct map *next_map = &game->maps[actor->level - 1];
+            struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
+
+            TCOD_list_remove(map->actors, actor);
+            TCOD_list_remove(tile->actors, actor);
+
+            actor->level--;
+            actor->x = next_map->stair_down_x;
+            actor->y = next_map->stair_down_y;
+
+            TCOD_list_push(next_map->actors, actor);
+            TCOD_list_push(next_tile->actors, actor);
+
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s %s descends",
+                game->race_info[actor->race].name,
+                game->class_info[actor->class].name);
+
+            return true;
+        }
+        else
+        {
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s %s can't go any higher",
+                game->race_info[actor->race].name,
+                game->class_info[actor->class].name);
+        }
+    }
+    else
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s can't ascend here",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
+    }
+
+    return false;
 }
 
-void actor_pick(struct actor *actor, struct actor *other)
+bool actor_grab(struct actor *actor, int x, int y)
 {
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[x][y];
+
+    if (TCOD_list_size(tile->items) > 0)
+    {
+        struct item *item = TCOD_list_pop(tile->items);
+
+        TCOD_list_push(actor->items, item);
+
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s picks up %s",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name,
+            game->item_info[item->type].name);
+
+        return true;
+    }
+    else
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "There is nothing to pick up!");
+    }
+
+    return false;
 }
 
 bool actor_swing(struct actor *actor, int x, int y)
 {
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[x][y];
+
+    for (void **iterator = TCOD_list_begin(tile->actors); iterator != TCOD_list_end(tile->actors); iterator++)
+    {
+        struct actor *other = *iterator;
+
+        if (other == actor)
+        {
+            continue;
+        }
+
+        actor_attack(actor, other);
+
+        return true;
+    }
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s %s swings at the air!",
+        game->race_info[actor->race].name,
+        game->class_info[actor->class].name);
+
+    return true;
 }
 
-void actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
+bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
+    struct game *game = actor->game;
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s %s shoots at (%d, %d)",
+        game->race_info[actor->race].name,
+        game->class_info[actor->class].name,
+        x,
+        y);
+
+    return false;
 }
 
-void actor_attack(struct actor *actor, struct actor *other)
+bool actor_attack(struct actor *actor, struct actor *other)
 {
+    struct game *game = actor->game;
+
+    if (other->dead)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s cannot attack that!",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
+
+        return false;
+    }
+
     int attack_roll = roll(1, 20);
     int attack_bonus = 1;
     int total_attack = attack_roll + attack_bonus;
@@ -308,16 +781,17 @@ void actor_attack(struct actor *actor, struct actor *other)
         }
 
         game_log(
-            actor->game,
+            game,
             actor->level,
-            actor->x, actor->y,
+            actor->x,
+            actor->y,
             crit ? TCOD_yellow : TCOD_white,
             "%s %s %s %s %s for %d",
-            actor->game->race_info[actor->race].name,
-            actor->game->class_info[actor->class].name,
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name,
             crit ? "crits" : "hits",
-            other->game->race_info[other->race].name,
-            other->game->class_info[other->class].name,
+            game->race_info[other->race].name,
+            game->class_info[other->class].name,
             total_damage);
 
         other->health -= total_damage;
@@ -332,42 +806,68 @@ void actor_attack(struct actor *actor, struct actor *other)
     else
     {
         game_log(
-            actor->game,
+            game,
             actor->level,
             actor->x,
             actor->y,
             TCOD_white,
             "%s %s misses",
-            actor->game->race_info[actor->race].name,
-            actor->game->class_info[actor->class].name);
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
     }
+
+    return true;
 }
 
-void actor_cast_spell(struct actor *actor)
+bool actor_cast_spell(struct actor *actor)
 {
+    return false;
 }
 
 void actor_die(struct actor *actor, struct actor *killer)
 {
+    struct game *game = actor->game;
+
+    actor->dead = true;
+
     game_log(
-        actor->game,
+        game,
         actor->level,
         actor->x,
         actor->y,
         TCOD_red,
         "%s %s dies",
-        actor->game->race_info[actor->race].name,
-        actor->game->class_info[actor->class].name);
-    game_log(
-        killer->game,
-        killer->level,
-        killer->x,
-        killer->y,
-        TCOD_azure,
-        "%s %s gains %d experience",
-        killer->game->race_info[killer->race].name,
-        killer->game->class_info[killer->class].name,
-        TCOD_random_get_int(NULL, 50, 100));
+        game->race_info[actor->race].name,
+        game->class_info[actor->class].name);
+
+    if (killer)
+    {
+        game_log(
+            game,
+            killer->level,
+            killer->x,
+            killer->y,
+            TCOD_azure,
+            "%s %s gains %d experience",
+            game->race_info[killer->race].name,
+            game->class_info[killer->class].name,
+            TCOD_random_get_int(NULL, 50, 100));
+    }
+
+    if (actor == game->player)
+    {
+        game->game_over = true;
+
+        TCOD_sys_delete_file("../saves/save.gz");
+
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_green,
+            "Game over! Press 'r' to restart");
+    }
 }
 
 void actor_destroy(struct actor *actor)
@@ -385,13 +885,6 @@ void actor_destroy(struct actor *actor)
     if (actor->torch_fov != NULL)
     {
         TCOD_map_delete(actor->torch_fov);
-    }
-
-    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
-    {
-        struct item *item = *iterator;
-
-        item_destroy(item);
     }
 
     TCOD_list_delete(actor->items);

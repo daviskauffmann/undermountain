@@ -10,6 +10,10 @@ struct object_common
 
 enum object_type
 {
+    OBJECT_DOOR_CLOSED,
+    OBJECT_DOOR_OPEN,
+    OBJECT_STAIR_DOWN,
+    OBJECT_STAIR_UP,
     OBJECT_ALTAR,
     OBJECT_FOUNTAIN,
     OBJECT_THRONE,

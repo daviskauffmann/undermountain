@@ -8,10 +8,6 @@ enum tile_type
     TILE_EMPTY,
     TILE_FLOOR,
     TILE_WALL,
-    TILE_DOOR_CLOSED,
-    TILE_DOOR_OPEN,
-    TILE_STAIR_DOWN,
-    TILE_STAIR_UP,
 
     NUM_TILE_TYPES
 };

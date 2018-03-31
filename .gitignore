@@ -6,7 +6,5 @@ Thumbs.db
 build
 
 bin/**/*.exe
-bin/**/*.exp
 bin/**/*.ilk
-bin/**/*.lib
 bin/**/*.pdb

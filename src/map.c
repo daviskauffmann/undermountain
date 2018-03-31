@@ -205,47 +205,90 @@ void map_populate(struct map *map)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
-            if (map->tiles[x][y].type == TILE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < DOOR_CHANCE)
+            struct tile *tile = &map->tiles[x][y];
+
+            bool put_door = false;
+
+            if (tile->type == TILE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < DOOR_CHANCE)
             {
                 if (map->tiles[x][y - 1].type == TILE_FLOOR && map->tiles[x + 1][y - 1].type == TILE_FLOOR && map->tiles[x - 1][y - 1].type == TILE_FLOOR)
                 {
                     if (map->tiles[x - 1][y].type == TILE_WALL && map->tiles[x + 1][y].type == TILE_WALL)
                     {
-                        map->tiles[x][y].type = TILE_DOOR_CLOSED;
+                        put_door = true;
                     }
                 }
                 if (map->tiles[x + 1][y].type == TILE_FLOOR && map->tiles[x + 1][y - 1].type == TILE_FLOOR && map->tiles[x + 1][y + 1].type == TILE_FLOOR)
                 {
                     if (map->tiles[x][y + 1].type == TILE_WALL && map->tiles[x][y - 1].type == TILE_WALL)
                     {
-                        map->tiles[x][y].type = TILE_DOOR_CLOSED;
+                        put_door = true;
                     }
                 }
                 if (map->tiles[x][y + 1].type == TILE_FLOOR && map->tiles[x + 1][y + 1].type == TILE_FLOOR && map->tiles[x - 1][y + 1].type == TILE_FLOOR)
                 {
                     if (map->tiles[x - 1][y].type == TILE_WALL && map->tiles[x + 1][y].type == TILE_WALL)
                     {
-                        map->tiles[x][y].type = TILE_DOOR_CLOSED;
+                        put_door = true;
                     }
                 }
                 if (map->tiles[x - 1][y].type == TILE_FLOOR && map->tiles[x - 1][y - 1].type == TILE_FLOOR && map->tiles[x - 1][y + 1].type == TILE_FLOOR)
                 {
                     if (map->tiles[x][y + 1].type == TILE_WALL && map->tiles[x][y - 1].type == TILE_WALL)
                     {
-                        map->tiles[x][y].type = TILE_DOOR_CLOSED;
+                        put_door = true;
                     }
                 }
+            }
+
+            if (put_door)
+            {
+                struct object *object = object_create(
+                    OBJECT_DOOR_CLOSED,
+                    map->game,
+                    map->level,
+                    x,
+                    y);
+
+                TCOD_list_push(map->objects, object);
+                TCOD_list_push(tile->objects, object);
             }
         }
     }
 
-    struct room *stair_down_room = map_get_random_room(map);
-    room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
-    map->tiles[map->stair_down_x][map->stair_down_y].type = TILE_STAIR_DOWN;
+    {
+        struct room *stair_down_room = map_get_random_room(map);
+        room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
 
-    struct room *stair_up_room = map_get_random_room(map);
-    room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
-    map->tiles[map->stair_up_x][map->stair_up_y].type = TILE_STAIR_UP;
+        struct object *object = object_create(
+            OBJECT_STAIR_DOWN,
+            map->game,
+            map->level,
+            map->stair_down_x,
+            map->stair_down_y);
+
+        struct tile *tile = &map->tiles[map->stair_down_x][map->stair_down_y];
+
+        TCOD_list_push(map->objects, object);
+        TCOD_list_push(tile->objects, object);
+    }
+
+    {
+        struct room *stair_up_room = map_get_random_room(map);
+        room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
+
+        struct object *object = object_create(
+            OBJECT_STAIR_UP,
+            map->game,
+            map->level,
+            map->stair_up_x,
+            map->stair_up_y);
+
+        struct tile *tile = &map->tiles[map->stair_up_x][map->stair_up_y];
+
+        TCOD_list_push(map->objects, object);
+        TCOD_list_push(tile->objects, object);
+    }
 
     for (int i = 0; i < NUM_OBJECTS; i++)
     {
@@ -254,8 +297,29 @@ void map_populate(struct map *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
+        enum object_type type;
+
+        switch (TCOD_random_get_int(NULL, 0, 3))
+        {
+        case 0:
+            type = OBJECT_FOUNTAIN;
+            break;
+        case 1:
+            type = OBJECT_ALTAR;
+            break;
+        case 2:
+            type = OBJECT_THRONE;
+            break;
+        case 3:
+            type = OBJECT_TORCH;
+            break;
+        default:
+            type = OBJECT_ALTAR;
+            break;
+        }
+
         struct object *object = object_create(
-            TCOD_random_get_int(NULL, 0, NUM_OBJECT_TYPES - 1),
+            type,
             map->game,
             map->level,
             x,

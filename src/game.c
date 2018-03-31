@@ -38,31 +38,43 @@ struct game *game_create(void)
     game->tile_info[TILE_WALL].is_transparent = false;
     game->tile_info[TILE_WALL].is_walkable = false;
 
-    game->tile_info[TILE_DOOR_CLOSED].name = "Closed Door";
-    game->tile_info[TILE_DOOR_CLOSED].glyph = '+';
-    game->tile_info[TILE_DOOR_CLOSED].color = TCOD_white;
-    game->tile_info[TILE_DOOR_CLOSED].is_transparent = false;
-    game->tile_info[TILE_DOOR_CLOSED].is_walkable = true;
-
-    game->tile_info[TILE_DOOR_OPEN].name = "Open Door";
-    game->tile_info[TILE_DOOR_OPEN].glyph = '-';
-    game->tile_info[TILE_DOOR_OPEN].color = TCOD_white;
-    game->tile_info[TILE_DOOR_OPEN].is_transparent = true;
-    game->tile_info[TILE_DOOR_OPEN].is_walkable = true;
-
-    game->tile_info[TILE_STAIR_DOWN].name = "Stair Down";
-    game->tile_info[TILE_STAIR_DOWN].glyph = '>';
-    game->tile_info[TILE_STAIR_DOWN].color = TCOD_white;
-    game->tile_info[TILE_STAIR_DOWN].is_transparent = true;
-    game->tile_info[TILE_STAIR_DOWN].is_walkable = true;
-
-    game->tile_info[TILE_STAIR_UP].name = "Stair Up";
-    game->tile_info[TILE_STAIR_UP].glyph = '<';
-    game->tile_info[TILE_STAIR_UP].color = TCOD_white;
-    game->tile_info[TILE_STAIR_UP].is_transparent = true;
-    game->tile_info[TILE_STAIR_UP].is_walkable = true;
-
     game->object_common.__placeholder = 0;
+
+    game->object_info[OBJECT_DOOR_CLOSED].name = "Closed Door";
+    game->object_info[OBJECT_DOOR_CLOSED].glyph = '+';
+    game->object_info[OBJECT_DOOR_CLOSED].color = TCOD_white;
+    game->object_info[OBJECT_DOOR_CLOSED].is_transparent = false;
+    game->object_info[OBJECT_DOOR_CLOSED].is_walkable = true;
+    game->object_info[OBJECT_DOOR_CLOSED].light_radius = -1;
+    game->object_info[OBJECT_DOOR_CLOSED].light_color = TCOD_white;
+    game->object_info[OBJECT_DOOR_CLOSED].light_flicker = false;
+
+    game->object_info[OBJECT_DOOR_OPEN].name = "Open Door";
+    game->object_info[OBJECT_DOOR_OPEN].glyph = '-';
+    game->object_info[OBJECT_DOOR_OPEN].color = TCOD_white;
+    game->object_info[OBJECT_DOOR_OPEN].is_transparent = true;
+    game->object_info[OBJECT_DOOR_OPEN].is_walkable = true;
+    game->object_info[OBJECT_DOOR_OPEN].light_radius = -1;
+    game->object_info[OBJECT_DOOR_OPEN].light_color = TCOD_white;
+    game->object_info[OBJECT_DOOR_OPEN].light_flicker = false;
+
+    game->object_info[OBJECT_STAIR_DOWN].name = "Stair Down";
+    game->object_info[OBJECT_STAIR_DOWN].glyph = '>';
+    game->object_info[OBJECT_STAIR_DOWN].color = TCOD_white;
+    game->object_info[OBJECT_STAIR_DOWN].is_transparent = true;
+    game->object_info[OBJECT_STAIR_DOWN].is_walkable = true;
+    game->object_info[OBJECT_STAIR_DOWN].light_radius = -1;
+    game->object_info[OBJECT_STAIR_DOWN].light_color = TCOD_white;
+    game->object_info[OBJECT_STAIR_DOWN].light_flicker = false;
+
+    game->object_info[OBJECT_STAIR_UP].name = "Stair Up";
+    game->object_info[OBJECT_STAIR_UP].glyph = '<';
+    game->object_info[OBJECT_STAIR_UP].color = TCOD_white;
+    game->object_info[OBJECT_STAIR_UP].is_transparent = true;
+    game->object_info[OBJECT_STAIR_UP].is_walkable = true;
+    game->object_info[OBJECT_STAIR_UP].light_radius = -1;
+    game->object_info[OBJECT_STAIR_UP].light_color = TCOD_white;
+    game->object_info[OBJECT_STAIR_UP].light_flicker = false;
 
     game->object_info[OBJECT_ALTAR].name = "Altar";
     game->object_info[OBJECT_ALTAR].glyph = '_';
@@ -625,6 +637,11 @@ void game_input(struct game *game)
                                 {
                                     struct actor *actor = *iterator;
 
+                                    if (actor->dead)
+                                    {
+                                        continue;
+                                    }
+
                                     if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
                                         actor->faction != game->player->faction)
                                     {
@@ -732,6 +749,18 @@ void game_update(struct game *game)
         struct actor *actor = *iterator;
 
         actor_update_flash(actor);
+    }
+
+    for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
+    {
+        struct projectile *projectile = *iterator;
+
+        projectile_update(projectile);
+
+        if (projectile->destroyed)
+        {
+            iterator = TCOD_list_remove_iterator(map->projectiles, iterator);
+        }
     }
 
     if (game->should_update)

@@ -12,6 +12,7 @@ enum object_type
 {
     OBJECT_ALTAR,
     OBJECT_FOUNTAIN,
+    OBJECT_THRONE,
     OBJECT_TORCH,
 
     NUM_OBJECT_TYPES

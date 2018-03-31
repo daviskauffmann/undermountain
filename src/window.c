@@ -20,7 +20,7 @@ void window_init(void)
     screen_width = 1366;
     screen_height = 768;
     console_width = 80;
-    console_height = 50;
+    console_height = 40;
     fullscreen = false;
     renderer = TCOD_RENDERER_SDL;
 

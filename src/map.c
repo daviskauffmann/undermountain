@@ -48,6 +48,7 @@ void map_init(struct map *map, struct game *game, int level)
     map->objects = TCOD_list_new();
     map->actors = TCOD_list_new();
     map->items = TCOD_list_new();
+    map->projectiles = TCOD_list_new();
 }
 
 void map_generate_custom(struct map *map)
@@ -254,7 +255,7 @@ void map_populate(struct map *map)
         room_get_random_pos(room, &x, &y);
 
         struct object *object = object_create(
-            TCOD_random_get_int(NULL, 0, NUM_OBJECT_TYPES - 2),
+            TCOD_random_get_int(NULL, 0, NUM_OBJECT_TYPES - 1),
             map->game,
             map->level,
             x,
@@ -382,7 +383,7 @@ TCOD_map_t map_to_fov_map(struct map *map, int x, int y, int radius)
 {
     TCOD_map_t fov_map = map_to_TCOD_map(map);
 
-    TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_BASIC);
+    TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_RESTRICTIVE);
 
     return fov_map;
 }

@@ -19,6 +19,7 @@ struct map
     TCOD_list_t objects;
     TCOD_list_t actors;
     TCOD_list_t items;
+    TCOD_list_t projectiles;
 };
 
 void map_init(struct map *map, struct game *game, int level);

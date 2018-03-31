@@ -6,6 +6,7 @@
 #include "game.h"
 #include "item.h"
 #include "map.h"
+#include "projectile.h"
 #include "tile.h"
 #include "util.h"
 #include "window.h"
@@ -98,7 +99,7 @@ void actor_calc_fov(struct actor *actor)
         TCOD_map_delete(actor->fov);
     }
 
-    actor->fov = map_to_TCOD_map(map);
+    actor->fov = map_to_fov_map(map, actor->x, actor->y, 1);
 
     TCOD_map_t los_map = map_to_fov_map(map, actor->x, actor->y, 0);
 
@@ -699,9 +700,62 @@ bool actor_swing(struct actor *actor, int x, int y)
     return true;
 }
 
+#include <stdio.h>
+
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+
+    float dx = (float)x - (float)actor->x;
+    float dy = (float)y - (float)actor->y;
+    float d = distance(actor->x, actor->y, x, y);
+
+    if (d > 0)
+    {
+        dx /= d;
+        dy /= d;
+    }
+
+    // unsigned char glyph = 0;
+    double a = angle(actor->x, actor->y, x, y);
+    printf("%f\n", a);
+    // if ((a >= 0.0f && a <= 30.0f) ||
+    //     (a >= 150.0f && a <= 180.0f) ||
+    //     (a >= 180.0f && a <= 210.0f) ||
+    //     (a >= 330.0f && a <= 360.0f))
+    // {
+    //     arrow_appearance->glyph = '-';
+    // }
+    // else if ((a >= 30.0f && a <= 60.0f) ||
+    //          (a >= 210.0f && a <= 240.0f))
+    // {
+    //     arrow_appearance->glyph = '/';
+    // }
+    // else if ((a >= 60.0f && a <= 90.0f) ||
+    //          (a >= 90.0f && a <= 120.0f) ||
+    //          (a >= 240.0f && a <= 270.0f) ||
+    //          (a >= 270.0f && a <= 300.0f))
+    // {
+    //     arrow_appearance->glyph = '|';
+    // }
+    // else if ((a >= 120.0f && a <= 150.0f) ||
+    //          (a >= 300.0f && a <= 330.0f))
+    // {
+    //     arrow_appearance->glyph = '\\';
+    // }
+
+    struct projectile *projectile = projectile_create(
+        '-',
+        (float)actor->x,
+        (float)actor->y,
+        dx,
+        dy,
+        actor,
+        on_hit,
+        on_hit_params);
+
+    TCOD_list_push(map->projectiles, projectile);
 
     game_log(
         game,

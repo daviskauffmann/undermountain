@@ -9,6 +9,7 @@
 #include "game.h"
 #include "map.h"
 #include "message.h"
+#include "projectile.h"
 #include "window.h"
 
 static void fn_should_update(struct game *game);
@@ -68,25 +69,34 @@ struct game *game_create(void)
     game->object_info[OBJECT_ALTAR].color = TCOD_white;
     game->object_info[OBJECT_ALTAR].is_transparent = false;
     game->object_info[OBJECT_ALTAR].is_walkable = false;
-    game->object_info[OBJECT_ALTAR].light_radius = -1;
+    game->object_info[OBJECT_ALTAR].light_radius = 3;
     game->object_info[OBJECT_ALTAR].light_color = TCOD_white;
     game->object_info[OBJECT_ALTAR].light_flicker = false;
 
     game->object_info[OBJECT_FOUNTAIN].name = "Fountain";
-    game->object_info[OBJECT_FOUNTAIN].glyph = '~';
-    game->object_info[OBJECT_FOUNTAIN].color = TCOD_white;
+    game->object_info[OBJECT_FOUNTAIN].glyph = '{';
+    game->object_info[OBJECT_FOUNTAIN].color = TCOD_blue;
     game->object_info[OBJECT_FOUNTAIN].is_transparent = false;
     game->object_info[OBJECT_FOUNTAIN].is_walkable = false;
     game->object_info[OBJECT_FOUNTAIN].light_radius = -1;
     game->object_info[OBJECT_FOUNTAIN].light_color = TCOD_white;
     game->object_info[OBJECT_FOUNTAIN].light_flicker = false;
 
+    game->object_info[OBJECT_THRONE].name = "Throne";
+    game->object_info[OBJECT_THRONE].glyph = '\\';
+    game->object_info[OBJECT_THRONE].color = TCOD_yellow;
+    game->object_info[OBJECT_THRONE].is_transparent = false;
+    game->object_info[OBJECT_THRONE].is_walkable = false;
+    game->object_info[OBJECT_THRONE].light_radius = -1;
+    game->object_info[OBJECT_THRONE].light_color = TCOD_white;
+    game->object_info[OBJECT_THRONE].light_flicker = false;
+
     game->object_info[OBJECT_TORCH].name = "Torch";
     game->object_info[OBJECT_TORCH].glyph = '*';
     game->object_info[OBJECT_TORCH].color = TCOD_light_amber;
     game->object_info[OBJECT_TORCH].is_transparent = false;
     game->object_info[OBJECT_TORCH].is_walkable = false;
-    game->object_info[OBJECT_TORCH].light_radius = 10;
+    game->object_info[OBJECT_TORCH].light_radius = 5;
     game->object_info[OBJECT_TORCH].light_color = TCOD_light_amber;
     game->object_info[OBJECT_TORCH].light_flicker = true;
 
@@ -218,7 +228,7 @@ void game_new(struct game *game)
         struct tile *tile = &map->tiles[x][y];
 
         game->player = actor_create(game, RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, level, x, y);
-        game->player->glow = true;
+        game->player->glow = false;
 
         TCOD_list_push(map->actors, game->player);
         TCOD_list_push(tile->actors, game->player);
@@ -577,6 +587,7 @@ void game_input(struct game *game)
                     break;
                     case 'C':
                     {
+                        game->current_panel = PANEL_CHARACTER;
                         game->panel_visible = !game->panel_visible;
                     }
                     break;
@@ -859,6 +870,20 @@ void game_render(struct game *game)
 
                     if (TCOD_map_is_in_fov(game->player->fov, x, y) || tile->seen)
                     {
+                        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                        {
+                            struct actor *actor = *iterator;
+
+                            if (actor->glow_fov && TCOD_map_is_in_fov(actor->glow_fov, x, y))
+                            {
+                                float r2 = powf((float)game->actor_common.glow_radius, 2);
+                                float d = powf((float)(x - actor->x), 2) + powf((float)(y - actor->y), 2);
+                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
+
+                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, game->actor_common.glow_color, l), l);
+                            }
+                        }
+
                         for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
                         {
                             struct object *object = *iterator;
@@ -876,15 +901,6 @@ void game_render(struct game *game)
                         for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
                         {
                             struct actor *actor = *iterator;
-
-                            if (actor->glow_fov && TCOD_map_is_in_fov(actor->glow_fov, x, y))
-                            {
-                                float r2 = powf((float)game->actor_common.glow_radius, 2);
-                                float d = powf((float)(x - actor->x), 2) + powf((float)(y - actor->y), 2);
-                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
-
-                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, game->actor_common.glow_color, l), l);
-                            }
 
                             if (actor->torch_fov && TCOD_map_is_in_fov(actor->torch_fov, x, y))
                             {
@@ -929,6 +945,20 @@ void game_render(struct game *game)
             {
                 TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, game->item_info[item->type].color);
                 TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, game->item_info[item->type].glyph);
+            }
+        }
+
+        for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
+        {
+            struct projectile *projectile = *iterator;
+
+            int x = (int)projectile->x;
+            int y = (int)projectile->y;
+
+            if (TCOD_map_is_in_fov(game->player->fov, x, y))
+            {
+                TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, TCOD_white);
+                TCOD_console_set_char(NULL, x - view_x, y - view_y, projectile->glyph);
             }
         }
 

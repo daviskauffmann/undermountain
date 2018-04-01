@@ -630,28 +630,26 @@ void game_input(struct game *game)
 
                             bool target_found = false;
 
+                            struct map *map = &game->maps[game->player->level];
+
+                            for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
                             {
-                                struct map *map = &game->maps[game->player->level];
+                                struct actor *actor = *iterator;
 
-                                for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                                if (actor->dead)
                                 {
-                                    struct actor *actor = *iterator;
+                                    continue;
+                                }
 
-                                    if (actor->dead)
-                                    {
-                                        continue;
-                                    }
+                                if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
+                                    actor->faction != game->player->faction)
+                                {
+                                    target_found = true;
 
-                                    if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
-                                        actor->faction != game->player->faction)
-                                    {
-                                        target_found = true;
+                                    game->target_x = actor->x;
+                                    game->target_y = actor->y;
 
-                                        game->target_x = actor->x;
-                                        game->target_y = actor->y;
-
-                                        break;
-                                    }
+                                    break;
                                 }
                             }
 

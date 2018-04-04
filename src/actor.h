@@ -10,7 +10,6 @@ enum race
     RACE_HUMAN,
     RACE_ELF,
     RACE_DWARF,
-    RACE_DOG,
     RACE_ORC,
     RACE_BUGBEAR,
     RACE_ZOMBIE,
@@ -51,7 +50,7 @@ enum targeting
     TARGETING_NONE,
     TARGETING_LOOK,
     TARGETING_SHOOT,
-    TARGETING_SPELL,
+    TARGETING_SPELL
 };
 
 struct actor_common
@@ -100,7 +99,6 @@ struct actor
 };
 
 struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, int level, int x, int y);
-void actor_update_inventory(struct actor *actor);
 void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
@@ -115,6 +113,7 @@ bool actor_close_door(struct actor *actor, int x, int y);
 bool actor_descend(struct actor *actor);
 bool actor_ascend(struct actor *actor);
 bool actor_grab(struct actor *actor, int x, int y);
+bool actor_drop(struct actor *actor);
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params);
 bool actor_swing(struct actor *actor, int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other);

@@ -2,8 +2,6 @@
 
 #include "window.h"
 
-int screen_width;
-int screen_height;
 int console_width;
 int console_height;
 bool fullscreen;
@@ -17,8 +15,6 @@ int font_char_vertic;
 void window_init(void)
 {
     // TODO: external config file
-    screen_width = 1366;
-    screen_height = 768;
     console_width = 80;
     console_height = 40;
     fullscreen = false;

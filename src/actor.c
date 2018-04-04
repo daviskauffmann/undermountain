@@ -37,17 +37,6 @@ struct actor *actor_create(struct game *game, enum race race, enum class class, 
     return actor;
 }
 
-void actor_update_inventory(struct actor *actor)
-{
-    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
-    {
-        struct item *item = *iterator;
-
-        item->x = actor->x;
-        item->y = actor->y;
-    }
-}
-
 void actor_update_flash(struct actor *actor)
 {
     if (actor->flash_fade > 0)
@@ -341,6 +330,14 @@ bool actor_move(struct actor *actor, int x, int y)
 
     TCOD_list_push(tile->actors, actor);
 
+    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+    {
+        struct item *item = *iterator;
+
+        item->x = actor->x;
+        item->y = actor->y;
+    }
+
     return true;
 }
 
@@ -372,6 +369,22 @@ bool actor_swap(struct actor *actor, struct actor *other)
     TCOD_list_push(other_tile->actors, actor);
     TCOD_list_push(tile->actors, other);
 
+    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+    {
+        struct item *item = *iterator;
+
+        item->x = actor->x;
+        item->y = actor->y;
+    }
+
+    for (void **iterator = TCOD_list_begin(other->items); iterator != TCOD_list_end(other->items); iterator++)
+    {
+        struct item *item = *iterator;
+
+        item->x = other->x;
+        item->y = other->y;
+    }
+
     game_log(
         game,
         actor->level,
@@ -384,7 +397,7 @@ bool actor_swap(struct actor *actor, struct actor *other)
         game->race_info[other->race].name,
         game->class_info[other->class].name);
 
-    return false;
+    return true;
 }
 
 bool actor_interact(struct actor *actor, int x, int y, enum action action)
@@ -559,6 +572,14 @@ bool actor_descend(struct actor *actor)
             TCOD_list_push(next_map->actors, actor);
             TCOD_list_push(next_tile->actors, actor);
 
+            for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+            {
+                struct item *item = *iterator;
+
+                TCOD_list_remove(map->items, item);
+                TCOD_list_push(next_map->items, item);
+            }
+
             game_log(
                 game,
                 actor->level,
@@ -633,6 +654,14 @@ bool actor_ascend(struct actor *actor)
             TCOD_list_push(next_map->actors, actor);
             TCOD_list_push(next_tile->actors, actor);
 
+            for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+            {
+                struct item *item = *iterator;
+
+                TCOD_list_remove(map->items, item);
+                TCOD_list_push(next_map->items, item);
+            }
+
             game_log(
                 game,
                 actor->level,
@@ -672,26 +701,7 @@ bool actor_grab(struct actor *actor, int x, int y)
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
-    if (TCOD_list_size(tile->items) > 0)
-    {
-        struct item *item = TCOD_list_pop(tile->items);
-
-        TCOD_list_push(actor->items, item);
-
-        game_log(
-            game,
-            actor->level,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "%s %s picks up %s",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name,
-            game->item_info[item->type].name);
-
-        return true;
-    }
-    else
+    if (TCOD_list_size(tile->items) == 0)
     {
         game_log(
             game,
@@ -700,9 +710,69 @@ bool actor_grab(struct actor *actor, int x, int y)
             actor->y,
             TCOD_white,
             "There is nothing to pick up!");
+
+        return false;
     }
 
-    return false;
+    struct item *item = TCOD_list_pop(tile->items);
+
+    TCOD_list_push(actor->items, item);
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s %s picks up %s",
+        game->race_info[actor->race].name,
+        game->class_info[actor->class].name,
+        game->item_info[item->type].name);
+
+    return true;
+}
+
+bool actor_drop(struct actor *actor)
+{
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[actor->x][actor->y];
+
+    if (TCOD_list_size(actor->items) == 0)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "There is nothing to drop!");
+
+        return false;
+    }
+
+    // TODO: select specfic items
+    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+    {
+        struct item *item = *iterator;
+
+        TCOD_list_push(tile->items, item);
+
+        iterator = TCOD_list_remove_iterator(actor->items, iterator);
+
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s drops %s",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name,
+            game->item_info[item->type].name);
+    }
+
+    return true;
 }
 
 bool actor_swing(struct actor *actor, int x, int y)

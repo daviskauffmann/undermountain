@@ -129,10 +129,6 @@ struct game *game_create(void)
     game->race_info[RACE_DWARF].glyph = '@';
     game->race_info[RACE_DWARF].energy_per_turn = 0.4f;
 
-    game->race_info[RACE_DOG].name = "Dog";
-    game->race_info[RACE_DOG].glyph = 'd';
-    game->race_info[RACE_DOG].energy_per_turn = 0.7f;
-
     game->race_info[RACE_ORC].name = "Orc";
     game->race_info[RACE_ORC].glyph = 'o';
     game->race_info[RACE_ORC].energy_per_turn = 0.5f;
@@ -242,11 +238,21 @@ void game_new(struct game *game)
         game->player = actor_create(game, RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, level, x, y);
         game->player->glow = false;
 
+        actor_calc_fov(game->player);
+
         TCOD_list_push(map->actors, game->player);
         TCOD_list_push(tile->actors, game->player);
-    }
 
-    game_log(game, game->player->level, game->player->x, game->player->y, TCOD_white, "Hail, %s", "Player");
+        game_log(
+            game,
+            level,
+            x,
+            y,
+            TCOD_white,
+            "Hail, %s %s!",
+            game->race_info[game->player->race].name,
+            game->class_info[game->player->class].name);
+    }
 }
 
 void game_save(struct game *game)
@@ -616,6 +622,11 @@ void game_input(struct game *game)
                             "Choose a direction");
                     }
                     break;
+                    case 'd':
+                    {
+                        game->should_update = actor_drop(game->player);
+                    }
+                    break;
                     case 'f':
                     {
                         if (game->targeting == TARGETING_SHOOT)
@@ -790,13 +801,6 @@ void game_update(struct game *game)
             {
                 actor_ai(actor);
             }
-        }
-
-        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
-        {
-            struct actor *actor = *iterator;
-
-            actor_update_inventory(actor);
         }
     }
 }
@@ -996,7 +1000,7 @@ void game_render(struct game *game)
             if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
             {
                 unsigned char glyph = actor->dead ? '%' : game->race_info[actor->race].glyph;
-                TCOD_color_t color = actor->dead ? TCOD_red : game->class_info[actor->class].color;
+                TCOD_color_t color = actor->dead ? TCOD_dark_red : game->class_info[actor->class].color;
 
                 if (actor->flash_fade > 0)
                 {

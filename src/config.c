@@ -1,6 +1,6 @@
 #include <libtcod/libtcod.h>
 
-#include "window.h"
+#include "config.h"
 
 int console_width;
 int console_height;
@@ -12,7 +12,7 @@ int font_flags;
 int font_char_horiz;
 int font_char_vertic;
 
-void window_init(void)
+void config_init(void)
 {
     // TODO: external config file
     console_width = 80;
@@ -24,9 +24,4 @@ void window_init(void)
     font_flags = TCOD_FONT_LAYOUT_ASCII_INCOL;
     font_char_horiz = 16;
     font_char_vertic = 16;
-
-    TCOD_sys_set_fps(FPS);
-
-    TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
-    TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, renderer);
 }

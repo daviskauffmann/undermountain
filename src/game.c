@@ -5,12 +5,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
 #include "actor.h"
 #include "game.h"
 #include "map.h"
 #include "message.h"
 #include "projectile.h"
-#include "window.h"
 
 static void fn_should_update(struct game *game);
 
@@ -257,10 +257,12 @@ void game_new(struct game *game)
 
 void game_save(struct game *game)
 {
+    (void)game;
 }
 
 void game_load(struct game *game)
 {
+    (void)game;
 }
 
 void game_input(struct game *game)

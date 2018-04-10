@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <math.h>
 
+#include "config.h"
 #include "actor.h"
 #include "game.h"
 #include "item.h"
@@ -9,7 +10,6 @@
 #include "projectile.h"
 #include "tile.h"
 #include "util.h"
-#include "window.h"
 
 struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, int level, int x, int y)
 {
@@ -572,9 +572,9 @@ bool actor_descend(struct actor *actor)
             TCOD_list_push(next_map->actors, actor);
             TCOD_list_push(next_tile->actors, actor);
 
-            for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+            for (void **iterator2 = TCOD_list_begin(actor->items); iterator2 != TCOD_list_end(actor->items); iterator2++)
             {
-                struct item *item = *iterator;
+                struct item *item = *iterator2;
 
                 TCOD_list_remove(map->items, item);
                 TCOD_list_push(next_map->items, item);
@@ -654,9 +654,9 @@ bool actor_ascend(struct actor *actor)
             TCOD_list_push(next_map->actors, actor);
             TCOD_list_push(next_tile->actors, actor);
 
-            for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+            for (void **iterator2 = TCOD_list_begin(actor->items); iterator2 != TCOD_list_end(actor->items); iterator2++)
             {
-                struct item *item = *iterator;
+                struct item *item = *iterator2;
 
                 TCOD_list_remove(map->items, item);
                 TCOD_list_push(next_map->items, item);
@@ -955,6 +955,8 @@ bool actor_attack(struct actor *actor, struct actor *other)
 
 bool actor_cast_spell(struct actor *actor)
 {
+    (void)actor;
+
     return false;
 }
 

@@ -209,6 +209,9 @@ struct game *game_create(void)
     game->panel_status[PANEL_INVENTORY].current = 0;
     game->panel_status[PANEL_INVENTORY].scroll = 0;
 
+    game->panel_status[PANEL_SPELLBOOK].current = 0;
+    game->panel_status[PANEL_SPELLBOOK].scroll = 0;
+
     game->message_log_visible = true;
     game->panel_visible = false;
 
@@ -603,6 +606,12 @@ void game_input(struct game *game)
                     case '>':
                     {
                         game->should_update = actor_descend(game->player);
+                    }
+                    break;
+                    case 'b':
+                    {
+                        game->current_panel = PANEL_SPELLBOOK;
+                        game->panel_visible = !game->panel_visible;
                     }
                     break;
                     case 'C':
@@ -1126,6 +1135,12 @@ void game_render(struct game *game)
         {
             TCOD_console_set_default_foreground(panel, TCOD_white);
             TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
+        }
+        break;
+        case PANEL_SPELLBOOK:
+        {
+            TCOD_console_set_default_foreground(panel, TCOD_white);
+            TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Spellbook");
         }
         break;
         }

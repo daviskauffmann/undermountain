@@ -3,8 +3,9 @@
 
 enum panel_type
 {
-    PANEL_INVENTORY,
     PANEL_CHARACTER,
+    PANEL_INVENTORY,
+    PANEL_SPELLBOOK,
 
     NUM_PANELS
 };

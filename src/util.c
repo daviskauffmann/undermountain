@@ -3,25 +3,25 @@
 
 #include "util.h"
 
-double distance_sq(int x1, int y1, int x2, int y2)
+float distance_sq(int x1, int y1, int x2, int y2)
 {
-    double dx = (double)(x1 - x2);
-    double dy = (double)(y1 - y2);
+    float dx = (float)(x1 - x2);
+    float dy = (float)(y1 - y2);
 
-    return pow(dx, 2) + pow(dy, 2);
+    return powf(dx, 2) + powf(dy, 2);
 }
 
-double distance(int x1, int y1, int x2, int y2)
+float distance(int x1, int y1, int x2, int y2)
 {
-    return sqrt(distance_sq(x1, y1, x2, y2));
+    return sqrtf(distance_sq(x1, y1, x2, y2));
 }
 
-double angle(int x1, int y1, int x2, int y2)
+float angle(int x1, int y1, int x2, int y2)
 {
-    double dx = (double)(x1 - x2);
-    double dy = (double)(y1 - y2);
+    float dx = (float)(x1 - x2);
+    float dy = (float)(y1 - y2);
 
-    return atan2(dy, dx);
+    return atan2f(dy, dx);
 }
 
 int roll(int a, int x)

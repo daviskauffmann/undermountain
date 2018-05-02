@@ -252,9 +252,9 @@ bool actor_move_towards(struct actor *actor, int x, int y)
 {
     int dx = x - actor->x;
     int dy = y - actor->y;
-    double d = distance(actor->x, actor->y, x, y);
+    float d = distance(actor->x, actor->y, x, y);
 
-    if (d > 0.0)
+    if (d > 0.0f)
     {
         dx = (int)round(dx / d);
         dy = (int)round(dy / d);

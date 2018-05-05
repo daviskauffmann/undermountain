@@ -50,6 +50,7 @@ void game_input(struct game *game);
 void game_update(struct game *game);
 void game_render(struct game *game);
 void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, char *fmt, ...);
+void game_panel_toggle(struct game *game, enum panel_type panel_type);
 void game_destroy(struct game *game);
 
 #endif

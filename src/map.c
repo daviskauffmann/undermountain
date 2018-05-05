@@ -19,7 +19,7 @@
 #define DOOR_CHANCE 1.0f
 #define NUM_OBJECTS 20
 #define NUM_ACTORS 20
-#define NUM_ITEMS 20
+#define NUM_ITEMS 200
 
 static void hline(struct map *map, int x1, int y, int x2);
 static void hline_left(struct map *map, int x, int y);
@@ -353,7 +353,7 @@ void map_populate(struct map *map)
         TCOD_list_push(tile->actors, actor);
     }
 
-    for (int i = 0; i < NUM_OBJECTS; i++)
+    for (int i = 0; i < NUM_ITEMS; i++)
     {
         struct room *room = map_get_random_room(map);
 

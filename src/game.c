@@ -372,32 +372,41 @@ void game_input(struct game *game)
                 break;
                 case TCODK_KP2:
                 {
-                    if (game->targeting != TARGETING_NONE)
+                    if (game->panel_visible)
                     {
-                        game->target_x;
-                        game->target_y++;
+                        struct panel_status *panel_status = &game->panel_status[game->current_panel];
+
+                        panel_status->current++;
                     }
                     else
                     {
-                        int x = game->player->x;
-                        int y = game->player->y + 1;
-
-                        if (game->action == ACTION_NONE)
+                        if (game->targeting != TARGETING_NONE)
                         {
-                            if (key.lctrl)
-                            {
-                                game->should_update = actor_swing(game->player, x, y);
-                            }
-                            else
-                            {
-                                game->should_update = actor_move(game->player, x, y);
-                            }
+                            game->target_x;
+                            game->target_y++;
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, game->action);
+                            int x = game->player->x;
+                            int y = game->player->y + 1;
 
-                            game->action = ACTION_NONE;
+                            if (game->action == ACTION_NONE)
+                            {
+                                if (key.lctrl)
+                                {
+                                    game->should_update = actor_swing(game->player, x, y);
+                                }
+                                else
+                                {
+                                    game->should_update = actor_move(game->player, x, y);
+                                }
+                            }
+                            else
+                            {
+                                game->should_update = actor_interact(game->player, x, y, game->action);
+
+                                game->action = ACTION_NONE;
+                            }
                         }
                     }
                 }
@@ -532,32 +541,41 @@ void game_input(struct game *game)
                 break;
                 case TCODK_KP8:
                 {
-                    if (game->targeting != TARGETING_NONE)
+                    if (game->panel_visible)
                     {
-                        game->target_x;
-                        game->target_y--;
+                        struct panel_status *panel_status = &game->panel_status[game->current_panel];
+
+                        panel_status->current--;
                     }
                     else
                     {
-                        int x = game->player->x;
-                        int y = game->player->y - 1;
-
-                        if (game->action == ACTION_NONE)
+                        if (game->targeting != TARGETING_NONE)
                         {
-                            if (key.lctrl)
-                            {
-                                game->should_update = actor_swing(game->player, x, y);
-                            }
-                            else
-                            {
-                                game->should_update = actor_move(game->player, x, y);
-                            }
+                            game->target_x;
+                            game->target_y--;
                         }
                         else
                         {
-                            game->should_update = actor_interact(game->player, x, y, game->action);
+                            int x = game->player->x;
+                            int y = game->player->y - 1;
 
-                            game->action = ACTION_NONE;
+                            if (game->action == ACTION_NONE)
+                            {
+                                if (key.lctrl)
+                                {
+                                    game->should_update = actor_swing(game->player, x, y);
+                                }
+                                else
+                                {
+                                    game->should_update = actor_move(game->player, x, y);
+                                }
+                            }
+                            else
+                            {
+                                game->should_update = actor_interact(game->player, x, y, game->action);
+
+                                game->action = ACTION_NONE;
+                            }
                         }
                     }
                 }
@@ -610,14 +628,12 @@ void game_input(struct game *game)
                     break;
                     case 'b':
                     {
-                        game->current_panel = PANEL_SPELLBOOK;
-                        game->panel_visible = !game->panel_visible;
+                        game_panel_toggle(game, PANEL_SPELLBOOK);
                     }
                     break;
                     case 'C':
                     {
-                        game->current_panel = PANEL_CHARACTER;
-                        game->panel_visible = !game->panel_visible;
+                        game_panel_toggle(game, PANEL_CHARACTER);
                     }
                     break;
                     case 'c':
@@ -690,8 +706,7 @@ void game_input(struct game *game)
                     break;
                     case 'i':
                     {
-                        game->current_panel = PANEL_INVENTORY;
-                        game->panel_visible = !game->panel_visible;
+                        game_panel_toggle(game, PANEL_INVENTORY);
                     }
                     break;
                     case 'l':
@@ -837,19 +852,19 @@ void game_render(struct game *game)
     int view_x = game->player->x - view_width / 2;
     int view_y = game->player->y - view_height / 2;
 
-    if (view_width < MAP_WIDTH && view_height < MAP_HEIGHT)
-    {
-        view_x = view_x < 0
-                     ? 0
-                     : view_x + view_width > MAP_WIDTH
-                           ? MAP_WIDTH - view_width
-                           : view_x;
-        view_y = view_y < 0
-                     ? 0
-                     : view_y + view_height > MAP_HEIGHT
-                           ? MAP_HEIGHT - view_height
-                           : view_y;
-    }
+    // if (view_width < MAP_WIDTH && view_height < MAP_HEIGHT)
+    // {
+    //     view_x = view_x < 0
+    //                  ? 0
+    //                  : view_x + view_width > MAP_WIDTH
+    //                        ? MAP_WIDTH - view_width
+    //                        : view_x;
+    //     view_y = view_y < 0
+    //                  ? 0
+    //                  : view_y + view_height > MAP_HEIGHT
+    //                        ? MAP_HEIGHT - view_height
+    //                        : view_y;
+    // }
 
     struct map *map = &game->maps[game->player->level];
 
@@ -968,6 +983,17 @@ void game_render(struct game *game)
             }
         }
 
+        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+        {
+            struct actor *actor = *iterator;
+
+            if (actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
+            {
+                TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, TCOD_dark_red);
+                TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, '%');
+            }
+        }
+
         for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
         {
             struct object *object = *iterator;
@@ -1008,10 +1034,9 @@ void game_render(struct game *game)
         {
             struct actor *actor = *iterator;
 
-            if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
+            if (!actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
             {
-                unsigned char glyph = actor->dead ? '%' : game->race_info[actor->race].glyph;
-                TCOD_color_t color = actor->dead ? TCOD_dark_red : game->class_info[actor->class].color;
+                TCOD_color_t color = game->class_info[actor->class].color;
 
                 if (actor->flash_fade > 0)
                 {
@@ -1019,7 +1044,7 @@ void game_render(struct game *game)
                 }
 
                 TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, color);
-                TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, glyph);
+                TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, game->race_info[actor->race].glyph);
             }
         }
     }
@@ -1099,7 +1124,7 @@ void game_render(struct game *game)
             struct message *message = *i;
 
             TCOD_console_set_default_foreground(message_log, message->color);
-            TCOD_console_print(message_log, message_log_x + 1, y, message->text);
+            TCOD_console_print(message_log, 1, y, message->text);
 
             y++;
         }
@@ -1123,16 +1148,50 @@ void game_render(struct game *game)
         TCOD_console_set_default_foreground(panel, TCOD_white);
         TCOD_console_clear(panel);
 
+        struct panel_status *panel_status = &game->panel_status[game->current_panel];
+
         switch (game->current_panel)
         {
         case PANEL_CHARACTER:
         {
+            TCOD_console_print(panel, 1, 1 - panel_status->scroll, "HP: 15 / 20");
+            TCOD_console_print(panel, 1, 2 - panel_status->scroll, "MP:  7 / 16");
+
+            TCOD_console_print(panel, 1, 4 - panel_status->scroll, "STR: 16");
+            TCOD_console_print(panel, 1, 5 - panel_status->scroll, "DEX: 14");
+            TCOD_console_print(panel, 1, 6 - panel_status->scroll, "CON: 12");
+            TCOD_console_print(panel, 1, 7 - panel_status->scroll, "INT: 10");
+            TCOD_console_print(panel, 1, 8 - panel_status->scroll, "WIS: 8");
+            TCOD_console_print(panel, 1, 9 - panel_status->scroll, "CHA: 10");
+
+            TCOD_console_print(panel, 1, 11 - panel_status->scroll, "R-Hand: Sword");
+            TCOD_console_print(panel, 1, 12 - panel_status->scroll, "L-Hand: Shield");
+            TCOD_console_print(panel, 1, 13 - panel_status->scroll, "Head  : Helm");
+            TCOD_console_print(panel, 1, 14 - panel_status->scroll, "Chest : Cuirass");
+            TCOD_console_print(panel, 1, 15 - panel_status->scroll, "Legs  : Greaves");
+            TCOD_console_print(panel, 1, 16 - panel_status->scroll, "Feet  : Boots");
+
             TCOD_console_set_default_foreground(panel, TCOD_white);
             TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");
         }
         break;
         case PANEL_INVENTORY:
         {
+            int i = 0;
+            int y = 1;
+            for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
+            {
+                struct item *item = *iterator;
+
+                TCOD_color_t color = panel_status->current == i ? TCOD_yellow : game->item_info[item->type].color;
+
+                TCOD_console_set_default_foreground(panel, color);
+                TCOD_console_print(panel, 1, y - panel_status->scroll, game->item_info[item->type].name);
+
+                i++;
+                y++;
+            }
+
             TCOD_console_set_default_foreground(panel, TCOD_white);
             TCOD_console_print_frame(panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
         }
@@ -1197,6 +1256,26 @@ void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, ch
 
         line_begin = line_end + 1;
     } while (line_end);
+}
+
+void game_panel_toggle(struct game *game, enum panel_type panel_type)
+{
+    if (game->panel_visible)
+    {
+        if (game->current_panel == panel_type)
+        {
+            game->panel_visible = false;
+        }
+        else
+        {
+            game->current_panel = panel_type;
+        }
+    }
+    else
+    {
+        game->current_panel = panel_type;
+        game->panel_visible = true;
+    }
 }
 
 void game_destroy(struct game *game)

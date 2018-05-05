@@ -208,10 +208,21 @@ void actor_ai(struct actor *actor)
             }
         }
 
-        int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
-        int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
+        if (TCOD_list_size(tile->items) > 0)
+        {
+            if (actor_grab(actor, actor->x, actor->y))
+            {
+                goto done;
+            }
+        }
 
-        actor_move(actor, x, y);
+        {
+            int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
+            int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
+
+            actor_move(actor, x, y);
+        }
+
     done:;
     }
 }
@@ -245,7 +256,7 @@ bool actor_path_towards(struct actor *actor, int x, int y)
 
     TCOD_map_delete(TCOD_map);
 
-    return true;
+    return success;
 }
 
 bool actor_move_towards(struct actor *actor, int x, int y)
@@ -963,10 +974,21 @@ bool actor_cast_spell(struct actor *actor)
 void actor_die(struct actor *actor, struct actor *killer)
 {
     struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[actor->x][actor->y];
 
     actor->dead = true;
     actor->glow = false;
     actor->torch = false;
+
+    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+    {
+        struct item *item = *iterator;
+
+        TCOD_list_push(tile->items, item);
+
+        iterator = TCOD_list_remove_iterator(actor->items, iterator);
+    }
 
     game_log(
         game,

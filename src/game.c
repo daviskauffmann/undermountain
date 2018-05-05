@@ -220,7 +220,7 @@ struct game *game_create(void)
 
 void game_new(struct game *game)
 {
-    TCOD_sys_delete_file("../saves/save.gz");
+    TCOD_sys_delete_file(SAVE_PATH);
 
     for (int level = 0; level < NUM_MAPS; level++)
     {
@@ -1149,6 +1149,7 @@ void game_render(struct game *game)
     }
 
     TCOD_console_print(NULL, 0, 0, "Turn: %d", game->turn);
+    TCOD_console_print(NULL, 0, 1, "Depth: %d", game->player->level);
 
     TCOD_console_flush();
 }

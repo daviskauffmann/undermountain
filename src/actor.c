@@ -998,7 +998,7 @@ void actor_die(struct actor *actor, struct actor *killer)
     {
         game->game_over = true;
 
-        TCOD_sys_delete_file("../saves/save.gz");
+        TCOD_sys_delete_file(SAVE_PATH);
 
         game_log(
             game,

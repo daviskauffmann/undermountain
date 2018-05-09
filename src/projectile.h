@@ -16,7 +16,7 @@ struct projectile
     bool destroyed;
 };
 
-struct projectile *projectile_create(struct game *game, unsigned char glyph, int level, float x, float y, float dx, float dy, struct actor *shooter, void (*on_hit)(void *on_hit_params), void *on_hit_params);
+struct projectile *projectile_create(struct game *game, unsigned char glyph, int level, int x1, int y1, int x2, int y2, struct actor *shooter, void (*on_hit)(void *on_hit_params), void *on_hit_params);
 void projectile_update(struct projectile *projectile);
 void projectile_destroy(struct projectile *projectile);
 

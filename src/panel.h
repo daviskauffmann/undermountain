@@ -12,8 +12,9 @@ enum panel_type
 
 struct panel_status
 {
-    int current;
     int scroll;
+    int current_index;
+    int max_index;
 };
 
 #endif

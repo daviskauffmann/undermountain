@@ -203,14 +203,17 @@ struct game *game_create(void)
 
     game->current_panel = PANEL_CHARACTER;
 
-    game->panel_status[PANEL_CHARACTER].current = 0;
     game->panel_status[PANEL_CHARACTER].scroll = 0;
+    game->panel_status[PANEL_CHARACTER].current_index = 0;
+    game->panel_status[PANEL_CHARACTER].max_index = 0;
 
-    game->panel_status[PANEL_INVENTORY].current = 0;
     game->panel_status[PANEL_INVENTORY].scroll = 0;
+    game->panel_status[PANEL_INVENTORY].current_index = 0;
+    game->panel_status[PANEL_INVENTORY].max_index = 0;
 
-    game->panel_status[PANEL_SPELLBOOK].current = 0;
     game->panel_status[PANEL_SPELLBOOK].scroll = 0;
+    game->panel_status[PANEL_SPELLBOOK].current_index = 0;
+    game->panel_status[PANEL_SPELLBOOK].max_index = 0;
 
     game->message_log_visible = true;
     game->panel_visible = false;
@@ -226,8 +229,8 @@ void game_new(struct game *game)
     {
         struct map *map = &game->maps[level];
 
-        // map_generate_custom(map);
-        map_generate_bsp(map);
+        map_generate_custom(map);
+        // map_generate_bsp(map);
         map_populate(map);
     }
 
@@ -238,10 +241,8 @@ void game_new(struct game *game)
         int y = map->stair_up_y;
         struct tile *tile = &map->tiles[x][y];
 
-        game->player = actor_create(game, RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, level, x, y);
+        game->player = actor_create(game, RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, "Player", level, x, y);
         game->player->glow = false;
-
-        actor_calc_fov(game->player);
 
         TCOD_list_push(map->actors, game->player);
         TCOD_list_push(tile->actors, game->player);
@@ -376,7 +377,10 @@ void game_input(struct game *game)
                     {
                         struct panel_status *panel_status = &game->panel_status[game->current_panel];
 
-                        panel_status->current++;
+                        if (panel_status->current_index < panel_status->max_index)
+                        {
+                            panel_status->current_index++;
+                        }
                     }
                     else
                     {
@@ -545,7 +549,10 @@ void game_input(struct game *game)
                     {
                         struct panel_status *panel_status = &game->panel_status[game->current_panel];
 
-                        panel_status->current--;
+                        if (panel_status->current_index > 0)
+                        {
+                            panel_status->current_index--;
+                        }
                     }
                     else
                     {
@@ -795,6 +802,8 @@ void game_update(struct game *game)
         if (projectile->destroyed)
         {
             iterator = TCOD_list_remove_iterator(map->projectiles, iterator);
+
+            projectile_destroy(projectile);
         }
     }
 
@@ -852,19 +861,18 @@ void game_render(struct game *game)
     int view_x = game->player->x - view_width / 2;
     int view_y = game->player->y - view_height / 2;
 
-    // if (view_width < MAP_WIDTH && view_height < MAP_HEIGHT)
-    // {
-    //     view_x = view_x < 0
-    //                  ? 0
-    //                  : view_x + view_width > MAP_WIDTH
-    //                        ? MAP_WIDTH - view_width
-    //                        : view_x;
-    //     view_y = view_y < 0
-    //                  ? 0
-    //                  : view_y + view_height > MAP_HEIGHT
-    //                        ? MAP_HEIGHT - view_height
-    //                        : view_y;
-    // }
+    // view_x = view_x < 0
+    //              ? 0
+    //              : view_x + view_width > MAP_WIDTH
+    //                    ? MAP_WIDTH - view_width
+    //                    : view_x;
+    // view_y = view_y < 0
+    //              ? 0
+    //              : view_y + view_height > MAP_HEIGHT
+    //                    ? MAP_HEIGHT - view_height
+    //                    : view_y;
+
+    game->panel_status[PANEL_INVENTORY].max_index = TCOD_list_size(game->player->items) - 1;
 
     struct map *map = &game->maps[game->player->level];
 
@@ -893,40 +901,12 @@ void game_render(struct game *game)
                     struct tile *tile = &map->tiles[x][y];
                     struct tile_info *tile_info = &game->tile_info[tile->type];
 
+                    TCOD_color_t color = game->tile_common.shadow_color;
+
                     if (TCOD_map_is_in_fov(game->player->fov, x, y))
                     {
                         tile->seen = true;
-                    }
 
-                    for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
-                    {
-                        struct object *object = *iterator;
-
-                        if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
-                        {
-                            tile->seen = true;
-                        }
-                    }
-
-                    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
-                    {
-                        struct actor *actor = *iterator;
-
-                        if (actor->glow_fov && TCOD_map_is_in_fov(actor->glow_fov, x, y))
-                        {
-                            tile->seen = true;
-                        }
-
-                        if (actor->torch_fov && TCOD_map_is_in_fov(actor->torch_fov, x, y))
-                        {
-                            tile->seen = true;
-                        }
-                    }
-
-                    TCOD_color_t color = game->tile_common.shadow_color;
-
-                    if (TCOD_map_is_in_fov(game->player->fov, x, y) || tile->seen)
-                    {
                         for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
                         {
                             struct actor *actor = *iterator;
@@ -969,16 +949,12 @@ void game_render(struct game *game)
                             }
                         }
                     }
-                    else
-                    {
-                        if (!tile->seen)
-                        {
-                            continue;
-                        }
-                    }
 
-                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
-                    TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info->glyph);
+                    if (tile->seen)
+                    {
+                        TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
+                        TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info->glyph);
+                    }
                 }
             }
         }
@@ -1183,7 +1159,7 @@ void game_render(struct game *game)
             {
                 struct item *item = *iterator;
 
-                TCOD_color_t color = panel_status->current == i ? TCOD_yellow : game->item_info[item->type].color;
+                TCOD_color_t color = panel_status->current_index == i ? TCOD_yellow : game->item_info[item->type].color;
 
                 TCOD_console_set_default_foreground(panel, color);
                 TCOD_console_print(panel, 1, y - panel_status->scroll, game->item_info[item->type].name);

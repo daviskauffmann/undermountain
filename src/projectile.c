@@ -1,22 +1,24 @@
 #include <libtcod/libtcod.h>
 #include <malloc.h>
+#include <math.h>
 
 #include "actor.h"
 #include "game.h"
 #include "map.h"
 #include "projectile.h"
+#include "util.h"
 
-struct projectile *projectile_create(struct game *game, unsigned char glyph, int level, float x, float y, float dx, float dy, struct actor *shooter, void (*on_hit)(void *on_hit_params), void *on_hit_params)
+struct projectile *projectile_create(struct game *game, unsigned char glyph, int level, int x1, int y1, int x2, int y2, struct actor *shooter, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     struct projectile *projectile = malloc(sizeof(struct projectile));
 
     projectile->game = game;
     projectile->glyph = glyph;
     projectile->level = level;
-    projectile->x = x;
-    projectile->y = y;
-    projectile->dx = dx;
-    projectile->dy = dy;
+    projectile->x = (float)x1;
+    projectile->y = (float)y1;
+    projectile->dx = ((float)x2 - (float)x1) / distance(x1, y1, x2, y2);
+    projectile->dy = ((float)y2 - (float)y1) / distance(x1, y1, x2, y2);
     projectile->shooter = shooter;
     projectile->on_hit = on_hit;
     projectile->on_hit_params = on_hit_params;
@@ -30,8 +32,8 @@ void projectile_update(struct projectile *projectile)
     float next_x = projectile->x + projectile->dx;
     float next_y = projectile->y + projectile->dy;
 
-    int x = (int)next_x;
-    int y = (int)next_y;
+    int x = (int)roundf(next_x);
+    int y = (int)roundf(next_y);
 
     bool should_move = true;
 

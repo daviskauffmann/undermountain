@@ -9,7 +9,7 @@
 #define CUSTOM_NUM_ROOM_ATTEMPTS 20
 #define CUSTOM_MIN_ROOM_SIZE 5
 #define CUSTOM_MAX_ROOM_SIZE 15
-#define CUSTOM_PREVENT_OVERLAP 0
+#define CUSTOM_PREVENT_OVERLAP_CHANCE 0.5f
 
 #define BSP_MIN_ROOM_SIZE 4
 #define BSP_DEPTH 8
@@ -19,7 +19,7 @@
 #define DOOR_CHANCE 1.0f
 #define NUM_OBJECTS 20
 #define NUM_ACTORS 20
-#define NUM_ITEMS 200
+#define NUM_ITEMS 20
 
 static void hline(struct map *map, int x1, int y, int x2);
 static void hline_left(struct map *map, int x, int y);
@@ -69,27 +69,28 @@ void map_generate_custom(struct map *map)
             continue;
         }
 
-#if CUSTOM_PREVENT_OVERLAP
-        bool overlap = false;
-
-        for (int x = room->x - 2; x < room->x + room->w + 2; x++)
+        if (TCOD_random_get_float(NULL, 0, 1) < CUSTOM_PREVENT_OVERLAP_CHANCE)
         {
-            for (int y = room->y - 2; y < room->y + room->h + 2; y++)
-            {
-                struct tile *tile = &map->tiles[x][y];
+            bool overlap = false;
 
-                if (tile->type == TILE_FLOOR)
+            for (int x = room->x - 2; x < room->x + room->w + 2; x++)
+            {
+                for (int y = room->y - 2; y < room->y + room->h + 2; y++)
                 {
-                    overlap = true;
+                    struct tile *tile = &map->tiles[x][y];
+
+                    if (tile->type == TILE_FLOOR)
+                    {
+                        overlap = true;
+                    }
                 }
             }
-        }
 
-        if (overlap)
-        {
-            continue;
+            if (overlap)
+            {
+                continue;
+            }
         }
-#endif
 
         for (int x = room->x; x < room->x + room->w; x++)
         {
@@ -343,6 +344,7 @@ void map_populate(struct map *map)
             TCOD_random_get_int(NULL, 0, NUM_RACES - 1),
             TCOD_random_get_int(NULL, 0, NUM_CLASSES - 1),
             TCOD_random_get_int(NULL, 0, NUM_FACTIONS - 1),
+            NULL,
             map->level,
             x,
             y);

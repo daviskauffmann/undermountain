@@ -1,6 +1,7 @@
 #include <libtcod/libtcod.h>
 #include <malloc.h>
 #include <math.h>
+#include <string.h>
 
 #include "config.h"
 #include "actor.h"
@@ -11,7 +12,7 @@
 #include "tile.h"
 #include "util.h"
 
-struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, int level, int x, int y)
+struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, const char *name, int level, int x, int y)
 {
     struct actor *actor = malloc(sizeof(struct actor));
 
@@ -19,6 +20,7 @@ struct actor *actor_create(struct game *game, enum race race, enum class class, 
     actor->race = race;
     actor->class = class;
     actor->faction = faction;
+    actor->name = name;
     actor->level = level;
     actor->x = x;
     actor->y = y;
@@ -28,11 +30,14 @@ struct actor *actor_create(struct game *game, enum race race, enum class class, 
     actor->last_seen_y = -1;
     actor->glow = false;
     actor->glow_fov = NULL;
-    actor->torch = TCOD_random_get_int(NULL, 0, 10) == 0;
+    actor->torch = TCOD_random_get_int(NULL, 0, 20) == 0;
     actor->torch_fov = NULL;
     actor->fov = NULL;
     actor->items = TCOD_list_new();
     actor->dead = false;
+
+    actor_calc_light(actor);
+    actor_calc_fov(actor);
 
     return actor;
 }
@@ -824,8 +829,6 @@ bool actor_swing(struct actor *actor, int x, int y)
     return true;
 }
 
-#include <stdio.h>
-
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     struct game *game = actor->game;
@@ -836,24 +839,14 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
-    float dx = (float)x - (float)actor->x;
-    float dy = (float)y - (float)actor->y;
-    float d = (float)distance(actor->x, actor->y, x, y);
-
-    if (d > 0)
-    {
-        dx /= d;
-        dy /= d;
-    }
-
     struct projectile *projectile = projectile_create(
         game,
         '`',
         actor->level,
-        (float)actor->x,
-        (float)actor->y,
-        dx,
-        dy,
+        actor->x,
+        actor->y,
+        x,
+        y,
         actor,
         on_hit,
         on_hit_params);

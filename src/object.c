@@ -15,6 +15,7 @@ struct object *object_create(enum object_type type, struct game *game, int level
     object->x = x;
     object->y = y;
     object->light_fov = NULL;
+    object->destroyed = false;
 
     return object;
 }

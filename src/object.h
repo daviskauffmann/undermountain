@@ -42,6 +42,7 @@ struct object
     int x;
     int y;
     TCOD_map_t light_fov;
+    bool destroyed;
 };
 
 struct object *object_create(enum object_type type, struct game *game, int level, int x, int y);

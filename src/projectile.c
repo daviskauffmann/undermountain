@@ -5,6 +5,7 @@
 #include "actor.h"
 #include "game.h"
 #include "map.h"
+#include "object.h"
 #include "projectile.h"
 #include "util.h"
 
@@ -69,6 +70,20 @@ void projectile_update(struct projectile *projectile)
         actor_attack(projectile->shooter, actor);
 
         should_move = false;
+
+        break;
+    }
+
+    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    {
+        struct object *object = *iterator;
+
+        if (!game->object_info[object->type].is_walkable)
+        {
+            should_move = false;
+
+            break;
+        }
     }
 
     if (should_move)

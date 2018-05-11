@@ -8,6 +8,7 @@
 #include "game.h"
 #include "item.h"
 #include "map.h"
+#include "object.h"
 #include "projectile.h"
 #include "tile.h"
 #include "util.h"
@@ -687,6 +688,8 @@ bool actor_ascend(struct actor *actor)
                 "%s %s descends",
                 game->race_info[actor->race].name,
                 game->class_info[actor->class].name);
+
+            break;
         }
     }
 
@@ -791,6 +794,26 @@ bool actor_drop(struct actor *actor)
     return true;
 }
 
+bool actor_bash(struct actor *actor, struct object *object)
+{
+    struct game *game = actor->game;
+
+    object->destroyed = true;
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s %s destroys the %s!",
+        game->race_info[actor->race].name,
+        game->class_info[actor->class].name,
+        game->object_info[object->type].name);
+
+    return true;
+}
+
 bool actor_swing(struct actor *actor, int x, int y)
 {
     if (!map_is_inside(x, y))
@@ -802,6 +825,8 @@ bool actor_swing(struct actor *actor, int x, int y)
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
+    bool hit = false;
+
     for (void **iterator = TCOD_list_begin(tile->actors); iterator != TCOD_list_end(tile->actors); iterator++)
     {
         struct actor *other = *iterator;
@@ -811,20 +836,38 @@ bool actor_swing(struct actor *actor, int x, int y)
             continue;
         }
 
-        actor_attack(actor, other);
+        hit = true;
 
-        return true;
+        if (actor_attack(actor, other))
+        {
+            return true;
+        }
     }
 
-    game_log(
-        game,
-        actor->level,
-        actor->x,
-        actor->y,
-        TCOD_white,
-        "%s %s swings at the air!",
-        game->race_info[actor->race].name,
-        game->class_info[actor->class].name);
+    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    {
+        struct object *object = *iterator;
+
+        hit = true;
+
+        if (actor_bash(actor, object))
+        {
+            return true;
+        }
+    }
+
+    if (!hit)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s %s swings at the air!",
+            game->race_info[actor->race].name,
+            game->class_info[actor->class].name);
+    }
 
     return true;
 }
@@ -878,12 +921,12 @@ bool actor_attack(struct actor *actor, struct actor *other)
     int attack_roll = roll(1, 20);
     int attack_bonus = 1;
     int total_attack = attack_roll + attack_bonus;
-    int other_armor_class = 5;
+    int armor_class = 5;
     bool hit = attack_roll == 1
                    ? false
                    : attack_roll == 20
                          ? true
-                         : total_attack >= other_armor_class;
+                         : total_attack >= armor_class;
 
     if (hit)
     {
@@ -901,7 +944,7 @@ bool actor_attack(struct actor *actor, struct actor *other)
             int threat_roll = roll(1, 20);
             int total_threat = threat_roll + attack_bonus;
 
-            if (total_threat >= other_armor_class)
+            if (total_threat >= armor_class)
             {
                 crit = true;
                 damage_rolls *= weapon_crit_multiplier;

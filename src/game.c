@@ -816,6 +816,18 @@ void game_update(struct game *game)
         {
             struct object *object = *iterator;
 
+            if (object->destroyed)
+            {
+                struct tile *tile = &map->tiles[object->x][object->y];
+
+                TCOD_list_remove(tile->objects, object);
+                iterator = TCOD_list_remove_iterator(map->objects, iterator);
+
+                object_destroy(object);
+
+                continue;
+            }
+
             object_calc_light(object);
         }
 

@@ -3,7 +3,7 @@
 
 #include <libtcod/libtcod.h>
 
-struct tile;
+struct object;
 
 enum race
 {
@@ -115,6 +115,7 @@ bool actor_descend(struct actor *actor);
 bool actor_ascend(struct actor *actor);
 bool actor_grab(struct actor *actor, int x, int y);
 bool actor_drop(struct actor *actor);
+bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params);
 bool actor_swing(struct actor *actor, int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other);

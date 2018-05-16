@@ -110,35 +110,19 @@ void map_generate_custom(struct map *map)
         struct room *room = TCOD_list_get(map->rooms, i);
         struct room *next_room = TCOD_list_get(map->rooms, i + 1);
 
-        int x1 = TCOD_random_get_int(NULL, room->x, room->x + room->w);
-        int y1 = TCOD_random_get_int(NULL, room->y, room->y + room->h);
-        int x2 = TCOD_random_get_int(NULL, next_room->x, next_room->x + next_room->w);
-        int y2 = TCOD_random_get_int(NULL, next_room->y, next_room->y + next_room->h);
+        int x1, y1, x2, y2;
+        room_get_random_pos(room, &x1, &y1);
+        room_get_random_pos(next_room, &x2, &y2);
 
-        if (x1 > x2)
+        if (TCOD_random_get_int(NULL, 0, 1) == 0)
         {
-            int t = x1;
-            x1 = x2;
-            x2 = t;
+            vline(map, x1, y1, y2);
+            hline(map, x1, y2, x2);
         }
-        if (y1 > y2)
+        else
         {
-            int t = y1;
-            y1 = y2;
-            y2 = t;
-        }
-
-        for (int x = x1; x <= x2; x++)
-        {
-            for (int y = y1; y <= y2; y++)
-            {
-                if (x == x1 || x == x2 || y == y1 || y == y2)
-                {
-                    struct tile *tile = &map->tiles[x][y];
-
-                    tile->type = TILE_FLOOR;
-                }
-            }
+            hline(map, x1, y1, x2);
+            vline(map, x2, y1, y2);
         }
     }
 
@@ -298,7 +282,7 @@ void map_populate(struct map *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        enum object_type type;
+        enum object_type type = 0;
 
         switch (TCOD_random_get_int(NULL, 0, 3))
         {
@@ -313,9 +297,6 @@ void map_populate(struct map *map)
             break;
         case 3:
             type = OBJECT_TORCH;
-            break;
-        default:
-            type = OBJECT_ALTAR;
             break;
         }
 

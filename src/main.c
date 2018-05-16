@@ -1,15 +1,10 @@
 #include <libtcod/libtcod.h>
-#include <stdio.h>
 
 #include "config.h"
 #include "game.h"
 
-int main(int argc, char *argv[])
+int main(void)
 {
-    // suppress warning C4100
-    (void)argc;
-    (void)argv;
-
     config_init();
 
     TCOD_sys_set_fps(FPS);

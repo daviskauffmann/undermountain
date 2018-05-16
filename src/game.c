@@ -186,6 +186,8 @@ struct game *game_create(void)
         map_init(map, game, level);
     }
 
+    game->map_algorithm = MAP_ALGORITHM_CUSTOM;
+
     game->player = NULL;
     game->action = ACTION_NONE;
     game->targeting = TARGETING_NONE;
@@ -229,8 +231,20 @@ void game_new(struct game *game)
     {
         struct map *map = &game->maps[level];
 
-        map_generate_custom(map);
-        // map_generate_bsp(map);
+        switch (game->map_algorithm)
+        {
+        case MAP_ALGORITHM_BSP:
+        {
+            map_generate_bsp(map);
+        }
+        break;
+        case MAP_ALGORITHM_CUSTOM:
+        {
+            map_generate_custom(map);
+        }
+        break;
+        }
+
         map_populate(map);
     }
 

@@ -152,22 +152,40 @@ void actor_ai(struct actor *actor)
     {
         actor->energy -= 1.0f;
 
-        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
         {
-            struct actor *other = *iterator;
+            struct actor *target = NULL;
+            float min_distance = 1000.0f;
 
-            if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) && other->faction != actor->faction && !other->dead)
+            for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
             {
-                actor->last_seen_x = other->x;
-                actor->last_seen_y = other->y;
+                struct actor *other = *iterator;
 
-                if (distance(actor->x, actor->y, other->x, other->y) < 2.0f)
+                if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
+                    other->faction != actor->faction &&
+                    !other->dead)
                 {
-                    actor_attack(actor, other);
+                    float dist = distance(actor->x, actor->y, other->x, other->y);
+
+                    if (dist < min_distance)
+                    {
+                        target = other;
+                        min_distance = dist;
+                    }
+                }
+            }
+
+            if (target)
+            {
+                actor->last_seen_x = target->x;
+                actor->last_seen_y = target->y;
+
+                if (distance(actor->x, actor->y, target->x, target->y) < 2.0f)
+                {
+                    actor_attack(actor, target);
                 }
                 else
                 {
-                    actor_path_towards(actor, other->x, other->y);
+                    actor_path_towards(actor, target->x, target->y);
                 }
 
                 goto done;

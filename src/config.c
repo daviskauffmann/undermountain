@@ -15,8 +15,8 @@ int renderer;
 void config_init(void)
 {
     // TODO: external config file
-    font_file = "terminal.png";
-    font_flags = TCOD_FONT_LAYOUT_ASCII_INCOL;
+    font_file = "terminal16x16.png";
+    font_flags = TCOD_FONT_LAYOUT_ASCII_INROW;
     font_char_horiz = 16;
     font_char_vertic = 16;
 

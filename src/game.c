@@ -11,6 +11,7 @@
 #include "map.h"
 #include "message.h"
 #include "projectile.h"
+#include "util.h"
 
 static void fn_should_update(struct game *game);
 
@@ -691,24 +692,34 @@ void game_input(struct game *game)
 
                             struct map *map = &game->maps[game->player->level];
 
-                            for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
                             {
-                                struct actor *actor = *iterator;
+                                struct actor *target = NULL;
+                                float min_distance = 1000.0f;
 
-                                if (actor->dead)
+                                for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
                                 {
-                                    continue;
+                                    struct actor *actor = *iterator;
+
+                                    if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
+                                        actor->faction != game->player->faction &&
+                                        !actor->dead)
+                                    {
+                                        float dist = distance(game->player->x, game->player->y, actor->x, actor->y);
+
+                                        if (dist < min_distance)
+                                        {
+                                            target = actor;
+                                            min_distance = dist;
+                                        }
+                                    }
                                 }
 
-                                if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
-                                    actor->faction != game->player->faction)
+                                if (target)
                                 {
                                     target_found = true;
 
-                                    game->target_x = actor->x;
-                                    game->target_y = actor->y;
-
-                                    break;
+                                    game->target_x = target->x;
+                                    game->target_y = target->y;
                                 }
                             }
 

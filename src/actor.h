@@ -4,6 +4,7 @@
 #include <libtcod/libtcod.h>
 
 struct object;
+struct item;
 
 enum race
 {
@@ -114,7 +115,7 @@ bool actor_close_door(struct actor *actor, int x, int y);
 bool actor_descend(struct actor *actor);
 bool actor_ascend(struct actor *actor);
 bool actor_grab(struct actor *actor, int x, int y);
-bool actor_drop(struct actor *actor);
+bool actor_drop(struct actor *actor, struct item *item);
 bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params);
 bool actor_swing(struct actor *actor, int x, int y);

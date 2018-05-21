@@ -298,7 +298,18 @@ void game_input(struct game *game)
         {
         case TCODK_ESCAPE:
         {
-            game->should_quit = true;
+            if (game->panel_visible)
+            {
+                game->panel_visible = false;
+            }
+            else if (game->targeting)
+            {
+                game->targeting = false;
+            }
+            else
+            {
+                game->should_quit = true;
+            }
         }
         break;
         case TCODK_ENTER:
@@ -311,13 +322,546 @@ void game_input(struct game *game)
             }
         }
         break;
+        case TCODK_PAGEDOWN:
+        {
+            if (game->panel_visible)
+            {
+                struct panel_status *panel_status = &game->panel_status[game->current_panel];
+
+                if (panel_status->current_index < panel_status->max_index)
+                {
+                    panel_status->current_index++;
+                }
+            }
+        }
+        break;
+        case TCODK_PAGEUP:
+        {
+            if (game->panel_visible)
+            {
+                struct panel_status *panel_status = &game->panel_status[game->current_panel];
+
+                if (panel_status->current_index > 0)
+                {
+                    panel_status->current_index--;
+                }
+            }
+        }
+        break;
+        case TCODK_KP1:
+        {
+            if (!game->game_over && game->turn_available)
+            {
+                if (game->targeting != TARGETING_NONE)
+                {
+                    game->target_x--;
+                    game->target_y++;
+                }
+                else
+                {
+                    int x = game->player->x - 1;
+                    int y = game->player->y + 1;
+
+                    if (game->action == ACTION_NONE)
+                    {
+                        if (key.lctrl)
+                        {
+                            game->should_update = actor_swing(game->player, x, y);
+                        }
+                        else
+                        {
+                            game->should_update = actor_move(game->player, x, y);
+                        }
+                    }
+                    else
+                    {
+                        game->should_update = actor_interact(game->player, x, y, game->action);
+
+                        game->action = ACTION_NONE;
+                    }
+                }
+            }
+        }
+        break;
+        case TCODK_KP2:
+        {
+            if (!game->game_over && game->turn_available)
+            {
+                if (game->targeting != TARGETING_NONE)
+                {
+                    game->target_x;
+                    game->target_y++;
+                }
+                else
+                {
+                    int x = game->player->x;
+                    int y = game->player->y + 1;
+
+                    if (game->action == ACTION_NONE)
+                    {
+                        if (key.lctrl)
+                        {
+                            game->should_update = actor_swing(game->player, x, y);
+                        }
+                        else
+                        {
+                            game->should_update = actor_move(game->player, x, y);
+                        }
+                    }
+                    else
+                    {
+                        game->should_update = actor_interact(game->player, x, y, game->action);
+
+                        game->action = ACTION_NONE;
+                    }
+                }
+            }
+        }
+        break;
+        case TCODK_KP3:
+        {
+            if (!game->game_over && game->turn_available)
+            {
+                if (game->targeting != TARGETING_NONE)
+                {
+                    game->target_x++;
+                    game->target_y++;
+                }
+                else
+                {
+                    int x = game->player->x + 1;
+                    int y = game->player->y + 1;
+
+                    if (game->action == ACTION_NONE)
+                    {
+                        if (key.lctrl)
+                        {
+                            game->should_update = actor_swing(game->player, x, y);
+                        }
+                        else
+                        {
+                            game->should_update = actor_move(game->player, x, y);
+                        }
+                    }
+                    else
+                    {
+                        game->should_update = actor_interact(game->player, x, y, game->action);
+
+                        game->action = ACTION_NONE;
+                    }
+                }
+            }
+        }
+        break;
+        case TCODK_KP4:
+        {
+            if (!game->game_over && game->turn_available)
+            {
+                if (game->targeting != TARGETING_NONE)
+                {
+                    game->target_x--;
+                    game->target_y;
+                }
+                else
+                {
+                    int x = game->player->x - 1;
+                    int y = game->player->y;
+
+                    if (game->action == ACTION_NONE)
+                    {
+                        if (key.lctrl)
+                        {
+                            game->should_update = actor_swing(game->player, x, y);
+                        }
+                        else
+                        {
+                            game->should_update = actor_move(game->player, x, y);
+                        }
+                    }
+                    else
+                    {
+                        game->should_update = actor_interact(game->player, x, y, game->action);
+
+                        game->action = ACTION_NONE;
+                    }
+                }
+            }
+        }
+        break;
+        case TCODK_KP5:
+        {
+            if (game->turn_available)
+            {
+                game->should_update = true;
+            }
+        }
+        break;
+        case TCODK_KP6:
+        {
+            if (!game->game_over && game->turn_available)
+            {
+                if (game->targeting != TARGETING_NONE)
+                {
+                    game->target_x++;
+                    game->target_y;
+                }
+                else
+                {
+                    int x = game->player->x + 1;
+                    int y = game->player->y;
+
+                    if (game->action == ACTION_NONE)
+                    {
+                        if (key.lctrl)
+                        {
+                            game->should_update = actor_swing(game->player, x, y);
+                        }
+                        else
+                        {
+                            game->should_update = actor_move(game->player, x, y);
+                        }
+                    }
+                    else
+                    {
+                        game->should_update = actor_interact(game->player, x, y, game->action);
+
+                        game->action = ACTION_NONE;
+                    }
+                }
+            }
+        }
+        break;
+        case TCODK_KP7:
+        {
+            if (!game->game_over && game->turn_available)
+            {
+                if (game->targeting != TARGETING_NONE)
+                {
+                    game->target_x--;
+                    game->target_y--;
+                }
+                else
+                {
+                    int x = game->player->x - 1;
+                    int y = game->player->y - 1;
+
+                    if (game->action == ACTION_NONE)
+                    {
+                        if (key.lctrl)
+                        {
+                            game->should_update = actor_swing(game->player, x, y);
+                        }
+                        else
+                        {
+                            game->should_update = actor_move(game->player, x, y);
+                        }
+                    }
+                    else
+                    {
+                        game->should_update = actor_interact(game->player, x, y, game->action);
+
+                        game->action = ACTION_NONE;
+                    }
+                }
+            }
+        }
+        break;
+        case TCODK_KP8:
+        {
+            if (!game->game_over && game->turn_available)
+            {
+                if (game->targeting != TARGETING_NONE)
+                {
+                    game->target_x;
+                    game->target_y--;
+                }
+                else
+                {
+                    int x = game->player->x;
+                    int y = game->player->y - 1;
+
+                    if (game->action == ACTION_NONE)
+                    {
+                        if (key.lctrl)
+                        {
+                            game->should_update = actor_swing(game->player, x, y);
+                        }
+                        else
+                        {
+                            game->should_update = actor_move(game->player, x, y);
+                        }
+                    }
+                    else
+                    {
+                        game->should_update = actor_interact(game->player, x, y, game->action);
+
+                        game->action = ACTION_NONE;
+                    }
+                }
+            }
+        }
+        break;
+        case TCODK_KP9:
+        {
+            if (!game->game_over && game->turn_available)
+            {
+                if (game->targeting != TARGETING_NONE)
+                {
+                    game->target_x++;
+                    game->target_y--;
+                }
+                else
+                {
+                    int x = game->player->x + 1;
+                    int y = game->player->y - 1;
+
+                    if (game->action == ACTION_NONE)
+                    {
+                        if (key.lctrl)
+                        {
+                            game->should_update = actor_swing(game->player, x, y);
+                        }
+                        else
+                        {
+                            game->should_update = actor_move(game->player, x, y);
+                        }
+                    }
+                    else
+                    {
+                        game->should_update = actor_interact(game->player, x, y, game->action);
+
+                        game->action = ACTION_NONE;
+                    }
+                }
+            }
+        }
+        break;
         case TCODK_CHAR:
         {
             switch (key.c)
             {
+            case '<':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    game->should_update = actor_ascend(game->player);
+                }
+            }
+            break;
+            case '>':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    game->should_update = actor_descend(game->player);
+                }
+            }
+            break;
+            case 'b':
+            {
+                game_panel_toggle(game, PANEL_SPELLBOOK);
+            }
+            break;
+            case 'C':
+            {
+                game_panel_toggle(game, PANEL_CHARACTER);
+            }
+            break;
+            case 'c':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    game->action = ACTION_CLOSE_DOOR;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose a direction");
+                }
+            }
+            break;
+            case 'd':
+            {
+                if (!game->game_over && game->turn_available && game->panel_visible && game->current_panel == PANEL_INVENTORY)
+                {
+                    switch (game->current_panel)
+                    {
+                    case PANEL_INVENTORY:
+                    {
+                        if (TCOD_list_size(game->player->items) > 0)
+                        {
+                            struct item *item = TCOD_list_get(game->player->items, game->panel_status[game->current_panel].current_index);
+
+                            game->should_update = actor_drop(game->player, item);
+                        }
+                        else
+                        {
+                            game_log(
+                                game,
+                                game->player->level,
+                                game->player->x,
+                                game->player->y,
+                                TCOD_white,
+                                "There is nothing to drop!");
+                        }
+                    }
+                    break;
+                    }
+                }
+            }
+            break;
+            case 'f':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    if (game->targeting == TARGETING_SHOOT)
+                    {
+                        actor_shoot(game->player, game->target_x, game->target_y, &fn_should_update, game);
+
+                        game->targeting = TARGETING_NONE;
+                    }
+                    else
+                    {
+                        game->targeting = TARGETING_SHOOT;
+
+                        bool target_found = false;
+
+                        struct map *map = &game->maps[game->player->level];
+
+                        {
+                            struct actor *target = NULL;
+                            float min_distance = 1000.0f;
+
+                            for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                            {
+                                struct actor *actor = *iterator;
+
+                                if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
+                                    actor->faction != game->player->faction &&
+                                    !actor->dead)
+                                {
+                                    float dist = distance(game->player->x, game->player->y, actor->x, actor->y);
+
+                                    if (dist < min_distance)
+                                    {
+                                        target = actor;
+                                        min_distance = dist;
+                                    }
+                                }
+                            }
+
+                            if (target)
+                            {
+                                target_found = true;
+
+                                game->target_x = target->x;
+                                game->target_y = target->y;
+                            }
+                        }
+
+                        if (!target_found)
+                        {
+                            game->target_x = game->player->x;
+                            game->target_y = game->player->y;
+                        }
+                    }
+                }
+            }
+            break;
+            case 'g':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    game->should_update = actor_grab(game->player, game->player->x, game->player->y);
+                }
+            }
+            break;
+            case 'i':
+            {
+                game_panel_toggle(game, PANEL_INVENTORY);
+            }
+            break;
+            case 'l':
+            {
+                if (game->targeting == TARGETING_LOOK)
+                {
+                    game->targeting = TARGETING_NONE;
+                }
+                else
+                {
+                    game->targeting = TARGETING_LOOK;
+
+                    game->target_x = game->player->x;
+                    game->target_y = game->player->y;
+                }
+            }
+            break;
+            case 'm':
+            {
+                game->message_log_visible = !game->message_log_visible;
+            }
+            break;
+            case 'o':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    game->action = ACTION_OPEN_DOOR;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose a direction");
+                }
+            }
+            break;
             case 'r':
             {
                 game->should_restart = true;
+            }
+            break;
+            case 's':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    if (key.lctrl)
+                    {
+                        game_save(game);
+                    }
+                }
+            }
+            break;
+            case 't':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    game->player->torch = !game->player->torch;
+
+                    game->should_update = true;
+                }
+            }
+            break;
+            case 'z':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    // TODO: spells
+                    if (game->targeting == TARGETING_SPELL)
+                    {
+                        game->targeting = TARGETING_NONE;
+                    }
+                    else
+                    {
+                        game->targeting = TARGETING_SPELL;
+
+                        game->target_x = game->player->x;
+                        game->target_y = game->player->y;
+                    }
+                }
             }
             break;
             }
@@ -326,482 +870,6 @@ void game_input(struct game *game)
         }
     }
     break;
-    }
-
-    if (game->turn_available)
-    {
-        switch (ev)
-        {
-        case TCOD_EVENT_KEY_PRESS:
-        {
-            switch (key.vk)
-            {
-            case TCODK_KP5:
-            {
-                game->should_update = true;
-            }
-            break;
-            }
-        }
-        break;
-        }
-
-        if (!game->game_over)
-        {
-            switch (ev)
-            {
-            case TCOD_EVENT_KEY_PRESS:
-            {
-                switch (key.vk)
-                {
-                case TCODK_KP1:
-                {
-                    if (game->targeting != TARGETING_NONE)
-                    {
-                        game->target_x--;
-                        game->target_y++;
-                    }
-                    else
-                    {
-                        int x = game->player->x - 1;
-                        int y = game->player->y + 1;
-
-                        if (game->action == ACTION_NONE)
-                        {
-                            if (key.lctrl)
-                            {
-                                game->should_update = actor_swing(game->player, x, y);
-                            }
-                            else
-                            {
-                                game->should_update = actor_move(game->player, x, y);
-                            }
-                        }
-                        else
-                        {
-                            game->should_update = actor_interact(game->player, x, y, game->action);
-
-                            game->action = ACTION_NONE;
-                        }
-                    }
-                }
-                break;
-                case TCODK_KP2:
-                {
-                    if (game->panel_visible)
-                    {
-                        struct panel_status *panel_status = &game->panel_status[game->current_panel];
-
-                        if (panel_status->current_index < panel_status->max_index)
-                        {
-                            panel_status->current_index++;
-                        }
-                    }
-                    else
-                    {
-                        if (game->targeting != TARGETING_NONE)
-                        {
-                            game->target_x;
-                            game->target_y++;
-                        }
-                        else
-                        {
-                            int x = game->player->x;
-                            int y = game->player->y + 1;
-
-                            if (game->action == ACTION_NONE)
-                            {
-                                if (key.lctrl)
-                                {
-                                    game->should_update = actor_swing(game->player, x, y);
-                                }
-                                else
-                                {
-                                    game->should_update = actor_move(game->player, x, y);
-                                }
-                            }
-                            else
-                            {
-                                game->should_update = actor_interact(game->player, x, y, game->action);
-
-                                game->action = ACTION_NONE;
-                            }
-                        }
-                    }
-                }
-                break;
-                case TCODK_KP3:
-                {
-                    if (game->targeting != TARGETING_NONE)
-                    {
-                        game->target_x++;
-                        game->target_y++;
-                    }
-                    else
-                    {
-                        int x = game->player->x + 1;
-                        int y = game->player->y + 1;
-
-                        if (game->action == ACTION_NONE)
-                        {
-                            if (key.lctrl)
-                            {
-                                game->should_update = actor_swing(game->player, x, y);
-                            }
-                            else
-                            {
-                                game->should_update = actor_move(game->player, x, y);
-                            }
-                        }
-                        else
-                        {
-                            game->should_update = actor_interact(game->player, x, y, game->action);
-
-                            game->action = ACTION_NONE;
-                        }
-                    }
-                }
-                break;
-                case TCODK_KP4:
-                {
-                    if (game->targeting != TARGETING_NONE)
-                    {
-                        game->target_x--;
-                        game->target_y;
-                    }
-                    else
-                    {
-                        int x = game->player->x - 1;
-                        int y = game->player->y;
-
-                        if (game->action == ACTION_NONE)
-                        {
-                            if (key.lctrl)
-                            {
-                                game->should_update = actor_swing(game->player, x, y);
-                            }
-                            else
-                            {
-                                game->should_update = actor_move(game->player, x, y);
-                            }
-                        }
-                        else
-                        {
-                            game->should_update = actor_interact(game->player, x, y, game->action);
-
-                            game->action = ACTION_NONE;
-                        }
-                    }
-                }
-                break;
-                case TCODK_KP6:
-                {
-                    if (game->targeting != TARGETING_NONE)
-                    {
-                        game->target_x++;
-                        game->target_y;
-                    }
-                    else
-                    {
-                        int x = game->player->x + 1;
-                        int y = game->player->y;
-
-                        if (game->action == ACTION_NONE)
-                        {
-                            if (key.lctrl)
-                            {
-                                game->should_update = actor_swing(game->player, x, y);
-                            }
-                            else
-                            {
-                                game->should_update = actor_move(game->player, x, y);
-                            }
-                        }
-                        else
-                        {
-                            game->should_update = actor_interact(game->player, x, y, game->action);
-
-                            game->action = ACTION_NONE;
-                        }
-                    }
-                }
-                break;
-                case TCODK_KP7:
-                {
-                    if (game->targeting != TARGETING_NONE)
-                    {
-                        game->target_x--;
-                        game->target_y--;
-                    }
-                    else
-                    {
-                        int x = game->player->x - 1;
-                        int y = game->player->y - 1;
-
-                        if (game->action == ACTION_NONE)
-                        {
-                            if (key.lctrl)
-                            {
-                                game->should_update = actor_swing(game->player, x, y);
-                            }
-                            else
-                            {
-                                game->should_update = actor_move(game->player, x, y);
-                            }
-                        }
-                        else
-                        {
-                            game->should_update = actor_interact(game->player, x, y, game->action);
-
-                            game->action = ACTION_NONE;
-                        }
-                    }
-                }
-                break;
-                case TCODK_KP8:
-                {
-                    if (game->panel_visible)
-                    {
-                        struct panel_status *panel_status = &game->panel_status[game->current_panel];
-
-                        if (panel_status->current_index > 0)
-                        {
-                            panel_status->current_index--;
-                        }
-                    }
-                    else
-                    {
-                        if (game->targeting != TARGETING_NONE)
-                        {
-                            game->target_x;
-                            game->target_y--;
-                        }
-                        else
-                        {
-                            int x = game->player->x;
-                            int y = game->player->y - 1;
-
-                            if (game->action == ACTION_NONE)
-                            {
-                                if (key.lctrl)
-                                {
-                                    game->should_update = actor_swing(game->player, x, y);
-                                }
-                                else
-                                {
-                                    game->should_update = actor_move(game->player, x, y);
-                                }
-                            }
-                            else
-                            {
-                                game->should_update = actor_interact(game->player, x, y, game->action);
-
-                                game->action = ACTION_NONE;
-                            }
-                        }
-                    }
-                }
-                break;
-                case TCODK_KP9:
-                {
-                    if (game->targeting != TARGETING_NONE)
-                    {
-                        game->target_x++;
-                        game->target_y--;
-                    }
-                    else
-                    {
-                        int x = game->player->x + 1;
-                        int y = game->player->y - 1;
-
-                        if (game->action == ACTION_NONE)
-                        {
-                            if (key.lctrl)
-                            {
-                                game->should_update = actor_swing(game->player, x, y);
-                            }
-                            else
-                            {
-                                game->should_update = actor_move(game->player, x, y);
-                            }
-                        }
-                        else
-                        {
-                            game->should_update = actor_interact(game->player, x, y, game->action);
-
-                            game->action = ACTION_NONE;
-                        }
-                    }
-                }
-                break;
-                case TCODK_CHAR:
-                {
-                    switch (key.c)
-                    {
-                    case '<':
-                    {
-                        game->should_update = actor_ascend(game->player);
-                    }
-                    break;
-                    case '>':
-                    {
-                        game->should_update = actor_descend(game->player);
-                    }
-                    break;
-                    case 'b':
-                    {
-                        game_panel_toggle(game, PANEL_SPELLBOOK);
-                    }
-                    break;
-                    case 'C':
-                    {
-                        game_panel_toggle(game, PANEL_CHARACTER);
-                    }
-                    break;
-                    case 'c':
-                    {
-                        game->action = ACTION_CLOSE_DOOR;
-
-                        game_log(
-                            game,
-                            game->player->level,
-                            game->player->x,
-                            game->player->y,
-                            TCOD_white,
-                            "Choose a direction");
-                    }
-                    break;
-                    case 'd':
-                    {
-                        game->should_update = actor_drop(game->player);
-                    }
-                    break;
-                    case 'f':
-                    {
-                        if (game->targeting == TARGETING_SHOOT)
-                        {
-                            actor_shoot(game->player, game->target_x, game->target_y, &fn_should_update, game);
-
-                            game->targeting = TARGETING_NONE;
-                        }
-                        else
-                        {
-                            game->targeting = TARGETING_SHOOT;
-
-                            bool target_found = false;
-
-                            struct map *map = &game->maps[game->player->level];
-
-                            {
-                                struct actor *target = NULL;
-                                float min_distance = 1000.0f;
-
-                                for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
-                                {
-                                    struct actor *actor = *iterator;
-
-                                    if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
-                                        actor->faction != game->player->faction &&
-                                        !actor->dead)
-                                    {
-                                        float dist = distance(game->player->x, game->player->y, actor->x, actor->y);
-
-                                        if (dist < min_distance)
-                                        {
-                                            target = actor;
-                                            min_distance = dist;
-                                        }
-                                    }
-                                }
-
-                                if (target)
-                                {
-                                    target_found = true;
-
-                                    game->target_x = target->x;
-                                    game->target_y = target->y;
-                                }
-                            }
-
-                            if (!target_found)
-                            {
-                                game->target_x = game->player->x;
-                                game->target_y = game->player->y;
-                            }
-                        }
-                    }
-                    break;
-                    case 'g':
-                    {
-                        game->should_update = actor_grab(game->player, game->player->x, game->player->y);
-                    }
-                    break;
-                    case 'i':
-                    {
-                        game_panel_toggle(game, PANEL_INVENTORY);
-                    }
-                    break;
-                    case 'l':
-                    {
-                        if (game->targeting == TARGETING_LOOK)
-                        {
-                            game->targeting = TARGETING_NONE;
-                        }
-                        else
-                        {
-                            game->targeting = TARGETING_LOOK;
-
-                            game->target_x = game->player->x;
-                            game->target_y = game->player->y;
-                        }
-                    }
-                    break;
-                    case 'm':
-                    {
-                        game->message_log_visible = !game->message_log_visible;
-                    }
-                    break;
-                    case 'o':
-                    {
-                        game->action = ACTION_OPEN_DOOR;
-
-                        game_log(
-                            game,
-                            game->player->level,
-                            game->player->x,
-                            game->player->y,
-                            TCOD_white,
-                            "Choose a direction");
-                    }
-                    break;
-                    case 's':
-                    {
-                        if (key.lctrl)
-                        {
-                            game_save(game);
-                        }
-                    }
-                    break;
-                    case 't':
-                    {
-                        game->should_update = true;
-
-                        game->player->torch = !game->player->torch;
-                    }
-                    break;
-                    case 'z':
-                    {
-                        // TODO: spells
-                    }
-                    break;
-                    }
-                }
-                break;
-                }
-            }
-            break;
-            }
-        }
     }
 }
 
@@ -875,6 +943,8 @@ void game_update(struct game *game)
             }
         }
     }
+
+    game->panel_status[PANEL_INVENTORY].max_index = TCOD_list_size(game->player->items) - 1;
 }
 
 void game_render(struct game *game)
@@ -908,8 +978,6 @@ void game_render(struct game *game)
     //              : view_y + view_height > MAP_HEIGHT
     //                    ? MAP_HEIGHT - view_height
     //                    : view_y;
-
-    game->panel_status[PANEL_INVENTORY].max_index = TCOD_list_size(game->player->items) - 1;
 
     struct map *map = &game->maps[game->player->level];
 

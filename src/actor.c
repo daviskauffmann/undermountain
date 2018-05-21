@@ -746,7 +746,7 @@ bool actor_grab(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "There is nothing to pick up!");
+            "There is nothing to grab!");
 
         return false;
     }
@@ -769,45 +769,25 @@ bool actor_grab(struct actor *actor, int x, int y)
     return true;
 }
 
-bool actor_drop(struct actor *actor)
+bool actor_drop(struct actor *actor, struct item *item)
 {
     struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
-    if (TCOD_list_size(actor->items) == 0)
-    {
-        game_log(
-            game,
-            actor->level,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "There is nothing to drop!");
+    TCOD_list_push(tile->items, item);
+    TCOD_list_remove(actor->items, item);
 
-        return false;
-    }
-
-    // TODO: select specfic items
-    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
-    {
-        struct item *item = *iterator;
-
-        TCOD_list_push(tile->items, item);
-
-        iterator = TCOD_list_remove_iterator(actor->items, iterator);
-
-        game_log(
-            game,
-            actor->level,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "%s %s drops %s",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name,
-            game->item_info[item->type].name);
-    }
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s %s drops %s",
+        game->race_info[actor->race].name,
+        game->class_info[actor->class].name,
+        game->item_info[item->type].name);
 
     return true;
 }

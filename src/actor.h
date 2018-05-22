@@ -80,7 +80,6 @@ struct actor
     enum race race;
     enum class class;
     enum faction faction;
-    const char *name;
     int level;
     int x;
     int y;
@@ -99,7 +98,7 @@ struct actor
     bool dead;
 };
 
-struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, const char *name, int level, int x, int y);
+struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, int level, int x, int y);
 const char *actor_get_name(struct actor *actor);
 void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);

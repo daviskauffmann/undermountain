@@ -31,6 +31,15 @@ struct ui *ui_create(void)
 void ui_update(struct ui *ui, struct game *game)
 {
     ui->panel_status[PANEL_INVENTORY].max_index = TCOD_list_size(game->player->items) - 1;
+
+    {
+        struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
+
+        if (panel_status->current_index > panel_status->max_index)
+        {
+            panel_status->current_index = panel_status->max_index;
+        }
+    }
 }
 
 void ui_panel_toggle(struct ui *ui, enum panel_type panel_type)

@@ -323,7 +323,6 @@ void map_generate(struct map *map)
             TCOD_random_get_int(NULL, 0, NUM_RACES - 1),
             TCOD_random_get_int(NULL, 0, NUM_CLASSES - 1),
             TCOD_random_get_int(NULL, 0, NUM_FACTIONS - 1),
-            NULL,
             map->level,
             x,
             y);
@@ -390,7 +389,7 @@ bool map_is_walkable(struct map *map, int x, int y)
     {
         struct object *object = *iterator;
 
-        if (!map->game->object_info[object->type].is_walkable)
+        if (!map->game->object_info[object->type].is_walkable && object->type != OBJECT_DOOR_CLOSED)
         {
             return false;
         }

@@ -42,7 +42,7 @@ struct game *game_create(void)
     game->object_info[OBJECT_DOOR_CLOSED].glyph = '+';
     game->object_info[OBJECT_DOOR_CLOSED].color = TCOD_white;
     game->object_info[OBJECT_DOOR_CLOSED].is_transparent = false;
-    game->object_info[OBJECT_DOOR_CLOSED].is_walkable = true;
+    game->object_info[OBJECT_DOOR_CLOSED].is_walkable = false;
     game->object_info[OBJECT_DOOR_CLOSED].light_radius = -1;
     game->object_info[OBJECT_DOOR_CLOSED].light_color = TCOD_white;
     game->object_info[OBJECT_DOOR_CLOSED].light_flicker = false;
@@ -225,7 +225,7 @@ void game_new(struct game *game)
         int y = map->stair_up_y;
         struct tile *tile = &map->tiles[x][y];
 
-        game->player = actor_create(game, RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, "Player", level, x, y);
+        game->player = actor_create(game, RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, level, x, y);
         game->player->glow = false;
 
         TCOD_list_push(map->actors, game->player);

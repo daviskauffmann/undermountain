@@ -13,7 +13,7 @@
 #include "tile.h"
 #include "util.h"
 
-struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, const char *name, int level, int x, int y)
+struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, int level, int x, int y)
 {
     struct actor *actor = malloc(sizeof(struct actor));
 
@@ -21,7 +21,6 @@ struct actor *actor_create(struct game *game, enum race race, enum class class, 
     actor->race = race;
     actor->class = class;
     actor->faction = faction;
-    actor->name = name;
     actor->level = level;
     actor->x = x;
     actor->y = y;

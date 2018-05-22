@@ -43,16 +43,14 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
     int view_x = game->player->x - view_width / 2;
     int view_y = game->player->y - view_height / 2;
 
-    // view_x = view_x < 0
-    //              ? 0
-    //              : view_x + view_width > MAP_WIDTH
-    //                    ? MAP_WIDTH - view_width
-    //                    : view_x;
-    // view_y = view_y < 0
-    //              ? 0
-    //              : view_y + view_height > MAP_HEIGHT
-    //                    ? MAP_HEIGHT - view_height
-    //                    : view_y;
+    if (view_x + view_width > MAP_WIDTH)
+        view_x = MAP_WIDTH - view_width;
+    if (view_x < 0)
+        view_x = 0;
+    if (view_y + view_height > MAP_HEIGHT)
+        view_y = MAP_HEIGHT - view_height;
+    if (view_y < 0)
+        view_y = 0;
 
     struct map *map = &game->maps[game->player->level];
 
@@ -75,7 +73,7 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                     TCOD_color_t color = game->tile_common.shadow_color;
 
-                    if (TCOD_map_is_in_fov(game->player->fov, x, y))
+                    if (TCOD_map_is_in_fov(game->player->fov, x, y) || true)
                     {
                         tile->seen = true;
 

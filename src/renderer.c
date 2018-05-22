@@ -73,7 +73,7 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                     TCOD_color_t color = game->tile_common.shadow_color;
 
-                    if (TCOD_map_is_in_fov(game->player->fov, x, y) || true)
+                    if (TCOD_map_is_in_fov(game->player->fov, x, y))
                     {
                         tile->seen = true;
 

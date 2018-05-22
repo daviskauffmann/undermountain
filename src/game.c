@@ -186,8 +186,6 @@ struct game *game_create(void)
 
     game->messages = TCOD_list_new();
 
-    game->map_algorithm = MAP_ALGORITHM_CUSTOM;
-
     game->player = NULL;
 
     game->turn = 0;
@@ -217,21 +215,7 @@ void game_new(struct game *game)
     {
         struct map *map = &game->maps[level];
 
-        switch (game->map_algorithm)
-        {
-        case MAP_ALGORITHM_BSP:
-        {
-            map_generate_bsp(map);
-        }
-        break;
-        case MAP_ALGORITHM_CUSTOM:
-        {
-            map_generate_custom(map);
-        }
-        break;
-        }
-
-        map_populate(map);
+        map_generate(map);
     }
 
     {

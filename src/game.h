@@ -11,14 +11,6 @@
 
 #define NUM_MAPS 60
 
-struct input;
-
-enum map_algorithm
-{
-    MAP_ALGORITHM_CUSTOM,
-    MAP_ALGORITHM_BSP
-};
-
 struct game
 {
     struct tile_common tile_common;
@@ -32,7 +24,6 @@ struct game
     struct item_info item_info[NUM_ITEM_TYPES];
     struct map maps[NUM_MAPS];
     TCOD_list_t messages;
-    enum map_algorithm map_algorithm;
     struct actor *player;
     int turn;
     bool turn_available;

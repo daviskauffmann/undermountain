@@ -6,6 +6,8 @@
 #include "room.h"
 #include "tile.h"
 
+#define MAP_ALGORITHM_CUSTOM
+
 #define CUSTOM_NUM_ROOM_ATTEMPTS 20
 #define CUSTOM_MIN_ROOM_SIZE 5
 #define CUSTOM_MAX_ROOM_SIZE 15
@@ -51,8 +53,9 @@ void map_init(struct map *map, struct game *game, int level)
     map->projectiles = TCOD_list_new();
 }
 
-void map_generate_custom(struct map *map)
+void map_generate(struct map *map)
 {
+#if defined(MAP_ALGORITHM_CUSTOM)
     for (int i = 0; i < CUSTOM_NUM_ROOM_ATTEMPTS; i++)
     {
         struct room *room = room_create(
@@ -157,10 +160,7 @@ void map_generate_custom(struct map *map)
             }
         }
     }
-}
-
-void map_generate_bsp(struct map *map)
-{
+#elif defined(MAP_ALGORITHM_BSP)
     for (int x = 0; x < MAP_WIDTH; x++)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
@@ -182,10 +182,8 @@ void map_generate_bsp(struct map *map)
         1.5f);
     TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
     TCOD_bsp_delete(bsp);
-}
+#endif
 
-void map_populate(struct map *map)
-{
     for (int x = 0; x < MAP_WIDTH; x++)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)

@@ -23,9 +23,7 @@ struct map
 };
 
 void map_init(struct map *map, struct game *game, int level);
-void map_generate_custom(struct map *map);
-void map_generate_bsp(struct map *map);
-void map_populate(struct map *map);
+void map_generate(struct map *map);
 bool map_is_inside(int x, int y);
 struct room *map_get_random_room(struct map *map);
 bool map_is_transparent(struct map *map, int x, int y);

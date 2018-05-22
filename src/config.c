@@ -10,7 +10,7 @@ int font_char_vertic;
 int console_width;
 int console_height;
 bool fullscreen;
-int renderer;
+int console_renderer;
 
 void config_init(void)
 {
@@ -23,5 +23,5 @@ void config_init(void)
     console_width = 80;
     console_height = 40;
     fullscreen = false;
-    renderer = TCOD_RENDERER_SDL;
+    console_renderer = TCOD_RENDERER_SDL;
 }

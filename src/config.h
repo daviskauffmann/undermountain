@@ -14,7 +14,7 @@ extern int font_char_vertic;
 extern int console_width;
 extern int console_height;
 extern bool fullscreen;
-extern int renderer;
+extern int console_renderer;
 
 void config_init(void);
 

@@ -7,10 +7,11 @@
 #include "item.h"
 #include "map.h"
 #include "object.h"
-#include "panel.h"
 #include "tile.h"
 
 #define NUM_MAPS 60
+
+struct input;
 
 enum map_algorithm
 {
@@ -30,34 +31,23 @@ struct game
     struct item_common item_common;
     struct item_info item_info[NUM_ITEM_TYPES];
     struct map maps[NUM_MAPS];
+    TCOD_list_t messages;
     enum map_algorithm map_algorithm;
     struct actor *player;
-    enum action action;
-    enum targeting targeting;
-    int target_x;
-    int target_y;
     int turn;
     bool turn_available;
     bool should_update;
     bool should_restart;
     bool should_quit;
     bool game_over;
-    TCOD_list_t messages;
-    enum panel_type current_panel;
-    struct panel_status panel_status[NUM_PANELS];
-    bool message_log_visible;
-    bool panel_visible;
 };
 
 struct game *game_create(void);
 void game_new(struct game *game);
 void game_save(struct game *game);
 void game_load(struct game *game);
-void game_input(struct game *game);
 void game_update(struct game *game);
-void game_render(struct game *game);
 void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, char *fmt, ...);
-void game_panel_toggle(struct game *game, enum panel_type panel_type);
 void game_destroy(struct game *game);
 
 #endif

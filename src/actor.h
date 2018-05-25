@@ -87,6 +87,7 @@ struct actor
     float energy;
     int last_seen_x;
     int last_seen_y;
+    int kills;
     bool glow;
     TCOD_map_t glow_fov;
     bool torch;

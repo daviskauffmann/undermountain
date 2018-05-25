@@ -28,6 +28,7 @@ struct actor *actor_create(struct game *game, enum race race, enum class class, 
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
+    actor->kills = 0;
     actor->glow = false;
     actor->glow_fov = NULL;
     actor->torch = TCOD_random_get_int(NULL, 0, 20) == 0;
@@ -1035,6 +1036,8 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (killer)
     {
+        killer->kills++;
+
         int experience = TCOD_random_get_int(NULL, 50, 100);
 
         game_log(

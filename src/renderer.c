@@ -200,54 +200,90 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
         TCOD_console_set_char_foreground(NULL, input->target_x - view_x, input->target_y - view_y, TCOD_red);
         TCOD_console_set_char(NULL, input->target_x - view_x, input->target_y - view_y, 'X');
 
-        switch (input->targeting)
-        {
-        case TARGETING_LOOK:
-        {
-            struct tile *tile = &map->tiles[input->target_x][input->target_y];
+        struct tile *tile = &map->tiles[input->target_x][input->target_y];
 
-            if (TCOD_map_is_in_fov(game->player->fov, input->target_x, input->target_y))
+        if (TCOD_map_is_in_fov(game->player->fov, input->target_x, input->target_y))
+        {
+            struct object *object = TCOD_list_peek(tile->objects);
+            struct actor *actor = TCOD_list_peek(tile->actors);
+            struct item *item = TCOD_list_peek(tile->items);
+
+            if (object)
             {
-                struct object *object = TCOD_list_peek(tile->objects);
-                struct actor *actor = TCOD_list_peek(tile->actors);
-                struct item *item = TCOD_list_peek(tile->items);
+                TCOD_console_print_ex(
+                    NULL,
+                    console_width / 2,
+                    message_log_y - 2,
+                    TCOD_BKGND_NONE,
+                    TCOD_CENTER,
+                    game->object_info[object->type].name);
 
-                if (object)
-                {
-                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->object_info[object->type].name);
+                goto done;
+            }
 
-                    break;
-                }
+            if (actor)
+            {
+                TCOD_console_print_ex(
+                    NULL,
+                    console_width / 2,
+                    message_log_y - 2,
+                    TCOD_BKGND_NONE,
+                    TCOD_CENTER,
+                    "%s %s, Health: %d, Kills: %d",
+                    game->race_info[actor->race].name,
+                    game->class_info[actor->class].name,
+                    actor->health,
+                    actor->kills);
 
-                if (actor)
-                {
-                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s %s", game->race_info[actor->race].name, game->class_info[actor->class].name);
+                goto done;
+            }
 
-                    break;
-                }
+            if (item)
+            {
+                TCOD_console_print_ex(
+                    NULL,
+                    console_width / 2,
+                    message_log_y - 2,
+                    TCOD_BKGND_NONE,
+                    TCOD_CENTER,
+                    game->item_info[item->type].name);
 
-                if (item)
-                {
-                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->item_info[item->type].name);
+                goto done;
+            }
 
-                    break;
-                }
+            TCOD_console_print_ex(
+                NULL,
+                console_width / 2,
+                message_log_y - 2,
+                TCOD_BKGND_NONE,
+                TCOD_CENTER,
+                game->tile_info[tile->type].name);
 
-                TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, game->tile_info[tile->type].name);
+        done:;
+        }
+        else
+        {
+            if (tile->seen)
+            {
+                TCOD_console_print_ex(
+                    NULL,
+                    console_width / 2,
+                    message_log_y - 2,
+                    TCOD_BKGND_NONE,
+                    TCOD_CENTER,
+                    "%s (known)",
+                    game->tile_info[tile->type].name);
             }
             else
             {
-                if (tile->seen)
-                {
-                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (known)", game->tile_info[tile->type].name);
-                }
-                else
-                {
-                    TCOD_console_print_ex(NULL, console_width / 2, message_log_y - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
-                }
+                TCOD_console_print_ex(
+                    NULL,
+                    console_width / 2,
+                    message_log_y - 2,
+                    TCOD_BKGND_NONE,
+                    TCOD_CENTER,
+                    "Unknown");
             }
-            break;
-        }
         }
     }
 
@@ -341,6 +377,10 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
     TCOD_console_print(NULL, 0, 0, "Turn: %d", game->turn);
     TCOD_console_print(NULL, 0, 1, "Depth: %d", game->player->level);
+    TCOD_console_print(NULL, 0, 2, "X: %d", game->player->x);
+    TCOD_console_print(NULL, 0, 3, "Y: %d", game->player->y);
+    TCOD_console_print(NULL, 0, 4, "Health: %d", game->player->health);
+    TCOD_console_print(NULL, 0, 5, "Kills: %d", game->player->kills);
 
     TCOD_console_flush();
 }

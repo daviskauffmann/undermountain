@@ -18,7 +18,7 @@
 #define BSP_RANDOM_ROOMS 0
 #define BSP_ROOM_WALLS 1
 
-#define DOOR_CHANCE 1.0f
+#define DOOR_CHANCE 0.5f
 #define NUM_OBJECTS 20
 #define NUM_ACTORS 20
 #define NUM_ITEMS 20
@@ -194,33 +194,40 @@ void map_generate(struct map *map)
 
             if (tile->type == TILE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < DOOR_CHANCE)
             {
-                if (map->tiles[x][y - 1].type == TILE_FLOOR && map->tiles[x + 1][y - 1].type == TILE_FLOOR && map->tiles[x - 1][y - 1].type == TILE_FLOOR)
+                if (map->tiles[x][y - 1].type == TILE_FLOOR &&
+                    map->tiles[x + 1][y - 1].type == TILE_FLOOR &&
+                    map->tiles[x - 1][y - 1].type == TILE_FLOOR &&
+                    map->tiles[x - 1][y].type == TILE_WALL &&
+                    map->tiles[x + 1][y].type == TILE_WALL)
                 {
-                    if (map->tiles[x - 1][y].type == TILE_WALL && map->tiles[x + 1][y].type == TILE_WALL)
-                    {
-                        put_door = true;
-                    }
+                    put_door = true;
                 }
-                if (map->tiles[x + 1][y].type == TILE_FLOOR && map->tiles[x + 1][y - 1].type == TILE_FLOOR && map->tiles[x + 1][y + 1].type == TILE_FLOOR)
+
+                if (map->tiles[x + 1][y].type == TILE_FLOOR &&
+                    map->tiles[x + 1][y - 1].type == TILE_FLOOR &&
+                    map->tiles[x + 1][y + 1].type == TILE_FLOOR &&
+                    map->tiles[x][y + 1].type == TILE_WALL &&
+                    map->tiles[x][y - 1].type == TILE_WALL)
                 {
-                    if (map->tiles[x][y + 1].type == TILE_WALL && map->tiles[x][y - 1].type == TILE_WALL)
-                    {
-                        put_door = true;
-                    }
+                    put_door = true;
                 }
-                if (map->tiles[x][y + 1].type == TILE_FLOOR && map->tiles[x + 1][y + 1].type == TILE_FLOOR && map->tiles[x - 1][y + 1].type == TILE_FLOOR)
+
+                if (map->tiles[x][y + 1].type == TILE_FLOOR &&
+                    map->tiles[x + 1][y + 1].type == TILE_FLOOR &&
+                    map->tiles[x - 1][y + 1].type == TILE_FLOOR &&
+                    map->tiles[x - 1][y].type == TILE_WALL &&
+                    map->tiles[x + 1][y].type == TILE_WALL)
                 {
-                    if (map->tiles[x - 1][y].type == TILE_WALL && map->tiles[x + 1][y].type == TILE_WALL)
-                    {
-                        put_door = true;
-                    }
+                    put_door = true;
                 }
-                if (map->tiles[x - 1][y].type == TILE_FLOOR && map->tiles[x - 1][y - 1].type == TILE_FLOOR && map->tiles[x - 1][y + 1].type == TILE_FLOOR)
+
+                if (map->tiles[x - 1][y].type == TILE_FLOOR &&
+                    map->tiles[x - 1][y - 1].type == TILE_FLOOR &&
+                    map->tiles[x - 1][y + 1].type == TILE_FLOOR &&
+                    map->tiles[x][y + 1].type == TILE_WALL &&
+                    map->tiles[x][y - 1].type == TILE_WALL)
                 {
-                    if (map->tiles[x][y + 1].type == TILE_WALL && map->tiles[x][y - 1].type == TILE_WALL)
-                    {
-                        put_door = true;
-                    }
+                    put_door = true;
                 }
             }
 

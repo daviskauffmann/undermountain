@@ -91,10 +91,7 @@ void projectile_update(struct projectile *projectile)
         projectile->x = next_x;
         projectile->y = next_y;
 
-        if (TCOD_map_is_in_fov(game->player->fov, x, y))
-        {
-            game->turn_available = false;
-        }
+        game->turn_available = false;
     }
     else
     {

@@ -18,9 +18,9 @@
 #define BSP_RANDOM_ROOMS 0
 #define BSP_ROOM_WALLS 1
 
-#define DOOR_CHANCE 0.5f
+#define DOOR_CHANCE 1.0f
 #define NUM_OBJECTS 20
-#define NUM_ACTORS 20
+#define NUM_ACTORS 0
 #define NUM_ITEMS 20
 
 static void hline(struct map *map, int x1, int y, int x2);
@@ -238,7 +238,11 @@ void map_generate(struct map *map)
                     map->game,
                     map->level,
                     x,
-                    y);
+                    y,
+                    TCOD_white,
+                    -1,
+                    TCOD_white,
+                    false);
 
                 TCOD_list_push(map->objects, object);
                 TCOD_list_push(tile->objects, object);
@@ -255,7 +259,11 @@ void map_generate(struct map *map)
             map->game,
             map->level,
             map->stair_down_x,
-            map->stair_down_y);
+            map->stair_down_y,
+            TCOD_white,
+            -1,
+            TCOD_white,
+            false);
 
         struct tile *tile = &map->tiles[map->stair_down_x][map->stair_down_y];
 
@@ -272,7 +280,11 @@ void map_generate(struct map *map)
             map->game,
             map->level,
             map->stair_up_x,
-            map->stair_up_y);
+            map->stair_up_y,
+            TCOD_white,
+            -1,
+            TCOD_white,
+            false);
 
         struct tile *tile = &map->tiles[map->stair_up_x][map->stair_up_y];
 
@@ -288,20 +300,37 @@ void map_generate(struct map *map)
         room_get_random_pos(room, &x, &y);
 
         enum object_type type = 0;
+        TCOD_color_t color = TCOD_white;
+        int light_radius = -1;
+        TCOD_color_t light_color = TCOD_white;
+        bool light_flicker = false;
 
         switch (TCOD_random_get_int(NULL, 0, 3))
         {
         case 0:
             type = OBJECT_FOUNTAIN;
+            color = TCOD_blue;
             break;
         case 1:
             type = OBJECT_ALTAR;
+            light_radius = 3;
+            light_color = TCOD_white;
+            light_flicker = false;
             break;
         case 2:
             type = OBJECT_THRONE;
+            color = TCOD_yellow;
             break;
         case 3:
+            TCOD_color_t random_color = TCOD_color_RGB(
+                (unsigned char)TCOD_random_get_int(NULL, 0, 255),
+                (unsigned char)TCOD_random_get_int(NULL, 0, 255),
+                (unsigned char)TCOD_random_get_int(NULL, 0, 255));
             type = OBJECT_TORCH;
+            color = random_color;
+            light_radius = TCOD_random_get_int(NULL, 10, 20);
+            light_color = random_color;
+            light_flicker = TCOD_random_get_int(NULL, 0, 1) == 0 ? true : false;
             break;
         }
 
@@ -310,7 +339,11 @@ void map_generate(struct map *map)
             map->game,
             map->level,
             x,
-            y);
+            y,
+            color,
+            light_radius,
+            light_color,
+            light_flicker);
 
         struct tile *tile = &map->tiles[x][y];
 

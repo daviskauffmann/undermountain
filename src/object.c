@@ -5,7 +5,16 @@
 #include "map.h"
 #include "object.h"
 
-struct object *object_create(enum object_type type, struct game *game, int level, int x, int y)
+struct object *object_create(
+    enum object_type type,
+    struct game *game,
+    int level,
+    int x,
+    int y,
+    TCOD_color_t color,
+    int light_radius,
+    TCOD_color_t light_color,
+    bool light_flicker)
 {
     struct object *object = malloc(sizeof(struct object));
 
@@ -14,6 +23,10 @@ struct object *object_create(enum object_type type, struct game *game, int level
     object->level = level;
     object->x = x;
     object->y = y;
+    object->color = color;
+    object->light_radius = light_radius;
+    object->light_color = light_color;
+    object->light_flicker = light_flicker;
     object->light_fov = NULL;
     object->destroyed = false;
 
@@ -30,9 +43,9 @@ void object_calc_light(struct object *object)
         TCOD_map_delete(object->light_fov);
     }
 
-    if (game->object_info[object->type].light_radius != -1)
+    if (object->light_radius != -1)
     {
-        object->light_fov = map_to_fov_map(map, object->x, object->y, game->object_info[object->type].light_radius);
+        object->light_fov = map_to_fov_map(map, object->x, object->y, object->light_radius);
     }
 }
 

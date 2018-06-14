@@ -26,12 +26,8 @@ struct object_info
 {
     const char *name;
     unsigned char glyph;
-    TCOD_color_t color;
     bool is_walkable;
     bool is_transparent;
-    int light_radius;
-    TCOD_color_t light_color;
-    bool light_flicker;
 };
 
 struct object
@@ -41,11 +37,24 @@ struct object
     int level;
     int x;
     int y;
+    TCOD_color_t color;
+    int light_radius;
+    TCOD_color_t light_color;
+    bool light_flicker;
     TCOD_map_t light_fov;
     bool destroyed;
 };
 
-struct object *object_create(enum object_type type, struct game *game, int level, int x, int y);
+struct object *object_create(
+    enum object_type type,
+    struct game *game,
+    int level,
+    int x,
+    int y,
+    TCOD_color_t color,
+    int light_radius,
+    TCOD_color_t light_color,
+    bool light_flicker);
 void object_calc_light(struct object *object);
 void object_destroy(struct object *object);
 

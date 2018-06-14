@@ -321,9 +321,52 @@ bool actor_move(struct actor *actor, int x, int y)
     {
         struct object *object = *iterator;
 
-        if (object->type == OBJECT_DOOR_CLOSED)
+        switch (object->type)
+        {
+        case OBJECT_ALTAR:
+        {
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s %s prays at the altar",
+                game->race_info[actor->race].name,
+                game->class_info[actor->class].name);
+        }
+        break;
+        case OBJECT_DOOR_CLOSED:
         {
             return actor_open_door(actor, x, y);
+        }
+        break;
+        case OBJECT_FOUNTAIN:
+        {
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s %s drinks from the fountain",
+                game->race_info[actor->race].name,
+                game->class_info[actor->class].name);
+        }
+        break;
+        case OBJECT_THRONE:
+        {
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s %s sits on the throne",
+                game->race_info[actor->race].name,
+                game->class_info[actor->class].name);
+        }
+        break;
         }
 
         if (!actor->game->object_info[object->type].is_walkable)

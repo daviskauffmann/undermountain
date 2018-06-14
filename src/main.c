@@ -31,7 +31,6 @@ int main(void)
         {
             game_destroy(game);
             game = game_create();
-            game_new(game);
         }
 
         if (game->should_quit)

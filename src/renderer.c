@@ -97,11 +97,11 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                             if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                             {
-                                float r2 = powf((float)game->object_info[object->type].light_radius, 2);
-                                float d = powf((float)(x - object->x + (game->object_info[object->type].light_flicker ? dx : 0)), 2) + powf((float)(y - object->y + (game->object_info[object->type].light_flicker ? dy : 0)), 2);
-                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (game->object_info[object->type].light_flicker ? di : 0));
+                                float r2 = powf((float)object->light_radius, 2);
+                                float d = powf((float)(x - object->x + (object->light_flicker ? dx : 0)), 2) + powf((float)(y - object->y + (object->light_flicker ? dy : 0)), 2);
+                                float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (object->light_flicker ? di : 0));
 
-                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, game->object_info[object->type].light_color, l), l);
+                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, object->light_color, l), l);
                             }
                         }
 
@@ -146,7 +146,7 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
             if (TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
             {
-                TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, game->object_info[object->type].color);
+                TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
                 TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, game->object_info[object->type].glyph);
             }
         }

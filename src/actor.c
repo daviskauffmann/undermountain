@@ -833,7 +833,7 @@ bool actor_bash(struct actor *actor, struct object *object)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s destroys the %s!",
+        "%s destroys the %s",
         actor->name,
         game->object_info[object->type].name);
 
@@ -1014,8 +1014,9 @@ bool actor_attack(struct actor *actor, struct actor *other)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s misses",
-            actor->name);
+            "%s misses %s",
+            actor->name,
+            other->name);
     }
 
     return true;

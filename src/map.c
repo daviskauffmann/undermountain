@@ -362,18 +362,49 @@ void map_generate(struct map *map)
 
         struct actor *actor = NULL;
 
-        if (TCOD_random_get_int(NULL, 0, 10) == 0)
+        if (TCOD_random_get_int(NULL, 0, 5) == 0)
         {
             enum race race = TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN);
             enum class class = TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD);
-            struct race_info *race_info = &map->game->race_info[race];
-            struct class_info *class_info = &map->game->class_info[class];
 
-            // TODO: random name generator
-            char *name = malloc(strlen(race_info->name) + strlen(class_info->name) + 2);
-            strcpy(name, race_info->name);
-            strcat(name, " ");
-            strcat(name, class_info->name);
+            const char *filename;
+            char *sex;
+
+            switch (race)
+            {
+            case RACE_DWARF:
+            {
+                filename = "namegen/mingos_dwarf.cfg";
+
+                if (TCOD_random_get_int(NULL, 0, 1) == 0)
+                {
+                    sex = "dwarf male";
+                }
+                else
+                {
+                    sex = "dwarf female";
+                }
+            }
+            break;
+            default:
+            {
+                filename = "namegen/mingos_standard.cfg";
+
+                if (TCOD_random_get_int(NULL, 0, 1) == 0)
+                {
+                    sex = "male";
+                }
+                else
+                {
+                    sex = "female";
+                }
+            }
+            break;
+            }
+
+            TCOD_namegen_parse(filename, NULL);
+            char *name = TCOD_namegen_generate(sex, false);
+            TCOD_namegen_destroy();
 
             actor = actor_create(
                 map->game,
@@ -384,8 +415,6 @@ void map_generate(struct map *map)
                 map->level,
                 x,
                 y);
-
-            free(name);
         }
         else
         {

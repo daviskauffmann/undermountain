@@ -1,4 +1,6 @@
 #include <libtcod/libtcod.h>
+#include <malloc.h>
+#include <string.h>
 
 #include "actor.h"
 #include "game.h"
@@ -18,10 +20,10 @@
 #define BSP_RANDOM_ROOMS 0
 #define BSP_ROOM_WALLS 1
 
-#define DOOR_CHANCE 1.0f
-#define NUM_OBJECTS 20
-#define NUM_ACTORS 20
-#define NUM_ITEMS 20
+#define DOOR_CHANCE 0.5f
+#define NUM_OBJECTS 10
+#define NUM_ACTORS 10
+#define NUM_ITEMS 10
 
 static void hline(struct map *map, int x1, int y, int x2);
 static void hline_left(struct map *map, int x, int y);
@@ -360,17 +362,30 @@ void map_generate(struct map *map)
 
         struct actor *actor = NULL;
 
-        if (TCOD_random_get_int(NULL, 0, 1) == 0)
+        if (TCOD_random_get_int(NULL, 0, 10) == 0)
         {
+            enum race race = TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN);
+            enum class class = TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD);
+            struct race_info *race_info = &map->game->race_info[race];
+            struct class_info *class_info = &map->game->class_info[class];
+
+            // TODO: random name generator
+            char *name = malloc(strlen(race_info->name) + strlen(class_info->name) + 2);
+            strcpy(name, race_info->name);
+            strcat(name, " ");
+            strcat(name, class_info->name);
+
             actor = actor_create(
                 map->game,
-                "__PLACEHOLDER", //TODO: random name generation!!
-                TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN),
-                TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD),
+                name,
+                race,
+                class,
                 FACTION_GOOD,
                 map->level,
                 x,
                 y);
+
+            free(name);
         }
         else
         {

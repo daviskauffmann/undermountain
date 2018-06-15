@@ -80,9 +80,16 @@ enum class
 enum monster
 {
     MONSTER_BEHOLDER,
+    MONSTER_BUGBEAR,
+    MONSTER_GELATINOUS_CUBE,
     MONSTER_GOBLIN,
-    MONSTER_ORC_FIGHTER,
     MONSTER_ORC_CLERIC,
+    MONSTER_ORC_FIGHTER,
+    MONSTER_PIXIE,
+    MONSTER_RAKSHASA,
+    MONSTER_RAT,
+    MONSTER_WOLF,
+    MONSTER_ZOMBIE,
 
     NUM_MONSTERS
 };
@@ -143,7 +150,7 @@ struct prototype
 struct actor
 {
     struct game *game;
-    const char *name;
+    char *name;
     enum race race;
     enum class class;
     enum faction faction;

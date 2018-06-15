@@ -13,12 +13,14 @@
 #include "tile.h"
 #include "util.h"
 
+#define strdup _strdup
+
 struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int level, int x, int y)
 {
     struct actor *actor = malloc(sizeof(struct actor));
 
     actor->game = game;
-    actor->name = name;
+    actor->name = strdup(name);
     actor->race = race;
     actor->class = class;
     actor->faction = faction;
@@ -1105,6 +1107,8 @@ void actor_destroy(struct actor *actor)
     }
 
     TCOD_list_delete(actor->items);
+
+    free(actor->name);
 
     free(actor);
 }

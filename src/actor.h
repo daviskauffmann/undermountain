@@ -8,24 +8,83 @@ struct item;
 
 enum race
 {
-    RACE_HUMAN,
-    RACE_ELF,
+    // player races
     RACE_DWARF,
+    RACE_ELF,
+    RACE_GNOME,
+    RACE_HALF_ELF,
+    RACE_HALF_ORC,
+    RACE_HALFLING,
+    RACE_HUMAN,
+
+    // monster races
+    RACE_ABBERATION,
+    RACE_ANIMAL,
+    RACE_BEAST,
+    RACE_CONSTRUCT,
+    RACE_DRAGON,
+    RACE_ELEMENTAL,
+    RACE_FEY,
+    RACE_GIANT,
+    RACE_GOBLINOID,
+    RACE_MAGICAL_BEAST,
+    RACE_MONSTROUS_HUMANOID,
+    RACE_OOZE,
     RACE_ORC,
-    RACE_BUGBEAR,
-    RACE_ZOMBIE,
+    RACE_OUTSIDER,
+    RACE_REPTILLIAN,
+    RACE_SHAPECHANGER,
+    RACE_UNDEAD,
+    RACE_VERMIN,
 
     NUM_RACES
 };
 
 enum class
 {
-    CLASS_FIGHTER,
-    CLASS_RANGER,
-    CLASS_WIZARD,
+    // player classes
+    CLASS_BARBARIAN,
+    CLASS_BARD,
     CLASS_CLERIC,
+    CLASS_DRUID,
+    CLASS_FIGHTER,
+    CLASS_MONK,
+    CLASS_PALADIN,
+    CLASS_RANGER,
+    CLASS_ROGUE,
+    CLASS_SORCERER,
+    CLASS_WIZARD,
+
+    // monster classes
+    CLASS_ABBERATION,
+    CLASS_ANIMAL,
+    CLASS_BEAST,
+    CLASS_COMMONER,
+    CLASS_CONSTRUCT,
+    CLASS_DRAGON,
+    CLASS_ELEMENTAL,
+    CLASS_FEY,
+    CLASS_GIANT,
+    CLASS_HUMANOID,
+    CLASS_MAGICAL_BEAST,
+    CLASS_MONSTROUS,
+    CLASS_OOZE,
+    CLASS_OUTSIDER,
+    CLASS_SHAPESHIFTER,
+    CLASS_UNDEAD,
+    CLASS_VERMIN,
 
     NUM_CLASSES
+};
+
+enum monster
+{
+    MONSTER_BEHOLDER,
+    MONSTER_GOBLIN,
+    MONSTER_ORC_FIGHTER,
+    MONSTER_ORC_CLERIC,
+
+    NUM_MONSTERS
 };
 
 enum faction
@@ -74,9 +133,17 @@ struct class_info
     TCOD_color_t color;
 };
 
+struct prototype
+{
+    const char *name;
+    enum race race;
+    enum class class;
+};
+
 struct actor
 {
     struct game *game;
+    const char *name;
     enum race race;
     enum class class;
     enum faction faction;
@@ -99,7 +166,7 @@ struct actor
     bool dead;
 };
 
-struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, int level, int x, int y);
+struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int level, int x, int y);
 const char *actor_get_name(struct actor *actor);
 void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);

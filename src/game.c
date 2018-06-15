@@ -83,41 +83,205 @@ struct game *game_create(void)
     game->actor_common.torch_radius = 10;
     game->actor_common.torch_color = TCOD_light_amber;
 
+    game->race_info[RACE_DWARF].name = "Dwarf";
+    game->race_info[RACE_DWARF].glyph = '@';
+    game->race_info[RACE_DWARF].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_ELF].name = "Elf";
+    game->race_info[RACE_ELF].glyph = '@';
+    game->race_info[RACE_ELF].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_GNOME].name = "Gnome";
+    game->race_info[RACE_GNOME].glyph = '@';
+    game->race_info[RACE_GNOME].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_HALF_ELF].name = "Half-Elf";
+    game->race_info[RACE_HALF_ELF].glyph = '@';
+    game->race_info[RACE_HALF_ELF].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_HALF_ORC].name = "Half-Orc";
+    game->race_info[RACE_HALF_ORC].glyph = '@';
+    game->race_info[RACE_HALF_ORC].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_HALFLING].name = "Halfling";
+    game->race_info[RACE_HALFLING].glyph = '@';
+    game->race_info[RACE_HALFLING].energy_per_turn = 0.5f;
+
     game->race_info[RACE_HUMAN].name = "Human";
     game->race_info[RACE_HUMAN].glyph = '@';
     game->race_info[RACE_HUMAN].energy_per_turn = 0.5f;
 
-    game->race_info[RACE_ELF].name = "Elf";
-    game->race_info[RACE_ELF].glyph = '@';
-    game->race_info[RACE_ELF].energy_per_turn = 0.6f;
+    game->race_info[RACE_ABBERATION].name = "Abberation";
+    game->race_info[RACE_ABBERATION].glyph = 'A';
+    game->race_info[RACE_ABBERATION].energy_per_turn = 0.5f;
 
-    game->race_info[RACE_DWARF].name = "Dwarf";
-    game->race_info[RACE_DWARF].glyph = '@';
-    game->race_info[RACE_DWARF].energy_per_turn = 0.4f;
+    game->race_info[RACE_ANIMAL].name = "Animal";
+    game->race_info[RACE_ANIMAL].glyph = 'a';
+    game->race_info[RACE_ANIMAL].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_BEAST].name = "Beast";
+    game->race_info[RACE_BEAST].glyph = 'b';
+    game->race_info[RACE_BEAST].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_CONSTRUCT].name = "Construct";
+    game->race_info[RACE_CONSTRUCT].glyph = 'c';
+    game->race_info[RACE_CONSTRUCT].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_DRAGON].name = "Dragon";
+    game->race_info[RACE_DRAGON].glyph = 'D';
+    game->race_info[RACE_DRAGON].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_ELEMENTAL].name = "Elemental";
+    game->race_info[RACE_ELEMENTAL].glyph = 'e';
+    game->race_info[RACE_ELEMENTAL].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_FEY].name = "Fey";
+    game->race_info[RACE_FEY].glyph = 'f';
+    game->race_info[RACE_FEY].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_GIANT].name = "Giant";
+    game->race_info[RACE_GIANT].glyph = 'G';
+    game->race_info[RACE_GIANT].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_GOBLINOID].name = "Goblinoid";
+    game->race_info[RACE_GOBLINOID].glyph = 'g';
+    game->race_info[RACE_GOBLINOID].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_MAGICAL_BEAST].name = "Magical Beast";
+    game->race_info[RACE_MAGICAL_BEAST].glyph = 'M';
+    game->race_info[RACE_MAGICAL_BEAST].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_MONSTROUS_HUMANOID].name = "Monstrous Humanoid";
+    game->race_info[RACE_MONSTROUS_HUMANOID].glyph = 'm';
+    game->race_info[RACE_MONSTROUS_HUMANOID].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_OOZE].name = "Ooze";
+    game->race_info[RACE_OOZE].glyph = 'O';
+    game->race_info[RACE_OOZE].energy_per_turn = 0.5f;
 
     game->race_info[RACE_ORC].name = "Orc";
     game->race_info[RACE_ORC].glyph = 'o';
     game->race_info[RACE_ORC].energy_per_turn = 0.5f;
 
-    game->race_info[RACE_BUGBEAR].name = "Bugbear";
-    game->race_info[RACE_BUGBEAR].glyph = 'b';
-    game->race_info[RACE_BUGBEAR].energy_per_turn = 0.5f;
+    game->race_info[RACE_OUTSIDER].name = "Outsider";
+    game->race_info[RACE_OUTSIDER].glyph = 'O';
+    game->race_info[RACE_OUTSIDER].energy_per_turn = 0.5f;
 
-    game->race_info[RACE_ZOMBIE].name = "Zombie";
-    game->race_info[RACE_ZOMBIE].glyph = 'z';
-    game->race_info[RACE_ZOMBIE].energy_per_turn = 0.3f;
+    game->race_info[RACE_REPTILLIAN].name = "Reptillian";
+    game->race_info[RACE_REPTILLIAN].glyph = 'r';
+    game->race_info[RACE_REPTILLIAN].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_SHAPECHANGER].name = "Shapechanger";
+    game->race_info[RACE_SHAPECHANGER].glyph = 's';
+    game->race_info[RACE_SHAPECHANGER].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_UNDEAD].name = "Undead";
+    game->race_info[RACE_UNDEAD].glyph = 'u';
+    game->race_info[RACE_UNDEAD].energy_per_turn = 0.5f;
+
+    game->race_info[RACE_VERMIN].name = "Vermin";
+    game->race_info[RACE_VERMIN].glyph = 'v';
+    game->race_info[RACE_VERMIN].energy_per_turn = 0.5f;
+
+    game->class_info[CLASS_BARBARIAN].name = "Barbarian";
+    game->class_info[CLASS_BARBARIAN].color = TCOD_amber;
+
+    game->class_info[CLASS_BARD].name = "Bard";
+    game->class_info[CLASS_BARD].color = TCOD_purple;
+
+    game->class_info[CLASS_CLERIC].name = "Cleric";
+    game->class_info[CLASS_CLERIC].color = TCOD_white;
+
+    game->class_info[CLASS_DRUID].name = "Druid";
+    game->class_info[CLASS_DRUID].color = TCOD_orange;
 
     game->class_info[CLASS_FIGHTER].name = "Fighter";
-    game->class_info[CLASS_FIGHTER].color = TCOD_white;
+    game->class_info[CLASS_FIGHTER].color = TCOD_brass;
+
+    game->class_info[CLASS_MONK].name = "Monk";
+    game->class_info[CLASS_MONK].color = TCOD_sea;
+
+    game->class_info[CLASS_PALADIN].name = "Paladin";
+    game->class_info[CLASS_PALADIN].color = TCOD_pink;
 
     game->class_info[CLASS_RANGER].name = "Ranger";
-    game->class_info[CLASS_RANGER].color = TCOD_dark_green;
+    game->class_info[CLASS_RANGER].color = TCOD_green;
+
+    game->class_info[CLASS_ROGUE].name = "Rogue";
+    game->class_info[CLASS_ROGUE].color = TCOD_yellow;
+
+    game->class_info[CLASS_SORCERER].name = "Sorcerer";
+    game->class_info[CLASS_SORCERER].color = TCOD_flame;
 
     game->class_info[CLASS_WIZARD].name = "Wizard";
     game->class_info[CLASS_WIZARD].color = TCOD_azure;
 
-    game->class_info[CLASS_CLERIC].name = "Cleric";
-    game->class_info[CLASS_CLERIC].color = TCOD_yellow;
+    game->class_info[CLASS_ABBERATION].name = "Abberation";
+    game->class_info[CLASS_ABBERATION].color = TCOD_white;
+
+    game->class_info[CLASS_ANIMAL].name = "Animal";
+    game->class_info[CLASS_ANIMAL].color = TCOD_white;
+
+    game->class_info[CLASS_BEAST].name = "Beast";
+    game->class_info[CLASS_BEAST].color = TCOD_white;
+
+    game->class_info[CLASS_COMMONER].name = "Commoner";
+    game->class_info[CLASS_COMMONER].color = TCOD_white;
+
+    game->class_info[CLASS_CONSTRUCT].name = "Construct";
+    game->class_info[CLASS_CONSTRUCT].color = TCOD_white;
+
+    game->class_info[CLASS_DRAGON].name = "Dragon";
+    game->class_info[CLASS_DRAGON].color = TCOD_white;
+
+    game->class_info[CLASS_ELEMENTAL].name = "Elementa;";
+    game->class_info[CLASS_ELEMENTAL].color = TCOD_white;
+
+    game->class_info[CLASS_FEY].name = "Fey";
+    game->class_info[CLASS_FEY].color = TCOD_white;
+
+    game->class_info[CLASS_GIANT].name = "Giant";
+    game->class_info[CLASS_GIANT].color = TCOD_white;
+
+    game->class_info[CLASS_HUMANOID].name = "Humanoid";
+    game->class_info[CLASS_HUMANOID].color = TCOD_white;
+
+    game->class_info[CLASS_MAGICAL_BEAST].name = "Magical Beast";
+    game->class_info[CLASS_MAGICAL_BEAST].color = TCOD_white;
+
+    game->class_info[CLASS_MONSTROUS].name = "Monstrous";
+    game->class_info[CLASS_MONSTROUS].color = TCOD_white;
+
+    game->class_info[CLASS_OOZE].name = "Ooze";
+    game->class_info[CLASS_OOZE].color = TCOD_white;
+
+    game->class_info[CLASS_OUTSIDER].name = "Outsider";
+    game->class_info[CLASS_OUTSIDER].color = TCOD_white;
+
+    game->class_info[CLASS_SHAPESHIFTER].name = "Shapeshifter";
+    game->class_info[CLASS_SHAPESHIFTER].color = TCOD_white;
+
+    game->class_info[CLASS_UNDEAD].name = "Undead";
+    game->class_info[CLASS_UNDEAD].color = TCOD_white;
+
+    game->class_info[CLASS_VERMIN].name = "Vermin";
+    game->class_info[CLASS_VERMIN].color = TCOD_white;
+
+    game->monster_prototypes[MONSTER_BEHOLDER].name = "Beholder";
+    game->monster_prototypes[MONSTER_BEHOLDER].race = RACE_ABBERATION;
+    game->monster_prototypes[MONSTER_BEHOLDER].class = CLASS_ABBERATION;
+
+    game->monster_prototypes[MONSTER_GOBLIN].name = "Goblin";
+    game->monster_prototypes[MONSTER_GOBLIN].race = RACE_GOBLINOID;
+    game->monster_prototypes[MONSTER_GOBLIN].class = CLASS_HUMANOID;
+
+    game->monster_prototypes[MONSTER_ORC_FIGHTER].name = "Orc Fighter";
+    game->monster_prototypes[MONSTER_ORC_FIGHTER].race = RACE_ORC;
+    game->monster_prototypes[MONSTER_ORC_FIGHTER].class = CLASS_FIGHTER;
+
+    game->monster_prototypes[MONSTER_ORC_CLERIC].name = "Orc Cleric";
+    game->monster_prototypes[MONSTER_ORC_CLERIC].race = RACE_ORC;
+    game->monster_prototypes[MONSTER_ORC_CLERIC].class = CLASS_CLERIC;
 
     game->item_common.__placeholder = 0;
 
@@ -193,7 +357,7 @@ void game_new(struct game *game)
         int y = map->stair_up_y;
         struct tile *tile = &map->tiles[x][y];
 
-        game->player = actor_create(game, RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, level, x, y);
+        game->player = actor_create(game, "Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, level, x, y);
         game->player->glow = false;
 
         TCOD_list_push(map->actors, game->player);
@@ -205,9 +369,8 @@ void game_new(struct game *game)
             x,
             y,
             TCOD_white,
-            "Hail, %s %s!",
-            game->race_info[game->player->race].name,
-            game->class_info[game->player->class].name);
+            "Hail, %s!",
+            game->player->name);
     }
 }
 

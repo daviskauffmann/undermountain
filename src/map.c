@@ -20,7 +20,7 @@
 
 #define DOOR_CHANCE 1.0f
 #define NUM_OBJECTS 20
-#define NUM_ACTORS 0
+#define NUM_ACTORS 20
 #define NUM_ITEMS 20
 
 static void hline(struct map *map, int x1, int y, int x2);
@@ -358,14 +358,35 @@ void map_generate(struct map *map)
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        struct actor *actor = actor_create(
-            map->game,
-            TCOD_random_get_int(NULL, 0, NUM_RACES - 1),
-            TCOD_random_get_int(NULL, 0, NUM_CLASSES - 1),
-            TCOD_random_get_int(NULL, 0, NUM_FACTIONS - 1),
-            map->level,
-            x,
-            y);
+        struct actor *actor = NULL;
+
+        if (TCOD_random_get_int(NULL, 0, 1) == 0)
+        {
+            actor = actor_create(
+                map->game,
+                "__PLACEHOLDER", //TODO: random name generation!!
+                TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN),
+                TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD),
+                FACTION_GOOD,
+                map->level,
+                x,
+                y);
+        }
+        else
+        {
+            enum monster_prototype monster_prototype = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
+            struct prototype *prototype = &map->game->monster_prototypes[monster_prototype];
+
+            actor = actor_create(
+                map->game,
+                prototype->name,
+                prototype->race,
+                prototype->class,
+                FACTION_EVIL,
+                map->level,
+                x,
+                y);
+        }
 
         struct tile *tile = &map->tiles[x][y];
 

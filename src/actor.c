@@ -13,11 +13,12 @@
 #include "tile.h"
 #include "util.h"
 
-struct actor *actor_create(struct game *game, enum race race, enum class class, enum faction faction, int level, int x, int y)
+struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int level, int x, int y)
 {
     struct actor *actor = malloc(sizeof(struct actor));
 
     actor->game = game;
+    actor->name = name;
     actor->race = race;
     actor->class = class;
     actor->faction = faction;
@@ -331,9 +332,8 @@ bool actor_move(struct actor *actor, int x, int y)
                 actor->x,
                 actor->y,
                 TCOD_white,
-                "%s %s prays at the altar",
-                game->race_info[actor->race].name,
-                game->class_info[actor->class].name);
+                "%s prays at the altar",
+                actor->name);
         }
         break;
         case OBJECT_DOOR_CLOSED:
@@ -349,9 +349,8 @@ bool actor_move(struct actor *actor, int x, int y)
                 actor->x,
                 actor->y,
                 TCOD_white,
-                "%s %s drinks from the fountain",
-                game->race_info[actor->race].name,
-                game->class_info[actor->class].name);
+                "%s drinks from the fountain",
+                actor->name);
         }
         break;
         case OBJECT_THRONE:
@@ -362,9 +361,8 @@ bool actor_move(struct actor *actor, int x, int y)
                 actor->x,
                 actor->y,
                 TCOD_white,
-                "%s %s sits on the throne",
-                game->race_info[actor->race].name,
-                game->class_info[actor->class].name);
+                "%s sits on the throne",
+                actor->name);
         }
         break;
         }
@@ -469,11 +467,9 @@ bool actor_swap(struct actor *actor, struct actor *other)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s %s swaps with %s %s",
-        game->race_info[actor->race].name,
-        game->class_info[actor->class].name,
-        game->race_info[other->race].name,
-        game->class_info[other->class].name);
+        "%s swaps with %s",
+        actor->name,
+        other->name);
 
     return true;
 }
@@ -529,9 +525,8 @@ bool actor_open_door(struct actor *actor, int x, int y)
                 actor->x,
                 actor->y,
                 TCOD_white,
-                "%s %s opens the door",
-                game->race_info[actor->race].name,
-                game->class_info[actor->class].name);
+                "%s opens the door",
+                actor->name);
 
             break;
         }
@@ -545,9 +540,8 @@ bool actor_open_door(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s can't open that",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s can't open that",
+            actor->name);
     }
 
     return success;
@@ -582,9 +576,8 @@ bool actor_close_door(struct actor *actor, int x, int y)
                 actor->x,
                 actor->y,
                 TCOD_white,
-                "%s %s closes the door",
-                game->race_info[actor->race].name,
-                game->class_info[actor->class].name);
+                "%s closes the door",
+                actor->name);
 
             break;
         }
@@ -598,9 +591,8 @@ bool actor_close_door(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s can't close that",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s can't close that",
+            actor->name);
     }
 
     return success;
@@ -620,9 +612,8 @@ bool actor_descend(struct actor *actor)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s has reached the end",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s has reached the end",
+            actor->name);
 
         return false;
     }
@@ -664,9 +655,8 @@ bool actor_descend(struct actor *actor)
                 actor->x,
                 actor->y,
                 TCOD_white,
-                "%s %s descends",
-                game->race_info[actor->race].name,
-                game->class_info[actor->class].name);
+                "%s descends",
+                actor->name);
 
             break;
         }
@@ -680,9 +670,8 @@ bool actor_descend(struct actor *actor)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s can't descend here",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s can't descend here",
+            actor->name);
     }
 
     return success;
@@ -702,9 +691,8 @@ bool actor_ascend(struct actor *actor)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s can't go any higher",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s can't go any higher",
+            actor->name);
 
         return false;
     }
@@ -746,9 +734,8 @@ bool actor_ascend(struct actor *actor)
                 actor->x,
                 actor->y,
                 TCOD_white,
-                "%s %s descends",
-                game->race_info[actor->race].name,
-                game->class_info[actor->class].name);
+                "%s descends",
+                actor->name);
 
             break;
         }
@@ -762,9 +749,8 @@ bool actor_ascend(struct actor *actor)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s can't ascend here",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s can't ascend here",
+            actor->name);
     }
 
     return success;
@@ -804,9 +790,8 @@ bool actor_grab(struct actor *actor, int x, int y)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s %s picks up %s",
-        game->race_info[actor->race].name,
-        game->class_info[actor->class].name,
+        "%s picks up %s",
+        actor->name,
         game->item_info[item->type].name);
 
     return true;
@@ -827,9 +812,8 @@ bool actor_drop(struct actor *actor, struct item *item)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s %s drops %s",
-        game->race_info[actor->race].name,
-        game->class_info[actor->class].name,
+        "%s drops %s",
+        actor->name,
         game->item_info[item->type].name);
 
     return true;
@@ -847,9 +831,8 @@ bool actor_bash(struct actor *actor, struct object *object)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s %s destroys the %s!",
-        game->race_info[actor->race].name,
-        game->class_info[actor->class].name,
+        "%s destroys the %s!",
+        actor->name,
         game->object_info[object->type].name);
 
     return true;
@@ -905,9 +888,8 @@ bool actor_swing(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s swings at the air!",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s swings at the air!",
+            actor->name);
     }
 
     return true;
@@ -952,9 +934,8 @@ bool actor_attack(struct actor *actor, struct actor *other)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s cannot attack that!",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s cannot attack that!",
+            actor->name);
 
         return false;
     }
@@ -1008,12 +989,10 @@ bool actor_attack(struct actor *actor, struct actor *other)
             actor->x,
             actor->y,
             crit ? TCOD_yellow : TCOD_white,
-            "%s %s %s %s %s for %d",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name,
+            "%s %s %s for %d",
+            actor->name,
             crit ? "crits" : "hits",
-            game->race_info[other->race].name,
-            game->class_info[other->class].name,
+            other->name,
             total_damage);
 
         other->health -= total_damage;
@@ -1033,9 +1012,8 @@ bool actor_attack(struct actor *actor, struct actor *other)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s %s misses",
-            game->race_info[actor->race].name,
-            game->class_info[actor->class].name);
+            "%s misses",
+            actor->name);
     }
 
     return true;
@@ -1073,9 +1051,8 @@ void actor_die(struct actor *actor, struct actor *killer)
         actor->x,
         actor->y,
         TCOD_red,
-        "%s %s dies",
-        game->race_info[actor->race].name,
-        game->class_info[actor->class].name);
+        "%s dies",
+        actor->name);
 
     if (killer)
     {
@@ -1089,9 +1066,8 @@ void actor_die(struct actor *actor, struct actor *killer)
             killer->x,
             killer->y,
             TCOD_azure,
-            "%s %s gains %d experience",
-            game->race_info[killer->race].name,
-            game->class_info[killer->class].name,
+            "%s gains %d experience",
+            actor->name,
             experience);
     }
 

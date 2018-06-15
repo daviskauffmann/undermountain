@@ -20,6 +20,7 @@ struct game
     struct actor_common actor_common;
     struct race_info race_info[NUM_RACES];
     struct class_info class_info[NUM_CLASSES];
+    struct prototype monster_prototypes[NUM_MONSTERS];
     struct item_common item_common;
     struct item_info item_info[NUM_ITEM_TYPES];
     struct map maps[NUM_MAPS];

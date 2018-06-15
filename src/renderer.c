@@ -205,8 +205,6 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
         if (TCOD_map_is_in_fov(game->player->fov, input->target_x, input->target_y))
         {
             struct object *object = TCOD_list_peek(tile->objects);
-            struct actor *actor = TCOD_list_peek(tile->actors);
-            struct item *item = TCOD_list_peek(tile->items);
 
             if (object)
             {
@@ -221,6 +219,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 goto done;
             }
 
+            struct actor *actor = TCOD_list_peek(tile->actors);
+
             if (actor)
             {
                 TCOD_console_print_ex(
@@ -229,7 +229,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                     message_log_y - 2,
                     TCOD_BKGND_NONE,
                     TCOD_CENTER,
-                    "%s %s, Health: %d, Kills: %d",
+                    "%s, Class: %s, Race: %s, Health: %d, Kills: %d",
+                    actor->name,
                     game->race_info[actor->race].name,
                     game->class_info[actor->class].name,
                     actor->health,
@@ -237,6 +238,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                 goto done;
             }
+
+            struct item *item = TCOD_list_peek(tile->items);
 
             if (item)
             {

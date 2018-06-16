@@ -24,6 +24,17 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->race = race;
     actor->class = class;
     actor->faction = faction;
+    actor->experience = 0;
+    for (int i = 0; i < NUM_CLASSES; i++)
+    {
+        actor->class_levels[i] = 0;
+    }
+    actor->strength = 10;
+    actor->dexterity = 10;
+    actor->constitution = 10;
+    actor->intelligence = 10;
+    actor->wisdom = 10;
+    actor->charisma = 10;
     actor->level = level;
     actor->x = x;
     actor->y = y;
@@ -777,7 +788,8 @@ bool actor_grab(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "There is nothing to grab!");
+            "%s cannot find anything to pick up",
+            actor->name);
 
         return false;
     }
@@ -1008,15 +1020,48 @@ bool actor_attack(struct actor *actor, struct actor *other)
     }
     else
     {
-        game_log(
-            game,
-            actor->level,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "%s misses %s",
-            actor->name,
-            other->name);
+        switch (TCOD_random_get_int(NULL, 0, 2))
+        {
+        case 0:
+        {
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_grey,
+                "%s is parried by %s",
+                actor->name,
+                other->name);
+        }
+        break;
+        case 1:
+        {
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_grey,
+                "%s is blocked by %s",
+                actor->name,
+                other->name);
+        }
+        break;
+        case 2:
+        {
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_grey,
+                "%s misses %s",
+                actor->name,
+                other->name);
+        }
+        break;
+        }
     }
 
     return true;
@@ -1059,9 +1104,10 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (killer)
     {
-        killer->kills++;
-
         int experience = TCOD_random_get_int(NULL, 50, 100);
+
+        killer->experience += experience;
+        killer->kills++;
 
         game_log(
             game,
@@ -1070,7 +1116,7 @@ void actor_die(struct actor *actor, struct actor *killer)
             killer->y,
             TCOD_azure,
             "%s gains %d experience",
-            actor->name,
+            killer->name,
             experience);
     }
 

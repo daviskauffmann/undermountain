@@ -154,6 +154,14 @@ struct actor
     enum race race;
     enum class class;
     enum faction faction;
+    int experience;
+    int class_levels[NUM_CLASSES];
+    int strength;
+    int dexterity;
+    int constitution;
+    int intelligence;
+    int wisdom;
+    int charisma;
     int level;
     int x;
     int y;

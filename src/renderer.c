@@ -325,22 +325,32 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
         {
         case PANEL_CHARACTER:
         {
-            TCOD_console_print(renderer->panel, 1, 1 - panel_status->scroll, "HP: 15 / 20");
-            TCOD_console_print(renderer->panel, 1, 2 - panel_status->scroll, "MP:  7 / 16");
-
-            TCOD_console_print(renderer->panel, 1, 4 - panel_status->scroll, "STR: 16");
-            TCOD_console_print(renderer->panel, 1, 5 - panel_status->scroll, "DEX: 14");
-            TCOD_console_print(renderer->panel, 1, 6 - panel_status->scroll, "CON: 12");
-            TCOD_console_print(renderer->panel, 1, 7 - panel_status->scroll, "INT: 10");
-            TCOD_console_print(renderer->panel, 1, 8 - panel_status->scroll, "WIS: 8");
-            TCOD_console_print(renderer->panel, 1, 9 - panel_status->scroll, "CHA: 10");
-
-            TCOD_console_print(renderer->panel, 1, 11 - panel_status->scroll, "R-Hand: Sword");
-            TCOD_console_print(renderer->panel, 1, 12 - panel_status->scroll, "L-Hand: Shield");
-            TCOD_console_print(renderer->panel, 1, 13 - panel_status->scroll, "Head  : Helm");
-            TCOD_console_print(renderer->panel, 1, 14 - panel_status->scroll, "Chest : Cuirass");
-            TCOD_console_print(renderer->panel, 1, 15 - panel_status->scroll, "Legs  : Greaves");
-            TCOD_console_print(renderer->panel, 1, 16 - panel_status->scroll, "Feet  : Boots");
+            int i = 1;
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "NAME     : Blinky");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "ALIGNMENT: Neutral Good");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "RACE     : Human");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CLASS    : Fighter (5), Ranger (2)");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "EXP      : 3653");
+            i++;
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "STR: 16");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "DEX: 14");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CON: 12");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "INT: 10");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "WIS: 8");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CHA: 10");
+            i++;
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "R-Hand: Sword");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "L-Hand: Shield");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Head  : Helm");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Chest : Cuirass");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Legs  : Greaves");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Feet  : Boots");
+            i++;
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "AC: 11");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "HP: 15 / 20");
+            i++;
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "ATTACK: +6");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "DAMAGE: 1-8 (19-20x2)");
 
             TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
             TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");

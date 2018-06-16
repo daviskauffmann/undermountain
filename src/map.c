@@ -310,30 +310,38 @@ void map_generate(struct map *map)
         switch (TCOD_random_get_int(NULL, 0, 3))
         {
         case 0:
-            type = OBJECT_FOUNTAIN;
-            color = TCOD_blue;
-            break;
-        case 1:
+        {
             type = OBJECT_ALTAR;
             light_radius = 3;
             light_color = TCOD_white;
             light_flicker = false;
-            break;
-        case 2:
-            type = OBJECT_THRONE;
-            color = TCOD_yellow;
-            break;
-        case 3:
+        }
+        break;
+        case 1:
+        {
             TCOD_color_t random_color = TCOD_color_RGB(
                 (unsigned char)TCOD_random_get_int(NULL, 0, 255),
                 (unsigned char)TCOD_random_get_int(NULL, 0, 255),
                 (unsigned char)TCOD_random_get_int(NULL, 0, 255));
-            type = OBJECT_TORCH;
+            type = OBJECT_BRAZIER;
             color = random_color;
             light_radius = TCOD_random_get_int(NULL, 10, 20);
             light_color = random_color;
             light_flicker = TCOD_random_get_int(NULL, 0, 1) == 0 ? true : false;
-            break;
+        }
+        break;
+        case 2:
+        {
+            type = OBJECT_FOUNTAIN;
+            color = TCOD_blue;
+        }
+        break;
+        case 3:
+        {
+            type = OBJECT_THRONE;
+            color = TCOD_yellow;
+        }
+        break;
         }
 
         struct object *object = object_create(

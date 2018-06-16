@@ -36,6 +36,14 @@ struct game *game_create(void)
 
     game->object_common.__placeholder = 0;
 
+    game->object_info[OBJECT_ALTAR].name = "Altar";
+    game->object_info[OBJECT_ALTAR].glyph = '_';
+    game->object_info[OBJECT_ALTAR].is_transparent = true;
+    game->object_info[OBJECT_ALTAR].is_walkable = false;
+    game->object_info[OBJECT_BRAZIER].name = "Brazier";
+    game->object_info[OBJECT_BRAZIER].glyph = '*';
+    game->object_info[OBJECT_BRAZIER].is_transparent = true;
+    game->object_info[OBJECT_BRAZIER].is_walkable = false;
     game->object_info[OBJECT_DOOR_CLOSED].name = "Closed Door";
     game->object_info[OBJECT_DOOR_CLOSED].glyph = '+';
     game->object_info[OBJECT_DOOR_CLOSED].is_transparent = false;
@@ -44,6 +52,10 @@ struct game *game_create(void)
     game->object_info[OBJECT_DOOR_OPEN].glyph = '-';
     game->object_info[OBJECT_DOOR_OPEN].is_transparent = true;
     game->object_info[OBJECT_DOOR_OPEN].is_walkable = true;
+    game->object_info[OBJECT_FOUNTAIN].name = "Fountain";
+    game->object_info[OBJECT_FOUNTAIN].glyph = '{';
+    game->object_info[OBJECT_FOUNTAIN].is_transparent = true;
+    game->object_info[OBJECT_FOUNTAIN].is_walkable = false;
     game->object_info[OBJECT_STAIR_DOWN].name = "Stair Down";
     game->object_info[OBJECT_STAIR_DOWN].glyph = '>';
     game->object_info[OBJECT_STAIR_DOWN].is_transparent = true;
@@ -52,22 +64,10 @@ struct game *game_create(void)
     game->object_info[OBJECT_STAIR_UP].glyph = '<';
     game->object_info[OBJECT_STAIR_UP].is_transparent = true;
     game->object_info[OBJECT_STAIR_UP].is_walkable = true;
-    game->object_info[OBJECT_ALTAR].name = "Altar";
-    game->object_info[OBJECT_ALTAR].glyph = '_';
-    game->object_info[OBJECT_ALTAR].is_transparent = true;
-    game->object_info[OBJECT_ALTAR].is_walkable = false;
-    game->object_info[OBJECT_FOUNTAIN].name = "Fountain";
-    game->object_info[OBJECT_FOUNTAIN].glyph = '{';
-    game->object_info[OBJECT_FOUNTAIN].is_transparent = true;
-    game->object_info[OBJECT_FOUNTAIN].is_walkable = false;
     game->object_info[OBJECT_THRONE].name = "Throne";
     game->object_info[OBJECT_THRONE].glyph = '\\';
     game->object_info[OBJECT_THRONE].is_transparent = true;
     game->object_info[OBJECT_THRONE].is_walkable = false;
-    game->object_info[OBJECT_TORCH].name = "Torch";
-    game->object_info[OBJECT_TORCH].glyph = '*';
-    game->object_info[OBJECT_TORCH].is_transparent = true;
-    game->object_info[OBJECT_TORCH].is_walkable = false;
 
     game->actor_common.glow_radius = 5;
     game->actor_common.glow_color = TCOD_white;

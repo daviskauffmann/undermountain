@@ -49,6 +49,7 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->torch_fov = NULL;
     actor->fov = NULL;
     actor->items = TCOD_list_new();
+    actor->flash_fade = 0;
     actor->dead = false;
 
     actor_calc_light(actor);
@@ -166,6 +167,47 @@ void actor_ai(struct actor *actor)
     {
         actor->energy -= 1.0f;
 
+        if (actor->health < 10)
+        {
+            struct object *target = NULL;
+            float min_distance = 1000.0f;
+
+            for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+            {
+                struct object *object = *iterator;
+
+                if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
+                    object->type == OBJECT_FOUNTAIN)
+                {
+                    float dist = distance(actor->x, actor->y, object->x, object->y);
+
+                    if (dist < min_distance)
+                    {
+                        target = object;
+                        min_distance = dist;
+                    }
+                }
+            }
+
+            if (target)
+            {
+                if (distance(actor->x, actor->y, target->x, target->y) < 2.0f)
+                {
+                    if (actor_drink(actor, target->x, target->y))
+                    {
+                        goto done;
+                    }
+                }
+                else
+                {
+                    if (actor_path_towards(actor, target->x, target->y))
+                    {
+                        goto done;
+                    }
+                }
+            }
+        }
+
         {
             struct actor *target = NULL;
             float min_distance = 1000.0f;
@@ -193,16 +235,20 @@ void actor_ai(struct actor *actor)
                 actor->last_seen_x = target->x;
                 actor->last_seen_y = target->y;
 
-                if (distance(actor->x, actor->y, target->x, target->y) < 2.0f)
+                if (distance(actor->x, actor->y, target->x, target->y) < 2.0f &&
+                    actor_attack(actor, target))
                 {
-                    actor_attack(actor, target);
+                    goto done;
                 }
-                else
+                else if ((actor->class == CLASS_RANGER || actor->class == CLASS_ROGUE) &&
+                         actor_shoot(actor, target->x, target->y, NULL, NULL))
                 {
-                    actor_path_towards(actor, target->x, target->y);
+                    goto done;
                 }
-
-                goto done;
+                else if (actor_path_towards(actor, target->x, target->y))
+                {
+                    goto done;
+                }
             }
         }
 
@@ -213,10 +259,8 @@ void actor_ai(struct actor *actor)
                 actor->last_seen_x = -1;
                 actor->last_seen_y = -1;
             }
-            else
+            else if (actor_path_towards(actor, actor->last_seen_x, actor->last_seen_y))
             {
-                actor_path_towards(actor, actor->last_seen_x, actor->last_seen_y);
-
                 goto done;
             }
         }
@@ -254,6 +298,7 @@ void actor_ai(struct actor *actor)
             }
         }
 
+        if (TCOD_random_get_int(NULL, 0, 1) == 0)
         {
             int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
             int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
@@ -339,14 +384,7 @@ bool actor_move(struct actor *actor, int x, int y)
         {
         case OBJECT_ALTAR:
         {
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s prays at the altar",
-                actor->name);
+            return actor_pray(actor, x, y);
         }
         break;
         case OBJECT_DOOR_CLOSED:
@@ -356,26 +394,12 @@ bool actor_move(struct actor *actor, int x, int y)
         break;
         case OBJECT_FOUNTAIN:
         {
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s drinks from the fountain",
-                actor->name);
+            return actor_drink(actor, x, y);
         }
         break;
         case OBJECT_THRONE:
         {
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s sits on the throne",
-                actor->name);
+            return actor_sit(actor, x, y);
         }
         break;
         }
@@ -504,6 +528,12 @@ bool actor_interact(struct actor *actor, int x, int y, enum action action)
         return actor_close_door(actor, x, y);
     case ACTION_OPEN_DOOR:
         return actor_open_door(actor, x, y);
+    case ACTION_PRAY:
+        return actor_pray(actor, x, y);
+    case ACTION_DRINK:
+        return actor_drink(actor, x, y);
+    case ACTION_SIT:
+        return actor_sit(actor, x, y);
     }
 
     return false;
@@ -769,6 +799,163 @@ bool actor_ascend(struct actor *actor)
     return success;
 }
 
+bool actor_pray(struct actor *actor, int x, int y)
+{
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[x][y];
+
+    bool success = false;
+
+    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    {
+        struct object *object = *iterator;
+
+        if (object->type == OBJECT_ALTAR)
+        {
+            success = true;
+
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s prays at the altar",
+                actor->name);
+
+            break;
+        }
+    }
+
+    if (!success)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s can't pray here",
+            actor->name);
+    }
+
+    return success;
+}
+
+bool actor_drink(struct actor *actor, int x, int y)
+{
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[x][y];
+
+    bool success = false;
+
+    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    {
+        struct object *object = *iterator;
+
+        if (object->type == OBJECT_FOUNTAIN)
+        {
+            success = true;
+
+            int health = roll(1, 4);
+
+            actor->health += health;
+
+            if (actor->health > 20)
+            {
+                actor->health = 20;
+            }
+
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s drinks from the fountain, restoring %d health",
+                actor->name,
+                health);
+
+            break;
+        }
+    }
+
+    if (!success)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s can't drink here",
+            actor->name);
+    }
+
+    return success;
+}
+
+bool actor_sit(struct actor *actor, int x, int y)
+{
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    struct game *game = actor->game;
+    struct map *map = &game->maps[actor->level];
+    struct tile *tile = &map->tiles[x][y];
+
+    bool success = false;
+
+    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    {
+        struct object *object = *iterator;
+
+        if (object->type == OBJECT_THRONE)
+        {
+            success = true;
+
+            game_log(
+                game,
+                actor->level,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s sits on the throne",
+                actor->name);
+
+            break;
+        }
+    }
+
+    if (!success)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s can't sit here",
+            actor->name);
+    }
+
+    return success;
+}
+
 bool actor_grab(struct actor *actor, int x, int y)
 {
     if (!map_is_inside(x, y))
@@ -1015,6 +1202,8 @@ bool actor_attack(struct actor *actor, struct actor *other)
 
         if (other->health <= 0)
         {
+            other->health = 0;
+
             actor_die(other, actor);
         }
     }

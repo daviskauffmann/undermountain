@@ -22,7 +22,8 @@
 
 #define DOOR_CHANCE 0.5f
 #define NUM_OBJECTS 10
-#define NUM_ACTORS 10
+#define NUM_ADVENTURERS 5
+#define NUM_MONSTERS 10
 #define NUM_ITEMS 10
 
 static void hline(struct map *map, int x1, int y, int x2);
@@ -361,84 +362,90 @@ void map_generate(struct map *map)
         TCOD_list_push(tile->objects, object);
     }
 
-    for (int i = 0; i < NUM_ACTORS; i++)
+    for (int i = 0; i < NUM_ADVENTURERS; i++)
     {
         struct room *room = map_get_random_room(map);
 
         int x, y;
         room_get_random_pos(room, &x, &y);
 
-        struct actor *actor = NULL;
+        enum race race = TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN);
+        enum class class = TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD);
 
-        if (TCOD_random_get_int(NULL, 0, 5) == 0)
+        const char *filename;
+        char *sex;
+
+        switch (race)
         {
-            enum race race = TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN);
-            enum class class = TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD);
-
-            const char *filename;
-            char *sex;
-
-            switch (race)
-            {
-            case RACE_DWARF:
-            {
-                filename = "namegen/mingos_dwarf.cfg";
-
-                if (TCOD_random_get_int(NULL, 0, 1) == 0)
-                {
-                    sex = "dwarf male";
-                }
-                else
-                {
-                    sex = "dwarf female";
-                }
-            }
-            break;
-            default:
-            {
-                filename = "namegen/mingos_standard.cfg";
-
-                if (TCOD_random_get_int(NULL, 0, 1) == 0)
-                {
-                    sex = "male";
-                }
-                else
-                {
-                    sex = "female";
-                }
-            }
-            break;
-            }
-
-            TCOD_namegen_parse(filename, NULL);
-            char *name = TCOD_namegen_generate(sex, false);
-            TCOD_namegen_destroy();
-
-            actor = actor_create(
-                map->game,
-                name,
-                race,
-                class,
-                FACTION_GOOD,
-                map->level,
-                x,
-                y);
-        }
-        else
+        case RACE_DWARF:
         {
-            enum monster_prototype monster_prototype = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
-            struct prototype *prototype = &map->game->monster_prototypes[monster_prototype];
+            filename = "namegen/mingos_dwarf.cfg";
 
-            actor = actor_create(
-                map->game,
-                prototype->name,
-                prototype->race,
-                prototype->class,
-                FACTION_EVIL,
-                map->level,
-                x,
-                y);
+            if (TCOD_random_get_int(NULL, 0, 1) == 0)
+            {
+                sex = "dwarf male";
+            }
+            else
+            {
+                sex = "dwarf female";
+            }
         }
+        break;
+        default:
+        {
+            filename = "namegen/mingos_standard.cfg";
+
+            if (TCOD_random_get_int(NULL, 0, 1) == 0)
+            {
+                sex = "male";
+            }
+            else
+            {
+                sex = "female";
+            }
+        }
+        break;
+        }
+
+        TCOD_namegen_parse(filename, NULL);
+        char *name = TCOD_namegen_generate(sex, false);
+        TCOD_namegen_destroy();
+
+        struct actor *actor = actor_create(
+            map->game,
+            name,
+            race,
+            class,
+            FACTION_GOOD,
+            map->level,
+            x,
+            y);
+
+        struct tile *tile = &map->tiles[x][y];
+
+        TCOD_list_push(map->actors, actor);
+        TCOD_list_push(tile->actors, actor);
+    }
+
+    for (int i = 0; i < NUM_MONSTERS; i++)
+    {
+        struct room *room = map_get_random_room(map);
+
+        int x, y;
+        room_get_random_pos(room, &x, &y);
+
+        enum monster_prototype monster_prototype = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
+        struct prototype *prototype = &map->game->monster_prototypes[monster_prototype];
+
+        struct actor *actor = actor_create(
+            map->game,
+            prototype->name,
+            prototype->race,
+            prototype->class,
+            FACTION_EVIL,
+            map->level,
+            x,
+            y);
 
         struct tile *tile = &map->tiles[x][y];
 

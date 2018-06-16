@@ -422,30 +422,45 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'd':
             {
-                if (!game->game_over && game->turn_available && ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
+                if (!game->game_over && game->turn_available)
                 {
-                    switch (ui->current_panel)
+                    if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
                     {
-                    case PANEL_INVENTORY:
-                    {
-                        if (TCOD_list_size(game->player->items) > 0)
+                        switch (ui->current_panel)
                         {
-                            struct item *item = TCOD_list_get(game->player->items, ui->panel_status[ui->current_panel].current_index);
+                        case PANEL_INVENTORY:
+                        {
+                            if (TCOD_list_size(game->player->items) > 0)
+                            {
+                                struct item *item = TCOD_list_get(game->player->items, ui->panel_status[ui->current_panel].current_index);
 
-                            game->should_update = actor_drop(game->player, item);
+                                game->should_update = actor_drop(game->player, item);
+                            }
+                            else
+                            {
+                                game_log(
+                                    game,
+                                    game->player->level,
+                                    game->player->x,
+                                    game->player->y,
+                                    TCOD_white,
+                                    "There is nothing to drop!");
+                            }
                         }
-                        else
-                        {
-                            game_log(
-                                game,
-                                game->player->level,
-                                game->player->x,
-                                game->player->y,
-                                TCOD_white,
-                                "There is nothing to drop!");
+                        break;
                         }
                     }
-                    break;
+                    else
+                    {
+                        input->action = ACTION_DRINK;
+
+                        game_log(
+                            game,
+                            game->player->level,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_white,
+                            "Choose a direction");
                     }
                 }
             }
@@ -557,6 +572,22 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                 }
             }
             break;
+            case 'p':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    input->action = ACTION_PRAY;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose a direction");
+                }
+            }
+            break;
             case 'r':
             {
                 game->should_restart = true;
@@ -569,6 +600,18 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     if (key.lctrl)
                     {
                         game_save(game);
+                    }
+                    else
+                    {
+                        input->action = ACTION_SIT;
+
+                        game_log(
+                            game,
+                            game->player->level,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_white,
+                            "Choose a direction");
                     }
                 }
             }

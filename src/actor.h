@@ -45,6 +45,7 @@ enum class
     // player classes
     CLASS_BARBARIAN,
     CLASS_BARD,
+    CLASS_COMMONER,
     CLASS_CLERIC,
     CLASS_DRUID,
     CLASS_FIGHTER,
@@ -59,7 +60,6 @@ enum class
     CLASS_ABBERATION,
     CLASS_ANIMAL,
     CLASS_BEAST,
-    CLASS_COMMONER,
     CLASS_CONSTRUCT,
     CLASS_DRAGON,
     CLASS_ELEMENTAL,
@@ -79,16 +79,23 @@ enum class
 
 enum monster
 {
+    MONSTER_BASILISK,
     MONSTER_BEHOLDER,
     MONSTER_BUGBEAR,
+    MONSTER_FIRE_ELEMENTAL,
     MONSTER_GELATINOUS_CUBE,
     MONSTER_GOBLIN,
+    MONSTER_IRON_GOLEM,
+    MONSTER_OGRE,
     MONSTER_ORC_CLERIC,
     MONSTER_ORC_FIGHTER,
+    MONSTER_ORC_RANGER,
     MONSTER_PIXIE,
     MONSTER_RAKSHASA,
     MONSTER_RAT,
+    MONSTER_RED_SLAAD,
     MONSTER_WOLF,
+    MONSTER_WYRMLING,
     MONSTER_ZOMBIE,
 
     NUM_MONSTERS
@@ -108,7 +115,10 @@ enum action
     ACTION_DESCEND,
     ACTION_ASCEND,
     ACTION_OPEN_DOOR,
-    ACTION_CLOSE_DOOR
+    ACTION_CLOSE_DOOR,
+    ACTION_PRAY,
+    ACTION_DRINK,
+    ACTION_SIT
 };
 
 enum targeting
@@ -138,6 +148,7 @@ struct class_info
 {
     const char *name;
     TCOD_color_t color;
+    int hit_die;
 };
 
 struct prototype
@@ -196,6 +207,9 @@ bool actor_open_door(struct actor *actor, int x, int y);
 bool actor_close_door(struct actor *actor, int x, int y);
 bool actor_descend(struct actor *actor);
 bool actor_ascend(struct actor *actor);
+bool actor_pray(struct actor *actor, int x, int y);
+bool actor_drink(struct actor *actor, int x, int y);
+bool actor_sit(struct actor *actor, int x, int y);
 bool actor_grab(struct actor *actor, int x, int y);
 bool actor_drop(struct actor *actor, struct item *item);
 bool actor_bash(struct actor *actor, struct object *object);

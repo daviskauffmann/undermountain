@@ -240,7 +240,7 @@ void actor_ai(struct actor *actor)
                 {
                     goto done;
                 }
-                else if ((actor->class == CLASS_RANGER || actor->class == CLASS_ROGUE) &&
+                else if ((actor->class == CLASS_DRUID || actor->class == CLASS_RANGER || actor->class == CLASS_ROGUE) &&
                          actor_shoot(actor, target->x, target->y, NULL, NULL))
                 {
                     goto done;

@@ -21,10 +21,10 @@
 #define BSP_ROOM_WALLS 1
 
 #define DOOR_CHANCE 0.5f
-#define NUM_OBJECTS 10
-#define NUM_ADVENTURERS 5
-#define NUM_MONSTERS 10
-#define NUM_ITEMS 10
+#define SPAWN_OBJECTS 10
+#define SPAWN_ADVENTURERS 5
+#define SPAWN_MONSTERS 10
+#define SPAWN_ITEMS 10
 
 static void hline(struct map *map, int x1, int y, int x2);
 static void hline_left(struct map *map, int x, int y);
@@ -295,7 +295,7 @@ void map_generate(struct map *map)
         TCOD_list_push(tile->objects, object);
     }
 
-    for (int i = 0; i < NUM_OBJECTS; i++)
+    for (int i = 0; i < SPAWN_OBJECTS; i++)
     {
         struct room *room = map_get_random_room(map);
 
@@ -362,7 +362,7 @@ void map_generate(struct map *map)
         TCOD_list_push(tile->objects, object);
     }
 
-    for (int i = 0; i < NUM_ADVENTURERS; i++)
+    for (int i = 0; i < SPAWN_ADVENTURERS; i++)
     {
         struct room *room = map_get_random_room(map);
 
@@ -427,7 +427,7 @@ void map_generate(struct map *map)
         TCOD_list_push(tile->actors, actor);
     }
 
-    for (int i = 0; i < NUM_MONSTERS; i++)
+    for (int i = 0; i < SPAWN_MONSTERS; i++)
     {
         struct room *room = map_get_random_room(map);
 
@@ -453,7 +453,7 @@ void map_generate(struct map *map)
         TCOD_list_push(tile->actors, actor);
     }
 
-    for (int i = 0; i < NUM_ITEMS; i++)
+    for (int i = 0; i < SPAWN_ITEMS; i++)
     {
         struct room *room = map_get_random_room(map);
 

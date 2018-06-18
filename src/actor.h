@@ -131,6 +131,7 @@ enum targeting
 
 struct actor_common
 {
+    int turns_to_chase;
     int glow_radius;
     TCOD_color_t glow_color;
     int torch_radius;
@@ -180,6 +181,7 @@ struct actor
     float energy;
     int last_seen_x;
     int last_seen_y;
+    int turns_chased;
     int kills;
     bool glow;
     TCOD_map_t glow_fov;

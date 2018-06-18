@@ -42,6 +42,7 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
+    actor->turns_chased = 0;
     actor->kills = 0;
     actor->glow = false;
     actor->glow_fov = NULL;
@@ -234,6 +235,7 @@ void actor_ai(struct actor *actor)
             {
                 actor->last_seen_x = target->x;
                 actor->last_seen_y = target->y;
+                actor->turns_chased = 0;
 
                 if (distance(actor->x, actor->y, target->x, target->y) < 2.0f &&
                     actor_attack(actor, target))
@@ -254,13 +256,16 @@ void actor_ai(struct actor *actor)
 
         if (actor->last_seen_x != -1 && actor->last_seen_y != -1)
         {
-            if (actor->x == actor->last_seen_x && actor->y == actor->last_seen_y)
+            if ((actor->x == actor->last_seen_x && actor->y == actor->last_seen_y) ||
+                actor->turns_chased > game->actor_common.turns_to_chase)
             {
                 actor->last_seen_x = -1;
                 actor->last_seen_y = -1;
             }
             else if (actor_path_towards(actor, actor->last_seen_x, actor->last_seen_y))
             {
+                actor->turns_chased++;
+
                 goto done;
             }
         }

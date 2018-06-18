@@ -69,6 +69,7 @@ struct game *game_create(void)
     game->object_info[OBJECT_THRONE].is_transparent = true;
     game->object_info[OBJECT_THRONE].is_walkable = false;
 
+    game->actor_common.turns_to_chase = 10;
     game->actor_common.glow_radius = 5;
     game->actor_common.glow_color = TCOD_white;
     game->actor_common.torch_radius = 10;

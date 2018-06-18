@@ -5,6 +5,8 @@
 #include "actor.h"
 #include "game.h"
 #include "map.h"
+#include "object.h"
+#include "projectile.h"
 #include "room.h"
 #include "tile.h"
 
@@ -58,6 +60,16 @@ void map_init(struct map *map, struct game *game, int level)
 
 void map_generate(struct map *map)
 {
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            struct tile *tile = &map->tiles[x][y];
+
+            tile->type = TILE_WALL;
+        }
+    }
+
 #if defined(MAP_ALGORITHM_CUSTOM)
     for (int i = 0; i < CUSTOM_NUM_ROOM_ATTEMPTS; i++)
     {
@@ -164,16 +176,6 @@ void map_generate(struct map *map)
         }
     }
 #elif defined(MAP_ALGORITHM_BSP)
-    for (int x = 0; x < MAP_WIDTH; x++)
-    {
-        for (int y = 0; y < MAP_HEIGHT; y++)
-        {
-            struct tile *tile = &map->tiles[x][y];
-
-            tile->type = TILE_WALL;
-        }
-    }
-
     TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
     TCOD_bsp_split_recursive(
         bsp,
@@ -599,6 +601,15 @@ void map_reset(struct map *map)
     }
 
     TCOD_list_delete(map->items);
+
+    for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
+    {
+        struct projectile *projectile = *iterator;
+
+        projectile_destroy(projectile);
+    }
+
+    TCOD_list_delete(map->projectiles);
 }
 
 static void hline(struct map *map, int x1, int y, int x2)

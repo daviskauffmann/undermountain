@@ -204,65 +204,70 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
         if (TCOD_map_is_in_fov(game->player->fov, input->target_x, input->target_y))
         {
-            struct actor *actor = TCOD_list_peek(tile->actors);
-
-            if (actor)
+            do
             {
+                struct actor *actor = TCOD_list_peek(tile->actors);
+
+                if (actor)
+                {
+                    TCOD_console_print_ex(
+                        NULL,
+                        console_width / 2,
+                        message_log_y - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        "%s, Race: %s, Class: %s, Health: %d, Kills: %d",
+                        actor->name,
+                        game->race_info[actor->race].name,
+                        game->class_info[actor->class].name,
+                        actor->health,
+                        actor->kills);
+
+                    break;
+                }
+
+                {
+                    struct item *item = TCOD_list_peek(tile->items);
+
+                    if (item)
+                    {
+                        TCOD_console_print_ex(
+                            NULL,
+                            console_width / 2,
+                            message_log_y - 2,
+                            TCOD_BKGND_NONE,
+                            TCOD_CENTER,
+                            game->item_info[item->type].name);
+
+                        break;
+                    }
+                }
+
+                {
+                    struct object *object = TCOD_list_peek(tile->objects);
+
+                    if (object)
+                    {
+                        TCOD_console_print_ex(
+                            NULL,
+                            console_width / 2,
+                            message_log_y - 2,
+                            TCOD_BKGND_NONE,
+                            TCOD_CENTER,
+                            game->object_info[object->type].name);
+
+                        break;
+                    }
+                }
+
                 TCOD_console_print_ex(
                     NULL,
                     console_width / 2,
                     message_log_y - 2,
                     TCOD_BKGND_NONE,
                     TCOD_CENTER,
-                    "%s, Race: %s, Class: %s, Health: %d, Kills: %d",
-                    actor->name,
-                    game->race_info[actor->race].name,
-                    game->class_info[actor->class].name,
-                    actor->health,
-                    actor->kills);
-
-                goto done;
-            }
-
-            struct item *item = TCOD_list_peek(tile->items);
-
-            if (item)
-            {
-                TCOD_console_print_ex(
-                    NULL,
-                    console_width / 2,
-                    message_log_y - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    game->item_info[item->type].name);
-
-                goto done;
-            }
-
-            struct object *object = TCOD_list_peek(tile->objects);
-
-            if (object)
-            {
-                TCOD_console_print_ex(
-                    NULL,
-                    console_width / 2,
-                    message_log_y - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    game->object_info[object->type].name);
-
-                goto done;
-            }
-
-            TCOD_console_print_ex(
-                NULL,
-                console_width / 2,
-                message_log_y - 2,
-                TCOD_BKGND_NONE,
-                TCOD_CENTER,
-                game->tile_info[tile->type].name);
-
-        done:;
+                    game->tile_info[tile->type].name);
+            } while (0);
         }
         else
         {

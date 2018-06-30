@@ -196,14 +196,14 @@ void actor_ai(struct actor *actor)
                 {
                     if (actor_drink(actor, target->x, target->y))
                     {
-                        goto done;
+                        continue;
                     }
                 }
                 else
                 {
                     if (actor_path_towards(actor, target->x, target->y))
                     {
-                        goto done;
+                        continue;
                     }
                 }
             }
@@ -240,16 +240,16 @@ void actor_ai(struct actor *actor)
                 if (distance(actor->x, actor->y, target->x, target->y) < 2.0f &&
                     actor_attack(actor, target))
                 {
-                    goto done;
+                    continue;
                 }
                 else if ((actor->class == CLASS_DRUID || actor->class == CLASS_RANGER || actor->class == CLASS_ROGUE) &&
                          actor_shoot(actor, target->x, target->y, NULL, NULL))
                 {
-                    goto done;
+                    continue;
                 }
                 else if (actor_path_towards(actor, target->x, target->y))
                 {
-                    goto done;
+                    continue;
                 }
             }
         }
@@ -266,32 +266,46 @@ void actor_ai(struct actor *actor)
             {
                 actor->turns_chased++;
 
-                goto done;
+                continue;
             }
         }
 
-        for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
         {
-            struct object *object = *iterator;
+            bool interacted = false;
 
-            switch (object->type)
+            for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
             {
-            case OBJECT_STAIR_DOWN:
-            {
-                if (actor_descend(actor))
+                struct object *object = *iterator;
+
+                switch (object->type)
                 {
-                    goto done;
+                case OBJECT_STAIR_DOWN:
+                {
+                    if (actor_descend(actor))
+                    {
+                        interacted = true;
+                    }
+                }
+                break;
+                case OBJECT_STAIR_UP:
+                {
+                    if (actor_ascend(actor))
+                    {
+                        interacted = true;
+                    }
+                }
+                break;
+                }
+
+                if (interacted)
+                {
+                    break;
                 }
             }
-            break;
-            case OBJECT_STAIR_UP:
+
+            if (interacted)
             {
-                if (actor_ascend(actor))
-                {
-                    goto done;
-                }
-            }
-            break;
+                continue;
             }
         }
 
@@ -299,7 +313,7 @@ void actor_ai(struct actor *actor)
         {
             if (actor_grab(actor, actor->x, actor->y))
             {
-                goto done;
+                continue;
             }
         }
 
@@ -309,9 +323,9 @@ void actor_ai(struct actor *actor)
             int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
 
             actor_move(actor, x, y);
-        }
 
-    done:;
+            continue;
+        }
     }
 }
 

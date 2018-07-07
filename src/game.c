@@ -293,24 +293,36 @@ struct game *game_create(void)
 
     game->item_common.__placeholder = 0;
 
-    game->item_info[ITEM_BOW].name = "Bow";
-    game->item_info[ITEM_BOW].glyph = '}';
-    game->item_info[ITEM_BOW].color = TCOD_white;
-    game->item_info[ITEM_POTION].name = "Potion";
-    game->item_info[ITEM_POTION].glyph = '!';
-    game->item_info[ITEM_POTION].color = TCOD_white;
-    game->item_info[ITEM_SCROLL].name = "Scroll";
-    game->item_info[ITEM_SCROLL].glyph = '?';
-    game->item_info[ITEM_SCROLL].color = TCOD_white;
-    game->item_info[ITEM_SHIELD].name = "Shield";
-    game->item_info[ITEM_SHIELD].glyph = ')';
-    game->item_info[ITEM_SHIELD].color = TCOD_white;
-    game->item_info[ITEM_SPEAR].name = "Spear";
-    game->item_info[ITEM_SPEAR].glyph = '/';
-    game->item_info[ITEM_SPEAR].color = TCOD_white;
-    game->item_info[ITEM_SWORD].name = "Sword";
-    game->item_info[ITEM_SWORD].glyph = '|';
-    game->item_info[ITEM_SWORD].color = TCOD_white;
+    game->base_item_info[BASE_ITEM_LONGSWORD].glyph = '|';
+    game->base_item_info[BASE_ITEM_LONGSWORD].color = TCOD_white;
+    game->base_item_info[BASE_ITEM_LONGSWORD].equip_slot = EQUIP_SLOT_MAIN_HAND;
+    game->base_item_info[BASE_ITEM_LONGSWORD].weapon_damage = WEAPON_DAMAGE_SLASHING;
+    game->base_item_info[BASE_ITEM_LONGSWORD].weapon_size = WEAPON_SIZE_MEDIUM;
+    game->base_item_info[BASE_ITEM_LONGSWORD].ranged = false;
+    game->base_item_info[BASE_ITEM_LONGSWORD].num_dice = 1;
+    game->base_item_info[BASE_ITEM_LONGSWORD].die_to_roll = 8;
+    game->base_item_info[BASE_ITEM_LONGSWORD].crit_threat = 19;
+    game->base_item_info[BASE_ITEM_LONGSWORD].crit_mult = 2;
+    game->base_item_info[BASE_ITEM_LONGSWORD].base_cost = 100;
+    game->base_item_info[BASE_ITEM_LONGSWORD].stack = 1;
+    game->base_item_info[BASE_ITEM_LONGSWORD].armor_class = 0;
+    game->base_item_info[BASE_ITEM_LONGSWORD].armor_check_penalty = 0;
+    game->base_item_info[BASE_ITEM_LONGSWORD].arcane_spell_failure = 0;
+
+    game->item_info[ITEM_COLD_IRON_LONGSWORD].base_type = BASE_ITEM_LONGSWORD;
+    game->item_info[ITEM_COLD_IRON_LONGSWORD].name = "Cold Iron Longsword";
+    game->item_info[ITEM_COLD_IRON_LONGSWORD].description = "A cold enchanted longsword";
+    game->item_info[ITEM_COLD_IRON_LONGSWORD].enhancement_bonus = 1;
+    game->item_info[ITEM_COLD_IRON_LONGSWORD].num_dice_bonus = 1;
+    game->item_info[ITEM_COLD_IRON_LONGSWORD].die_to_roll_bonus = 4;
+    game->item_info[ITEM_COLD_IRON_LONGSWORD].damage_element = DAMAGE_ELEMENT_COLD;
+    game->item_info[ITEM_LONGSWORD].base_type = BASE_ITEM_LONGSWORD;
+    game->item_info[ITEM_LONGSWORD].name = "Longsword";
+    game->item_info[ITEM_LONGSWORD].description = "A generic longsword";
+    game->item_info[ITEM_LONGSWORD].enhancement_bonus = 0;
+    game->item_info[ITEM_LONGSWORD].num_dice_bonus = 0;
+    game->item_info[ITEM_LONGSWORD].die_to_roll_bonus = 0;
+    game->item_info[ITEM_LONGSWORD].damage_element = 0;
 
     for (int level = 0; level < NUM_MAPS; level++)
     {

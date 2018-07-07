@@ -157,8 +157,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
             if (TCOD_map_is_in_fov(game->player->fov, item->x, item->y))
             {
-                TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, game->item_info[item->type].color);
-                TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, game->item_info[item->type].glyph);
+                TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, game->base_item_info[game->item_info[item->type].base_type].color);
+                TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, game->base_item_info[game->item_info[item->type].base_type].glyph);
             }
         }
 
@@ -204,7 +204,6 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
         if (TCOD_map_is_in_fov(game->player->fov, input->target_x, input->target_y))
         {
-            do
             {
                 struct actor *actor = TCOD_list_peek(tile->actors);
 
@@ -223,51 +222,53 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                         actor->health,
                         actor->kills);
 
-                    break;
+                    goto done;
                 }
+            }
 
+            {
+                struct item *item = TCOD_list_peek(tile->items);
+
+                if (item)
                 {
-                    struct item *item = TCOD_list_peek(tile->items);
+                    TCOD_console_print_ex(
+                        NULL,
+                        console_width / 2,
+                        message_log_y - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        game->item_info[item->type].name);
 
-                    if (item)
-                    {
-                        TCOD_console_print_ex(
-                            NULL,
-                            console_width / 2,
-                            message_log_y - 2,
-                            TCOD_BKGND_NONE,
-                            TCOD_CENTER,
-                            game->item_info[item->type].name);
-
-                        break;
-                    }
+                    goto done;
                 }
+            }
 
+            {
+                struct object *object = TCOD_list_peek(tile->objects);
+
+                if (object)
                 {
-                    struct object *object = TCOD_list_peek(tile->objects);
+                    TCOD_console_print_ex(
+                        NULL,
+                        console_width / 2,
+                        message_log_y - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        game->object_info[object->type].name);
 
-                    if (object)
-                    {
-                        TCOD_console_print_ex(
-                            NULL,
-                            console_width / 2,
-                            message_log_y - 2,
-                            TCOD_BKGND_NONE,
-                            TCOD_CENTER,
-                            game->object_info[object->type].name);
-
-                        break;
-                    }
+                    goto done;
                 }
+            }
 
-                TCOD_console_print_ex(
-                    NULL,
-                    console_width / 2,
-                    message_log_y - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    game->tile_info[tile->type].name);
-            } while (0);
+            TCOD_console_print_ex(
+                NULL,
+                console_width / 2,
+                message_log_y - 2,
+                TCOD_BKGND_NONE,
+                TCOD_CENTER,
+                game->tile_info[tile->type].name);
+
+        done:;
         }
         else
         {
@@ -369,7 +370,7 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             {
                 struct item *item = *iterator;
 
-                TCOD_color_t color = panel_status->current_index == i ? TCOD_yellow : game->item_info[item->type].color;
+                TCOD_color_t color = panel_status->current_index == i ? TCOD_yellow : game->base_item_info[game->item_info[item->type].base_type].color;
 
                 TCOD_console_set_default_foreground(renderer->panel, color);
                 TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, game->item_info[item->type].name);

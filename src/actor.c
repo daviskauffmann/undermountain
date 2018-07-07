@@ -35,10 +35,14 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->intelligence = 10;
     actor->wisdom = 10;
     actor->charisma = 10;
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+    {
+        actor->equipment[i] = NULL;
+    }
     actor->level = level;
     actor->x = x;
     actor->y = y;
-    actor->health = 20;
+    actor->health = 10;
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -892,9 +896,9 @@ bool actor_drink(struct actor *actor, int x, int y)
 
             actor->health += health;
 
-            if (actor->health > 20)
+            if (actor->health > 10)
             {
-                actor->health = 20;
+                actor->health = 10;
             }
 
             game_log(
@@ -1039,6 +1043,29 @@ bool actor_drop(struct actor *actor, struct item *item)
     return true;
 }
 
+bool actor_equip(struct actor *actor, struct item *item)
+{
+    struct game *game = actor->game;
+    struct item_info *item_info = &game->item_info[item->type];
+    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+
+    // TODO: unequip current
+    TCOD_list_remove(actor->items, item);
+    actor->equipment[base_item_info->equip_slot] = item;
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s equips %s",
+        actor->name,
+        item_info->name);
+
+    return true;
+}
+
 bool actor_bash(struct actor *actor, struct object *object)
 {
     struct game *game = actor->game;
@@ -1161,9 +1188,9 @@ bool actor_attack(struct actor *actor, struct actor *other)
     }
 
     int attack_roll = roll(1, 20);
-    int attack_bonus = 1;
+    int attack_bonus = 0;
     int total_attack = attack_roll + attack_bonus;
-    int armor_class = 5;
+    int armor_class = 10;
     bool hit = attack_roll == 1
                    ? false
                    : attack_roll == 20
@@ -1172,10 +1199,9 @@ bool actor_attack(struct actor *actor, struct actor *other)
 
     if (hit)
     {
-        // 1d8 19-20x2
         int weapon_a = 1;
-        int weapon_x = 8;
-        int weapon_threat_range = 19;
+        int weapon_x = 3;
+        int weapon_threat_range = 20;
         int weapon_crit_multiplier = 2;
 
         int damage_rolls = 1;

@@ -436,16 +436,6 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
 
                                 game->should_update = actor_drop(game->player, item);
                             }
-                            else
-                            {
-                                game_log(
-                                    game,
-                                    game->player->level,
-                                    game->player->x,
-                                    game->player->y,
-                                    TCOD_white,
-                                    "There is nothing to drop!");
-                            }
                         }
                         break;
                         }
@@ -461,6 +451,29 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                             game->player->y,
                             TCOD_white,
                             "Choose a direction");
+                    }
+                }
+            }
+            break;
+            case 'e':
+            {
+                if (!game->game_over && game->turn_available)
+                {
+                    if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
+                    {
+                        switch (ui->current_panel)
+                        {
+                        case PANEL_INVENTORY:
+                        {
+                            if (TCOD_list_size(game->player->items) > 0)
+                            {
+                                struct item *item = TCOD_list_get(game->player->items, ui->panel_status[ui->current_panel].current_index);
+
+                                game->should_update = actor_equip(game->player, item);
+                            }
+                        }
+                        break;
+                        }
                     }
                 }
             }

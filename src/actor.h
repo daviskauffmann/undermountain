@@ -3,8 +3,8 @@
 
 #include <libtcod/libtcod.h>
 
-struct object;
-struct item;
+#include "item.h"
+#include "object.h"
 
 enum race
 {
@@ -174,6 +174,7 @@ struct actor
     int intelligence;
     int wisdom;
     int charisma;
+    struct item *equipment[NUM_EQUIP_SLOTS];
     int level;
     int x;
     int y;
@@ -195,7 +196,6 @@ struct actor
 };
 
 struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int level, int x, int y);
-const char *actor_get_name(struct actor *actor);
 void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
@@ -214,6 +214,7 @@ bool actor_drink(struct actor *actor, int x, int y);
 bool actor_sit(struct actor *actor, int x, int y);
 bool actor_grab(struct actor *actor, int x, int y);
 bool actor_drop(struct actor *actor, struct item *item);
+bool actor_equip(struct actor *actor, struct item *item);
 bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params);
 bool actor_swing(struct actor *actor, int x, int y);

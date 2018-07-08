@@ -215,11 +215,11 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                         message_log_y - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
-                        "%s, Race: %s, Class: %s, Health: %d, Kills: %d",
+                        "%s, Race: %s, Class: %s, HP: %d, Kills: %d",
                         actor->name,
                         game->race_info[actor->race].name,
                         game->class_info[actor->class].name,
-                        actor->health,
+                        actor->current_hp,
                         actor->kills);
 
                     goto done;
@@ -398,7 +398,7 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
     TCOD_console_print(NULL, 0, 1, "Depth: %d", game->player->level);
     TCOD_console_print(NULL, 0, 2, "X: %d", game->player->x);
     TCOD_console_print(NULL, 0, 3, "Y: %d", game->player->y);
-    TCOD_console_print(NULL, 0, 4, "Health: %d", game->player->health);
+    TCOD_console_print(NULL, 0, 4, "HP: %d", game->player->current_hp);
     TCOD_console_print(NULL, 0, 5, "Kills: %d", game->player->kills);
 
     TCOD_console_flush();

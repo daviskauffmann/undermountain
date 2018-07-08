@@ -97,9 +97,6 @@ struct item_info
     const char *name;
     const char *description;
     int enhancement_bonus;
-    int num_dice_bonus;
-    int die_to_roll_bonus;
-    enum damage_element damage_element;
 };
 
 struct item

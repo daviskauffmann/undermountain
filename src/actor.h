@@ -178,7 +178,8 @@ struct actor
     int level;
     int x;
     int y;
-    int health;
+    int base_hp;
+    int current_hp;
     float energy;
     int last_seen_x;
     int last_seen_y;
@@ -196,6 +197,12 @@ struct actor
 };
 
 struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int level, int x, int y);
+int actor_calc_max_hp(struct actor *actor);
+int actor_calc_enhancement_bonus(struct actor *actor);
+int actor_calc_attack_bonus(struct actor *actor);
+int actor_calc_armor_class(struct actor *actor);
+void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult);
+int actor_calc_damage_bonus(struct actor *actor);
 void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);

@@ -15,6 +15,8 @@
 
 #define strdup _strdup
 
+static int calc_ability_modifier(int ability);
+
 struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int level, int x, int y)
 {
     struct actor *actor = malloc(sizeof(struct actor));
@@ -42,7 +44,8 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->level = level;
     actor->x = x;
     actor->y = y;
-    actor->health = 10;
+    actor->base_hp = 10; // dependent on class
+    actor->current_hp = actor_calc_max_hp(actor);
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -61,6 +64,71 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor_calc_fov(actor);
 
     return actor;
+}
+
+int actor_calc_max_hp(struct actor *actor)
+{
+    return actor->base_hp + calc_ability_modifier(actor->constitution);
+}
+
+int actor_calc_enhancement_bonus(struct actor *actor)
+{
+    struct game *game = actor->game;
+    struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+
+    int enhancement_bonus = 0;
+
+    if (main_hand)
+    {
+        struct item_info *item_info = &game->item_info[main_hand->type];
+
+        enhancement_bonus += item_info->enhancement_bonus;
+    }
+
+    return enhancement_bonus;
+}
+
+int actor_calc_attack_bonus(struct actor *actor)
+{
+    int base_attack_bonus = 0;
+
+    return base_attack_bonus + calc_ability_modifier(actor->strength) + actor_calc_enhancement_bonus(actor);
+}
+
+int actor_calc_armor_class(struct actor *actor)
+{
+    return 10;
+}
+
+void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult)
+{
+    struct game *game = actor->game;
+    struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+
+    if (main_hand)
+    {
+        struct item_info *item_info = &game->item_info[main_hand->type];
+        struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+
+        *num_dice = base_item_info->num_dice;
+        *die_to_roll = base_item_info->die_to_roll;
+        *crit_threat = base_item_info->crit_threat;
+        *crit_mult = base_item_info->crit_mult;
+    }
+    else
+    {
+        *num_dice = 1;
+        *die_to_roll = 3;
+        *crit_threat = 20;
+        *crit_mult = 2;
+    }
+}
+
+int actor_calc_damage_bonus(struct actor *actor)
+{
+
+    // TODO: apply special considerations based on weapon type
+    return calc_ability_modifier(actor->strength) + actor_calc_enhancement_bonus(actor);
 }
 
 void actor_update_flash(struct actor *actor)
@@ -172,7 +240,7 @@ void actor_ai(struct actor *actor)
     {
         actor->energy -= 1.0f;
 
-        if (actor->health < 10)
+        if (actor->current_hp < actor_calc_max_hp(actor) / 2)
         {
             struct object *target = NULL;
             float min_distance = 1000.0f;
@@ -892,13 +960,14 @@ bool actor_drink(struct actor *actor, int x, int y)
         {
             success = true;
 
-            int health = roll(1, 4);
+            int hp = roll(1, 4);
+            int max_hp = actor_calc_max_hp(actor);
 
-            actor->health += health;
+            actor->current_hp += hp;
 
-            if (actor->health > 10)
+            if (actor->current_hp > max_hp)
             {
-                actor->health = 10;
+                actor->current_hp = max_hp;
             }
 
             game_log(
@@ -909,7 +978,7 @@ bool actor_drink(struct actor *actor, int x, int y)
                 TCOD_white,
                 "%s drinks from the fountain, restoring %d health",
                 actor->name,
-                health);
+                hp);
 
             break;
         }
@@ -1188,9 +1257,9 @@ bool actor_attack(struct actor *actor, struct actor *other)
     }
 
     int attack_roll = roll(1, 20);
-    int attack_bonus = 0;
+    int attack_bonus = actor_calc_attack_bonus(actor);
     int total_attack = attack_roll + attack_bonus;
-    int armor_class = 10;
+    int armor_class = actor_calc_armor_class(other);
     bool hit = attack_roll == 1
                    ? false
                    : attack_roll == 20
@@ -1199,15 +1268,16 @@ bool actor_attack(struct actor *actor, struct actor *other)
 
     if (hit)
     {
-        int weapon_a = 1;
-        int weapon_x = 3;
-        int weapon_threat_range = 20;
-        int weapon_crit_multiplier = 2;
+        int num_dice;
+        int die_to_roll;
+        int crit_threat;
+        int crit_mult;
+        actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult);
 
         int damage_rolls = 1;
 
         bool crit = false;
-        if (attack_roll >= weapon_threat_range)
+        if (attack_roll >= crit_threat)
         {
             int threat_roll = roll(1, 20);
             int total_threat = threat_roll + attack_bonus;
@@ -1215,15 +1285,15 @@ bool actor_attack(struct actor *actor, struct actor *other)
             if (total_threat >= armor_class)
             {
                 crit = true;
-                damage_rolls *= weapon_crit_multiplier;
+                damage_rolls *= crit_mult;
             }
         }
 
         int total_damage = 0;
-        int damage_bonus = 0;
+        int damage_bonus = actor_calc_damage_bonus(actor);
         for (int i = 0; i < damage_rolls; i++)
         {
-            int damage_roll = roll(weapon_a, weapon_x);
+            int damage_roll = roll(num_dice, die_to_roll);
             int damage = damage_roll + damage_bonus;
 
             total_damage += damage;
@@ -1241,13 +1311,13 @@ bool actor_attack(struct actor *actor, struct actor *other)
             other->name,
             total_damage);
 
-        other->health -= total_damage;
+        other->current_hp -= total_damage;
         other->flash_color = TCOD_red;
         other->flash_fade = 1.0f;
 
-        if (other->health <= 0)
+        if (other->current_hp <= 0)
         {
-            other->health = 0;
+            other->current_hp = 0;
 
             actor_die(other, actor);
         }
@@ -1392,4 +1462,9 @@ void actor_destroy(struct actor *actor)
     free(actor->name);
 
     free(actor);
+}
+
+static int calc_ability_modifier(int ability)
+{
+    return (ability - 10) / 2;
 }

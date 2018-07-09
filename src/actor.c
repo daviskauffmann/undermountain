@@ -74,15 +74,19 @@ int actor_calc_max_hp(struct actor *actor)
 int actor_calc_enhancement_bonus(struct actor *actor)
 {
     struct game *game = actor->game;
-    struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
 
     int enhancement_bonus = 0;
 
-    if (main_hand)
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
-        struct item_info *item_info = &game->item_info[main_hand->type];
+        struct item *equipment = actor->equipment[i];
 
-        enhancement_bonus += item_info->enhancement_bonus;
+        if (equipment)
+        {
+            struct item_info *item_info = &game->item_info[equipment->type];
+
+            enhancement_bonus += item_info->enhancement_bonus;
+        }
     }
 
     return enhancement_bonus;
@@ -97,7 +101,25 @@ int actor_calc_attack_bonus(struct actor *actor)
 
 int actor_calc_armor_class(struct actor *actor)
 {
-    return 10;
+    struct game *game = actor->game;
+
+    int armor_class = 10;
+
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+    {
+        struct item *equipment = actor->equipment[i];
+
+        if (equipment)
+        {
+            struct item_info *item_info = &game->item_info[equipment->type];
+            struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+
+            // TODO: do not stack certain AC types
+            armor_class += base_item_info->base_ac;
+        }
+    }
+
+    return armor_class;
 }
 
 void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult)
@@ -126,8 +148,6 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
 
 int actor_calc_damage_bonus(struct actor *actor)
 {
-
-    // TODO: apply special considerations based on weapon type
     return calc_ability_modifier(actor->strength) + actor_calc_enhancement_bonus(actor);
 }
 

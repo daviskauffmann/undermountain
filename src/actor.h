@@ -167,7 +167,6 @@ struct actor
     enum class class;
     enum faction faction;
     int experience;
-    int class_levels[NUM_CLASSES];
     int strength;
     int dexterity;
     int constitution;
@@ -175,6 +174,7 @@ struct actor
     int wisdom;
     int charisma;
     struct item *equipment[NUM_EQUIP_SLOTS];
+    TCOD_list_t items;
     int level;
     int x;
     int y;
@@ -190,7 +190,6 @@ struct actor
     bool torch;
     TCOD_map_t torch_fov;
     TCOD_map_t fov;
-    TCOD_list_t items;
     TCOD_color_t flash_color;
     float flash_fade;
     bool dead;

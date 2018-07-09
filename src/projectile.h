@@ -1,6 +1,10 @@
 #ifndef PROJECTILE_H
 #define PROJECTILE_H
 
+struct game;
+struct actor;
+struct item;
+
 struct projectile
 {
     struct game *game;

@@ -10,6 +10,7 @@ struct item_common
 
 enum base_item_type
 {
+    BASE_ITEM_LONGBOW,
     BASE_ITEM_LONGSWORD,
 
     NUM_BASE_ITEM_TYPES
@@ -24,8 +25,7 @@ enum equip_slot
     EQUIP_SLOT_CLOAK,
     EQUIP_SLOT_GLOVES,
     EQUIP_SLOT_HELMET,
-    EQUIP_SLOT_MAIN_HAND,
-    EQUIP_SLOT_OFF_HAND,
+    EQUIP_SLOT_HAND,
 
     NUM_EQUIP_SLOTS
 };
@@ -57,6 +57,7 @@ struct base_item_info
 {
     unsigned char glyph;
     TCOD_color_t color;
+    int weight;
     enum equip_slot equip_slot;
     enum weapon_damage weapon_damage;
     enum weapon_size weapon_size;
@@ -75,8 +76,10 @@ struct base_item_info
 
 enum item_type
 {
-    ITEM_COLD_IRON_LONGSWORD,
+    ITEM_LONGBOW,
+    ITEM_LONGBOW_1,
     ITEM_LONGSWORD,
+    ITEM_LONGSWORD_1,
 
     NUM_ITEM_TYPES
 };

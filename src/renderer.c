@@ -332,10 +332,10 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
         case PANEL_CHARACTER:
         {
             int i = 1;
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "NAME     : Blinky");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "NAME     : %s", game->player->name);
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "ALIGNMENT: Neutral Good");
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "RACE     : Human");
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CLASS    : Fighter (5), Ranger (2)");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "RACE     : %s", game->race_info[game->player->race].name);
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CLASS    : %s", game->class_info[game->player->class].name);
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "EXP      : 3653");
             i++;
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "STR: %d", game->player->strength);
@@ -345,14 +345,13 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "WIS: %d", game->player->wisdom);
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CHA: %d", game->player->charisma);
             i++;
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "M-Hand");
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "O-Hand");
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Helmet");
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Armor");
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Cloak");
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Gloves");
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Belt");
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Boots");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Cloak");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Gloves");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Hand");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Helmet");
             i++;
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "AC: %d", actor_calc_armor_class(game->player));
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "HP: %d / %d", game->player->current_hp, actor_calc_max_hp(game->player));

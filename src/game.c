@@ -293,9 +293,26 @@ struct game *game_create(void)
 
     game->item_common.__placeholder = 0;
 
+    game->base_item_info[BASE_ITEM_LONGBOW].glyph = '}';
+    game->base_item_info[BASE_ITEM_LONGBOW].color = TCOD_white;
+    game->base_item_info[BASE_ITEM_LONGBOW].weight = 3;
+    game->base_item_info[BASE_ITEM_LONGBOW].equip_slot = EQUIP_SLOT_HAND;
+    game->base_item_info[BASE_ITEM_LONGBOW].weapon_damage = WEAPON_DAMAGE_PIERCING;
+    game->base_item_info[BASE_ITEM_LONGBOW].weapon_size = WEAPON_SIZE_LARGE;
+    game->base_item_info[BASE_ITEM_LONGBOW].ranged = true;
+    game->base_item_info[BASE_ITEM_LONGBOW].num_dice = 1;
+    game->base_item_info[BASE_ITEM_LONGBOW].die_to_roll = 8;
+    game->base_item_info[BASE_ITEM_LONGBOW].crit_threat = 20;
+    game->base_item_info[BASE_ITEM_LONGBOW].crit_mult = 3;
+    game->base_item_info[BASE_ITEM_LONGBOW].base_cost = 75;
+    game->base_item_info[BASE_ITEM_LONGBOW].stack = 1;
+    game->base_item_info[BASE_ITEM_LONGBOW].armor_class = 0;
+    game->base_item_info[BASE_ITEM_LONGBOW].armor_check_penalty = 0;
+    game->base_item_info[BASE_ITEM_LONGBOW].arcane_spell_failure = 0;
     game->base_item_info[BASE_ITEM_LONGSWORD].glyph = '|';
     game->base_item_info[BASE_ITEM_LONGSWORD].color = TCOD_white;
-    game->base_item_info[BASE_ITEM_LONGSWORD].equip_slot = EQUIP_SLOT_MAIN_HAND;
+    game->base_item_info[BASE_ITEM_LONGSWORD].weight = 4;
+    game->base_item_info[BASE_ITEM_LONGSWORD].equip_slot = EQUIP_SLOT_HAND;
     game->base_item_info[BASE_ITEM_LONGSWORD].weapon_damage = WEAPON_DAMAGE_SLASHING;
     game->base_item_info[BASE_ITEM_LONGSWORD].weapon_size = WEAPON_SIZE_MEDIUM;
     game->base_item_info[BASE_ITEM_LONGSWORD].ranged = false;
@@ -303,20 +320,28 @@ struct game *game_create(void)
     game->base_item_info[BASE_ITEM_LONGSWORD].die_to_roll = 8;
     game->base_item_info[BASE_ITEM_LONGSWORD].crit_threat = 19;
     game->base_item_info[BASE_ITEM_LONGSWORD].crit_mult = 2;
-    game->base_item_info[BASE_ITEM_LONGSWORD].base_cost = 100;
+    game->base_item_info[BASE_ITEM_LONGSWORD].base_cost = 15;
     game->base_item_info[BASE_ITEM_LONGSWORD].stack = 1;
     game->base_item_info[BASE_ITEM_LONGSWORD].armor_class = 0;
     game->base_item_info[BASE_ITEM_LONGSWORD].armor_check_penalty = 0;
     game->base_item_info[BASE_ITEM_LONGSWORD].arcane_spell_failure = 0;
 
-    game->item_info[ITEM_COLD_IRON_LONGSWORD].base_type = BASE_ITEM_LONGSWORD;
-    game->item_info[ITEM_COLD_IRON_LONGSWORD].name = "Longsword + 1";
-    game->item_info[ITEM_COLD_IRON_LONGSWORD].description = "A special longsword.";
-    game->item_info[ITEM_COLD_IRON_LONGSWORD].enhancement_bonus = 1;
+    game->item_info[ITEM_LONGBOW].base_type = BASE_ITEM_LONGBOW;
+    game->item_info[ITEM_LONGBOW].name = "Longbow";
+    game->item_info[ITEM_LONGBOW].description = "A generic Longbow.";
+    game->item_info[ITEM_LONGBOW].enhancement_bonus = 0;
+    game->item_info[ITEM_LONGBOW_1].base_type = BASE_ITEM_LONGBOW;
+    game->item_info[ITEM_LONGBOW_1].name = "Longbow + 1";
+    game->item_info[ITEM_LONGBOW_1].description = "A special Longbow.";
+    game->item_info[ITEM_LONGBOW_1].enhancement_bonus = 1;
     game->item_info[ITEM_LONGSWORD].base_type = BASE_ITEM_LONGSWORD;
     game->item_info[ITEM_LONGSWORD].name = "Longsword";
     game->item_info[ITEM_LONGSWORD].description = "A generic longsword.";
     game->item_info[ITEM_LONGSWORD].enhancement_bonus = 0;
+    game->item_info[ITEM_LONGSWORD_1].base_type = BASE_ITEM_LONGSWORD;
+    game->item_info[ITEM_LONGSWORD_1].name = "Longsword + 1";
+    game->item_info[ITEM_LONGSWORD_1].description = "A special longsword.";
+    game->item_info[ITEM_LONGSWORD_1].enhancement_bonus = 1;
 
     for (int level = 0; level < NUM_MAPS; level++)
     {

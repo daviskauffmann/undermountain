@@ -27,10 +27,6 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->class = class;
     actor->faction = faction;
     actor->experience = 0;
-    for (int i = 0; i < NUM_CLASSES; i++)
-    {
-        actor->class_levels[i] = 0;
-    }
     actor->strength = 10;
     actor->dexterity = 10;
     actor->constitution = 10;
@@ -41,6 +37,7 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     {
         actor->equipment[i] = NULL;
     }
+    actor->items = TCOD_list_new();
     actor->level = level;
     actor->x = x;
     actor->y = y;
@@ -56,7 +53,6 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->torch = TCOD_random_get_int(NULL, 0, 20) == 0;
     actor->torch_fov = NULL;
     actor->fov = NULL;
-    actor->items = TCOD_list_new();
     actor->flash_fade = 0;
     actor->dead = false;
 
@@ -125,11 +121,11 @@ int actor_calc_armor_class(struct actor *actor)
 void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult)
 {
     struct game *game = actor->game;
-    struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    struct item *weapon = actor->equipment[EQUIP_SLOT_HAND];
 
-    if (main_hand)
+    if (weapon)
     {
-        struct item_info *item_info = &game->item_info[main_hand->type];
+        struct item_info *item_info = &game->item_info[weapon->type];
         struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
 
         *num_dice = base_item_info->num_dice;
@@ -334,12 +330,21 @@ void actor_ai(struct actor *actor)
                 {
                     continue;
                 }
-                else if ((actor->class == CLASS_DRUID || actor->class == CLASS_RANGER || actor->class == CLASS_ROGUE) &&
-                         actor_shoot(actor, target->x, target->y, NULL, NULL))
+
+                struct item *weapon = actor->equipment[EQUIP_SLOT_HAND];
+
+                if (weapon)
                 {
-                    continue;
+                    struct item_info *item_info = &game->item_info[weapon->type];
+                    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+
+                    if (base_item_info->ranged && actor_shoot(actor, target->x, target->y, NULL, NULL))
+                    {
+                        continue;
+                    }
                 }
-                else if (actor_path_towards(actor, target->x, target->y))
+
+                if (actor_path_towards(actor, target->x, target->y))
                 {
                     continue;
                 }
@@ -553,6 +558,17 @@ bool actor_move(struct actor *actor, int x, int y)
     actor->y = y;
 
     TCOD_list_push(tile->actors, actor);
+
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+    {
+        struct item *equipment = actor->equipment[i];
+
+        if (equipment)
+        {
+            equipment->x = actor->x;
+            equipment->y = actor->y;
+        }
+    }
 
     for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
     {
@@ -795,9 +811,24 @@ bool actor_descend(struct actor *actor)
             TCOD_list_push(next_map->actors, actor);
             TCOD_list_push(next_tile->actors, actor);
 
+            for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+            {
+                struct item *equipment = actor->equipment[i];
+
+                if (equipment)
+                {
+                    equipment->level = next_map->level;
+
+                    TCOD_list_remove(map->items, equipment);
+                    TCOD_list_push(next_map->items, equipment);
+                }
+            }
+
             for (void **iterator2 = TCOD_list_begin(actor->items); iterator2 != TCOD_list_end(actor->items); iterator2++)
             {
                 struct item *item = *iterator2;
+
+                item->level = next_map->level;
 
                 TCOD_list_remove(map->items, item);
                 TCOD_list_push(next_map->items, item);
@@ -874,9 +905,24 @@ bool actor_ascend(struct actor *actor)
             TCOD_list_push(next_map->actors, actor);
             TCOD_list_push(next_tile->actors, actor);
 
+            for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+            {
+                struct item *equipment = actor->equipment[i];
+
+                if (equipment)
+                {
+                    equipment->level = next_map->level;
+
+                    TCOD_list_remove(map->items, equipment);
+                    TCOD_list_push(next_map->items, equipment);
+                }
+            }
+
             for (void **iterator2 = TCOD_list_begin(actor->items); iterator2 != TCOD_list_end(actor->items); iterator2++)
             {
                 struct item *item = *iterator2;
+
+                item->level = next_map->level;
 
                 TCOD_list_remove(map->items, item);
                 TCOD_list_push(next_map->items, item);
@@ -1095,6 +1141,10 @@ bool actor_grab(struct actor *actor, int x, int y)
 
     struct item *item = TCOD_list_pop(tile->items);
 
+    item->level = actor->level;
+    item->x = actor->x;
+    item->y = actor->y;
+
     TCOD_list_push(actor->items, item);
 
     game_log(
@@ -1115,6 +1165,10 @@ bool actor_drop(struct actor *actor, struct item *item)
     struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[actor->x][actor->y];
+
+    item->level = actor->level;
+    item->x = actor->x;
+    item->y = actor->y;
 
     TCOD_list_push(tile->items, item);
     TCOD_list_remove(actor->items, item);
@@ -1137,8 +1191,14 @@ bool actor_equip(struct actor *actor, struct item *item)
     struct game *game = actor->game;
     struct item_info *item_info = &game->item_info[item->type];
     struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+    struct item *equipment = actor->equipment[base_item_info->equip_slot];
 
-    // TODO: unequip current
+    if (equipment)
+    {
+        TCOD_list_push(actor->items, equipment);
+        actor->equipment[base_item_info->equip_slot] = NULL;
+    }
+
     TCOD_list_remove(actor->items, item);
     actor->equipment[base_item_info->equip_slot] = item;
 
@@ -1234,10 +1294,52 @@ bool actor_swing(struct actor *actor, int x, int y)
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     struct game *game = actor->game;
-    struct map *map = &game->maps[actor->level];
 
     if (x == actor->x && y == actor->y)
     {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s cannot shoot themselves!",
+            actor->name);
+
+        return false;
+    }
+
+    struct map *map = &game->maps[actor->level];
+    struct item *weapon = actor->equipment[EQUIP_SLOT_HAND];
+
+    if (!weapon)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s cannot shoot without a weapon!",
+            actor->name);
+
+        return false;
+    }
+
+    struct item_info *item_info = &game->item_info[weapon->type];
+    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+
+    if (!base_item_info->ranged)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s cannot shoot without a ranged weapon!",
+            actor->name);
+
         return false;
     }
 
@@ -1408,13 +1510,27 @@ void actor_die(struct actor *actor, struct actor *killer)
     actor->glow = false;
     actor->torch = false;
 
-    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
-        struct item *item = *iterator;
+        struct item *equipment = actor->equipment[i];
 
-        TCOD_list_push(tile->items, item);
+        if (equipment)
+        {
+            TCOD_list_push(actor->items, equipment);
+            actor->equipment[i] = NULL;
+        }
+    }
 
-        iterator = TCOD_list_remove_iterator(actor->items, iterator);
+    if (actor != game->player)
+    {
+        for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+        {
+            struct item *item = *iterator;
+
+            TCOD_list_push(tile->items, item);
+
+            iterator = TCOD_list_remove_iterator(actor->items, iterator);
+        }
     }
 
     game_log(

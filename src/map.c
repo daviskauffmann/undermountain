@@ -26,7 +26,7 @@
 #define SPAWN_OBJECTS 10
 #define SPAWN_ADVENTURERS 5
 #define SPAWN_MONSTERS 10
-#define SPAWN_ITEMS 10
+#define SPAWN_ITEMS 20
 
 static void hline(struct map *map, int x1, int y, int x2);
 static void hline_left(struct map *map, int x, int y);

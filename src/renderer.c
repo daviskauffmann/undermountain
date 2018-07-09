@@ -352,6 +352,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Gloves");
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Hand");
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Helmet");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "M-Hand");
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "O-Hand");
             i++;
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "AC: %d", actor_calc_armor_class(game->player));
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "HP: %d / %d", game->player->current_hp, actor_calc_max_hp(game->player));
@@ -361,8 +363,10 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             int die_to_roll;
             int crit_threat;
             int crit_mult;
-            actor_calc_weapon(game->player, &num_dice, &die_to_roll, &crit_threat, &crit_mult);
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "DAMAGE: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
+            actor_calc_weapon(game->player, &num_dice, &die_to_roll, &crit_threat, &crit_mult, false);
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "MELEE: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
+            actor_calc_weapon(game->player, &num_dice, &die_to_roll, &crit_threat, &crit_mult, true);
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "RANGED: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
 
             TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
             TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");

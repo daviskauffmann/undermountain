@@ -118,20 +118,17 @@ int actor_calc_armor_class(struct actor *actor)
     return armor_class;
 }
 
-void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult)
+void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult, bool ranged)
 {
     struct game *game = actor->game;
-    struct item *weapon = actor->equipment[EQUIP_SLOT_HAND];
+    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
 
-    if (weapon)
+    if (ranged)
     {
-        struct item_info *item_info = &game->item_info[weapon->type];
-        struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
-
-        *num_dice = base_item_info->num_dice;
-        *die_to_roll = base_item_info->die_to_roll;
-        *crit_threat = base_item_info->crit_threat;
-        *crit_mult = base_item_info->crit_mult;
+        *num_dice = 0;
+        *die_to_roll = 0;
+        *crit_threat = 0;
+        *crit_mult = 0;
     }
     else
     {
@@ -139,6 +136,20 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
         *die_to_roll = 3;
         *crit_threat = 20;
         *crit_mult = 2;
+    }
+
+    if (weapon)
+    {
+        struct item_info *item_info = &game->item_info[weapon->type];
+        struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+
+        if (base_item_info->ranged == ranged)
+        {
+            *num_dice = base_item_info->num_dice;
+            *die_to_roll = base_item_info->die_to_roll;
+            *crit_threat = base_item_info->crit_threat;
+            *crit_mult = base_item_info->crit_mult;
+        }
     }
 }
 
@@ -326,12 +337,12 @@ void actor_ai(struct actor *actor)
                 actor->turns_chased = 0;
 
                 if (distance(actor->x, actor->y, target->x, target->y) < 2.0f &&
-                    actor_attack(actor, target))
+                    actor_attack(actor, target, false))
                 {
                     continue;
                 }
 
-                struct item *weapon = actor->equipment[EQUIP_SLOT_HAND];
+                struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
 
                 if (weapon)
                 {
@@ -546,7 +557,7 @@ bool actor_move(struct actor *actor, int x, int y)
         }
         else
         {
-            return actor_attack(actor, other);
+            return actor_attack(actor, other, false);
         }
     }
 
@@ -1258,7 +1269,7 @@ bool actor_swing(struct actor *actor, int x, int y)
 
         hit = true;
 
-        if (actor_attack(actor, other))
+        if (actor_attack(actor, other, false))
         {
             return true;
         }
@@ -1310,7 +1321,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     }
 
     struct map *map = &game->maps[actor->level];
-    struct item *weapon = actor->equipment[EQUIP_SLOT_HAND];
+    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
 
     if (!weapon)
     {
@@ -1360,7 +1371,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     return true;
 }
 
-bool actor_attack(struct actor *actor, struct actor *other)
+bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
 {
     struct game *game = actor->game;
 
@@ -1394,7 +1405,7 @@ bool actor_attack(struct actor *actor, struct actor *other)
         int die_to_roll;
         int crit_threat;
         int crit_mult;
-        actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult);
+        actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult, ranged);
 
         int damage_rolls = 1;
 

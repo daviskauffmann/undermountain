@@ -67,7 +67,7 @@ void projectile_update(struct projectile *projectile)
             continue;
         }
 
-        actor_attack(projectile->shooter, actor);
+        actor_attack(projectile->shooter, actor, true);
 
         should_move = false;
 

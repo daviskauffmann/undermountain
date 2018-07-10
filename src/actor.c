@@ -81,7 +81,15 @@ int actor_calc_enhancement_bonus(struct actor *actor)
         {
             struct item_info *item_info = &game->item_info[equipment->type];
 
-            enhancement_bonus += item_info->enhancement_bonus;
+            for (int j = 0; j < NUM_ITEM_PROPERTIES; j++)
+            {
+                if (item_info->item_properties[j])
+                {
+                    struct item_property_info *item_property_info = &game->item_property_info[j];
+
+                    enhancement_bonus += item_property_info->enhancement_bonus;
+                }
+            }
         }
     }
 
@@ -113,7 +121,15 @@ int actor_calc_armor_class(struct actor *actor)
             armor_class += base_item_info->base_armor_class;
 
             // TODO: deal with stacking AC types
-            armor_class += item_info->armor_class_bonus;
+            for (int j = 0; j < NUM_ITEM_PROPERTIES; j++)
+            {
+                if (item_info->item_properties[j])
+                {
+                    struct item_property_info *item_property_info = &game->item_property_info[j];
+
+                    armor_class += item_property_info->armor_class_bonus;
+                }
+            }
         }
     }
 

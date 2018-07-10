@@ -25,6 +25,7 @@ struct game
     struct prototype monster_prototypes[NUM_MONSTERS];
     struct item_common item_common;
     struct base_item_info base_item_info[NUM_BASE_ITEM_TYPES];
+    struct item_property_info item_property_info[NUM_ITEM_PROPERTIES];
     struct item_info item_info[NUM_ITEM_TYPES];
     struct map maps[NUM_MAPS];
     TCOD_list_t messages;

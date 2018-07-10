@@ -153,14 +153,28 @@ enum damage_element
     DAMAGE_ELEMENT_SONIC
 };
 
+enum item_property_type
+{
+    ITEM_PROPERTY_ARMOR_BONUS_SHIELD_1,
+    ITEM_PROPERTY_ENHANCEMENT_BONUS_1,
+
+    NUM_ITEM_PROPERTIES
+};
+
+struct item_property_info
+{
+    const char *text;
+    int enhancement_bonus;
+    enum armor_class_type armor_class_type;
+    int armor_class_bonus;
+};
+
 struct item_info
 {
     enum base_item_type base_type;
     const char *name;
     const char *description;
-    int enhancement_bonus;
-    enum armor_class_type armor_class_type;
-    int armor_class_bonus;
+    bool item_properties[NUM_ITEM_PROPERTIES];
 };
 
 struct item

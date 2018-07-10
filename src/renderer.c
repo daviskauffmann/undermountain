@@ -2,13 +2,13 @@
 #include <malloc.h>
 #include <math.h>
 
-#include "config.h"
 #include "game.h"
 #include "input.h"
 #include "message.h"
 #include "projectile.h"
 #include "renderer.h"
 #include "ui.h"
+#include "window.h"
 
 struct renderer *renderer_create(void)
 {
@@ -358,7 +358,6 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "AC: %d", actor_calc_armor_class(game->player));
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "HP: %d / %d", game->player->current_hp, actor_calc_max_hp(game->player));
             i++;
-            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "ATTACK: +%d", actor_calc_attack_bonus(game->player));
             int num_dice;
             int die_to_roll;
             int crit_threat;
@@ -367,6 +366,9 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "MELEE: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
             actor_calc_weapon(game->player, &num_dice, &die_to_roll, &crit_threat, &crit_mult, true);
             TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "RANGED: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
+            i++;
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "ATTACK: +%d", actor_calc_attack_bonus(game->player));
+            TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "DAMAGE: +%d", actor_calc_damage_bonus(game->player));
 
             TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
             TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");

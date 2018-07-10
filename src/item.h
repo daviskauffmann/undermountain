@@ -18,6 +18,7 @@ enum base_item_type
     BASE_ITEM_HALBERD,
     BASE_ITEM_HEAVY_CROSSBOW,
     BASE_ITEM_KATANA,
+    BASE_ITEM_LARGE_SHIELD,
     BASE_ITEM_LIGHT_CROSSBOW,
     BASE_ITEM_LONGBOW,
     BASE_ITEM_LONGSWORD,
@@ -26,7 +27,9 @@ enum base_item_type
     BASE_ITEM_SCIMITAR,
     BASE_ITEM_SHORTBOW,
     BASE_ITEM_SHORTSWORD,
+    BASE_ITEM_SMALL_SHIELD,
     BASE_ITEM_SPEAR,
+    BASE_ITEM_TOWER_SHIELD,
     BASE_ITEM_WARHAMMER,
 
     NUM_BASE_ITEM_TYPES
@@ -63,7 +66,7 @@ enum weapon_size
     WEAPON_SIZE_TINY
 };
 
-enum armor_class
+enum armor_class_type
 {
     ARMOR_CLASS_DEFLECTION,
     ARMOR_CLASS_DODGE,
@@ -86,10 +89,10 @@ struct base_item_info
     int crit_mult;
     int base_cost;
     int stack;
-    enum armor_class armor_class;
-    int base_ac;
+    int base_armor_class;
     int armor_check_penalty;
     int arcane_spell_failure;
+    int starting_charges;
 };
 
 enum item_type
@@ -110,6 +113,8 @@ enum item_type
     ITEM_HEAVY_CROSSBOW_1,
     ITEM_KATANA,
     ITEM_KATANA_1,
+    ITEM_LARGE_SHIELD,
+    ITEM_LARGE_SHIELD_1,
     ITEM_LIGHT_CROSSBOW,
     ITEM_LIGHT_CROSSBOW_1,
     ITEM_LONGBOW,
@@ -126,8 +131,12 @@ enum item_type
     ITEM_SHORTBOW_1,
     ITEM_SHORTSWORD,
     ITEM_SHORTSWORD_1,
+    ITEM_SMALL_SHIELD,
+    ITEM_SMALL_SHIELD_1,
     ITEM_SPEAR,
     ITEM_SPEAR_1,
+    ITEM_TOWER_SHIELD,
+    ITEM_TOWER_SHIELD_1,
     ITEM_WARHAMMER,
     ITEM_WARHAMMER_1,
 
@@ -150,6 +159,8 @@ struct item_info
     const char *name;
     const char *description;
     int enhancement_bonus;
+    enum armor_class_type armor_class_type;
+    int armor_class_bonus;
 };
 
 struct item

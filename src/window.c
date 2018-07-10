@@ -1,6 +1,6 @@
 #include <libtcod/libtcod.h>
 
-#include "config.h"
+#include "window.h"
 
 const char *font_file;
 int font_flags;
@@ -12,7 +12,7 @@ int console_height;
 bool fullscreen;
 int console_renderer;
 
-void config_init(void)
+void window_init(void)
 {
     // TODO: external config file
     font_file = "terminal.png";
@@ -24,4 +24,14 @@ void config_init(void)
     console_height = 50;
     fullscreen = false;
     console_renderer = TCOD_RENDERER_SDL;
+
+    TCOD_sys_set_fps(FPS);
+
+    TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
+    TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, console_renderer);
+}
+
+bool window_is_closed(void)
+{
+    return TCOD_console_is_window_closed();
 }

@@ -3,7 +3,6 @@
 #include <math.h>
 #include <string.h>
 
-#include "config.h"
 #include "actor.h"
 #include "game.h"
 #include "item.h"
@@ -12,6 +11,7 @@
 #include "projectile.h"
 #include "tile.h"
 #include "util.h"
+#include "window.h"
 
 #define strdup _strdup
 
@@ -110,8 +110,10 @@ int actor_calc_armor_class(struct actor *actor)
             struct item_info *item_info = &game->item_info[equipment->type];
             struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
 
-            // TODO: do not stack certain AC types
-            armor_class += base_item_info->base_ac;
+            armor_class += base_item_info->base_armor_class;
+
+            // TODO: deal with stacking AC types
+            armor_class += item_info->armor_class_bonus;
         }
     }
 

@@ -2,11 +2,11 @@
 #include <malloc.h>
 
 #include "actor.h"
-#include "config.h"
 #include "game.h"
 #include "input.h"
 #include "ui.h"
 #include "util.h"
+#include "window.h"
 
 static void fn_should_update(struct game *game);
 

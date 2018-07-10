@@ -9,6 +9,8 @@
 #include "object.h"
 #include "tile.h"
 
+#define SAVE_PATH "../saves/save.gz"
+
 #define NUM_MAPS 60
 
 struct game

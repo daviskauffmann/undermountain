@@ -8,7 +8,7 @@ struct item_common
     char __placeholder;
 };
 
-enum base_item_type
+enum base_item
 {
     BASE_ITEM_BATTLEAXE,
     BASE_ITEM_CLUB,
@@ -32,7 +32,7 @@ enum base_item_type
     BASE_ITEM_TOWER_SHIELD,
     BASE_ITEM_WARHAMMER,
 
-    NUM_BASE_ITEM_TYPES
+    NUM_BASE_ITEMS
 };
 
 enum equip_slot
@@ -50,12 +50,20 @@ enum equip_slot
     NUM_EQUIP_SLOTS
 };
 
-enum weapon_damage
+enum damage
 {
-    WEAPON_DAMAGE_BLUDGEONING,
-    WEAPON_DAMAGE_PIERCING,
-    WEAPON_DAMAGE_PIERCING_AND_SLASHING,
-    WEAPON_DAMAGE_SLASHING
+    DAMAGE_ACID,
+    DAMAGE_BLUDGEONING,
+    DAMAGE_COLD,
+    DAMAGE_DIVINE,
+    DAMAGE_ELECTRICAL,
+    DAMAGE_FIRE,
+    DAMAGE_MAGICAL,
+    DAMAGE_NEGATIVE,
+    DAMAGE_PIERCING,
+    DAMAGE_POSITIVE,
+    DAMAGE_SLASHING,
+    DAMAGE_SONIC
 };
 
 enum weapon_size
@@ -66,21 +74,13 @@ enum weapon_size
     WEAPON_SIZE_TINY
 };
 
-enum armor_class_type
-{
-    ARMOR_CLASS_DEFLECTION,
-    ARMOR_CLASS_DODGE,
-    ARMOR_CLASS_NATURAL,
-    ARMOR_CLASS_SHIELD
-};
-
 struct base_item_info
 {
     unsigned char glyph;
     TCOD_color_t color;
     int weight;
     enum equip_slot equip_slot;
-    enum weapon_damage weapon_damage;
+    enum damage damage;
     enum weapon_size weapon_size;
     bool ranged;
     int num_dice;
@@ -89,7 +89,7 @@ struct base_item_info
     int crit_mult;
     int base_cost;
     int stack;
-    int base_armor_class;
+    int base_ac;
     int armor_check_penalty;
     int arcane_spell_failure;
     int starting_charges;
@@ -97,81 +97,80 @@ struct base_item_info
 
 enum item_type
 {
-    ITEM_BATTLEAXE,
-    ITEM_BATTLEAXE_1,
-    ITEM_CLUB,
-    ITEM_CLUB_1,
-    ITEM_DAGGER,
-    ITEM_DAGGER_1,
-    ITEM_GREATAXE,
-    ITEM_GREATAXE_1,
-    ITEM_GREATSWORD,
-    ITEM_GREATSWORD_1,
-    ITEM_HALBERD,
-    ITEM_HALBERD_1,
-    ITEM_HEAVY_CROSSBOW,
-    ITEM_HEAVY_CROSSBOW_1,
-    ITEM_KATANA,
-    ITEM_KATANA_1,
-    ITEM_LARGE_SHIELD,
-    ITEM_LARGE_SHIELD_1,
-    ITEM_LIGHT_CROSSBOW,
-    ITEM_LIGHT_CROSSBOW_1,
-    ITEM_LONGBOW,
-    ITEM_LONGBOW_1,
-    ITEM_LONGSWORD,
-    ITEM_LONGSWORD_1,
-    ITEM_MACE,
-    ITEM_MACE_1,
-    ITEM_QUARTERSTAFF,
-    ITEM_QUARTERSTAFF_1,
-    ITEM_SCIMITAR,
-    ITEM_SCIMITAR_1,
-    ITEM_SHORTBOW,
-    ITEM_SHORTBOW_1,
-    ITEM_SHORTSWORD,
-    ITEM_SHORTSWORD_1,
-    ITEM_SMALL_SHIELD,
-    ITEM_SMALL_SHIELD_1,
-    ITEM_SPEAR,
-    ITEM_SPEAR_1,
-    ITEM_TOWER_SHIELD,
-    ITEM_TOWER_SHIELD_1,
-    ITEM_WARHAMMER,
-    ITEM_WARHAMMER_1,
+    ITEM_TYPE_BATTLEAXE,
+    ITEM_TYPE_BATTLEAXE_1,
+    ITEM_TYPE_CLUB,
+    ITEM_TYPE_CLUB_1,
+    ITEM_TYPE_DAGGER,
+    ITEM_TYPE_DAGGER_1,
+    ITEM_TYPE_GREATAXE,
+    ITEM_TYPE_GREATAXE_1,
+    ITEM_TYPE_GREATSWORD,
+    ITEM_TYPE_GREATSWORD_1,
+    ITEM_TYPE_HALBERD,
+    ITEM_TYPE_HALBERD_1,
+    ITEM_TYPE_HEAVY_CROSSBOW,
+    ITEM_TYPE_HEAVY_CROSSBOW_1,
+    ITEM_TYPE_KATANA,
+    ITEM_TYPE_KATANA_1,
+    ITEM_TYPE_LARGE_SHIELD,
+    ITEM_TYPE_LARGE_SHIELD_1,
+    ITEM_TYPE_LIGHT_CROSSBOW,
+    ITEM_TYPE_LIGHT_CROSSBOW_1,
+    ITEM_TYPE_LONGBOW,
+    ITEM_TYPE_LONGBOW_1,
+    ITEM_TYPE_LONGSWORD,
+    ITEM_TYPE_LONGSWORD_1,
+    ITEM_TYPE_MACE,
+    ITEM_TYPE_MACE_1,
+    ITEM_TYPE_QUARTERSTAFF,
+    ITEM_TYPE_QUARTERSTAFF_1,
+    ITEM_TYPE_SCIMITAR,
+    ITEM_TYPE_SCIMITAR_1,
+    ITEM_TYPE_SHORTBOW,
+    ITEM_TYPE_SHORTBOW_1,
+    ITEM_TYPE_SHORTSWORD,
+    ITEM_TYPE_SHORTSWORD_1,
+    ITEM_TYPE_SMALL_SHIELD,
+    ITEM_TYPE_SMALL_SHIELD_1,
+    ITEM_TYPE_SPEAR,
+    ITEM_TYPE_SPEAR_1,
+    ITEM_TYPE_TOWER_SHIELD,
+    ITEM_TYPE_TOWER_SHIELD_1,
+    ITEM_TYPE_WARHAMMER,
+    ITEM_TYPE_WARHAMMER_1,
 
     NUM_ITEM_TYPES
 };
 
-enum damage_element
+enum item_property
 {
-    DAMAGE_ELEMENT_ACID,
-    DAMAGE_ELEMENT_COLD,
-    DAMAGE_ELEMENT_ELECTRICITY,
-    DAMAGE_ELEMENT_FIRE,
-    DAMAGE_ELEMENT_PHYSICAL,
-    DAMAGE_ELEMENT_SONIC
-};
-
-enum item_property_type
-{
-    ITEM_PROPERTY_ARMOR_BONUS_SHIELD_1,
+    ITEM_PROPERTY_AC_SHIELD_1,
     ITEM_PROPERTY_ENHANCEMENT_BONUS_1,
 
     NUM_ITEM_PROPERTIES
+};
+
+enum ac
+{
+    AC_ARMOR,
+    AC_DEFLECTION,
+    AC_DODGE,
+    AC_NATURAL,
+    AC_SHIELD
 };
 
 struct item_property_info
 {
     const char *text;
     int enhancement_bonus;
-    enum armor_class_type armor_class_type;
-    int armor_class_bonus;
+    enum ac ac;
+    int ac_bonus;
 };
 
 struct item_info
 {
-    enum base_item_type base_type;
+    enum base_item base_item;
     const char *name;
     const char *description;
     bool item_properties[NUM_ITEM_PROPERTIES];

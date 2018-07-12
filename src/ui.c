@@ -35,29 +35,33 @@ void ui_update(struct ui *ui, struct game *game)
     {
         struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
-        if (panel_status->current_index > panel_status->max_index)
+        if (panel_status->current_index < 0)
+        {
+            panel_status->current_index = 0;
+        }
+        else if (panel_status->current_index > panel_status->max_index)
         {
             panel_status->current_index = panel_status->max_index;
         }
     }
 }
 
-void ui_panel_toggle(struct ui *ui, enum panel_type panel_type)
+void ui_panel_toggle(struct ui *ui, enum panel panel)
 {
     if (ui->panel_visible)
     {
-        if (ui->current_panel == panel_type)
+        if (ui->current_panel == panel)
         {
             ui->panel_visible = false;
         }
         else
         {
-            ui->current_panel = panel_type;
+            ui->current_panel = panel;
         }
     }
     else
     {
-        ui->current_panel = panel_type;
+        ui->current_panel = panel;
         ui->panel_visible = true;
     }
 }

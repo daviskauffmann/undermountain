@@ -157,8 +157,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
             if (TCOD_map_is_in_fov(game->player->fov, item->x, item->y))
             {
-                TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, game->base_item_info[game->item_info[item->type].base_type].color);
-                TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, game->base_item_info[game->item_info[item->type].base_type].glyph);
+                TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, game->base_item_info[game->item_info[item->type].base_item].color);
+                TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, game->base_item_info[game->item_info[item->type].base_item].glyph);
             }
         }
 
@@ -382,7 +382,7 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             {
                 struct item *item = *iterator;
 
-                TCOD_color_t color = panel_status->current_index == i ? TCOD_yellow : game->base_item_info[game->item_info[item->type].base_type].color;
+                TCOD_color_t color = panel_status->current_index == i ? TCOD_yellow : game->base_item_info[game->item_info[item->type].base_item].color;
 
                 TCOD_console_set_default_foreground(renderer->panel, color);
                 TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, game->item_info[item->type].name);

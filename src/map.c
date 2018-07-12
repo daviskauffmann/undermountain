@@ -10,7 +10,7 @@
 #include "room.h"
 #include "tile.h"
 
-#define MAP_ALGORITHM_CUSTOM
+#define MAP_ALGORITHM_BSP
 
 #define CUSTOM_NUM_ROOM_ATTEMPTS 20
 #define CUSTOM_MIN_ROOM_SIZE 5
@@ -47,7 +47,7 @@ void map_init(struct map *map, struct game *game, int level)
         {
             struct tile *tile = &map->tiles[x][y];
 
-            tile_init(tile, TILE_EMPTY, false);
+            tile_init(tile, TILE_TYPE_EMPTY, false);
         }
     }
 
@@ -66,7 +66,7 @@ void map_generate(struct map *map)
         {
             struct tile *tile = &map->tiles[x][y];
 
-            tile->type = TILE_WALL;
+            tile->type = TILE_TYPE_WALL;
         }
     }
 
@@ -97,7 +97,7 @@ void map_generate(struct map *map)
                 {
                     struct tile *tile = &map->tiles[x][y];
 
-                    if (tile->type == TILE_FLOOR)
+                    if (tile->type == TILE_TYPE_FLOOR)
                     {
                         overlap = true;
                     }
@@ -116,7 +116,7 @@ void map_generate(struct map *map)
             {
                 struct tile *tile = &map->tiles[x][y];
 
-                tile->type = TILE_FLOOR;
+                tile->type = TILE_TYPE_FLOOR;
             }
         }
 
@@ -150,7 +150,7 @@ void map_generate(struct map *map)
         {
             struct tile *tile = &map->tiles[x][y];
 
-            if (tile->type == TILE_FLOOR)
+            if (tile->type == TILE_TYPE_FLOOR)
             {
                 struct tile *neighbors[8];
 
@@ -167,9 +167,9 @@ void map_generate(struct map *map)
                 {
                     struct tile *neighbor = neighbors[i];
 
-                    if (neighbor->type == TILE_EMPTY)
+                    if (neighbor->type == TILE_TYPE_EMPTY)
                     {
-                        neighbor->type = TILE_WALL;
+                        neighbor->type = TILE_TYPE_WALL;
                     }
                 }
             }
@@ -197,40 +197,40 @@ void map_generate(struct map *map)
 
             bool put_door = false;
 
-            if (tile->type == TILE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < DOOR_CHANCE)
+            if (tile->type == TILE_TYPE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < DOOR_CHANCE)
             {
-                if (map->tiles[x][y - 1].type == TILE_FLOOR &&
-                    map->tiles[x + 1][y - 1].type == TILE_FLOOR &&
-                    map->tiles[x - 1][y - 1].type == TILE_FLOOR &&
-                    map->tiles[x - 1][y].type == TILE_WALL &&
-                    map->tiles[x + 1][y].type == TILE_WALL)
+                if (map->tiles[x][y - 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x + 1][y - 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x - 1][y - 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x - 1][y].type == TILE_TYPE_WALL &&
+                    map->tiles[x + 1][y].type == TILE_TYPE_WALL)
                 {
                     put_door = true;
                 }
 
-                if (map->tiles[x + 1][y].type == TILE_FLOOR &&
-                    map->tiles[x + 1][y - 1].type == TILE_FLOOR &&
-                    map->tiles[x + 1][y + 1].type == TILE_FLOOR &&
-                    map->tiles[x][y + 1].type == TILE_WALL &&
-                    map->tiles[x][y - 1].type == TILE_WALL)
+                if (map->tiles[x + 1][y].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x + 1][y - 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x + 1][y + 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x][y + 1].type == TILE_TYPE_WALL &&
+                    map->tiles[x][y - 1].type == TILE_TYPE_WALL)
                 {
                     put_door = true;
                 }
 
-                if (map->tiles[x][y + 1].type == TILE_FLOOR &&
-                    map->tiles[x + 1][y + 1].type == TILE_FLOOR &&
-                    map->tiles[x - 1][y + 1].type == TILE_FLOOR &&
-                    map->tiles[x - 1][y].type == TILE_WALL &&
-                    map->tiles[x + 1][y].type == TILE_WALL)
+                if (map->tiles[x][y + 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x + 1][y + 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x - 1][y + 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x - 1][y].type == TILE_TYPE_WALL &&
+                    map->tiles[x + 1][y].type == TILE_TYPE_WALL)
                 {
                     put_door = true;
                 }
 
-                if (map->tiles[x - 1][y].type == TILE_FLOOR &&
-                    map->tiles[x - 1][y - 1].type == TILE_FLOOR &&
-                    map->tiles[x - 1][y + 1].type == TILE_FLOOR &&
-                    map->tiles[x][y + 1].type == TILE_WALL &&
-                    map->tiles[x][y - 1].type == TILE_WALL)
+                if (map->tiles[x - 1][y].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x - 1][y - 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x - 1][y + 1].type == TILE_TYPE_FLOOR &&
+                    map->tiles[x][y + 1].type == TILE_TYPE_WALL &&
+                    map->tiles[x][y - 1].type == TILE_TYPE_WALL)
                 {
                     put_door = true;
                 }
@@ -239,7 +239,7 @@ void map_generate(struct map *map)
             if (put_door)
             {
                 struct object *object = object_create(
-                    OBJECT_DOOR_CLOSED,
+                    OBJECT_TYPE_DOOR_CLOSED,
                     map->game,
                     map->level,
                     x,
@@ -260,7 +260,7 @@ void map_generate(struct map *map)
         room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
 
         struct object *object = object_create(
-            OBJECT_STAIR_DOWN,
+            OBJECT_TYPE_STAIR_DOWN,
             map->game,
             map->level,
             map->stair_down_x,
@@ -281,7 +281,7 @@ void map_generate(struct map *map)
         room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
 
         struct object *object = object_create(
-            OBJECT_STAIR_UP,
+            OBJECT_TYPE_STAIR_UP,
             map->game,
             map->level,
             map->stair_up_x,
@@ -314,7 +314,7 @@ void map_generate(struct map *map)
         {
         case 0:
         {
-            type = OBJECT_ALTAR;
+            type = OBJECT_TYPE_ALTAR;
             light_radius = 3;
             light_color = TCOD_white;
             light_flicker = false;
@@ -326,7 +326,7 @@ void map_generate(struct map *map)
                 (unsigned char)TCOD_random_get_int(NULL, 0, 255),
                 (unsigned char)TCOD_random_get_int(NULL, 0, 255),
                 (unsigned char)TCOD_random_get_int(NULL, 0, 255));
-            type = OBJECT_BRAZIER;
+            type = OBJECT_TYPE_BRAZIER;
             color = random_color;
             light_radius = TCOD_random_get_int(NULL, 10, 20);
             light_color = random_color;
@@ -335,13 +335,13 @@ void map_generate(struct map *map)
         break;
         case 2:
         {
-            type = OBJECT_FOUNTAIN;
+            type = OBJECT_TYPE_FOUNTAIN;
             color = TCOD_blue;
         }
         break;
         case 3:
         {
-            type = OBJECT_THRONE;
+            type = OBJECT_TYPE_THRONE;
             color = TCOD_yellow;
         }
         break;
@@ -511,7 +511,7 @@ bool map_is_walkable(struct map *map, int x, int y)
     {
         struct object *object = *iterator;
 
-        if (!map->game->object_info[object->type].is_walkable && object->type != OBJECT_DOOR_CLOSED)
+        if (!map->game->object_info[object->type].is_walkable && object->type != OBJECT_TYPE_DOOR_CLOSED)
         {
             return false;
         }
@@ -617,7 +617,7 @@ static void hline(struct map *map, int x1, int y, int x2)
     int x = x1;
     int dx = (x1 > x2 ? -1 : 1);
 
-    map->tiles[x][y].type = TILE_FLOOR;
+    map->tiles[x][y].type = TILE_TYPE_FLOOR;
 
     if (x1 != x2)
     {
@@ -625,16 +625,16 @@ static void hline(struct map *map, int x1, int y, int x2)
         {
             x += dx;
 
-            map->tiles[x][y].type = TILE_FLOOR;
+            map->tiles[x][y].type = TILE_TYPE_FLOOR;
         } while (x != x2);
     }
 }
 
 static void hline_left(struct map *map, int x, int y)
 {
-    while (x >= 0 && map->tiles[x][y].type != TILE_FLOOR)
+    while (x >= 0 && map->tiles[x][y].type != TILE_TYPE_FLOOR)
     {
-        map->tiles[x][y].type = TILE_FLOOR;
+        map->tiles[x][y].type = TILE_TYPE_FLOOR;
 
         x--;
     }
@@ -642,9 +642,9 @@ static void hline_left(struct map *map, int x, int y)
 
 static void hline_right(struct map *map, int x, int y)
 {
-    while (x < MAP_WIDTH && map->tiles[x][y].type != TILE_FLOOR)
+    while (x < MAP_WIDTH && map->tiles[x][y].type != TILE_TYPE_FLOOR)
     {
-        map->tiles[x][y].type = TILE_FLOOR;
+        map->tiles[x][y].type = TILE_TYPE_FLOOR;
 
         x++;
     }
@@ -655,7 +655,7 @@ static void vline(struct map *map, int x, int y1, int y2)
     int y = y1;
     int dy = (y1 > y2 ? -1 : 1);
 
-    map->tiles[x][y].type = TILE_FLOOR;
+    map->tiles[x][y].type = TILE_TYPE_FLOOR;
 
     if (y1 != y2)
     {
@@ -663,16 +663,16 @@ static void vline(struct map *map, int x, int y1, int y2)
         {
             y += dy;
 
-            map->tiles[x][y].type = TILE_FLOOR;
+            map->tiles[x][y].type = TILE_TYPE_FLOOR;
         } while (y != y2);
     }
 }
 
 static void vline_up(struct map *map, int x, int y)
 {
-    while (y >= 0 && map->tiles[x][y].type != TILE_FLOOR)
+    while (y >= 0 && map->tiles[x][y].type != TILE_TYPE_FLOOR)
     {
-        map->tiles[x][y].type = TILE_FLOOR;
+        map->tiles[x][y].type = TILE_TYPE_FLOOR;
 
         y--;
     }
@@ -680,9 +680,9 @@ static void vline_up(struct map *map, int x, int y)
 
 static void vline_down(struct map *map, int x, int y)
 {
-    while (y < MAP_HEIGHT && map->tiles[x][y].type != TILE_FLOOR)
+    while (y < MAP_HEIGHT && map->tiles[x][y].type != TILE_TYPE_FLOOR)
     {
-        map->tiles[x][y].type = TILE_FLOOR;
+        map->tiles[x][y].type = TILE_TYPE_FLOOR;
 
         y++;
     }
@@ -735,7 +735,7 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
         {
             for (int y = miny; y <= maxy; y++)
             {
-                map->tiles[x][y].type = TILE_FLOOR;
+                map->tiles[x][y].type = TILE_TYPE_FLOOR;
             }
         }
 

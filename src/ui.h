@@ -5,7 +5,7 @@
 
 struct game;
 
-enum panel_type
+enum panel
 {
     PANEL_CHARACTER,
     PANEL_INVENTORY,
@@ -31,7 +31,7 @@ struct ui
 
 struct ui *ui_create(void);
 void ui_update(struct ui *ui, struct game *game);
-void ui_panel_toggle(struct ui *ui, enum panel_type panel_type);
+void ui_panel_toggle(struct ui *ui, enum panel panel);
 void ui_destroy(struct ui *ui);
 
 #endif

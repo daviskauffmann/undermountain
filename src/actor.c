@@ -116,9 +116,9 @@ int actor_calc_armor_class(struct actor *actor)
         if (equipment)
         {
             struct item_info *item_info = &game->item_info[equipment->type];
-            struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+            struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
 
-            armor_class += base_item_info->base_armor_class;
+            armor_class += base_item_info->base_ac;
 
             // TODO: deal with stacking AC types
             for (int j = 0; j < NUM_ITEM_PROPERTIES; j++)
@@ -127,7 +127,7 @@ int actor_calc_armor_class(struct actor *actor)
                 {
                     struct item_property_info *item_property_info = &game->item_property_info[j];
 
-                    armor_class += item_property_info->armor_class_bonus;
+                    armor_class += item_property_info->ac_bonus;
                 }
             }
         }
@@ -159,7 +159,7 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
     if (weapon)
     {
         struct item_info *item_info = &game->item_info[weapon->type];
-        struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+        struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
 
         if (base_item_info->ranged == ranged)
         {
@@ -295,7 +295,7 @@ void actor_ai(struct actor *actor)
                 struct object *object = *iterator;
 
                 if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
-                    object->type == OBJECT_FOUNTAIN)
+                    object->type == OBJECT_TYPE_FOUNTAIN)
                 {
                     float dist = distance(actor->x, actor->y, object->x, object->y);
 
@@ -365,7 +365,7 @@ void actor_ai(struct actor *actor)
                 if (weapon)
                 {
                     struct item_info *item_info = &game->item_info[weapon->type];
-                    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+                    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
 
                     if (base_item_info->ranged && actor_shoot(actor, target->x, target->y, NULL, NULL))
                     {
@@ -405,7 +405,7 @@ void actor_ai(struct actor *actor)
 
                 switch (object->type)
                 {
-                case OBJECT_STAIR_DOWN:
+                case OBJECT_TYPE_STAIR_DOWN:
                 {
                     if (actor_descend(actor))
                     {
@@ -413,7 +413,7 @@ void actor_ai(struct actor *actor)
                     }
                 }
                 break;
-                case OBJECT_STAIR_UP:
+                case OBJECT_TYPE_STAIR_UP:
                 {
                     if (actor_ascend(actor))
                     {
@@ -527,22 +527,22 @@ bool actor_move(struct actor *actor, int x, int y)
 
         switch (object->type)
         {
-        case OBJECT_ALTAR:
+        case OBJECT_TYPE_ALTAR:
         {
             return actor_pray(actor, x, y);
         }
         break;
-        case OBJECT_DOOR_CLOSED:
+        case OBJECT_TYPE_DOOR_CLOSED:
         {
             return actor_open_door(actor, x, y);
         }
         break;
-        case OBJECT_FOUNTAIN:
+        case OBJECT_TYPE_FOUNTAIN:
         {
             return actor_drink(actor, x, y);
         }
         break;
-        case OBJECT_THRONE:
+        case OBJECT_TYPE_THRONE:
         {
             return actor_sit(actor, x, y);
         }
@@ -712,11 +712,11 @@ bool actor_open_door(struct actor *actor, int x, int y)
     {
         struct object *object = *iterator;
 
-        if (object->type == OBJECT_DOOR_CLOSED)
+        if (object->type == OBJECT_TYPE_DOOR_CLOSED)
         {
             success = true;
 
-            object->type = OBJECT_DOOR_OPEN;
+            object->type = OBJECT_TYPE_DOOR_OPEN;
 
             game_log(
                 game,
@@ -763,11 +763,11 @@ bool actor_close_door(struct actor *actor, int x, int y)
     {
         struct object *object = *iterator;
 
-        if (object->type == OBJECT_DOOR_OPEN)
+        if (object->type == OBJECT_TYPE_DOOR_OPEN)
         {
             success = true;
 
-            object->type = OBJECT_DOOR_CLOSED;
+            object->type = OBJECT_TYPE_DOOR_CLOSED;
 
             game_log(
                 game,
@@ -823,7 +823,7 @@ bool actor_descend(struct actor *actor)
     {
         struct object *object = *iterator;
 
-        if (object->type == OBJECT_STAIR_DOWN)
+        if (object->type == OBJECT_TYPE_STAIR_DOWN)
         {
             success = true;
 
@@ -917,7 +917,7 @@ bool actor_ascend(struct actor *actor)
     {
         struct object *object = *iterator;
 
-        if (object->type == OBJECT_STAIR_UP)
+        if (object->type == OBJECT_TYPE_STAIR_UP)
         {
             success = true;
 
@@ -1002,7 +1002,7 @@ bool actor_pray(struct actor *actor, int x, int y)
     {
         struct object *object = *iterator;
 
-        if (object->type == OBJECT_ALTAR)
+        if (object->type == OBJECT_TYPE_ALTAR)
         {
             success = true;
 
@@ -1051,7 +1051,7 @@ bool actor_drink(struct actor *actor, int x, int y)
     {
         struct object *object = *iterator;
 
-        if (object->type == OBJECT_FOUNTAIN)
+        if (object->type == OBJECT_TYPE_FOUNTAIN)
         {
             success = true;
 
@@ -1111,7 +1111,7 @@ bool actor_sit(struct actor *actor, int x, int y)
     {
         struct object *object = *iterator;
 
-        if (object->type == OBJECT_THRONE)
+        if (object->type == OBJECT_TYPE_THRONE)
         {
             success = true;
 
@@ -1219,7 +1219,7 @@ bool actor_equip(struct actor *actor, struct item *item)
 {
     struct game *game = actor->game;
     struct item_info *item_info = &game->item_info[item->type];
-    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
     struct item *equipment = actor->equipment[base_item_info->equip_slot];
 
     if (equipment)
@@ -1356,7 +1356,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     }
 
     struct item_info *item_info = &game->item_info[weapon->type];
-    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_type];
+    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
 
     if (!base_item_info->ranged)
     {

@@ -4,6 +4,8 @@
 #include "game.h"
 #include "ui.h"
 
+#include "CMemleak.h"
+
 struct ui *ui_create(void)
 {
     struct ui *ui = malloc(sizeof(struct ui));

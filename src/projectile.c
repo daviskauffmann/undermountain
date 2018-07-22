@@ -9,6 +9,8 @@
 #include "projectile.h"
 #include "util.h"
 
+#include "CMemleak.h"
+
 struct projectile *projectile_create(struct game *game, unsigned char glyph, int level, int x1, int y1, int x2, int y2, struct actor *shooter, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     struct projectile *projectile = malloc(sizeof(struct projectile));

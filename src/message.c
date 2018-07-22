@@ -4,7 +4,7 @@
 
 #include "message.h"
 
-#define strdup _strdup
+#include "CMemleak.h"
 
 struct message *message_create(char *text, TCOD_color_t color)
 {

@@ -3,6 +3,8 @@
 
 #include "item.h"
 
+#include "CMemleak.h"
+
 struct item *item_create(enum item_type type, struct game *game, int level, int x, int y)
 {
     struct item *item = malloc(sizeof(struct item));

@@ -13,7 +13,7 @@
 #include "util.h"
 #include "window.h"
 
-#define strdup _strdup
+#include "CMemleak.h"
 
 static int calc_ability_modifier(int ability);
 

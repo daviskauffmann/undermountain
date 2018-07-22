@@ -2,7 +2,7 @@
 
 set SRC_DIR=src\*.c
 
-set COMPILER_OPTS=/D_CRT_SECURE_NO_WARNINGS /Fdbuild\x86\ /Febin\x86\game.exe /Fobuild\x86\ /Iinclude /W4 /Zi
+set COMPILER_OPTS=/D_CRT_SECURE_NO_WARNINGS /DMEM_LEAK_CHECK /Fdbuild\x86\ /Febin\x86\game.exe /Fobuild\x86\ /Iinclude /W4 /Zi
 set LINKER_OPTS=/libpath:lib\x86\ /subsystem:console
 set LIBS=lib\x86\*.lib
 

@@ -10,6 +10,8 @@
 #include "ui.h"
 #include "window.h"
 
+#include "CMemleak.h"
+
 struct renderer *renderer_create(void)
 {
     struct renderer *renderer = malloc(sizeof(struct renderer));

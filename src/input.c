@@ -8,6 +8,8 @@
 #include "util.h"
 #include "window.h"
 
+#include "CMemleak.h"
+
 static void fn_should_update(struct game *game);
 
 struct input *input_create(void)

@@ -2,6 +2,8 @@
 
 #include "window.h"
 
+#include "CMemleak.h"
+
 const char *font_file;
 int font_flags;
 int font_char_horiz;

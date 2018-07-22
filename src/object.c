@@ -5,6 +5,8 @@
 #include "map.h"
 #include "object.h"
 
+#include "CMemleak.h"
+
 struct object *object_create(
     enum object_type type,
     struct game *game,

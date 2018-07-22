@@ -12,6 +12,8 @@
 #include "projectile.h"
 #include "window.h"
 
+#include "CMemleak.h"
+
 struct game *game_create(void)
 {
     struct game *game = malloc(sizeof(struct game));
@@ -667,6 +669,13 @@ struct game *game_create(void)
     game->item_info[ITEM_TYPE_GREATAXE_1].name = "Greataxe + 1";
     game->item_info[ITEM_TYPE_GREATAXE_1].description = "A special greataxe.";
     game->item_info[ITEM_TYPE_GREATAXE_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    game->item_info[ITEM_TYPE_GREATSWORD].base_item = BASE_ITEM_GREATSWORD;
+    game->item_info[ITEM_TYPE_GREATSWORD].name = "Greatsword";
+    game->item_info[ITEM_TYPE_GREATSWORD].description = "A generic greatsword.";
+    game->item_info[ITEM_TYPE_GREATSWORD_1].base_item = BASE_ITEM_GREATSWORD;
+    game->item_info[ITEM_TYPE_GREATSWORD_1].name = "Greatsword + 1";
+    game->item_info[ITEM_TYPE_GREATSWORD_1].description = "A special greatsword.";
+    game->item_info[ITEM_TYPE_GREATSWORD_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
     game->item_info[ITEM_TYPE_HALBERD].base_item = BASE_ITEM_HALBERD;
     game->item_info[ITEM_TYPE_HALBERD].name = "Halberd";
     game->item_info[ITEM_TYPE_HALBERD].description = "A generic halberd.";
@@ -833,6 +842,11 @@ void game_new(struct game *game)
 
         TCOD_list_push(map->actors, game->player);
         TCOD_list_push(tile->actors, game->player);
+
+        struct item *greatsword = item_create(ITEM_TYPE_GREATSWORD, game, level, x, y);
+
+        TCOD_list_push(map->items, greatsword);
+        TCOD_list_push(game->player->items, greatsword);
 
         game_log(
             game,

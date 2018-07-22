@@ -4,6 +4,8 @@
 #include "ui.h"
 #include "window.h"
 
+#include "CMemleak.h"
+
 int main(void)
 {
     window_init();

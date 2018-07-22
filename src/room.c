@@ -3,6 +3,8 @@
 
 #include "room.h"
 
+#include "CMemleak.h"
+
 struct room *room_create(int x, int y, int w, int h)
 {
     struct room *room = malloc(sizeof(struct room));

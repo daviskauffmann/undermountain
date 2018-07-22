@@ -10,6 +10,8 @@
 #include "room.h"
 #include "tile.h"
 
+#include "CMemleak.h"
+
 #define MAP_ALGORITHM_BSP
 
 #define CUSTOM_NUM_ROOM_ATTEMPTS 20

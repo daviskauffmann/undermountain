@@ -2,6 +2,8 @@
 
 #include "tile.h"
 
+#include "CMemleak.h"
+
 void tile_init(struct tile *tile, enum tile_type type, bool seen)
 {
     tile->type = type;

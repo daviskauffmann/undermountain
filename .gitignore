@@ -8,3 +8,5 @@ build
 bin/**/*.exe
 bin/**/*.ilk
 bin/**/*.pdb
+
+CMemleak.txt

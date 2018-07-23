@@ -846,7 +846,9 @@ bool actor_descend(struct actor *actor)
 
                 if (equipment)
                 {
-                    equipment->level = next_map->level;
+                    equipment->level = actor->level;
+                    equipment->x = actor->x;
+                    equipment->y = actor->y;
 
                     TCOD_list_remove(map->items, equipment);
                     TCOD_list_push(next_map->items, equipment);
@@ -857,7 +859,9 @@ bool actor_descend(struct actor *actor)
             {
                 struct item *item = *iterator2;
 
-                item->level = next_map->level;
+                item->level = actor->level;
+                item->x = actor->x;
+                item->y = actor->y;
 
                 TCOD_list_remove(map->items, item);
                 TCOD_list_push(next_map->items, item);
@@ -940,7 +944,9 @@ bool actor_ascend(struct actor *actor)
 
                 if (equipment)
                 {
-                    equipment->level = next_map->level;
+                    equipment->level = actor->level;
+                    equipment->x = actor->x;
+                    equipment->y = actor->y;
 
                     TCOD_list_remove(map->items, equipment);
                     TCOD_list_push(next_map->items, equipment);
@@ -951,7 +957,9 @@ bool actor_ascend(struct actor *actor)
             {
                 struct item *item = *iterator2;
 
-                item->level = next_map->level;
+                item->level = actor->level;
+                item->x = actor->x;
+                item->y = actor->y;
 
                 TCOD_list_remove(map->items, item);
                 TCOD_list_push(next_map->items, item);

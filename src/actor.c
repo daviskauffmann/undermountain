@@ -62,6 +62,24 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     return actor;
 }
 
+void actor_level_up(struct actor *actor)
+{
+    struct game *game = actor->game;
+    struct class_info *class_info = &game->class_info[actor->class];
+
+    // TODO: class levels?
+    actor->base_hp += roll(1, class_info->hit_die);
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_yellow,
+        "%s has gained a level!",
+        actor->name);
+}
+
 int actor_calc_max_hp(struct actor *actor)
 {
     return actor->base_hp + calc_ability_modifier(actor->constitution);

@@ -10,6 +10,12 @@ struct ui *ui_create(void)
 {
     struct ui *ui = malloc(sizeof(struct ui));
 
+    ui->menu_state = MENU_STATE_MAIN;
+    ui->menu_options[0].text = "Start";
+    ui->menu_options[1].text = "About";
+    ui->menu_options[2].text = "Quit";
+    ui->menu_index = 0;
+
     ui->current_panel = PANEL_CHARACTER;
 
     ui->panel_status[PANEL_CHARACTER].scroll = 0;
@@ -32,19 +38,26 @@ struct ui *ui_create(void)
 
 void ui_update(struct ui *ui, struct game *game)
 {
-    ui->panel_status[PANEL_INVENTORY].max_index = TCOD_list_size(game->player->items) - 1;
-
+    switch (game->state)
     {
-        struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
+    case STATE_PLAYING:
+    {
+        ui->panel_status[PANEL_INVENTORY].max_index = TCOD_list_size(game->player->items) - 1;
 
-        if (panel_status->current_index < 0)
         {
-            panel_status->current_index = 0;
+            struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
+
+            if (panel_status->current_index < 0)
+            {
+                panel_status->current_index = 0;
+            }
+            else if (panel_status->current_index > panel_status->max_index)
+            {
+                panel_status->current_index = panel_status->max_index;
+            }
         }
-        else if (panel_status->current_index > panel_status->max_index)
-        {
-            panel_status->current_index = panel_status->max_index;
-        }
+    }
+    break;
     }
 }
 

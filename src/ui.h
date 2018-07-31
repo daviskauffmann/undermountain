@@ -3,7 +3,20 @@
 
 #include <libtcod/libtcod.h>
 
+#define NUM_MENU_OPTIONS 3
+
 struct game;
+
+enum menu_state
+{
+    MENU_STATE_MAIN,
+    MENU_STATE_ABOUT
+};
+
+struct menu_option
+{
+    const char *text;
+};
 
 enum panel
 {
@@ -23,6 +36,9 @@ struct panel_status
 
 struct ui
 {
+    enum menu_state menu_state;
+    struct menu_option menu_options[NUM_MENU_OPTIONS];
+    int menu_index;
     enum panel_type current_panel;
     struct panel_status panel_status[NUM_PANELS];
     bool message_log_visible;

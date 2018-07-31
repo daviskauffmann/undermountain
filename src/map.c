@@ -12,7 +12,7 @@
 
 #include "CMemleak.h"
 
-#define MAP_ALGORITHM_BSP
+#define MAP_ALGORITHM_CUSTOM
 
 #define CUSTOM_NUM_ROOM_ATTEMPTS 20
 #define CUSTOM_MIN_ROOM_SIZE 5

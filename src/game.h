@@ -13,6 +13,18 @@
 
 #define NUM_MAPS 60
 
+enum state
+{
+    STATE_MENU,
+    STATE_PLAYING
+};
+
+enum play_state
+{
+    PLAY_STATE_PLAYING,
+    PLAY_STATE_LOSE
+};
+
 struct game
 {
     struct tile_common tile_common;
@@ -35,7 +47,8 @@ struct game
     bool should_update;
     bool should_restart;
     bool should_quit;
-    bool game_over;
+    enum state state;
+    enum play_state play_state;
 };
 
 struct game *game_create(void);

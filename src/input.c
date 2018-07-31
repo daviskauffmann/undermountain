@@ -10,7 +10,7 @@
 
 #include "CMemleak.h"
 
-static void fn_should_update(struct game *game);
+static void cb_should_update(struct game *game);
 
 struct input *input_create(void)
 {
@@ -60,11 +60,51 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
 
                 TCOD_console_set_fullscreen(fullscreen);
             }
+            else if (game->state == STATE_MENU)
+            {
+                switch (ui->menu_state)
+                {
+                case MENU_STATE_MAIN:
+                {
+                    switch (ui->menu_index)
+                    {
+                    case 0:
+                    {
+                        if (TCOD_sys_file_exists(SAVE_PATH))
+                        {
+                            game_load(game);
+                        }
+                        else
+                        {
+                            game_new(game);
+                        }
+                    }
+                    break;
+                    case 1:
+                    {
+                        ui->menu_state = MENU_STATE_ABOUT;
+                    }
+                    break;
+                    case 2:
+                    {
+                        game->should_quit = true;
+                    }
+                    break;
+                    }
+                }
+                break;
+                case MENU_STATE_ABOUT:
+                {
+                    ui->menu_state = MENU_STATE_MAIN;
+                }
+                break;
+                }
+            }
         }
         break;
         case TCODK_PAGEDOWN:
         {
-            if (ui->panel_visible)
+            if (game->state == STATE_PLAYING && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -77,7 +117,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         break;
         case TCODK_PAGEUP:
         {
-            if (ui->panel_visible)
+            if (game->state == STATE_PLAYING && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -90,7 +130,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         break;
         case TCODK_KP1:
         {
-            if (!game->game_over && game->turn_available)
+            if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
             {
                 if (input->targeting != TARGETING_NONE)
                 {
@@ -124,8 +164,16 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         }
         break;
         case TCODK_KP2:
+        case TCODK_DOWN:
         {
-            if (!game->game_over && game->turn_available)
+            if (game->state == STATE_MENU && ui->menu_state == MENU_STATE_MAIN)
+            {
+                if (ui->menu_index < 2)
+                {
+                    ui->menu_index++;
+                }
+            }
+            else if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
             {
                 if (input->targeting != TARGETING_NONE)
                 {
@@ -160,7 +208,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         break;
         case TCODK_KP3:
         {
-            if (!game->game_over && game->turn_available)
+            if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
             {
                 if (input->targeting != TARGETING_NONE)
                 {
@@ -194,8 +242,9 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         }
         break;
         case TCODK_KP4:
+        case TCODK_LEFT:
         {
-            if (!game->game_over && game->turn_available)
+            if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
             {
                 if (input->targeting != TARGETING_NONE)
                 {
@@ -230,15 +279,16 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         break;
         case TCODK_KP5:
         {
-            if (game->turn_available)
+            if (game->state == STATE_PLAYING && game->turn_available)
             {
                 game->should_update = true;
             }
         }
         break;
         case TCODK_KP6:
+        case TCODK_RIGHT:
         {
-            if (!game->game_over && game->turn_available)
+            if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
             {
                 if (input->targeting != TARGETING_NONE)
                 {
@@ -273,7 +323,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         break;
         case TCODK_KP7:
         {
-            if (!game->game_over && game->turn_available)
+            if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
             {
                 if (input->targeting != TARGETING_NONE)
                 {
@@ -307,8 +357,16 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         }
         break;
         case TCODK_KP8:
+        case TCODK_UP:
         {
-            if (!game->game_over && game->turn_available)
+            if (game->state == STATE_MENU && ui->menu_state == MENU_STATE_MAIN)
+            {
+                if (ui->menu_index > 0)
+                {
+                    ui->menu_index--;
+                }
+            }
+            else if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
             {
                 if (input->targeting != TARGETING_NONE)
                 {
@@ -343,7 +401,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         break;
         case TCODK_KP9:
         {
-            if (!game->game_over && game->turn_available)
+            if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
             {
                 if (input->targeting != TARGETING_NONE)
                 {
@@ -382,7 +440,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             {
             case '<':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     game->should_update = actor_ascend(game->player);
                 }
@@ -390,7 +448,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case '>':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     game->should_update = actor_descend(game->player);
                 }
@@ -408,7 +466,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'c':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     input->action = ACTION_CLOSE_DOOR;
 
@@ -424,7 +482,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'd':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
                     {
@@ -459,7 +517,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'e':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
                     {
@@ -482,11 +540,11 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'f':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     if (input->targeting == TARGETING_SHOOT)
                     {
-                        actor_shoot(game->player, input->target_x, input->target_y, &fn_should_update, game);
+                        actor_shoot(game->player, input->target_x, input->target_y, &cb_should_update, game);
 
                         input->targeting = TARGETING_NONE;
                     }
@@ -510,7 +568,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                                     actor->faction != game->player->faction &&
                                     !actor->dead)
                                 {
-                                    float dist = distance(game->player->x, game->player->y, actor->x, actor->y);
+                                    float dist = distance_sq(game->player->x, game->player->y, actor->x, actor->y);
 
                                     if (dist < min_distance)
                                     {
@@ -540,7 +598,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'g':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     game->should_update = actor_grab(game->player, game->player->x, game->player->y);
                 }
@@ -573,7 +631,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'o':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     input->action = ACTION_OPEN_DOOR;
 
@@ -589,7 +647,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'p':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     input->action = ACTION_PRAY;
 
@@ -610,7 +668,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 's':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     if (key.lctrl)
                     {
@@ -633,7 +691,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 't':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     game->player->torch = !game->player->torch;
 
@@ -643,7 +701,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'z':
             {
-                if (!game->game_over && game->turn_available)
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
                     // TODO: spells
                     if (input->targeting == TARGETING_SPELL)
@@ -674,7 +732,7 @@ void input_destroy(struct input *input)
     free(input);
 }
 
-static void fn_should_update(struct game *game)
+static void cb_should_update(struct game *game)
 {
     game->should_update = true;
 }

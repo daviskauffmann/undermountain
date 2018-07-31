@@ -315,7 +315,7 @@ void actor_ai(struct actor *actor)
                 if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
                     object->type == OBJECT_TYPE_FOUNTAIN)
                 {
-                    float dist = distance(actor->x, actor->y, object->x, object->y);
+                    float dist = distance_sq(actor->x, actor->y, object->x, object->y);
 
                     if (dist < min_distance)
                     {
@@ -356,7 +356,7 @@ void actor_ai(struct actor *actor)
                     other->faction != actor->faction &&
                     !other->dead)
                 {
-                    float dist = distance(actor->x, actor->y, other->x, other->y);
+                    float dist = distance_sq(actor->x, actor->y, other->x, other->y);
 
                     if (dist < min_distance)
                     {
@@ -1617,7 +1617,7 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
-        game->game_over = true;
+        game->play_state = PLAY_STATE_LOSE;
 
         TCOD_sys_delete_file(SAVE_PATH);
 

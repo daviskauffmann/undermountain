@@ -462,7 +462,3 @@ void renderer_destroy(struct renderer *renderer)
 
     free(renderer);
 }
-
-static void draw_menu(struct ui *ui)
-{
-}

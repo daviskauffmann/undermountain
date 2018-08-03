@@ -868,12 +868,16 @@ void game_new(struct game *game)
 
 void game_save(struct game *game)
 {
-    (void)game;
+    TCOD_zip_t zip = TCOD_zip_new();
+
+    TCOD_zip_save_to_file(zip, SAVE_PATH);
+
+    TCOD_zip_delete(zip);
 }
 
 void game_load(struct game *game)
 {
-    (void)game;
+    game_new(game);
 }
 
 void game_update(struct game *game)

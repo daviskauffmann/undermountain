@@ -673,6 +673,14 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     if (key.lctrl)
                     {
                         game_save(game);
+
+                        game_log(
+                            game,
+                            game->player->level,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_green,
+                            "Game saved!");
                     }
                     else
                     {

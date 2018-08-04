@@ -6,6 +6,8 @@
 // innate level
 // levels for each class
 // school of magic
+// spells must also be able to be stored in potions and scrolls
+//     these spells should contain information about what caster level to use
 
 // casting:
 // open spellbook

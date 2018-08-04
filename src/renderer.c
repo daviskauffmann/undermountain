@@ -42,12 +42,12 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
             for (int i = 0; i < NUM_MENU_OPTIONS; i++)
             {
-                struct menu_option *menu_option = &ui->menu_options[i];
+                struct menu_option_info *menu_option_info = &ui->menu_option_info[i];
 
                 TCOD_color_t color = ui->menu_index == i ? TCOD_yellow : TCOD_white;
 
                 TCOD_console_set_default_foreground(NULL, color);
-                TCOD_console_print_ex(NULL, console_width / 2, console_height / 2 + i, TCOD_BKGND_SET, TCOD_CENTER, menu_option->text);
+                TCOD_console_print_ex(NULL, console_width / 2, console_height / 2 + i, TCOD_BKGND_SET, TCOD_CENTER, menu_option_info->text);
             }
         }
         break;

@@ -11,9 +11,9 @@ struct ui *ui_create(void)
     struct ui *ui = malloc(sizeof(struct ui));
 
     ui->menu_state = MENU_STATE_MAIN;
-    ui->menu_options[0].text = "Start";
-    ui->menu_options[1].text = "About";
-    ui->menu_options[2].text = "Quit";
+    ui->menu_option_info[MENU_OPTION_START].text = "Start";
+    ui->menu_option_info[MENU_OPTION_ABOUT].text = "About";
+    ui->menu_option_info[MENU_OPTION_QUIT].text = "Quit";
     ui->menu_index = 0;
 
     ui->current_panel = PANEL_CHARACTER;

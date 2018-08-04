@@ -196,9 +196,13 @@ int actor_calc_damage_bonus(struct actor *actor)
 
 void actor_update_flash(struct actor *actor)
 {
+    // struct game *game = actor->game;
+
     if (actor->flash_fade > 0)
     {
         actor->flash_fade -= (1.0f / (float)FPS) * 4.0f;
+
+        // game->turn_available = false;
     }
     else
     {
@@ -1200,6 +1204,7 @@ bool actor_grab(struct actor *actor, int x, int y)
     item->x = actor->x;
     item->y = actor->y;
 
+    // TODO: stacking?
     TCOD_list_push(actor->items, item);
 
     game_log(
@@ -1246,6 +1251,22 @@ bool actor_equip(struct actor *actor, struct item *item)
     struct game *game = actor->game;
     struct item_info *item_info = &game->item_info[item->type];
     struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
+
+    if (base_item_info->equip_slot == EQUIP_SLOT_NONE)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s cannot equip %s",
+            actor->name,
+            item_info->name);
+
+        return false;
+    }
+
     struct item *equipment = actor->equipment[base_item_info->equip_slot];
 
     if (equipment)
@@ -1264,6 +1285,41 @@ bool actor_equip(struct actor *actor, struct item *item)
         actor->y,
         TCOD_white,
         "%s equips %s",
+        actor->name,
+        item_info->name);
+
+    return true;
+}
+
+bool actor_quaff(struct actor *actor, struct item *item)
+{
+    struct game *game = actor->game;
+    struct item_info *item_info = &game->item_info[item->type];
+
+    if (item_info->base_item != BASE_ITEM_POTION)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s cannot quaff %s",
+            actor->name,
+            item_info->name);
+
+        return false;
+    }
+
+    // TODO: cast the spell stored in the potion
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s quaffs %s",
         actor->name,
         item_info->name);
 

@@ -6,6 +6,14 @@
 struct game;
 struct ui;
 
+enum targeting
+{
+    TARGETING_NONE,
+    TARGETING_LOOK,
+    TARGETING_SHOOT,
+    TARGETING_SPELL
+};
+
 struct input
 {
     enum action action;

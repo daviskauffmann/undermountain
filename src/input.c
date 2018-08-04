@@ -661,6 +661,29 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                 }
             }
             break;
+            case 'q':
+            {
+                if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
+                {
+                    if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
+                    {
+                        switch (ui->current_panel)
+                        {
+                        case PANEL_INVENTORY:
+                        {
+                            if (TCOD_list_size(game->player->items) > 0)
+                            {
+                                struct item *item = TCOD_list_get(game->player->items, ui->panel_status[ui->current_panel].current_index);
+
+                                game->should_update = actor_quaff(game->player, item);
+                            }
+                        }
+                        break;
+                        }
+                    }
+                }
+            }
+            break;
             case 'r':
             {
                 game->should_restart = true;

@@ -75,16 +75,15 @@ void map_generate(struct map *map)
 #if defined(MAP_ALGORITHM_CUSTOM)
     for (int i = 0; i < CUSTOM_NUM_ROOM_ATTEMPTS; i++)
     {
-        struct room *room = room_create(
-            TCOD_random_get_int(NULL, 0, MAP_WIDTH),
-            TCOD_random_get_int(NULL, 0, MAP_HEIGHT),
-            TCOD_random_get_int(NULL, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE),
-            TCOD_random_get_int(NULL, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE));
+        int room_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH);
+        int room_y = TCOD_random_get_int(NULL, 0, MAP_HEIGHT);
+        int room_w = TCOD_random_get_int(NULL, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE);
+        int room_h = TCOD_random_get_int(NULL, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE);
 
-        if (room->x < 2 ||
-            room->x + room->w > MAP_WIDTH - 2 ||
-            room->y < 2 ||
-            room->y + room->h > MAP_HEIGHT - 2)
+        if (room_x < 2 ||
+            room_x + room_w > MAP_WIDTH - 2 ||
+            room_y < 2 ||
+            room_y + room_h > MAP_HEIGHT - 2)
         {
             continue;
         }
@@ -93,9 +92,9 @@ void map_generate(struct map *map)
         {
             bool overlap = false;
 
-            for (int x = room->x - 2; x < room->x + room->w + 2; x++)
+            for (int x = room_x - 2; x < room_x + room_w + 2; x++)
             {
-                for (int y = room->y - 2; y < room->y + room->h + 2; y++)
+                for (int y = room_y - 2; y < room_y + room_h + 2; y++)
                 {
                     struct tile *tile = &map->tiles[x][y];
 
@@ -112,15 +111,17 @@ void map_generate(struct map *map)
             }
         }
 
-        for (int x = room->x; x < room->x + room->w; x++)
+        for (int x = room_x; x < room_x + room_w; x++)
         {
-            for (int y = room->y; y < room->y + room->h; y++)
+            for (int y = room_y; y < room_y + room_h; y++)
             {
                 struct tile *tile = &map->tiles[x][y];
 
                 tile->type = TILE_TYPE_FLOOR;
             }
         }
+
+        struct room *room = room_create(room_x, room_y, room_w, room_h);
 
         TCOD_list_push(map->rooms, room);
     }

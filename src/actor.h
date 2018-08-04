@@ -121,14 +121,6 @@ enum action
     ACTION_SIT
 };
 
-enum targeting
-{
-    TARGETING_NONE,
-    TARGETING_LOOK,
-    TARGETING_SHOOT,
-    TARGETING_SPELL
-};
-
 struct actor_common
 {
     int turns_to_chase;
@@ -222,6 +214,7 @@ bool actor_sit(struct actor *actor, int x, int y);
 bool actor_grab(struct actor *actor, int x, int y);
 bool actor_drop(struct actor *actor, struct item *item);
 bool actor_equip(struct actor *actor, struct item *item);
+bool actor_quaff(struct actor *actor, struct item *item);
 bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params);
 bool actor_swing(struct actor *actor, int x, int y);

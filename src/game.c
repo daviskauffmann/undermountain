@@ -503,6 +503,22 @@ struct game *game_create(void)
     game->base_item_info[BASE_ITEM_MACE].base_ac = 0;
     game->base_item_info[BASE_ITEM_MACE].armor_check_penalty = 0;
     game->base_item_info[BASE_ITEM_MACE].arcane_spell_failure = 0;
+    game->base_item_info[BASE_ITEM_POTION].glyph = '!';
+    game->base_item_info[BASE_ITEM_POTION].color = TCOD_white;
+    game->base_item_info[BASE_ITEM_POTION].weight = 0.5f;
+    game->base_item_info[BASE_ITEM_POTION].equip_slot = EQUIP_SLOT_NONE;
+    game->base_item_info[BASE_ITEM_POTION].damage = 0;
+    game->base_item_info[BASE_ITEM_POTION].weapon_size = 0;
+    game->base_item_info[BASE_ITEM_POTION].ranged = false;
+    game->base_item_info[BASE_ITEM_POTION].num_dice = 0;
+    game->base_item_info[BASE_ITEM_POTION].die_to_roll = 0;
+    game->base_item_info[BASE_ITEM_POTION].crit_threat = 0;
+    game->base_item_info[BASE_ITEM_POTION].crit_mult = 0;
+    game->base_item_info[BASE_ITEM_POTION].base_cost = 30;
+    game->base_item_info[BASE_ITEM_POTION].stack = 10;
+    game->base_item_info[BASE_ITEM_POTION].base_ac = 0;
+    game->base_item_info[BASE_ITEM_POTION].armor_check_penalty = 0;
+    game->base_item_info[BASE_ITEM_POTION].arcane_spell_failure = 0;
     game->base_item_info[BASE_ITEM_QUARTERSTAFF].glyph = '|';
     game->base_item_info[BASE_ITEM_QUARTERSTAFF].color = TCOD_white;
     game->base_item_info[BASE_ITEM_QUARTERSTAFF].weight = 4;
@@ -732,6 +748,9 @@ struct game *game_create(void)
     game->item_info[ITEM_TYPE_MACE_1].name = "Mace + 1";
     game->item_info[ITEM_TYPE_MACE_1].description = "A special mace.";
     game->item_info[ITEM_TYPE_MACE_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    game->item_info[ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS].base_item = BASE_ITEM_POTION;
+    game->item_info[ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS].name = "Potion of Cure Light Wounds";
+    game->item_info[ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS].description = "A healing potion.";
     game->item_info[ITEM_TYPE_QUARTERSTAFF].base_item = BASE_ITEM_QUARTERSTAFF;
     game->item_info[ITEM_TYPE_QUARTERSTAFF].name = "Quarterstaff";
     game->item_info[ITEM_TYPE_QUARTERSTAFF].description = "A generic quarterstaff.";
@@ -854,6 +873,11 @@ void game_new(struct game *game)
 
         TCOD_list_push(map->items, tower_shield);
         TCOD_list_push(game->player->items, tower_shield);
+
+        struct item *potion_cure_light_wounds = item_create(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, game, level, x, y);
+
+        TCOD_list_push(map->items, potion_cure_light_wounds);
+        TCOD_list_push(game->player->items, potion_cure_light_wounds);
 
         game_log(
             game,

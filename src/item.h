@@ -23,6 +23,7 @@ enum base_item
     BASE_ITEM_LONGBOW,
     BASE_ITEM_LONGSWORD,
     BASE_ITEM_MACE,
+    BASE_ITEM_POTION,
     BASE_ITEM_QUARTERSTAFF,
     BASE_ITEM_SCIMITAR,
     BASE_ITEM_SHORTBOW,
@@ -78,7 +79,7 @@ struct base_item_info
 {
     unsigned char glyph;
     TCOD_color_t color;
-    int weight;
+    float weight;
     enum equip_slot equip_slot;
     enum damage damage;
     enum weapon_size weapon_size;
@@ -123,6 +124,7 @@ enum item_type
     ITEM_TYPE_LONGSWORD_1,
     ITEM_TYPE_MACE,
     ITEM_TYPE_MACE_1,
+    ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS,
     ITEM_TYPE_QUARTERSTAFF,
     ITEM_TYPE_QUARTERSTAFF_1,
     ITEM_TYPE_SCIMITAR,
@@ -166,6 +168,7 @@ struct item_property_info
     int enhancement_bonus;
     enum ac ac;
     int ac_bonus;
+    // TODO: contained spell (used for scrolls and potions)
 };
 
 struct item_info

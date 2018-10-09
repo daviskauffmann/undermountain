@@ -9,7 +9,7 @@
 
 struct object *object_create(enum object_type type, struct game *game, int level, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, bool light_flicker)
 {
-    struct object *object = malloc(sizeof(struct object));
+    struct object *object = calloc(1, sizeof(struct object));
 
     object->type = type;
     object->game = game;

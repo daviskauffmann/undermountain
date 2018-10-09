@@ -10,13 +10,14 @@
 #include "map.h"
 #include "message.h"
 #include "projectile.h"
+#include "tile.h"
 #include "window.h"
 
 #include "CMemleak.h"
 
 struct game *game_create(void)
 {
-    struct game *game = malloc(sizeof(struct game));
+    struct game *game = calloc(1, sizeof(struct game));
 
     game->tile_common.shadow_color = TCOD_color_RGB(16, 16, 32);
 
@@ -853,7 +854,7 @@ void game_new(struct game *game)
         int y = map->stair_up_y;
         struct tile *tile = &map->tiles[x][y];
 
-        game->player = actor_create(game, "Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, level, x, y);
+        game->player = actor_create(game, "Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, level, x, y);
         game->player->glow = false;
 
         TCOD_list_push(map->actors, game->player);

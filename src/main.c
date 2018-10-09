@@ -39,5 +39,7 @@ int main(void)
     game_destroy(game);
     input_destroy(input);
 
+    window_quit();
+
     return 0;
 }

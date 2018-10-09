@@ -158,6 +158,7 @@ struct actor
     enum race race;
     enum class class;
     enum faction faction;
+    int class_level;
     int experience;
     int strength;
     int dexterity;
@@ -187,7 +188,7 @@ struct actor
     bool dead;
 };
 
-struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int level, int x, int y);
+struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int class_level, int level, int x, int y);
 void actor_level_up(struct actor *actor);
 int actor_calc_max_hp(struct actor *actor);
 int actor_calc_enhancement_bonus(struct actor *actor);

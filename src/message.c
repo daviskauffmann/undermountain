@@ -8,7 +8,7 @@
 
 struct message *message_create(char *text, TCOD_color_t color)
 {
-    struct message *message = malloc(sizeof(struct message));
+    struct message *message = calloc(1, sizeof(struct message));
 
     message->text = strdup(text);
     message->color = color;

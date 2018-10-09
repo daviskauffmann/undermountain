@@ -18,5 +18,6 @@ extern int console_renderer;
 
 void window_init(void);
 bool window_is_closed(void);
+void window_quit(void);
 
 #endif

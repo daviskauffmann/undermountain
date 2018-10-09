@@ -422,6 +422,7 @@ void map_generate(struct map *map)
             race,
             class,
             FACTION_GOOD,
+            map->level + 1,
             map->level,
             x,
             y);
@@ -448,6 +449,7 @@ void map_generate(struct map *map)
             prototype->race,
             prototype->class,
             FACTION_EVIL,
+            map->level + 1,
             map->level,
             x,
             y);

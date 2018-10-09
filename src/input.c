@@ -14,7 +14,7 @@ static void cb_should_update(struct game *game);
 
 struct input *input_create(void)
 {
-    struct input *input = malloc(sizeof(struct input));
+    struct input *input = calloc(1, sizeof(struct input));
 
     input->action = ACTION_NONE;
     input->targeting = TARGETING_NONE;
@@ -23,6 +23,8 @@ struct input *input_create(void)
 
     return input;
 }
+
+#include <stdio.h>
 
 void input_handle(struct input *input, struct game *game, struct ui *ui)
 {
@@ -611,16 +613,19 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
             break;
             case 'l':
             {
-                if (input->targeting == TARGETING_LOOK)
+                if (game->state == STATE_PLAYING)
                 {
-                    input->targeting = TARGETING_NONE;
-                }
-                else
-                {
-                    input->targeting = TARGETING_LOOK;
+                    if (input->targeting == TARGETING_LOOK)
+                    {
+                        input->targeting = TARGETING_NONE;
+                    }
+                    else
+                    {
+                        input->targeting = TARGETING_LOOK;
 
-                    input->target_x = game->player->x;
-                    input->target_y = game->player->y;
+                        input->target_x = game->player->x;
+                        input->target_y = game->player->y;
+                    }
                 }
             }
             break;
@@ -730,11 +735,35 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                 }
             }
             break;
+            case 'x':
+            {
+                if (game->state == STATE_PLAYING)
+                {
+                    if (input->targeting == TARGETING_EXAMINE)
+                    {
+                        input->targeting = TARGETING_NONE;
+
+                        // TODO: send examine target to ui
+
+                        if (!ui->panel_visible || ui->current_panel != PANEL_EXAMINE)
+                        {
+                            ui_panel_toggle(ui, PANEL_EXAMINE);
+                        }
+                    }
+                    else
+                    {
+                        input->targeting = TARGETING_EXAMINE;
+
+                        input->target_x = game->player->x;
+                        input->target_y = game->player->y;
+                    }
+                }
+            }
+            break;
             case 'z':
             {
                 if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
                 {
-                    // TODO: spells
                     if (input->targeting == TARGETING_SPELL)
                     {
                         input->targeting = TARGETING_NONE;

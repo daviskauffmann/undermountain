@@ -8,7 +8,7 @@
 
 struct ui *ui_create(void)
 {
-    struct ui *ui = malloc(sizeof(struct ui));
+    struct ui *ui = calloc(1, sizeof(struct ui));
 
     ui->menu_state = MENU_STATE_MAIN;
     ui->menu_option_info[MENU_OPTION_START].text = "Start";
@@ -21,6 +21,10 @@ struct ui *ui_create(void)
     ui->panel_status[PANEL_CHARACTER].scroll = 0;
     ui->panel_status[PANEL_CHARACTER].current_index = 0;
     ui->panel_status[PANEL_CHARACTER].max_index = 0;
+
+    ui->panel_status[PANEL_EXAMINE].scroll = 0;
+    ui->panel_status[PANEL_EXAMINE].current_index = 0;
+    ui->panel_status[PANEL_EXAMINE].max_index = 0;
 
     ui->panel_status[PANEL_INVENTORY].scroll = 0;
     ui->panel_status[PANEL_INVENTORY].current_index = 0;

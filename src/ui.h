@@ -28,6 +28,7 @@ struct menu_option_info
 enum panel
 {
     PANEL_CHARACTER,
+    PANEL_EXAMINE,
     PANEL_INVENTORY,
     PANEL_SPELLBOOK,
 

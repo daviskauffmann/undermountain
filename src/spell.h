@@ -8,16 +8,17 @@
 // school of magic
 // spells must also be able to be stored in potions and scrolls
 //     these spells should contain information about what caster level to use
+// spell target type: self or target
 
 // casting:
 // open spellbook
 // select spell and press a to activate it
 // press z to cast
 // if non-targeted spell, cast immediately
-//     this could be self-buffing spells or "cone-of-cold" type spells
-// if tagreted spell, enter targeting mode
+//     this could be self-buffing spells or aoe spells
+// if targeted spell, enter targeting mode
 // press z again to cast spell, calling spell_cast() with the coordinates of the cursor
-// activaing a spell should be a input module thing, not an actor thing
+// activating a spell should be a input module thing, not an actor thing
 //     it doesn't make much sense for an npc to activate a spell, their AI would just cast it
 
 #endif

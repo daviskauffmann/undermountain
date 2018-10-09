@@ -31,9 +31,15 @@ void window_init(void)
 
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
     TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, console_renderer);
+
+    TCOD_mouse_show_cursor(false);
 }
 
 bool window_is_closed(void)
 {
     return TCOD_console_is_window_closed();
+}
+
+void window_quit(void)
+{
 }

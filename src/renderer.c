@@ -14,7 +14,7 @@
 
 struct renderer *renderer_create(void)
 {
-    struct renderer *renderer = malloc(sizeof(struct renderer));
+    struct renderer *renderer = calloc(1, sizeof(struct renderer));
 
     renderer->noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
     renderer->noise_x = 0.0f;
@@ -211,6 +211,17 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 }
             }
 
+            for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+            {
+                struct object *object = *iterator;
+
+                if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) && TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
+                {
+                    TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
+                    TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, game->object_info[object->type].glyph);
+                }
+            }
+
             for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
             {
                 struct actor *actor = *iterator;
@@ -246,16 +257,11 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                     {
                         TCOD_console_print_ex(
                             NULL,
-                            console_width / 2,
-                            message_log_y - 2,
+                            view_width / 2,
+                            view_height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
-                            "%s, Race: %s, Class: %s, HP: %d, Kills: %d",
-                            actor->name,
-                            game->race_info[actor->race].name,
-                            game->class_info[actor->class].name,
-                            actor->current_hp,
-                            actor->kills);
+                            actor->name);
 
                         goto done;
                     }
@@ -268,8 +274,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                     {
                         TCOD_console_print_ex(
                             NULL,
-                            console_width / 2,
-                            message_log_y - 2,
+                            view_width / 2,
+                            view_height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
                             game->item_info[item->type].name);
@@ -285,8 +291,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                     {
                         TCOD_console_print_ex(
                             NULL,
-                            console_width / 2,
-                            message_log_y - 2,
+                            view_width / 2,
+                            view_height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
                             game->object_info[object->type].name);
@@ -297,8 +303,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                 TCOD_console_print_ex(
                     NULL,
-                    console_width / 2,
-                    message_log_y - 2,
+                    view_width / 2,
+                    view_height - 2,
                     TCOD_BKGND_NONE,
                     TCOD_CENTER,
                     game->tile_info[tile->type].name);
@@ -311,8 +317,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 {
                     TCOD_console_print_ex(
                         NULL,
-                        console_width / 2,
-                        message_log_y - 2,
+                        view_width / 2,
+                        view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
                         "%s (known)",
@@ -322,8 +328,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 {
                     TCOD_console_print_ex(
                         NULL,
-                        console_width / 2,
-                        message_log_y - 2,
+                        view_width / 2,
+                        view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
                         "Unknown");
@@ -371,7 +377,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "ALIGNMENT: Neutral Good");
                 TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "RACE     : %s", game->race_info[game->player->race].name);
                 TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CLASS    : %s", game->class_info[game->player->class].name);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "EXP      : 3653");
+                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "LEVEL    : %d", game->player->class_level);
+                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "EXP      : %d", game->player->experience);
                 i++;
                 TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "STR: %d", game->player->strength);
                 TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "DEX: %d", game->player->dexterity);
@@ -409,6 +416,12 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");
             }
             break;
+            case PANEL_EXAMINE:
+            {
+                TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
+                TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Examine");
+            }
+            break;
             case PANEL_INVENTORY:
             {
                 int i = 0;
@@ -441,6 +454,7 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             TCOD_console_blit(renderer->panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
         }
 
+        // DEBUG
         TCOD_console_print(NULL, 0, 0, "Turn: %d", game->turn);
         TCOD_console_print(NULL, 0, 1, "Depth: %d", game->player->level);
         TCOD_console_print(NULL, 0, 2, "X: %d", game->player->x);

@@ -15,18 +15,21 @@
 
 #include "CMemleak.h"
 
+#include <stdio.h>
+
 static int calc_ability_modifier(int ability);
 
-struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int level, int x, int y)
+struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int class_level, int level, int x, int y)
 {
-    struct actor *actor = malloc(sizeof(struct actor));
+    struct actor *actor = calloc(1, sizeof(struct actor));
 
     actor->game = game;
     actor->name = strdup(name);
     actor->race = race;
     actor->class = class;
     actor->faction = faction;
-    actor->experience = 0;
+    actor->class_level = class_level;
+    actor->experience = (actor->class_level - 1) * 1000;
     actor->strength = 10;
     actor->dexterity = 10;
     actor->constitution = 10;
@@ -41,7 +44,7 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->level = level;
     actor->x = x;
     actor->y = y;
-    actor->base_hp = 10; // dependent on class
+    actor->base_hp = game->class_info[actor->class].hit_die * actor->class_level;
     actor->current_hp = actor_calc_max_hp(actor);
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
@@ -67,8 +70,9 @@ void actor_level_up(struct actor *actor)
     struct game *game = actor->game;
     struct class_info *class_info = &game->class_info[actor->class];
 
-    // TODO: class levels?
+    actor->class_level++;
     actor->base_hp += roll(1, class_info->hit_die);
+    actor->current_hp = actor_calc_max_hp(actor);
 
     game_log(
         game,
@@ -1330,6 +1334,21 @@ bool actor_bash(struct actor *actor, struct object *object)
 {
     struct game *game = actor->game;
 
+    if (object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s cannot destroy the %s",
+            actor->name,
+            game->object_info[object->type].name);
+
+        return false;
+    }
+
     object->destroyed = true;
 
     game_log(
@@ -1408,15 +1427,6 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
 
     if (x == actor->x && y == actor->y)
     {
-        game_log(
-            game,
-            actor->level,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "%s cannot shoot themselves!",
-            actor->name);
-
         return false;
     }
 
@@ -1655,7 +1665,7 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (killer)
     {
-        int experience = TCOD_random_get_int(NULL, 50, 100);
+        int experience = TCOD_random_get_int(NULL, 50, 100) * actor->class_level;
 
         killer->experience += experience;
         killer->kills++;

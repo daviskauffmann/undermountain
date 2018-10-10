@@ -109,18 +109,6 @@ enum faction
     NUM_FACTIONS
 };
 
-enum action
-{
-    ACTION_NONE,
-    ACTION_DESCEND,
-    ACTION_ASCEND,
-    ACTION_OPEN_DOOR,
-    ACTION_CLOSE_DOOR,
-    ACTION_PRAY,
-    ACTION_DRINK,
-    ACTION_SIT
-};
-
 struct actor_common
 {
     int turns_to_chase;
@@ -204,7 +192,6 @@ bool actor_path_towards(struct actor *actor, int x, int y);
 bool actor_move_towards(struct actor *actor, int x, int y);
 bool actor_move(struct actor *actor, int x, int y);
 bool actor_swap(struct actor *actor, struct actor *other);
-bool actor_interact(struct actor *actor, int x, int y, enum action action);
 bool actor_open_door(struct actor *actor, int x, int y);
 bool actor_close_door(struct actor *actor, int x, int y);
 bool actor_descend(struct actor *actor);

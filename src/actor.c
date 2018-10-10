@@ -693,34 +693,6 @@ bool actor_swap(struct actor *actor, struct actor *other)
     return true;
 }
 
-bool actor_interact(struct actor *actor, int x, int y, enum action action)
-{
-    if (!map_is_inside(x, y))
-    {
-        return false;
-    }
-
-    switch (action)
-    {
-    case ACTION_DESCEND:
-        return actor_descend(actor);
-    case ACTION_ASCEND:
-        return actor_ascend(actor);
-    case ACTION_CLOSE_DOOR:
-        return actor_close_door(actor, x, y);
-    case ACTION_OPEN_DOOR:
-        return actor_open_door(actor, x, y);
-    case ACTION_PRAY:
-        return actor_pray(actor, x, y);
-    case ACTION_DRINK:
-        return actor_drink(actor, x, y);
-    case ACTION_SIT:
-        return actor_sit(actor, x, y);
-    }
-
-    return false;
-}
-
 bool actor_open_door(struct actor *actor, int x, int y)
 {
     if (!map_is_inside(x, y))

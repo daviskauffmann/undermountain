@@ -13,6 +13,7 @@ struct renderer
     float noise_x;
     TCOD_console_t message_log;
     TCOD_console_t panel;
+    TCOD_console_t tooltip;
 };
 
 struct renderer *renderer_create(void);

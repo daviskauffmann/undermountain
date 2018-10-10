@@ -1,6 +1,7 @@
 #include <libtcod/libtcod.h>
 #include <malloc.h>
 #include <math.h>
+#include <string.h>
 
 #include "game.h"
 #include "input.h"
@@ -20,6 +21,7 @@ struct renderer *renderer_create(void)
     renderer->noise_x = 0.0f;
     renderer->panel = TCOD_console_new(console_width, console_height);
     renderer->message_log = TCOD_console_new(console_width, console_height);
+    renderer->tooltip = TCOD_console_new(console_width, console_height);
 
     return renderer;
 }
@@ -63,30 +65,6 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
     break;
     case STATE_PLAYING:
     {
-        int message_log_x = 0;
-        int message_log_height = console_height / 4;
-        int message_log_y = console_height - message_log_height;
-        int message_log_width = console_width;
-
-        int panel_width = console_width / 2;
-        int panel_x = console_width - panel_width;
-        int panel_y = 0;
-        int panel_height = console_height - (ui->message_log_visible ? message_log_height : 0);
-
-        int view_width = console_width - (ui->panel_visible ? panel_width : 0);
-        int view_height = console_height - (ui->message_log_visible ? message_log_height : 0);
-        int view_x = game->player->x - view_width / 2;
-        int view_y = game->player->y - view_height / 2;
-
-        if (view_x + view_width > MAP_WIDTH)
-            view_x = MAP_WIDTH - view_width;
-        if (view_x < 0)
-            view_x = 0;
-        if (view_y + view_height > MAP_HEIGHT)
-            view_y = MAP_HEIGHT - view_height;
-        if (view_y < 0)
-            view_y = 0;
-
         struct map *map = &game->maps[game->player->level];
 
         {
@@ -97,9 +75,9 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             float dy = TCOD_noise_get(renderer->noise, &noise_dx) * 0.5f;
             float di = 0.2f * TCOD_noise_get(renderer->noise, &renderer->noise_x);
 
-            for (int x = view_x; x < view_x + view_width; x++)
+            for (int x = ui->view_x; x < ui->view_x + ui->view_width; x++)
             {
-                for (int y = view_y; y < view_y + view_height; y++)
+                for (int y = ui->view_y; y < ui->view_y + ui->view_height; y++)
                 {
                     if (map_is_inside(x, y))
                     {
@@ -157,8 +135,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                         if (tile->seen)
                         {
-                            TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
-                            TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info->glyph);
+                            TCOD_console_set_char_foreground(NULL, x - ui->view_x, y - ui->view_y, color);
+                            TCOD_console_set_char(NULL, x - ui->view_x, y - ui->view_y, tile_info->glyph);
                         }
                     }
                 }
@@ -170,8 +148,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                 if (actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
                 {
-                    TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, TCOD_dark_red);
-                    TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, '%');
+                    TCOD_console_set_char_foreground(NULL, actor->x - ui->view_x, actor->y - ui->view_y, TCOD_dark_red);
+                    TCOD_console_set_char(NULL, actor->x - ui->view_x, actor->y - ui->view_y, '%');
                 }
             }
 
@@ -181,8 +159,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                 if (TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
                 {
-                    TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
-                    TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, game->object_info[object->type].glyph);
+                    TCOD_console_set_char_foreground(NULL, object->x - ui->view_x, object->y - ui->view_y, object->color);
+                    TCOD_console_set_char(NULL, object->x - ui->view_x, object->y - ui->view_y, game->object_info[object->type].glyph);
                 }
             }
 
@@ -192,8 +170,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                 if (TCOD_map_is_in_fov(game->player->fov, item->x, item->y))
                 {
-                    TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, game->base_item_info[game->item_info[item->type].base_item].color);
-                    TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, game->base_item_info[game->item_info[item->type].base_item].glyph);
+                    TCOD_console_set_char_foreground(NULL, item->x - ui->view_x, item->y - ui->view_y, game->base_item_info[game->item_info[item->type].base_item].color);
+                    TCOD_console_set_char(NULL, item->x - ui->view_x, item->y - ui->view_y, game->base_item_info[game->item_info[item->type].base_item].glyph);
                 }
             }
 
@@ -206,8 +184,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                 if (TCOD_map_is_in_fov(game->player->fov, x, y))
                 {
-                    TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, TCOD_white);
-                    TCOD_console_set_char(NULL, x - view_x, y - view_y, projectile->glyph);
+                    TCOD_console_set_char_foreground(NULL, x - ui->view_x, y - ui->view_y, TCOD_white);
+                    TCOD_console_set_char(NULL, x - ui->view_x, y - ui->view_y, projectile->glyph);
                 }
             }
 
@@ -217,8 +195,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                 if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) && TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
                 {
-                    TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
-                    TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, game->object_info[object->type].glyph);
+                    TCOD_console_set_char_foreground(NULL, object->x - ui->view_x, object->y - ui->view_y, object->color);
+                    TCOD_console_set_char(NULL, object->x - ui->view_x, object->y - ui->view_y, game->object_info[object->type].glyph);
                 }
             }
 
@@ -235,16 +213,16 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                         color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade);
                     }
 
-                    TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, color);
-                    TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, game->race_info[actor->race].glyph);
+                    TCOD_console_set_char_foreground(NULL, actor->x - ui->view_x, actor->y - ui->view_y, color);
+                    TCOD_console_set_char(NULL, actor->x - ui->view_x, actor->y - ui->view_y, game->race_info[actor->race].glyph);
                 }
             }
         }
 
         if (input->targeting != TARGETING_NONE)
         {
-            TCOD_console_set_char_foreground(NULL, input->target_x - view_x, input->target_y - view_y, TCOD_red);
-            TCOD_console_set_char(NULL, input->target_x - view_x, input->target_y - view_y, 'X');
+            TCOD_console_set_char_foreground(NULL, input->target_x - ui->view_x, input->target_y - ui->view_y, TCOD_red);
+            TCOD_console_set_char(NULL, input->target_x - ui->view_x, input->target_y - ui->view_y, 'X');
 
             struct tile *tile = &map->tiles[input->target_x][input->target_y];
 
@@ -257,8 +235,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                     {
                         TCOD_console_print_ex(
                             NULL,
-                            view_width / 2,
-                            view_height - 2,
+                            ui->view_width / 2,
+                            ui->view_height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
                             actor->name);
@@ -274,8 +252,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                     {
                         TCOD_console_print_ex(
                             NULL,
-                            view_width / 2,
-                            view_height - 2,
+                            ui->view_width / 2,
+                            ui->view_height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
                             game->item_info[item->type].name);
@@ -291,8 +269,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                     {
                         TCOD_console_print_ex(
                             NULL,
-                            view_width / 2,
-                            view_height - 2,
+                            ui->view_width / 2,
+                            ui->view_height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
                             game->object_info[object->type].name);
@@ -303,8 +281,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
                 TCOD_console_print_ex(
                     NULL,
-                    view_width / 2,
-                    view_height - 2,
+                    ui->view_width / 2,
+                    ui->view_height - 2,
                     TCOD_BKGND_NONE,
                     TCOD_CENTER,
                     game->tile_info[tile->type].name);
@@ -317,8 +295,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 {
                     TCOD_console_print_ex(
                         NULL,
-                        view_width / 2,
-                        view_height - 2,
+                        ui->view_width / 2,
+                        ui->view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
                         "%s (known)",
@@ -328,8 +306,8 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 {
                     TCOD_console_print_ex(
                         NULL,
-                        view_width / 2,
-                        view_height - 2,
+                        ui->view_width / 2,
+                        ui->view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
                         "Unknown");
@@ -355,9 +333,9 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             }
 
             TCOD_console_set_default_foreground(renderer->message_log, TCOD_white);
-            TCOD_console_print_frame(renderer->message_log, 0, 0, message_log_width, message_log_height, false, TCOD_BKGND_SET, "Log");
+            TCOD_console_print_frame(renderer->message_log, 0, 0, ui->message_log_width, ui->message_log_height, false, TCOD_BKGND_SET, "Log");
 
-            TCOD_console_blit(renderer->message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
+            TCOD_console_blit(renderer->message_log, 0, 0, ui->message_log_width, ui->message_log_height, NULL, ui->message_log_x, ui->message_log_y, 1, 1);
         }
 
         if (ui->panel_visible)
@@ -413,13 +391,13 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "DAMAGE: +%d", actor_calc_damage_bonus(game->player));
 
                 TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
-                TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Character");
+                TCOD_console_print_frame(renderer->panel, 0, 0, ui->panel_width, ui->panel_height, false, TCOD_BKGND_SET, "Character");
             }
             break;
             case PANEL_EXAMINE:
             {
                 TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
-                TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Examine");
+                TCOD_console_print_frame(renderer->panel, 0, 0, ui->panel_width, ui->panel_height, false, TCOD_BKGND_SET, "Examine");
             }
             break;
             case PANEL_INVENTORY:
@@ -440,18 +418,46 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                 }
 
                 TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
-                TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Inventory");
+                TCOD_console_print_frame(renderer->panel, 0, 0, ui->panel_width, ui->panel_height, false, TCOD_BKGND_SET, "Inventory");
             }
             break;
             case PANEL_SPELLBOOK:
             {
                 TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
-                TCOD_console_print_frame(renderer->panel, 0, 0, panel_width, panel_height, false, TCOD_BKGND_SET, "Spellbook");
+                TCOD_console_print_frame(renderer->panel, 0, 0, ui->panel_width, ui->panel_height, false, TCOD_BKGND_SET, "Spellbook");
             }
             break;
             }
 
-            TCOD_console_blit(renderer->panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
+            TCOD_console_blit(renderer->panel, 0, 0, ui->panel_width, ui->panel_height, NULL, ui->panel_x, ui->panel_y, 1, 1);
+        }
+
+        if (ui->tooltip_visible)
+        {
+            TCOD_console_set_default_background(renderer->tooltip, TCOD_black);
+            TCOD_console_set_default_foreground(renderer->tooltip, TCOD_white);
+            TCOD_console_clear(renderer->tooltip);
+
+            int y = 1;
+            for (void **i = TCOD_list_begin(ui->tooltip_options); i != TCOD_list_end(ui->tooltip_options); i++)
+            {
+                struct tooltip_option *option = *i;
+
+                TCOD_color_t color = TCOD_white;
+
+                if (ui->mouse_x > ui->tooltip_x && ui->mouse_x < ui->tooltip_x + (int)strlen(option->text) + 1 && ui->mouse_y == y + ui->tooltip_y)
+                {
+                    color = TCOD_yellow;
+                }
+
+                TCOD_console_set_default_foreground(renderer->tooltip, color);
+                y += TCOD_console_print_rect(renderer->tooltip, 1, y, ui->tooltip_width - 2, ui->tooltip_height - 2, option->text);
+            }
+
+            TCOD_console_set_default_foreground(renderer->tooltip, TCOD_white);
+            TCOD_console_print_frame(renderer->tooltip, 0, 0, ui->tooltip_width, ui->tooltip_height, false, TCOD_BKGND_SET, "");
+
+            TCOD_console_blit(renderer->tooltip, 0, 0, ui->tooltip_width, ui->tooltip_height, NULL, ui->tooltip_x, ui->tooltip_y, 1, 1);
         }
 
         // DEBUG
@@ -471,8 +477,9 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 void renderer_destroy(struct renderer *renderer)
 {
     TCOD_noise_delete(renderer->noise);
-    TCOD_console_delete(renderer->panel);
     TCOD_console_delete(renderer->message_log);
+    TCOD_console_delete(renderer->panel);
+    TCOD_console_delete(renderer->tooltip);
 
     free(renderer);
 }

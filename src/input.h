@@ -6,6 +6,18 @@
 struct game;
 struct ui;
 
+enum action
+{
+    ACTION_NONE,
+    ACTION_DESCEND,
+    ACTION_ASCEND,
+    ACTION_OPEN_DOOR,
+    ACTION_CLOSE_DOOR,
+    ACTION_PRAY,
+    ACTION_DRINK,
+    ACTION_SIT
+};
+
 enum targeting
 {
     TARGETING_NONE,
@@ -21,6 +33,9 @@ struct input
     enum targeting targeting;
     int target_x;
     int target_y;
+    bool automoving;
+    int automove_x;
+    int automove_y;
 };
 
 struct input *input_create(void);

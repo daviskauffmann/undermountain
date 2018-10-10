@@ -10,7 +10,9 @@
 
 #include "CMemleak.h"
 
+static bool interact(struct game *game, struct input *input, int x, int y);
 static void cb_should_update(struct game *game);
+static bool tooltip_option_move(struct game *game, struct input *input, struct tooltip_data data);
 
 struct input *input_create(void)
 {
@@ -20,6 +22,9 @@ struct input *input_create(void)
     input->targeting = TARGETING_NONE;
     input->target_x = -1;
     input->target_y = -1;
+    input->automoving = false;
+    input->automove_x = -1;
+    input->automove_y = -1;
 
     return input;
 }
@@ -36,6 +41,8 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
     {
     case TCOD_EVENT_KEY_PRESS:
     {
+        input->automoving = false;
+
         switch (key.vk)
         {
         case TCODK_ESCAPE:
@@ -157,7 +164,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     }
                     else
                     {
-                        game->should_update = actor_interact(game->player, x, y, input->action);
+                        game->should_update = interact(game, input, x, y);
 
                         input->action = ACTION_NONE;
                     }
@@ -200,7 +207,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     }
                     else
                     {
-                        game->should_update = actor_interact(game->player, x, y, input->action);
+                        game->should_update = interact(game, input, x, y);
 
                         input->action = ACTION_NONE;
                     }
@@ -235,7 +242,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     }
                     else
                     {
-                        game->should_update = actor_interact(game->player, x, y, input->action);
+                        game->should_update = interact(game, input, x, y);
 
                         input->action = ACTION_NONE;
                     }
@@ -271,7 +278,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     }
                     else
                     {
-                        game->should_update = actor_interact(game->player, x, y, input->action);
+                        game->should_update = interact(game, input, x, y);
 
                         input->action = ACTION_NONE;
                     }
@@ -315,7 +322,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     }
                     else
                     {
-                        game->should_update = actor_interact(game->player, x, y, input->action);
+                        game->should_update = interact(game, input, x, y);
 
                         input->action = ACTION_NONE;
                     }
@@ -350,7 +357,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     }
                     else
                     {
-                        game->should_update = actor_interact(game->player, x, y, input->action);
+                        game->should_update = interact(game, input, x, y);
 
                         input->action = ACTION_NONE;
                     }
@@ -393,7 +400,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     }
                     else
                     {
-                        game->should_update = actor_interact(game->player, x, y, input->action);
+                        game->should_update = interact(game, input, x, y);
 
                         input->action = ACTION_NONE;
                     }
@@ -428,7 +435,7 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
                     }
                     else
                     {
-                        game->should_update = actor_interact(game->player, x, y, input->action);
+                        game->should_update = interact(game, input, x, y);
 
                         input->action = ACTION_NONE;
                     }
@@ -784,6 +791,80 @@ void input_handle(struct input *input, struct game *game, struct ui *ui)
         }
     }
     break;
+    case TCOD_EVENT_MOUSE_PRESS:
+    {
+        input->automoving = false;
+
+        if (mouse.lbutton)
+        {
+            if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
+            {
+                if (ui->tooltip_visible)
+                {
+                    if (ui_tooltip_is_inside(ui, ui->mouse_x, ui->mouse_y))
+                    {
+                        struct tooltip_option *option = ui_tooltip_get_selected(ui);
+
+                        if (option)
+                        {
+                            if (option->fn)
+                            {
+                                game->should_update = option->fn(game, input, option->data);
+                            }
+
+                            ui_tooltip_hide(ui);
+                        }
+                    }
+                    else
+                    {
+                        ui_tooltip_hide(ui);
+                    }
+                }
+                else if (ui_view_is_inside(ui, ui->mouse_x, ui->mouse_y))
+                {
+                    input->automoving = true;
+                    input->automove_x = ui->mouse_tile_x;
+                    input->automove_y = ui->mouse_tile_y;
+                }
+            }
+        }
+        else if (mouse.rbutton)
+        {
+            if (game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
+            {
+                // struct map *map = &game->maps[game->player->level];
+                // struct tile *tile = &map->tiles[ui->mouse_tile_x][ui->mouse_tile_y];
+
+                ui_tooltip_show(ui);
+
+                struct tooltip_data data;
+                data.x = ui->mouse_tile_x;
+                data.y = ui->mouse_tile_y;
+
+                ui_tooltip_options_add(ui, "Move", &tooltip_option_move, data);
+                ui_tooltip_options_add(ui, "Cancel", NULL, data);
+            }
+        }
+    }
+    break;
+    case TCOD_EVENT_MOUSE_MOVE:
+    {
+        ui->mouse_x = mouse.cx;
+        ui->mouse_y = mouse.cy;
+        ui->mouse_tile_x = mouse.cx + ui->view_x;
+        ui->mouse_tile_y = mouse.cy + ui->view_y;
+    }
+    break;
+    }
+
+    if (input->automoving && game->state == STATE_PLAYING && game->play_state == PLAY_STATE_PLAYING && game->turn_available)
+    {
+        game->should_update = actor_path_towards(game->player, input->automove_x, input->automove_y);
+
+        if (!game->should_update)
+        {
+            input->automoving = false;
+        }
     }
 }
 
@@ -792,7 +873,44 @@ void input_destroy(struct input *input)
     free(input);
 }
 
+static bool interact(struct game *game, struct input *input, int x, int y)
+{
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    switch (input->action)
+    {
+    case ACTION_DESCEND:
+        return actor_descend(game->player);
+    case ACTION_ASCEND:
+        return actor_ascend(game->player);
+    case ACTION_CLOSE_DOOR:
+        return actor_close_door(game->player, x, y);
+    case ACTION_OPEN_DOOR:
+        return actor_open_door(game->player, x, y);
+    case ACTION_PRAY:
+        return actor_pray(game->player, x, y);
+    case ACTION_DRINK:
+        return actor_drink(game->player, x, y);
+    case ACTION_SIT:
+        return actor_sit(game->player, x, y);
+    }
+
+    return false;
+}
+
 static void cb_should_update(struct game *game)
 {
     game->should_update = true;
+}
+
+static bool tooltip_option_move(struct game *game, struct input *input, struct tooltip_data data)
+{
+    input->automoving = true;
+    input->automove_x = data.x;
+    input->automove_y = data.y;
+
+    return false;
 }

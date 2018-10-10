@@ -30,8 +30,8 @@ struct tile
 {
     enum tile_type type;
     bool seen;
-    TCOD_list_t objects;
-    TCOD_list_t actors;
+    struct object *object;
+    struct actor *actor;
     TCOD_list_t items;
 };
 

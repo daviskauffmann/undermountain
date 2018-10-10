@@ -858,7 +858,7 @@ void game_new(struct game *game)
         game->player->glow = false;
 
         TCOD_list_push(map->actors, game->player);
-        TCOD_list_push(tile->actors, game->player);
+        tile->actor = game->player;
 
         struct item *greatsword = item_create(ITEM_TYPE_GREATSWORD, game, level, x, y);
 
@@ -947,7 +947,7 @@ void game_update(struct game *game)
                 {
                     struct tile *tile = &map->tiles[object->x][object->y];
 
-                    TCOD_list_remove(tile->objects, object);
+                    tile->object = NULL;
                     iterator = TCOD_list_remove_iterator(map->objects, iterator);
 
                     object_destroy(object);

@@ -55,37 +55,18 @@ void projectile_update(struct projectile *projectile)
         should_move = false;
     }
 
-    for (void **iterator = TCOD_list_begin(tile->actors); iterator != TCOD_list_end(tile->actors); iterator++)
+    if (tile->actor && tile->actor != projectile->shooter && !tile->actor->dead)
     {
-        struct actor *actor = *iterator;
-
-        if (actor == projectile->shooter)
-        {
-            continue;
-        }
-
-        if (actor->dead)
-        {
-            continue;
-        }
-
-        actor_attack(projectile->shooter, actor, true);
+        actor_attack(projectile->shooter, tile->actor, true);
 
         should_move = false;
-
-        break;
     }
 
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    if (tile->object && game->object_info[tile->object->type].is_walkable)
     {
-        struct object *object = *iterator;
+        // actor_bash(projectile->shooter, tile->object);
 
-        if (!game->object_info[object->type].is_walkable)
-        {
-            should_move = false;
-
-            break;
-        }
+        should_move = false;
     }
 
     if (should_move)

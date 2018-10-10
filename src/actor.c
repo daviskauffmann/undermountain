@@ -422,44 +422,28 @@ void actor_ai(struct actor *actor)
             }
         }
 
-        {
-            bool interacted = false;
-
-            for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
-            {
-                struct object *object = *iterator;
-
-                switch (object->type)
-                {
-                case OBJECT_TYPE_STAIR_DOWN:
-                {
-                    if (actor_descend(actor))
-                    {
-                        interacted = true;
-                    }
-                }
-                break;
-                case OBJECT_TYPE_STAIR_UP:
-                {
-                    if (actor_ascend(actor))
-                    {
-                        interacted = true;
-                    }
-                }
-                break;
-                }
-
-                if (interacted)
-                {
-                    break;
-                }
-            }
-
-            if (interacted)
-            {
-                continue;
-            }
-        }
+        // if (tile->object)
+        // {
+        //     switch (tile->object->type)
+        //     {
+        //     case OBJECT_TYPE_STAIR_DOWN:
+        //     {
+        //         if (actor_descend(actor))
+        //         {
+        //             continue;
+        //         }
+        //     }
+        //     break;
+        //     case OBJECT_TYPE_STAIR_UP:
+        //     {
+        //         if (actor_ascend(actor))
+        //         {
+        //             continue;
+        //         }
+        //     }
+        //     break;
+        //     }
+        // }
 
         if (TCOD_list_size(tile->items) > 0)
         {
@@ -547,11 +531,9 @@ bool actor_move(struct actor *actor, int x, int y)
         return false;
     }
 
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    if (tile->object)
     {
-        struct object *object = *iterator;
-
-        switch (object->type)
+        switch (tile->object->type)
         {
         case OBJECT_TYPE_ALTAR:
         {
@@ -575,44 +557,32 @@ bool actor_move(struct actor *actor, int x, int y)
         break;
         }
 
-        if (!actor->game->object_info[object->type].is_walkable)
+        if (!actor->game->object_info[tile->object->type].is_walkable)
         {
             return false;
         }
     }
 
-    for (void **iterator = TCOD_list_begin(tile->actors); iterator != TCOD_list_end(tile->actors); iterator++)
+    if (tile->actor && tile->actor != actor && !tile->actor->dead)
     {
-        struct actor *other = *iterator;
-
-        if (other == actor)
+        if (tile->actor->faction == actor->faction)
         {
-            continue;
-        }
-
-        if (other->dead)
-        {
-            continue;
-        }
-
-        if (other->faction == actor->faction)
-        {
-            return actor_swap(actor, other);
+            return actor_swap(actor, tile->actor);
         }
         else
         {
-            return actor_attack(actor, other, false);
+            return actor_attack(actor, tile->actor, false);
         }
     }
 
     struct tile *current_tile = &map->tiles[actor->x][actor->y];
 
-    TCOD_list_remove(current_tile->actors, actor);
+    current_tile->actor = NULL;
 
     actor->x = x;
     actor->y = y;
 
-    TCOD_list_push(tile->actors, actor);
+    tile->actor = actor;
 
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
@@ -649,8 +619,8 @@ bool actor_swap(struct actor *actor, struct actor *other)
     struct tile *tile = &map->tiles[actor->x][actor->y];
     struct tile *other_tile = &map->tiles[other->x][other->y];
 
-    TCOD_list_remove(tile->actors, actor);
-    TCOD_list_remove(other_tile->actors, other);
+    tile->actor = NULL;
+    other_tile->actor = NULL;
 
     int temp_x = actor->x;
     int temp_y = actor->y;
@@ -661,8 +631,8 @@ bool actor_swap(struct actor *actor, struct actor *other)
     other->x = temp_x;
     other->y = temp_y;
 
-    TCOD_list_push(other_tile->actors, actor);
-    TCOD_list_push(tile->actors, other);
+    other_tile->actor = actor;
+    tile->actor = other;
 
     for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
     {
@@ -704,44 +674,32 @@ bool actor_open_door(struct actor *actor, int x, int y)
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
-    bool success = false;
-
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    if (tile->object && tile->object->type == OBJECT_TYPE_DOOR_CLOSED)
     {
-        struct object *object = *iterator;
+        tile->object->type = OBJECT_TYPE_DOOR_OPEN;
 
-        if (object->type == OBJECT_TYPE_DOOR_CLOSED)
-        {
-            success = true;
-
-            object->type = OBJECT_TYPE_DOOR_OPEN;
-
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s opens the door",
-                actor->name);
-
-            break;
-        }
-    }
-
-    if (!success)
-    {
         game_log(
             game,
             actor->level,
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't open that",
+            "%s opens the door",
             actor->name);
+
+        return true;
     }
 
-    return success;
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s can't open that",
+        actor->name);
+
+    return false;
 }
 
 bool actor_close_door(struct actor *actor, int x, int y)
@@ -755,44 +713,32 @@ bool actor_close_door(struct actor *actor, int x, int y)
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
-    bool success = false;
-
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    if (tile->object && tile->object->type == OBJECT_TYPE_DOOR_OPEN)
     {
-        struct object *object = *iterator;
+        tile->object->type = OBJECT_TYPE_DOOR_CLOSED;
 
-        if (object->type == OBJECT_TYPE_DOOR_OPEN)
-        {
-            success = true;
-
-            object->type = OBJECT_TYPE_DOOR_CLOSED;
-
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s closes the door",
-                actor->name);
-
-            break;
-        }
-    }
-
-    if (!success)
-    {
         game_log(
             game,
             actor->level,
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't close that",
+            "%s closes the door",
             actor->name);
+
+        return true;
     }
 
-    return success;
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s can't close that",
+        actor->name);
+
+    return false;
 }
 
 bool actor_descend(struct actor *actor)
@@ -815,82 +761,70 @@ bool actor_descend(struct actor *actor)
         return false;
     }
 
-    bool success = false;
-
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    if (tile->object && tile->object->type == OBJECT_TYPE_STAIR_DOWN)
     {
-        struct object *object = *iterator;
+        struct map *next_map = &game->maps[actor->level + 1];
+        struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
 
-        if (object->type == OBJECT_TYPE_STAIR_DOWN)
+        TCOD_list_remove(map->actors, actor);
+        tile->actor = NULL;
+
+        actor->level++;
+        actor->x = next_map->stair_up_x;
+        actor->y = next_map->stair_up_y;
+
+        TCOD_list_push(next_map->actors, actor);
+        next_tile->actor = actor;
+
+        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
         {
-            success = true;
+            struct item *equipment = actor->equipment[i];
 
-            struct map *next_map = &game->maps[actor->level + 1];
-            struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
-
-            TCOD_list_remove(map->actors, actor);
-            TCOD_list_remove(tile->actors, actor);
-
-            actor->level++;
-            actor->x = next_map->stair_up_x;
-            actor->y = next_map->stair_up_y;
-
-            TCOD_list_push(next_map->actors, actor);
-            TCOD_list_push(next_tile->actors, actor);
-
-            for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+            if (equipment)
             {
-                struct item *equipment = actor->equipment[i];
+                equipment->level = actor->level;
+                equipment->x = actor->x;
+                equipment->y = actor->y;
 
-                if (equipment)
-                {
-                    equipment->level = actor->level;
-                    equipment->x = actor->x;
-                    equipment->y = actor->y;
-
-                    TCOD_list_remove(map->items, equipment);
-                    TCOD_list_push(next_map->items, equipment);
-                }
+                TCOD_list_remove(map->items, equipment);
+                TCOD_list_push(next_map->items, equipment);
             }
-
-            for (void **iterator2 = TCOD_list_begin(actor->items); iterator2 != TCOD_list_end(actor->items); iterator2++)
-            {
-                struct item *item = *iterator2;
-
-                item->level = actor->level;
-                item->x = actor->x;
-                item->y = actor->y;
-
-                TCOD_list_remove(map->items, item);
-                TCOD_list_push(next_map->items, item);
-            }
-
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s descends",
-                actor->name);
-
-            break;
         }
-    }
 
-    if (!success)
-    {
+        for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+        {
+            struct item *item = *iterator;
+
+            item->level = actor->level;
+            item->x = actor->x;
+            item->y = actor->y;
+
+            TCOD_list_remove(map->items, item);
+            TCOD_list_push(next_map->items, item);
+        }
+
         game_log(
             game,
             actor->level,
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't descend here",
+            "%s descends",
             actor->name);
+
+        return true;
     }
 
-    return success;
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s can't descend here",
+        actor->name);
+
+    return false;
 }
 
 bool actor_ascend(struct actor *actor)
@@ -913,82 +847,70 @@ bool actor_ascend(struct actor *actor)
         return false;
     }
 
-    bool success = false;
-
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    if (tile->object && tile->object->type == OBJECT_TYPE_STAIR_UP)
     {
-        struct object *object = *iterator;
+        struct map *next_map = &game->maps[actor->level - 1];
+        struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
 
-        if (object->type == OBJECT_TYPE_STAIR_UP)
+        TCOD_list_remove(map->actors, actor);
+        tile->actor = NULL;
+
+        actor->level--;
+        actor->x = next_map->stair_down_x;
+        actor->y = next_map->stair_down_y;
+
+        TCOD_list_push(next_map->actors, actor);
+        next_tile->actor = actor;
+
+        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
         {
-            success = true;
+            struct item *equipment = actor->equipment[i];
 
-            struct map *next_map = &game->maps[actor->level - 1];
-            struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
-
-            TCOD_list_remove(map->actors, actor);
-            TCOD_list_remove(tile->actors, actor);
-
-            actor->level--;
-            actor->x = next_map->stair_down_x;
-            actor->y = next_map->stair_down_y;
-
-            TCOD_list_push(next_map->actors, actor);
-            TCOD_list_push(next_tile->actors, actor);
-
-            for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+            if (equipment)
             {
-                struct item *equipment = actor->equipment[i];
+                equipment->level = actor->level;
+                equipment->x = actor->x;
+                equipment->y = actor->y;
 
-                if (equipment)
-                {
-                    equipment->level = actor->level;
-                    equipment->x = actor->x;
-                    equipment->y = actor->y;
-
-                    TCOD_list_remove(map->items, equipment);
-                    TCOD_list_push(next_map->items, equipment);
-                }
+                TCOD_list_remove(map->items, equipment);
+                TCOD_list_push(next_map->items, equipment);
             }
-
-            for (void **iterator2 = TCOD_list_begin(actor->items); iterator2 != TCOD_list_end(actor->items); iterator2++)
-            {
-                struct item *item = *iterator2;
-
-                item->level = actor->level;
-                item->x = actor->x;
-                item->y = actor->y;
-
-                TCOD_list_remove(map->items, item);
-                TCOD_list_push(next_map->items, item);
-            }
-
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s descends",
-                actor->name);
-
-            break;
         }
-    }
 
-    if (!success)
-    {
+        for (void **iterator2 = TCOD_list_begin(actor->items); iterator2 != TCOD_list_end(actor->items); iterator2++)
+        {
+            struct item *item = *iterator2;
+
+            item->level = actor->level;
+            item->x = actor->x;
+            item->y = actor->y;
+
+            TCOD_list_remove(map->items, item);
+            TCOD_list_push(next_map->items, item);
+        }
+
         game_log(
             game,
             actor->level,
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't ascend here",
+            "%s ascends",
             actor->name);
+
+        return true;
     }
 
-    return success;
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s can't ascend here",
+        actor->name);
+
+    return false;
 }
 
 bool actor_pray(struct actor *actor, int x, int y)
@@ -1002,30 +924,7 @@ bool actor_pray(struct actor *actor, int x, int y)
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
-    bool success = false;
-
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
-    {
-        struct object *object = *iterator;
-
-        if (object->type == OBJECT_TYPE_ALTAR)
-        {
-            success = true;
-
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s prays at the altar",
-                actor->name);
-
-            break;
-        }
-    }
-
-    if (!success)
+    if (tile->object && tile->object->type == OBJECT_TYPE_ALTAR)
     {
         game_log(
             game,
@@ -1033,11 +932,22 @@ bool actor_pray(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't pray here",
+            "%s prays at the altar",
             actor->name);
+
+        return true;
     }
 
-    return success;
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s can't pray here",
+        actor->name);
+
+    return false;
 }
 
 bool actor_drink(struct actor *actor, int x, int y)
@@ -1051,53 +961,41 @@ bool actor_drink(struct actor *actor, int x, int y)
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
-    bool success = false;
-
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    if (tile->object && tile->object->type == OBJECT_TYPE_FOUNTAIN)
     {
-        struct object *object = *iterator;
+        int hp = roll(1, 4);
+        int max_hp = actor_calc_max_hp(actor);
 
-        if (object->type == OBJECT_TYPE_FOUNTAIN)
+        actor->current_hp += hp;
+
+        if (actor->current_hp > max_hp)
         {
-            success = true;
-
-            int hp = roll(1, 4);
-            int max_hp = actor_calc_max_hp(actor);
-
-            actor->current_hp += hp;
-
-            if (actor->current_hp > max_hp)
-            {
-                actor->current_hp = max_hp;
-            }
-
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s drinks from the fountain, restoring %d health",
-                actor->name,
-                hp);
-
-            break;
+            actor->current_hp = max_hp;
         }
-    }
 
-    if (!success)
-    {
         game_log(
             game,
             actor->level,
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't drink here",
-            actor->name);
+            "%s drinks from the fountain, restoring %d health",
+            actor->name,
+            hp);
+
+        return true;
     }
 
-    return success;
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s can't drink here",
+        actor->name);
+
+    return false;
 }
 
 bool actor_sit(struct actor *actor, int x, int y)
@@ -1111,30 +1009,7 @@ bool actor_sit(struct actor *actor, int x, int y)
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
-    bool success = false;
-
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
-    {
-        struct object *object = *iterator;
-
-        if (object->type == OBJECT_TYPE_THRONE)
-        {
-            success = true;
-
-            game_log(
-                game,
-                actor->level,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s sits on the throne",
-                actor->name);
-
-            break;
-        }
-    }
-
-    if (!success)
+    if (tile->object && tile->object->type == OBJECT_TYPE_THRONE)
     {
         game_log(
             game,
@@ -1142,11 +1017,22 @@ bool actor_sit(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't sit here",
+            "%s sits on the throne",
             actor->name);
+
+        return true;
     }
 
-    return success;
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s can't sit here",
+        actor->name);
+
+    return false;
 }
 
 bool actor_grab(struct actor *actor, int x, int y)
@@ -1349,30 +1235,21 @@ bool actor_swing(struct actor *actor, int x, int y)
 
     bool hit = false;
 
-    for (void **iterator = TCOD_list_begin(tile->actors); iterator != TCOD_list_end(tile->actors); iterator++)
+    if (tile->actor && tile->actor != actor)
     {
-        struct actor *other = *iterator;
-
-        if (other == actor)
-        {
-            continue;
-        }
-
         hit = true;
 
-        if (actor_attack(actor, other, false))
+        if (actor_attack(actor, tile->actor, false))
         {
             return true;
         }
     }
 
-    for (void **iterator = TCOD_list_begin(tile->objects); iterator != TCOD_list_end(tile->objects); iterator++)
+    if (tile->object)
     {
-        struct object *object = *iterator;
-
         hit = true;
 
-        if (actor_bash(actor, object))
+        if (actor_bash(actor, tile->object))
         {
             return true;
         }

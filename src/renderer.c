@@ -228,21 +228,17 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
 
             if (TCOD_map_is_in_fov(game->player->fov, input->target_x, input->target_y))
             {
+                if (tile->actor)
                 {
-                    struct actor *actor = TCOD_list_peek(tile->actors);
+                    TCOD_console_print_ex(
+                        NULL,
+                        ui->view_width / 2,
+                        ui->view_height - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        tile->actor->name);
 
-                    if (actor)
-                    {
-                        TCOD_console_print_ex(
-                            NULL,
-                            ui->view_width / 2,
-                            ui->view_height - 2,
-                            TCOD_BKGND_NONE,
-                            TCOD_CENTER,
-                            actor->name);
-
-                        goto done;
-                    }
+                    goto done;
                 }
 
                 {
@@ -262,21 +258,17 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
                     }
                 }
 
+                if (tile->object)
                 {
-                    struct object *object = TCOD_list_peek(tile->objects);
+                    TCOD_console_print_ex(
+                        NULL,
+                        ui->view_width / 2,
+                        ui->view_height - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        game->object_info[tile->object->type].name);
 
-                    if (object)
-                    {
-                        TCOD_console_print_ex(
-                            NULL,
-                            ui->view_width / 2,
-                            ui->view_height - 2,
-                            TCOD_BKGND_NONE,
-                            TCOD_CENTER,
-                            game->object_info[object->type].name);
-
-                        goto done;
-                    }
+                    goto done;
                 }
 
                 TCOD_console_print_ex(

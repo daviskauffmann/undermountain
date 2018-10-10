@@ -172,7 +172,7 @@ void ui_tooltip_hide(struct ui *ui)
     ui->tooltip_visible = false;
 }
 
-void ui_tooltip_options_add(struct ui *ui, char *text, bool (*fn)(struct game *game, struct inut *input, struct tooltip_data data), struct tooltip_data data)
+void ui_tooltip_options_add(struct ui *ui, char *text, bool (*fn)(struct game *game, struct input *input, struct tooltip_data data), struct tooltip_data data)
 {
     struct tooltip_option *option = (struct tooltip_option *)calloc(1, sizeof(struct tooltip_option));
 

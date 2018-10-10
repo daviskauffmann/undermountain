@@ -27,6 +27,15 @@ struct menu_option_info
     const char *text;
 };
 
+enum targeting
+{
+    TARGETING_NONE,
+    TARGETING_LOOK,
+    TARGETING_EXAMINE,
+    TARGETING_SHOOT,
+    TARGETING_SPELL
+};
+
 enum panel
 {
     PANEL_CHARACTER,
@@ -63,6 +72,9 @@ struct ui
     enum menu_state menu_state;
     struct menu_option_info menu_option_info[NUM_MENU_OPTIONS];
     int menu_index;
+    enum targeting targeting;
+    int target_x;
+    int target_y;
     enum panel_type current_panel;
     struct panel_status panel_status[NUM_PANELS];
     bool message_log_visible;

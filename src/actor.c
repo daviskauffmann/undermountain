@@ -1,9 +1,10 @@
 #include <libtcod/libtcod.h>
 #include <malloc.h>
-#include <math.h>
+#include <math.h> // TODO: remove?
 #include <string.h>
 
 #include "actor.h"
+#include "engine.h"
 #include "game.h"
 #include "item.h"
 #include "map.h"
@@ -11,11 +12,8 @@
 #include "projectile.h"
 #include "tile.h"
 #include "util.h"
-#include "window.h"
 
 #include "CMemleak.h"
-
-#include <stdio.h>
 
 static int calc_ability_modifier(int ability);
 
@@ -1532,7 +1530,7 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
-        game->play_state = PLAY_STATE_LOSE;
+        game->game_state = GAME_STATE_LOSE;
 
         TCOD_sys_delete_file(SAVE_PATH);
 

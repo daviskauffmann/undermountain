@@ -3,13 +3,14 @@
 #include <math.h>
 #include <string.h>
 
+#include "config.h"
+#include "engine.h"
 #include "game.h"
 #include "input.h"
 #include "message.h"
 #include "projectile.h"
 #include "renderer.h"
 #include "ui.h"
-#include "window.h"
 
 #include "CMemleak.h"
 
@@ -26,15 +27,15 @@ struct renderer *renderer_create(void)
     return renderer;
 }
 
-void renderer_draw(struct renderer *renderer, struct game *game, struct input *input, struct ui *ui)
+void renderer_draw(struct renderer *renderer, struct game *game, struct ui *ui)
 {
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
     TCOD_console_clear(NULL);
 
-    switch (game->state)
+    switch (engine_state)
     {
-    case STATE_MENU:
+    case ENGINE_STATE_MENU:
     {
         switch (ui->menu_state)
         {
@@ -63,7 +64,7 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
         }
     }
     break;
-    case STATE_PLAYING:
+    case ENGINE_STATE_PLAYING:
     {
         struct map *map = &game->maps[game->player->level];
 
@@ -219,14 +220,14 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct input *i
             }
         }
 
-        if (input->targeting != TARGETING_NONE)
+        if (ui->targeting != TARGETING_NONE)
         {
-            TCOD_console_set_char_foreground(NULL, input->target_x - ui->view_x, input->target_y - ui->view_y, TCOD_red);
-            TCOD_console_set_char(NULL, input->target_x - ui->view_x, input->target_y - ui->view_y, 'X');
+            TCOD_console_set_char_foreground(NULL, ui->target_x - ui->view_x, ui->target_y - ui->view_y, TCOD_red);
+            TCOD_console_set_char(NULL, ui->target_x - ui->view_x, ui->target_y - ui->view_y, 'X');
 
-            struct tile *tile = &map->tiles[input->target_x][input->target_y];
+            struct tile *tile = &map->tiles[ui->target_x][ui->target_y];
 
-            if (TCOD_map_is_in_fov(game->player->fov, input->target_x, input->target_y))
+            if (TCOD_map_is_in_fov(game->player->fov, ui->target_x, ui->target_y))
             {
                 if (tile->actor)
                 {

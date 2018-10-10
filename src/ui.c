@@ -2,10 +2,11 @@
 #include <malloc.h>
 #include <string.h>
 
+#include "config.h"
+#include "engine.h"
 #include "game.h"
 #include "map.h"
 #include "ui.h"
-#include "window.h"
 
 #include "CMemleak.h"
 
@@ -18,6 +19,10 @@ struct ui *ui_create(void)
     ui->menu_option_info[MENU_OPTION_ABOUT].text = "About";
     ui->menu_option_info[MENU_OPTION_QUIT].text = "Quit";
     ui->menu_index = 0;
+
+    ui->targeting = TARGETING_NONE;
+    ui->target_x = -1;
+    ui->target_y = -1;
 
     ui->current_panel = PANEL_CHARACTER;
 
@@ -52,8 +57,8 @@ struct ui *ui_create(void)
     ui->tooltip_visible = false;
     ui->tooltip_x = 0;
     ui->tooltip_y = 0;
-    ui->tooltip_width = 15;
-    ui->tooltip_height = 10;
+    ui->tooltip_width = 0;
+    ui->tooltip_height = 0;
     ui->tooltip_options = TCOD_list_new();
 
     ui->view_width = 0;
@@ -71,9 +76,9 @@ struct ui *ui_create(void)
 
 void ui_update(struct ui *ui, struct game *game)
 {
-    switch (game->state)
+    switch (engine_state)
     {
-    case STATE_PLAYING:
+    case ENGINE_STATE_PLAYING:
     {
         ui->panel_status[PANEL_INVENTORY].max_index = TCOD_list_size(game->player->items) - 1;
 
@@ -87,7 +92,18 @@ void ui_update(struct ui *ui, struct game *game)
         ui->panel_y = 0;
         ui->panel_height = console_height - (ui->message_log_visible ? ui->message_log_height : 0);
 
-        ui->tooltip_width = 15;
+        ui->tooltip_width = 0;
+        for (void **i = TCOD_list_begin(ui->tooltip_options); i != TCOD_list_end(ui->tooltip_options); i++)
+        {
+            struct tooltip_option *option = *i;
+
+            int len = (int)strlen(option->text) + 2;
+
+            if (len > ui->tooltip_width)
+            {
+                ui->tooltip_width = len;
+            }
+        }
         ui->tooltip_height = TCOD_list_size(ui->tooltip_options) + 2;
 
         ui->view_width = console_width - (ui->panel_visible ? ui->panel_width : 0);
@@ -176,7 +192,7 @@ void ui_tooltip_options_add(struct ui *ui, char *text, bool (*fn)(struct game *g
 {
     struct tooltip_option *option = (struct tooltip_option *)calloc(1, sizeof(struct tooltip_option));
 
-    option->text = text;
+    option->text = strdup(text);
     option->fn = fn;
     option->data = data;
 
@@ -191,6 +207,7 @@ void ui_tooltip_options_clear(struct ui *ui)
 
         i = TCOD_list_remove_iterator(ui->tooltip_options, i);
 
+        free(option->text);
         free(option);
     }
 }

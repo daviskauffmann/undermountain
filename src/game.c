@@ -5,19 +5,22 @@
 #include <string.h>
 
 #include "actor.h"
+#include "config.h"
+#include "engine.h"
 #include "game.h"
 #include "input.h"
 #include "map.h"
 #include "message.h"
 #include "projectile.h"
 #include "tile.h"
-#include "window.h"
 
 #include "CMemleak.h"
 
 struct game *game_create(void)
 {
     struct game *game = calloc(1, sizeof(struct game));
+
+    game->game_state = GAME_STATE_PLAYING;
 
     game->tile_common.shadow_color = TCOD_color_RGB(16, 16, 32);
 
@@ -826,17 +829,12 @@ struct game *game_create(void)
     game->should_restart = false;
     game->should_quit = false;
 
-    game->state = STATE_MENU;
-    game->play_state = PLAY_STATE_PLAYING;
-
     return game;
 }
 
 void game_new(struct game *game)
 {
-
-    game->state = STATE_PLAYING;
-    game->play_state = PLAY_STATE_PLAYING;
+    engine_state = ENGINE_STATE_PLAYING;
 
     TCOD_sys_delete_file(SAVE_PATH);
 
@@ -902,12 +900,14 @@ void game_save(struct game *game)
 
 void game_load(struct game *game)
 {
+    engine_state = ENGINE_STATE_PLAYING;
+
     game_new(game);
 }
 
 void game_update(struct game *game)
 {
-    if (game->state == STATE_PLAYING)
+    if (engine_state == ENGINE_STATE_PLAYING)
     {
         game->turn_available = true;
 

@@ -18,21 +18,9 @@ enum action
     ACTION_SIT
 };
 
-enum targeting
-{
-    TARGETING_NONE,
-    TARGETING_LOOK,
-    TARGETING_EXAMINE,
-    TARGETING_SHOOT,
-    TARGETING_SPELL
-};
-
 struct input
 {
     enum action action;
-    enum targeting targeting;
-    int target_x;
-    int target_y;
     bool automoving;
     int automove_x;
     int automove_y;

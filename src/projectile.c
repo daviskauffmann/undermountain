@@ -62,7 +62,7 @@ void projectile_update(struct projectile *projectile)
         should_move = false;
     }
 
-    if (tile->object && game->object_info[tile->object->type].is_walkable)
+    if (tile->object && game->object_info[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
     {
         // actor_bash(projectile->shooter, tile->object);
 

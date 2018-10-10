@@ -16,29 +16,26 @@
 
 #include "CMemleak.h"
 
+#define TILE_COMMON(_shadow_color) game->tile_common.shadow_color = _shadow_color;
+
+#define TILE_INFO(_type, _name, _glyph, _color, _is_transparent, _is_walkable) \
+    game->tile_info[_type].name = _name;                                       \
+    game->tile_info[_type].glyph = _glyph;                                     \
+    game->tile_info[_type].color = _color;                                     \
+    game->tile_info[_type].is_transparent = _is_transparent;                   \
+    game->tile_info[_type].is_walkable = _is_walkable;
+
 struct game *game_create(void)
 {
     struct game *game = calloc(1, sizeof(struct game));
 
-    game->game_state = GAME_STATE_PLAYING;
+    game->state = GAME_STATE_PLAYING;
 
-    game->tile_common.shadow_color = TCOD_color_RGB(16, 16, 32);
+    TILE_COMMON(TCOD_color_RGB(16, 16, 32))
 
-    game->tile_info[TILE_TYPE_EMPTY].name = "Empty";
-    game->tile_info[TILE_TYPE_EMPTY].glyph = ' ';
-    game->tile_info[TILE_TYPE_EMPTY].color = TCOD_white;
-    game->tile_info[TILE_TYPE_EMPTY].is_transparent = true;
-    game->tile_info[TILE_TYPE_EMPTY].is_walkable = true;
-    game->tile_info[TILE_TYPE_FLOOR].name = "Floor";
-    game->tile_info[TILE_TYPE_FLOOR].glyph = '.';
-    game->tile_info[TILE_TYPE_FLOOR].color = TCOD_white;
-    game->tile_info[TILE_TYPE_FLOOR].is_transparent = true;
-    game->tile_info[TILE_TYPE_FLOOR].is_walkable = true;
-    game->tile_info[TILE_TYPE_WALL].name = "Wall";
-    game->tile_info[TILE_TYPE_WALL].glyph = '#';
-    game->tile_info[TILE_TYPE_WALL].color = TCOD_white;
-    game->tile_info[TILE_TYPE_WALL].is_transparent = false;
-    game->tile_info[TILE_TYPE_WALL].is_walkable = false;
+    TILE_INFO(TILE_TYPE_EMPTY, "Empty", ' ', TCOD_white, true, true)
+    TILE_INFO(TILE_TYPE_FLOOR, "Floor", '.', TCOD_white, true, true)
+    TILE_INFO(TILE_TYPE_WALL, "Wall", '#', TCOD_white, false, false)
 
     game->object_common.__placeholder = 0;
 
@@ -827,15 +824,12 @@ struct game *game_create(void)
     game->turn_available = true;
     game->should_update = true;
     game->should_restart = false;
-    game->should_quit = false;
 
     return game;
 }
 
 void game_new(struct game *game)
 {
-    engine_state = ENGINE_STATE_PLAYING;
-
     TCOD_sys_delete_file(SAVE_PATH);
 
     for (int level = 0; level < NUM_MAPS; level++)
@@ -900,14 +894,12 @@ void game_save(struct game *game)
 
 void game_load(struct game *game)
 {
-    engine_state = ENGINE_STATE_PLAYING;
-
     game_new(game);
 }
 
-void game_update(struct game *game)
+void game_update(struct game *game, struct engine *engine)
 {
-    if (engine_state == ENGINE_STATE_PLAYING)
+    if (engine->state == ENGINE_STATE_PLAYING)
     {
         game->turn_available = true;
 

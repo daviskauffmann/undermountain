@@ -1530,7 +1530,7 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
-        game->game_state = GAME_STATE_LOSE;
+        game->state = GAME_STATE_LOSE;
 
         TCOD_sys_delete_file(SAVE_PATH);
 
@@ -1540,7 +1540,7 @@ void actor_die(struct actor *actor, struct actor *killer)
             actor->x,
             actor->y,
             TCOD_green,
-            "Game over! Press 'r' to restart");
+            "Game over! Press 'ESC' to return to the menu");
     }
 }
 

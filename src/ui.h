@@ -101,10 +101,11 @@ struct ui
     int mouse_y;
     int mouse_tile_x;
     int mouse_tile_y;
+    bool should_restart;
 };
 
 struct ui *ui_create(void);
-void ui_update(struct ui *ui, struct game *game);
+void ui_update(struct ui *ui, struct engine *engine, struct game *game);
 bool ui_message_log_is_inside(struct ui *ui, int x, int y);
 bool ui_panel_is_inside(struct ui *ui, int x, int y);
 void ui_panel_toggle(struct ui *ui, enum panel panel);

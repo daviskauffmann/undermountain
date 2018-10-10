@@ -1,3 +1,6 @@
+#include <malloc.h>
+#include <stdio.h>
+
 #include "config.h"
 #include "engine.h"
 #include "game.h"
@@ -7,11 +10,11 @@
 
 #include "CMemleak.h"
 
-enum engine_state engine_state;
-
 int engine_run(void)
 {
-    engine_state = ENGINE_STATE_MENU;
+    struct engine engine;
+
+    engine.state = ENGINE_STATE_MENU;
 
     config_load();
 
@@ -27,10 +30,14 @@ int engine_run(void)
 
     while (!TCOD_console_is_window_closed())
     {
-        input_handle(input, game, ui);
-        game_update(game);
-        ui_update(ui, game);
-        renderer_draw(renderer, game, ui);
+        char title[256];
+        sprintf(title, "%s - FPS: %d", WINDOW_TITLE, TCOD_sys_get_fps());
+        TCOD_console_set_window_title(title);
+
+        input_handle(input, &engine, game, ui);
+        game_update(game, &engine);
+        ui_update(ui, &engine, game);
+        renderer_draw(renderer, &engine, game, ui);
 
         if (game->should_restart)
         {
@@ -38,7 +45,13 @@ int engine_run(void)
             game = game_create();
         }
 
-        if (game->should_quit)
+        if (ui->should_restart)
+        {
+            ui_destroy(ui);
+            ui = ui_create();
+        }
+
+        if (engine.should_quit)
         {
             break;
         }

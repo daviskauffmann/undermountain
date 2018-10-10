@@ -13,6 +13,8 @@
 
 #define NUM_MAPS 60
 
+struct engine;
+
 enum game_state
 {
     GAME_STATE_PLAYING,
@@ -21,7 +23,7 @@ enum game_state
 
 struct game
 {
-    enum game_state game_state;
+    enum game_state state;
     struct tile_common tile_common;
     struct tile_info tile_info[NUM_TILE_TYPES];
     struct object_common object_common;
@@ -41,14 +43,13 @@ struct game
     bool turn_available;
     bool should_update;
     bool should_restart;
-    bool should_quit;
 };
 
 struct game *game_create(void);
 void game_new(struct game *game);
 void game_save(struct game *game);
 void game_load(struct game *game);
-void game_update(struct game *game);
+void game_update(struct game *game, struct engine *engine);
 void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, char *fmt, ...);
 void game_destroy(struct game *game);
 

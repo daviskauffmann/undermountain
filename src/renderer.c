@@ -27,13 +27,13 @@ struct renderer *renderer_create(void)
     return renderer;
 }
 
-void renderer_draw(struct renderer *renderer, struct game *game, struct ui *ui)
+void renderer_draw(struct renderer *renderer, struct engine *engine, struct game *game, struct ui *ui)
 {
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
     TCOD_console_clear(NULL);
 
-    switch (engine_state)
+    switch (engine->state)
     {
     case ENGINE_STATE_MENU:
     {
@@ -436,15 +436,10 @@ void renderer_draw(struct renderer *renderer, struct game *game, struct ui *ui)
             {
                 struct tooltip_option *option = *i;
 
-                TCOD_color_t color = TCOD_white;
+                TCOD_console_set_default_foreground(renderer->tooltip, option == ui_tooltip_get_selected(ui) ? TCOD_yellow : TCOD_white);
+                TCOD_console_print(renderer->tooltip, 1, y, option->text);
 
-                if (ui->mouse_x > ui->tooltip_x && ui->mouse_x < ui->tooltip_x + (int)strlen(option->text) + 1 && ui->mouse_y == y + ui->tooltip_y)
-                {
-                    color = TCOD_yellow;
-                }
-
-                TCOD_console_set_default_foreground(renderer->tooltip, color);
-                y += TCOD_console_print_rect(renderer->tooltip, 1, y, ui->tooltip_width - 2, ui->tooltip_height - 2, option->text);
+                y++;
             }
 
             TCOD_console_set_default_foreground(renderer->tooltip, TCOD_white);

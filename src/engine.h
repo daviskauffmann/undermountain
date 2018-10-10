@@ -12,7 +12,11 @@ enum engine_state
     ENGINE_STATE_PLAYING
 };
 
-extern enum engine_state engine_state;
+struct engine
+{
+    enum engine_state state;
+    bool should_quit;
+};
 
 int engine_run(void);
 

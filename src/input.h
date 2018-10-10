@@ -27,7 +27,7 @@ struct input
 };
 
 struct input *input_create(void);
-void input_handle(struct input *input, struct game *game, struct ui *ui);
+void input_handle(struct input *input, struct engine *engine, struct game *game, struct ui *ui);
 void input_destroy(struct input *input);
 
 #endif

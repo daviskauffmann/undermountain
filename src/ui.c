@@ -71,12 +71,14 @@ struct ui *ui_create(void)
     ui->mouse_tile_x = 0;
     ui->mouse_tile_y = 0;
 
+    ui->should_restart = false;
+
     return ui;
 }
 
-void ui_update(struct ui *ui, struct game *game)
+void ui_update(struct ui *ui, struct engine *engine, struct game *game)
 {
-    switch (engine_state)
+    switch (engine->state)
     {
     case ENGINE_STATE_PLAYING:
     {

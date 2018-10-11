@@ -6,21 +6,26 @@
 struct game;
 struct ui;
 
-enum action
+enum directional_action
 {
-    ACTION_NONE,
-    ACTION_DESCEND,
-    ACTION_ASCEND,
-    ACTION_OPEN_DOOR,
-    ACTION_CLOSE_DOOR,
-    ACTION_PRAY,
-    ACTION_DRINK,
-    ACTION_SIT
+    DIRECTIONAL_ACTION_NONE,
+    DIRECTIONAL_ACTION_CLOSE_DOOR,
+    DIRECTIONAL_ACTION_DRINK,
+    DIRECTIONAL_ACTION_OPEN_DOOR,
+    DIRECTIONAL_ACTION_PRAY,
+    DIRECTIONAL_ACTION_SIT
+};
+
+enum inventory_action
+{
+    INVENTORY_ACTION_NONE,
+    INVENTORY_ACTION_EQUIP
 };
 
 struct input
 {
-    enum action action;
+    enum directional_action directional_action;
+    enum inventory_action inventory_action;
     bool automoving;
     int automove_x;
     int automove_y;

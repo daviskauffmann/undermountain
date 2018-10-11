@@ -25,6 +25,14 @@
     game->tile_info[_type].is_transparent = _is_transparent;                   \
     game->tile_info[_type].is_walkable = _is_walkable;
 
+#define OBJECT_COMMON(_placeholder) game->object_common.__placeholder = _placeholder;
+
+#define OBJECT_INFO(_type, _name, _glyph, _is_transparent, _is_walkable) \
+    game->object_info[_type].name = _name;                               \
+    game->object_info[_type].glyph = _glyph;                             \
+    game->object_info[_type].is_transparent = _is_transparent;           \
+    game->object_info[_type].is_walkable = _is_walkable;
+
 struct game *game_create(void)
 {
     struct game *game = calloc(1, sizeof(struct game));
@@ -37,12 +45,9 @@ struct game *game_create(void)
     TILE_INFO(TILE_TYPE_FLOOR, "Floor", '.', TCOD_white, true, true)
     TILE_INFO(TILE_TYPE_WALL, "Wall", '#', TCOD_white, false, false)
 
-    game->object_common.__placeholder = 0;
+    OBJECT_COMMON(0)
 
-    game->object_info[OBJECT_TYPE_ALTAR].name = "Altar";
-    game->object_info[OBJECT_TYPE_ALTAR].glyph = '_';
-    game->object_info[OBJECT_TYPE_ALTAR].is_transparent = true;
-    game->object_info[OBJECT_TYPE_ALTAR].is_walkable = false;
+    OBJECT_INFO(OBJECT_TYPE_ALTAR, "Altar", '_', true, false)
     game->object_info[OBJECT_TYPE_BRAZIER].name = "Brazier";
     game->object_info[OBJECT_TYPE_BRAZIER].glyph = '*';
     game->object_info[OBJECT_TYPE_BRAZIER].is_transparent = true;

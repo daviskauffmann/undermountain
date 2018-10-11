@@ -15,6 +15,7 @@ int engine_run(void)
     struct engine engine;
 
     engine.state = ENGINE_STATE_MENU;
+    engine.should_quit = false;
 
     config_load();
 

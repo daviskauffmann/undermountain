@@ -13,20 +13,6 @@ enum menu_state
     MENU_STATE_ABOUT
 };
 
-enum menu_option
-{
-    MENU_OPTION_START,
-    MENU_OPTION_ABOUT,
-    MENU_OPTION_QUIT,
-
-    NUM_MENU_OPTIONS
-};
-
-struct menu_option_info
-{
-    const char *text;
-};
-
 enum targeting
 {
     TARGETING_NONE,
@@ -49,8 +35,6 @@ enum panel
 struct panel_status
 {
     int scroll;
-    int current_index;
-    int max_index;
 };
 
 struct tooltip_data
@@ -70,8 +54,7 @@ struct tooltip_option
 struct ui
 {
     enum menu_state menu_state;
-    struct menu_option_info menu_option_info[NUM_MENU_OPTIONS];
-    int menu_index;
+    bool selection_mode;
     enum targeting targeting;
     int target_x;
     int target_y;

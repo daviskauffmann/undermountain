@@ -15,10 +15,8 @@ struct ui *ui_create(void)
     struct ui *ui = calloc(1, sizeof(struct ui));
 
     ui->menu_state = MENU_STATE_MAIN;
-    ui->menu_option_info[MENU_OPTION_START].text = "Start";
-    ui->menu_option_info[MENU_OPTION_ABOUT].text = "About";
-    ui->menu_option_info[MENU_OPTION_QUIT].text = "Quit";
-    ui->menu_index = 0;
+
+    ui->selection_mode = false;
 
     ui->targeting = TARGETING_NONE;
     ui->target_x = -1;
@@ -27,20 +25,12 @@ struct ui *ui_create(void)
     ui->current_panel = PANEL_CHARACTER;
 
     ui->panel_status[PANEL_CHARACTER].scroll = 0;
-    ui->panel_status[PANEL_CHARACTER].current_index = 0;
-    ui->panel_status[PANEL_CHARACTER].max_index = 0;
 
     ui->panel_status[PANEL_EXAMINE].scroll = 0;
-    ui->panel_status[PANEL_EXAMINE].current_index = 0;
-    ui->panel_status[PANEL_EXAMINE].max_index = 0;
 
     ui->panel_status[PANEL_INVENTORY].scroll = 0;
-    ui->panel_status[PANEL_INVENTORY].current_index = 0;
-    ui->panel_status[PANEL_INVENTORY].max_index = 0;
 
     ui->panel_status[PANEL_SPELLBOOK].scroll = 0;
-    ui->panel_status[PANEL_SPELLBOOK].current_index = 0;
-    ui->panel_status[PANEL_SPELLBOOK].max_index = 0;
 
     ui->message_log_visible = true;
     ui->message_log_x = 0;
@@ -82,8 +72,6 @@ void ui_update(struct ui *ui, struct engine *engine, struct game *game)
     {
     case ENGINE_STATE_PLAYING:
     {
-        ui->panel_status[PANEL_INVENTORY].max_index = TCOD_list_size(game->player->items) - 1;
-
         ui->message_log_x = 0;
         ui->message_log_height = console_height / 4;
         ui->message_log_y = console_height - ui->message_log_height;
@@ -121,19 +109,6 @@ void ui_update(struct ui *ui, struct engine *engine, struct game *game)
             ui->view_y = MAP_HEIGHT - ui->view_height;
         if (ui->view_y < 0)
             ui->view_y = 0;
-
-        {
-            struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
-
-            if (panel_status->current_index < 0)
-            {
-                panel_status->current_index = 0;
-            }
-            else if (panel_status->current_index > panel_status->max_index)
-            {
-                panel_status->current_index = panel_status->max_index;
-            }
-        }
     }
     break;
     }

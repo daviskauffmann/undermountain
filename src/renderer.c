@@ -41,24 +41,21 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
         {
         case MENU_STATE_MAIN:
         {
-            TCOD_console_print_ex(NULL, console_width / 2, console_height / 4, TCOD_BKGND_SET, TCOD_CENTER, "Roguelike thing");
+            TCOD_console_set_default_foreground(NULL, TCOD_white);
 
-            for (int i = 0; i < NUM_MENU_OPTIONS; i++)
-            {
-                struct menu_option_info *menu_option_info = &ui->menu_option_info[i];
-
-                TCOD_color_t color = ui->menu_index == i ? TCOD_yellow : TCOD_white;
-
-                TCOD_console_set_default_foreground(NULL, color);
-                TCOD_console_print_ex(NULL, console_width / 2, console_height / 2 + i, TCOD_BKGND_SET, TCOD_CENTER, menu_option_info->text);
-            }
+            int y = 0;
+            TCOD_console_print(NULL, 0, y++, WINDOW_TITLE);
+            y++;
+            TCOD_console_print(NULL, 0, y++, "a) Start");
+            TCOD_console_print(NULL, 0, y++, "b) About");
+            TCOD_console_print(NULL, 0, y++, "c) Quit");
         }
         break;
         case MENU_STATE_ABOUT:
         {
             TCOD_console_print_rect(NULL, console_width / 2, console_height / 4, 100, 100, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
-            TCOD_console_print_rect(NULL, console_width / 2, console_height / 2, 100, 100, "Press ENTER to return.");
+            TCOD_console_print_rect(NULL, console_width / 2, console_height / 2, 100, 100, "Press ESC to return.");
         }
         break;
         }
@@ -343,45 +340,45 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
             {
             case PANEL_CHARACTER:
             {
-                int i = 1;
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "NAME     : %s", game->player->name);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "ALIGNMENT: Neutral Good");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "RACE     : %s", game->race_info[game->player->race].name);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CLASS    : %s", game->class_info[game->player->class].name);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "LEVEL    : %d", game->player->class_level);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "EXP      : %d", game->player->experience);
-                i++;
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "STR: %d", game->player->strength);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "DEX: %d", game->player->dexterity);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CON: %d", game->player->constitution);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "INT: %d", game->player->intelligence);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "WIS: %d", game->player->wisdom);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "CHA: %d", game->player->charisma);
-                i++;
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Armor");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Belt");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Boots");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Cloak");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Gloves");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Hand");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "Helmet");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "M-Hand");
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "O-Hand");
-                i++;
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "AC: %d", actor_calc_armor_class(game->player));
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "HP: %d / %d", game->player->current_hp, actor_calc_max_hp(game->player));
-                i++;
+                int y = 1;
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "NAME     : %s", game->player->name);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "ALIGNMENT: Neutral Good");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "RACE     : %s", game->race_info[game->player->race].name);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "CLASS    : %s", game->class_info[game->player->class].name);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "LEVEL    : %d", game->player->class_level);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "EXP      : %d", game->player->experience);
+                y++;
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "STR: %d", game->player->strength);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "DEX: %d", game->player->dexterity);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "CON: %d", game->player->constitution);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "INT: %d", game->player->intelligence);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "WIS: %d", game->player->wisdom);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "CHA: %d", game->player->charisma);
+                y++;
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Armor");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Belt");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Boots");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Cloak");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Gloves");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Hand");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Helmet");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "M-Hand");
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "O-Hand");
+                y++;
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "AC: %d", actor_calc_armor_class(game->player));
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "HP: %d / %d", game->player->current_hp, actor_calc_max_hp(game->player));
+                y++;
                 int num_dice;
                 int die_to_roll;
                 int crit_threat;
                 int crit_mult;
                 actor_calc_weapon(game->player, &num_dice, &die_to_roll, &crit_threat, &crit_mult, false);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "MELEE: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "MELEE: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
                 actor_calc_weapon(game->player, &num_dice, &die_to_roll, &crit_threat, &crit_mult, true);
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "RANGED: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
-                i++;
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "ATTACK: +%d", actor_calc_attack_bonus(game->player));
-                TCOD_console_print(renderer->panel, 1, i++ - panel_status->scroll, "DAMAGE: +%d", actor_calc_damage_bonus(game->player));
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "RANGED: %dd%d (%d-20x%d)", num_dice, die_to_roll, crit_threat, crit_mult);
+                y++;
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "ATTACK: +%d", actor_calc_attack_bonus(game->player));
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "DAMAGE: +%d", actor_calc_damage_bonus(game->player));
 
                 TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
                 TCOD_console_print_frame(renderer->panel, 0, 0, ui->panel_width, ui->panel_height, false, TCOD_BKGND_SET, "Character");
@@ -395,18 +392,22 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
             break;
             case PANEL_INVENTORY:
             {
-                int i = 0;
                 int y = 1;
                 for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
                 {
                     struct item *item = *iterator;
 
-                    TCOD_color_t color = panel_status->current_index == i ? TCOD_yellow : game->base_item_info[game->item_info[item->type].base_item].color;
+                    TCOD_console_set_default_foreground(renderer->panel, game->base_item_info[game->item_info[item->type].base_item].color);
 
-                    TCOD_console_set_default_foreground(renderer->panel, color);
-                    TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, game->item_info[item->type].name);
+                    if (ui->selection_mode)
+                    {
+                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 97, game->item_info[item->type].name);
+                    }
+                    else
+                    {
+                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, game->item_info[item->type].name);
+                    }
 
-                    i++;
                     y++;
                 }
 
@@ -416,6 +417,11 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
             break;
             case PANEL_SPELLBOOK:
             {
+                for (int y = 1; y <= 26; y++)
+                {
+                    TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%d) spell", y);
+                }
+
                 TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
                 TCOD_console_print_frame(renderer->panel, 0, 0, ui->panel_width, ui->panel_height, false, TCOD_BKGND_SET, "Spellbook");
             }

@@ -13,6 +13,20 @@ enum menu_state
     MENU_STATE_ABOUT
 };
 
+enum main_menu_option
+{
+    MAIN_MENU_OPTION_START,
+    MAIN_MENU_OPTION_ABOUT,
+    MAIN_MENU_OPTION_QUIT,
+
+    NUM_MAIN_MENU_OPTIONS
+};
+
+struct main_menu_option_info
+{
+    char *text;
+};
+
 enum targeting
 {
     TARGETING_NONE,
@@ -54,7 +68,7 @@ struct tooltip_option
 struct ui
 {
     enum menu_state menu_state;
-    bool selection_mode;
+    struct main_menu_option_info main_menu_option_info[NUM_MAIN_MENU_OPTIONS];
     enum targeting targeting;
     int target_x;
     int target_y;
@@ -89,9 +103,11 @@ struct ui
 
 struct ui *ui_create(void);
 void ui_update(struct ui *ui, struct engine *engine, struct game *game);
+enum main_menu_option ui_main_menu_get_selected(struct ui *ui);
 bool ui_message_log_is_inside(struct ui *ui, int x, int y);
 bool ui_panel_is_inside(struct ui *ui, int x, int y);
 void ui_panel_toggle(struct ui *ui, enum panel panel);
+struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game);
 bool ui_tooltip_is_inside(struct ui *ui, int x, int y);
 void ui_tooltip_show(struct ui *ui);
 void ui_tooltip_hide(struct ui *ui);

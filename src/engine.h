@@ -18,6 +18,8 @@ struct engine
     bool should_quit;
 };
 
-int engine_run(void);
+struct engine *engine_create(void);
+int engine_run(struct engine *engine);
+void engine_destroy(struct engine *engine);
 
 #endif

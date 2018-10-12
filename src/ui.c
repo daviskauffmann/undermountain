@@ -16,7 +16,9 @@ struct ui *ui_create(void)
 
     ui->menu_state = MENU_STATE_MAIN;
 
-    ui->selection_mode = false;
+    ui->main_menu_option_info[MAIN_MENU_OPTION_START].text = "Start";
+    ui->main_menu_option_info[MAIN_MENU_OPTION_ABOUT].text = "About";
+    ui->main_menu_option_info[MAIN_MENU_OPTION_QUIT].text = "Quit";
 
     ui->targeting = TARGETING_NONE;
     ui->target_x = -1;
@@ -25,11 +27,8 @@ struct ui *ui_create(void)
     ui->current_panel = PANEL_CHARACTER;
 
     ui->panel_status[PANEL_CHARACTER].scroll = 0;
-
     ui->panel_status[PANEL_EXAMINE].scroll = 0;
-
     ui->panel_status[PANEL_INVENTORY].scroll = 0;
-
     ui->panel_status[PANEL_SPELLBOOK].scroll = 0;
 
     ui->message_log_visible = true;
@@ -114,6 +113,24 @@ void ui_update(struct ui *ui, struct engine *engine, struct game *game)
     }
 }
 
+enum main_menu_option ui_main_menu_get_selected(struct ui *ui)
+{
+    int y = 1;
+    for (enum main_menu_option main_menu_option = 0; main_menu_option < NUM_MAIN_MENU_OPTIONS; main_menu_option++)
+    {
+        struct main_menu_option_info *main_menu_option_info = &ui->main_menu_option_info[main_menu_option];
+
+        if (ui->mouse_x > 0 && ui->mouse_x < (int)strlen(main_menu_option_info->text) + 3 + 1 && ui->mouse_y == y)
+        {
+            return main_menu_option;
+        }
+
+        y++;
+    }
+
+    return -1;
+}
+
 bool ui_message_log_is_inside(struct ui *ui, int x, int y)
 {
     return ui->message_log_visible && x >= ui->message_log_x && x < ui->message_log_x + ui->message_log_width && y >= ui->message_log_y && y < ui->message_log_y + ui->message_log_height;
@@ -142,6 +159,24 @@ void ui_panel_toggle(struct ui *ui, enum panel panel)
         ui->current_panel = panel;
         ui->panel_visible = true;
     }
+}
+
+struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game)
+{
+    int y = 1;
+    for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
+    {
+        struct item *item = *iterator;
+
+        if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(game->item_info[item->type].name) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+        {
+            return item;
+        }
+
+        y++;
+    }
+
+    return NULL;
 }
 
 bool ui_tooltip_is_inside(struct ui *ui, int x, int y)

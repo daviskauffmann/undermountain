@@ -11,8 +11,6 @@
 
 #include "CMemleak.h"
 
-#include <stdio.h>
-
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
 static void cb_should_update(struct game *game);
 static bool tooltip_option_move(struct game *game, struct input *input, struct tooltip_data data);
@@ -40,41 +38,39 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
     {
     case TCOD_EVENT_KEY_PRESS:
     {
-        input->automoving = false;
+        if (engine->state == ENGINE_STATE_PLAYING)
+        {
+            input->automoving = false;
+        }
 
         switch (key.vk)
         {
         case TCODK_ESCAPE:
         {
-            switch (engine->state)
+            if (engine->state == ENGINE_STATE_MENU)
             {
-            case ENGINE_STATE_MENU:
-            {
-                switch (ui->menu_state)
-                {
-                case MENU_STATE_MAIN:
+                if (ui->menu_state == MENU_STATE_MAIN)
                 {
                     engine->should_quit = true;
                 }
-                break;
-                case MENU_STATE_ABOUT:
+                else if (ui->menu_state == MENU_STATE_ABOUT)
                 {
                     ui->menu_state = MENU_STATE_MAIN;
                 }
-                break;
-                }
             }
-            break;
-            case ENGINE_STATE_PLAYING:
+            else if (engine->state == ENGINE_STATE_PLAYING)
             {
-                if (input->directional_action != DIRECTIONAL_ACTION_NONE)
+                if (ui->tooltip_visible)
+                {
+                    ui_tooltip_hide(ui);
+                }
+                else if (input->directional_action != DIRECTIONAL_ACTION_NONE)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_NONE;
                 }
                 else if (input->inventory_action != INVENTORY_ACTION_NONE)
                 {
                     input->inventory_action = INVENTORY_ACTION_NONE;
-                    ui->selection_mode = false;
                 }
                 else if (ui->panel_visible)
                 {
@@ -90,8 +86,6 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
 
                     game->should_restart = true;
                 }
-            }
-            break;
             }
         }
         break;
@@ -421,16 +415,21 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         {
             if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available && input->inventory_action != INVENTORY_ACTION_NONE && key.c >= 97 && key.c <= 122)
             {
-                int index = key.c - 97 + ui->panel_status[PANEL_INVENTORY].scroll;
-
+                int index = key.c - 97 + ui->panel_status[PANEL_INVENTORY].scroll; // ui_panel_get_key_selected?
                 struct item *item = TCOD_list_get(game->player->items, index);
 
                 if (item)
                 {
-                    actor_equip(game->player, item);
+                    switch (input->inventory_action)
+                    {
+                    case INVENTORY_ACTION_EQUIP:
+                    {
+                        actor_equip(game->player, item);
 
-                    input->inventory_action = INVENTORY_ACTION_NONE;
-                    ui->selection_mode = false;
+                        input->inventory_action = INVENTORY_ACTION_NONE;
+                    }
+                    break;
+                    }
                 }
             }
             else
@@ -455,15 +454,18 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 break;
                 case 'a':
                 {
-                    engine->state = ENGINE_STATE_PLAYING;
+                    if (engine->state == ENGINE_STATE_MENU)
+                    {
+                        engine->state = ENGINE_STATE_PLAYING;
 
-                    if (TCOD_sys_file_exists(SAVE_PATH))
-                    {
-                        game_load(game);
-                    }
-                    else
-                    {
-                        game_new(game);
+                        if (TCOD_sys_file_exists(SAVE_PATH))
+                        {
+                            game_load(game);
+                        }
+                        else
+                        {
+                            game_new(game);
+                        }
                     }
                 }
                 break;
@@ -481,7 +483,10 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 break;
                 case 'C':
                 {
-                    ui_panel_toggle(ui, PANEL_CHARACTER);
+                    if (engine->state == ENGINE_STATE_PLAYING)
+                    {
+                        ui_panel_toggle(ui, PANEL_CHARACTER);
+                    }
                 }
                 break;
                 case 'c':
@@ -530,7 +535,6 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                         }
 
                         input->inventory_action = INVENTORY_ACTION_EQUIP;
-                        ui->selection_mode = true;
 
                         game_log(
                             game,
@@ -610,7 +614,10 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 break;
                 case 'i':
                 {
-                    ui_panel_toggle(ui, PANEL_INVENTORY);
+                    if (engine->state == ENGINE_STATE_PLAYING)
+                    {
+                        ui_panel_toggle(ui, PANEL_INVENTORY);
+                    }
                 }
                 break;
                 case 'l':
@@ -633,7 +640,10 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 break;
                 case 'm':
                 {
-                    ui->message_log_visible = !ui->message_log_visible;
+                    if (engine->state == ENGINE_STATE_PLAYING)
+                    {
+                        ui->message_log_visible = !ui->message_log_visible;
+                    }
                 }
                 break;
                 case 'o':
@@ -791,18 +801,44 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
     break;
     case TCOD_EVENT_MOUSE_PRESS:
     {
-        input->automoving = false;
-
         if (mouse.lbutton)
         {
-            switch (engine->state)
+            if (engine->state == ENGINE_STATE_MENU)
             {
-            case ENGINE_STATE_MENU:
-            {
+                enum main_menu_option main_menu_option = ui_main_menu_get_selected(ui);
+
+                switch (main_menu_option)
+                {
+                case MAIN_MENU_OPTION_START:
+                {
+                    engine->state = ENGINE_STATE_PLAYING;
+
+                    if (TCOD_sys_file_exists(SAVE_PATH))
+                    {
+                        game_load(game);
+                    }
+                    else
+                    {
+                        game_new(game);
+                    }
+                }
+                break;
+                case MAIN_MENU_OPTION_ABOUT:
+                {
+                    ui->menu_state = MENU_STATE_ABOUT;
+                }
+                break;
+                case MAIN_MENU_OPTION_QUIT:
+                {
+                    engine->should_quit = true;
+                }
+                break;
+                }
             }
-            break;
-            case ENGINE_STATE_PLAYING:
+            else if (engine->state == ENGINE_STATE_PLAYING)
             {
+                input->automoving = false;
+
                 if (ui->tooltip_visible)
                 {
                     if (ui_tooltip_is_inside(ui, ui->mouse_x, ui->mouse_y))
@@ -830,19 +866,36 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                     input->automove_x = ui->mouse_tile_x;
                     input->automove_y = ui->mouse_tile_y;
                 }
-            }
-            break;
+                else if (ui_panel_is_inside(ui, ui->mouse_x, ui->mouse_y))
+                {
+                    switch (ui->current_panel)
+                    {
+                    case PANEL_INVENTORY:
+                    {
+                        struct item *item = ui_panel_inventory_get_selected(ui, game);
+
+                        if (item)
+                        {
+                            switch (input->inventory_action)
+                            {
+                            case INVENTORY_ACTION_EQUIP:
+                            {
+                                actor_equip(game->player, item);
+
+                                input->inventory_action = INVENTORY_ACTION_NONE;
+                            }
+                            break;
+                            }
+                        }
+                    }
+                    break;
+                    }
+                }
             }
         }
         else if (mouse.rbutton)
         {
-            switch (engine->state)
-            {
-            case ENGINE_STATE_MENU:
-            {
-            }
-            break;
-            case ENGINE_STATE_PLAYING:
+            if (engine->state == ENGINE_STATE_PLAYING)
             {
                 if (ui_view_is_inside(ui, ui->mouse_x, ui->mouse_y) && map_is_inside(ui->mouse_tile_x, ui->mouse_tile_y))
                 {
@@ -887,9 +940,58 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 }
                 else if (ui_panel_is_inside(ui, ui->mouse_x, ui->mouse_y))
                 {
+                    switch (ui->current_panel)
+                    {
+                    case PANEL_INVENTORY:
+                    {
+                        struct item *item = ui_panel_inventory_get_selected(ui, game);
+
+                        if (item != NULL)
+                        {
+                            struct item_info *item_info = &game->item_info[item->type];
+                            struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
+
+                            ui_tooltip_show(ui);
+
+                            struct tooltip_data data;
+                            data.item = item;
+
+                            ui_tooltip_options_add(ui, "Drop", NULL, data);
+
+                            if (base_item_info->equip_slot != EQUIP_SLOT_NONE)
+                            {
+                                ui_tooltip_options_add(ui, "Equip", NULL, data);
+                            }
+
+                            if (item_info->base_item == BASE_ITEM_POTION)
+                            {
+                                ui_tooltip_options_add(ui, "Quaff", NULL, data);
+                            }
+                        }
+
+                        break;
+                    }
+                    break;
+                    }
                 }
             }
-            break;
+        }
+        else if (mouse.wheel_down)
+        {
+            if (engine->state == ENGINE_STATE_PLAYING && ui->panel_visible)
+            {
+                struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
+
+                panel_status->scroll++;
+            }
+        }
+        else if (mouse.wheel_up)
+        {
+            if (engine->state == ENGINE_STATE_PLAYING && ui->panel_visible)
+            {
+                struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
+
+                panel_status->scroll--;
             }
         }
     }

@@ -10,20 +10,23 @@
 
 #include "CMemleak.h"
 
-int engine_run(void)
+struct engine *engine_create(void)
 {
-    struct engine engine;
+    struct engine *engine = calloc(1, sizeof(struct engine));
 
-    engine.state = ENGINE_STATE_MENU;
-    engine.should_quit = false;
-
-    config_load();
+    engine->state = ENGINE_STATE_MENU;
+    engine->should_quit = false;
 
     TCOD_sys_set_fps(FPS);
 
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
     TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, console_renderer);
 
+    return engine;
+}
+
+int engine_run(struct engine *engine)
+{
     struct input *input = input_create();
     struct game *game = game_create();
     struct ui *ui = ui_create();
@@ -35,10 +38,10 @@ int engine_run(void)
         sprintf(title, "%s - FPS: %d", WINDOW_TITLE, TCOD_sys_get_fps());
         TCOD_console_set_window_title(title);
 
-        input_handle(input, &engine, game, ui);
-        game_update(game, &engine);
-        ui_update(ui, &engine, game);
-        renderer_draw(renderer, &engine, game, ui);
+        input_handle(input, engine, game, ui);
+        game_update(game, engine);
+        ui_update(ui, engine, game);
+        renderer_draw(renderer, engine, game, ui);
 
         if (game->should_restart)
         {
@@ -52,7 +55,7 @@ int engine_run(void)
             ui = ui_create();
         }
 
-        if (engine.should_quit)
+        if (engine->should_quit)
         {
             break;
         }
@@ -63,7 +66,10 @@ int engine_run(void)
     game_destroy(game);
     input_destroy(input);
 
-    config_save();
-
     return 0;
+}
+
+void engine_destroy(struct engine *engine)
+{
+    free(engine);
 }

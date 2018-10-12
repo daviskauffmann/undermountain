@@ -41,24 +41,28 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
         {
         case MENU_STATE_MAIN:
         {
-            TCOD_console_set_default_foreground(NULL, TCOD_white);
+            int y = 1;
+            for (enum main_menu_option main_menu_option = 0; main_menu_option < NUM_MAIN_MENU_OPTIONS; main_menu_option++)
+            {
+                struct main_menu_option_info *main_menu_option_info = &ui->main_menu_option_info[main_menu_option];
 
-            int y = 0;
-            TCOD_console_print(NULL, 0, y++, WINDOW_TITLE);
-            y++;
-            TCOD_console_print(NULL, 0, y++, "a) Start");
-            TCOD_console_print(NULL, 0, y++, "b) About");
-            TCOD_console_print(NULL, 0, y++, "c) Quit");
+                TCOD_console_set_default_foreground(NULL, main_menu_option == ui_main_menu_get_selected(ui) ? TCOD_yellow : TCOD_white);
+                TCOD_console_print(NULL, 1, y++, "%c) %s", main_menu_option + 97, main_menu_option_info->text);
+            }
         }
         break;
         case MENU_STATE_ABOUT:
         {
-            TCOD_console_print_rect(NULL, console_width / 2, console_height / 4, 100, 100, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
+            int y = 1;
+            y += TCOD_console_print_rect(NULL, 1, y, 100, 100, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
-            TCOD_console_print_rect(NULL, console_width / 2, console_height / 2, 100, 100, "Press ESC to return.");
+            TCOD_console_print_rect(NULL, 1, y + 1, 100, 100, "Press ESC to return.");
         }
         break;
         }
+
+        TCOD_console_set_default_foreground(NULL, TCOD_white);
+        TCOD_console_print_frame(NULL, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, WINDOW_TITLE);
     }
     break;
     case ENGINE_STATE_PLAYING:
@@ -397,16 +401,8 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
                 {
                     struct item *item = *iterator;
 
-                    TCOD_console_set_default_foreground(renderer->panel, game->base_item_info[game->item_info[item->type].base_item].color);
-
-                    if (ui->selection_mode)
-                    {
-                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 97, game->item_info[item->type].name);
-                    }
-                    else
-                    {
-                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, game->item_info[item->type].name);
-                    }
+                    TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected(ui, game) ? TCOD_yellow : game->base_item_info[game->item_info[item->type].base_item].color);
+                    TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 97 - panel_status->scroll, game->item_info[item->type].name);
 
                     y++;
                 }

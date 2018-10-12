@@ -301,6 +301,15 @@ struct game *game_create(void)
 
     game->item_common.__placeholder = 0;
 
+    game->equip_slot_info[EQUIP_SLOT_ARMOR].label = "Armor ";
+    game->equip_slot_info[EQUIP_SLOT_BELT].label = "Belt  ";
+    game->equip_slot_info[EQUIP_SLOT_BOOTS].label = "Boots ";
+    game->equip_slot_info[EQUIP_SLOT_CLOAK].label = "Cloak ";
+    game->equip_slot_info[EQUIP_SLOT_GLOVES].label = "Gloves";
+    game->equip_slot_info[EQUIP_SLOT_HELMET].label = "Helmet";
+    game->equip_slot_info[EQUIP_SLOT_MAIN_HAND].label = "M-Hand";
+    game->equip_slot_info[EQUIP_SLOT_OFF_HAND].label = "O-Hand";
+
     game->base_item_info[BASE_ITEM_BATTLEAXE].glyph = 'T';
     game->base_item_info[BASE_ITEM_BATTLEAXE].color = TCOD_white;
     game->base_item_info[BASE_ITEM_BATTLEAXE].weight = 7;

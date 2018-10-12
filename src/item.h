@@ -51,6 +51,11 @@ enum equip_slot
     NUM_EQUIP_SLOTS
 };
 
+struct equip_slot_info
+{
+    char *label;
+};
+
 enum damage
 {
     DAMAGE_ACID,

@@ -19,6 +19,7 @@ enum directional_action
 enum inventory_action
 {
     INVENTORY_ACTION_NONE,
+    INVENTORY_ACTION_DROP,
     INVENTORY_ACTION_EQUIP
 };
 

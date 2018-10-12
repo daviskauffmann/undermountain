@@ -1,3 +1,4 @@
+#include <libtcod/libtcod.h>
 #include <malloc.h>
 #include <stdio.h>
 

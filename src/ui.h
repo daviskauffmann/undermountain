@@ -107,6 +107,7 @@ enum main_menu_option ui_main_menu_get_selected(struct ui *ui);
 bool ui_message_log_is_inside(struct ui *ui, int x, int y);
 bool ui_panel_is_inside(struct ui *ui, int x, int y);
 void ui_panel_toggle(struct ui *ui, enum panel panel);
+void ui_panel_show(struct ui *ui, enum panel panel);
 struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game);
 bool ui_tooltip_is_inside(struct ui *ui, int x, int y);
 void ui_tooltip_show(struct ui *ui);

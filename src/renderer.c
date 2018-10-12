@@ -360,15 +360,20 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "WIS: %d", game->player->wisdom);
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "CHA: %d", game->player->charisma);
                 y++;
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Armor");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Belt");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Boots");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Cloak");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Gloves");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Hand");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "Helmet");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "M-Hand");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "O-Hand");
+                for (enum equip_slot equip_slot = EQUIP_SLOT_ARMOR; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+                {
+                    if (game->player->equipment[equip_slot])
+                    {
+                        TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: %s",
+                                           game->equip_slot_info[equip_slot].label,
+                                           game->item_info[game->player->equipment[equip_slot]->type].name);
+                    }
+                    else
+                    {
+                        TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: N/A",
+                                           game->equip_slot_info[equip_slot].label);
+                    }
+                }
                 y++;
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "AC: %d", actor_calc_armor_class(game->player));
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "HP: %d / %d", game->player->current_hp, actor_calc_max_hp(game->player));

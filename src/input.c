@@ -429,6 +429,13 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                         input->inventory_action = INVENTORY_ACTION_NONE;
                     }
                     break;
+                    case INVENTORY_ACTION_DROP:
+                    {
+                        actor_drop(game->player, item);
+
+                        input->inventory_action = INVENTORY_ACTION_NONE;
+                    }
+                    break;
                     }
                 }
             }
@@ -509,7 +516,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                     }
                 }
                 break;
-                case 'd':
+                case 'D':
                 {
                     if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
                     {
@@ -525,14 +532,29 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                     }
                 }
                 break;
+                case 'd':
+                {
+                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                    {
+                        ui_panel_show(ui, PANEL_INVENTORY);
+
+                        input->inventory_action = INVENTORY_ACTION_DROP;
+
+                        game_log(
+                            game,
+                            game->player->level,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_white,
+                            "Choose an item to drop, ESC to cancel");
+                    }
+                }
+                break;
                 case 'e':
                 {
                     if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
                     {
-                        if (!ui->panel_visible || ui->current_panel != PANEL_INVENTORY)
-                        {
-                            ui_panel_toggle(ui, PANEL_INVENTORY);
-                        }
+                        ui_panel_show(ui, PANEL_INVENTORY);
 
                         input->inventory_action = INVENTORY_ACTION_EQUIP;
 
@@ -542,7 +564,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                             game->player->x,
                             game->player->y,
                             TCOD_white,
-                            "Choose an item, ESC to cancel");
+                            "Choose an item to equip, ESC to cancel");
                     }
                 }
                 break;
@@ -751,10 +773,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
 
                             // TODO: send examine target to ui
 
-                            if (!ui->panel_visible || ui->current_panel != PANEL_EXAMINE)
-                            {
-                                ui_panel_toggle(ui, PANEL_EXAMINE);
-                            }
+                            ui_panel_show(ui, PANEL_EXAMINE);
                         }
                         else
                         {
@@ -881,6 +900,13 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                             case INVENTORY_ACTION_EQUIP:
                             {
                                 actor_equip(game->player, item);
+
+                                input->inventory_action = INVENTORY_ACTION_NONE;
+                            }
+                            break;
+                            case INVENTORY_ACTION_DROP:
+                            {
+                                actor_drop(game->player, item);
 
                                 input->inventory_action = INVENTORY_ACTION_NONE;
                             }

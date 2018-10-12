@@ -161,6 +161,14 @@ void ui_panel_toggle(struct ui *ui, enum panel panel)
     }
 }
 
+void ui_panel_show(struct ui *ui, enum panel panel)
+{
+    if (!ui->panel_visible || ui->current_panel != panel)
+    {
+        ui_panel_toggle(ui, panel);
+    }
+}
+
 struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game)
 {
     int y = 1;

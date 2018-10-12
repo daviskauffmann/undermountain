@@ -54,9 +54,10 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
         case MENU_STATE_ABOUT:
         {
             int y = 1;
-            y += TCOD_console_print_rect(NULL, 1, y, 100, 100, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
-            TCOD_console_print_rect(NULL, 1, y + 1, 100, 100, "Press ESC to return.");
+            y += TCOD_console_print_rect(NULL, 1, y, console_width - 2, console_height - 2, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
+
+            TCOD_console_print_rect(NULL, 1, y + 1, console_width - 2, console_height - 2, "Press ESC to return.");
         }
         break;
         }

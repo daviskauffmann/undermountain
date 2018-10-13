@@ -44,6 +44,7 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->y = y;
     actor->base_hp = game->class_info[actor->class].hit_die * actor->class_level;
     actor->current_hp = actor_calc_max_hp(actor);
+    actor->speed = 0.5f;
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -204,7 +205,7 @@ void actor_update_flash(struct actor *actor)
     {
         actor->flash_fade -= (1.0f / (float)FPS) * 4.0f;
 
-        // game->turn_available = false;
+        // game->state == GAME_STATE_WAIT;
     }
     else
     {
@@ -303,7 +304,7 @@ void actor_ai(struct actor *actor)
         return;
     }
 
-    actor->energy += game->race_info[actor->race].energy_per_turn;
+    actor->energy += actor->speed;
 
     while (actor->energy >= 1.0f)
     {
@@ -1134,6 +1135,16 @@ bool actor_equip(struct actor *actor, struct item *item)
         actor_unequip(actor, base_item_info->equip_slot);
     }
 
+    // TODO: figure out two-handedness and unequip accordingly
+    if (base_item_info->equip_slot == EQUIP_SLOT_MAIN_HAND)
+    {
+
+    }
+
+    if (base_item_info->equip_slot == EQUIP_SLOT_OFF_HAND)
+    {
+    }
+
     TCOD_list_remove(actor->items, item);
     actor->equipment[base_item_info->equip_slot] = item;
 
@@ -1566,8 +1577,6 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
-        game->state = GAME_STATE_LOSE;
-
         TCOD_sys_delete_file(SAVE_PATH);
 
         game_log(

@@ -17,8 +17,9 @@ struct engine;
 
 enum game_state
 {
-    GAME_STATE_PLAYING,
-    GAME_STATE_LOSE
+    GAME_STATE_PLAY,
+    GAME_STATE_LOSE,
+    GAME_STATE_WAIT
 };
 
 struct game
@@ -41,7 +42,6 @@ struct game
     TCOD_list_t messages;
     struct actor *player;
     int turn;
-    bool turn_available;
     bool should_update;
     bool should_restart;
 };

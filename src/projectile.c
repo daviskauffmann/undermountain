@@ -74,7 +74,7 @@ void projectile_update(struct projectile *projectile)
         projectile->x = next_x;
         projectile->y = next_y;
 
-        game->turn_available = false;
+        game->state = GAME_STATE_WAIT;
     }
     else
     {

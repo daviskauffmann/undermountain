@@ -118,11 +118,17 @@ struct actor_common
     TCOD_color_t torch_color;
 };
 
+enum race_size
+{
+    RACE_SIZE_MEDIUM,
+    RACE_SIZE_SMALL
+};
+
 struct race_info
 {
     const char *name;
     unsigned char glyph;
-    float energy_per_turn;
+    enum race_size size;
 };
 
 struct class_info
@@ -161,6 +167,7 @@ struct actor
     int y;
     int base_hp;
     int current_hp;
+    float speed;
     float energy;
     int last_seen_x;
     int last_seen_y;

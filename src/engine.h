@@ -9,7 +9,7 @@
 enum engine_state
 {
     ENGINE_STATE_MENU,
-    ENGINE_STATE_PLAYING
+    ENGINE_STATE_PLAY
 };
 
 struct engine

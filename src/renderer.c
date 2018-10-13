@@ -67,7 +67,7 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
         TCOD_console_print_frame(NULL, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, WINDOW_TITLE);
     }
     break;
-    case ENGINE_STATE_PLAYING:
+    case ENGINE_STATE_PLAY:
     {
         struct map *map = &game->maps[game->player->level];
 

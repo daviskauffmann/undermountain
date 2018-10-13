@@ -3,6 +3,8 @@
 
 #include <libtcod/libtcod.h>
 
+struct actor;
+
 struct item_common
 {
     char __placeholder;
@@ -194,6 +196,7 @@ struct item
 };
 
 struct item *item_create(enum item_type type, struct game *game, int level, int x, int y);
+bool item_is_two_handed(struct item *item, struct actor *actor);
 void item_destroy(struct item *item);
 
 #endif

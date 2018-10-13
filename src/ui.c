@@ -74,7 +74,7 @@ void ui_update(struct ui *ui, struct engine *engine, struct game *game)
 {
     switch (engine->state)
     {
-    case ENGINE_STATE_PLAYING:
+    case ENGINE_STATE_PLAY:
     {
         ui->message_log_x = 0;
         ui->message_log_height = console_height / 4;

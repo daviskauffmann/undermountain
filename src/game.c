@@ -25,7 +25,8 @@
     game->tile_info[_type].is_transparent = _is_transparent;                   \
     game->tile_info[_type].is_walkable = _is_walkable;
 
-#define OBJECT_COMMON(_placeholder) game->object_common.__placeholder = _placeholder;
+#define OBJECT_COMMON(_placeholder) \
+    game->object_common.__placeholder = _placeholder;
 
 #define OBJECT_INFO(_type, _name, _glyph, _is_transparent, _is_walkable) \
     game->object_info[_type].name = _name;                               \
@@ -33,11 +34,23 @@
     game->object_info[_type].is_transparent = _is_transparent;           \
     game->object_info[_type].is_walkable = _is_walkable;
 
+#define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _torch_radius, _torch_color) \
+    game->actor_common.turns_to_chase = _turns_to_chase;                                      \
+    game->actor_common.glow_radius = _glow_radius;                                            \
+    game->actor_common.glow_color = _glow_color;                                              \
+    game->actor_common.torch_radius = _torch_radius;                                          \
+    game->actor_common.torch_color = _torch_color;
+
+#define RACE_INFO(_race, _name, _glyph, _size) \
+    game->race_info[_race].name = _name;       \
+    game->race_info[_race].glyph = _glyph;     \
+    game->race_info[_race].size = _size
+
 struct game *game_create(void)
 {
     struct game *game = calloc(1, sizeof(struct game));
 
-    game->state = GAME_STATE_PLAYING;
+    game->state = GAME_STATE_PLAY;
 
     TILE_COMMON(TCOD_color_RGB(16, 16, 32))
 
@@ -48,116 +61,42 @@ struct game *game_create(void)
     OBJECT_COMMON(0)
 
     OBJECT_INFO(OBJECT_TYPE_ALTAR, "Altar", '_', true, false)
-    game->object_info[OBJECT_TYPE_BRAZIER].name = "Brazier";
-    game->object_info[OBJECT_TYPE_BRAZIER].glyph = '*';
-    game->object_info[OBJECT_TYPE_BRAZIER].is_transparent = true;
-    game->object_info[OBJECT_TYPE_BRAZIER].is_walkable = false;
-    game->object_info[OBJECT_TYPE_DOOR_CLOSED].name = "Closed Door";
-    game->object_info[OBJECT_TYPE_DOOR_CLOSED].glyph = '+';
-    game->object_info[OBJECT_TYPE_DOOR_CLOSED].is_transparent = false;
-    game->object_info[OBJECT_TYPE_DOOR_CLOSED].is_walkable = false;
-    game->object_info[OBJECT_TYPE_DOOR_OPEN].name = "Open Door";
-    game->object_info[OBJECT_TYPE_DOOR_OPEN].glyph = '-';
-    game->object_info[OBJECT_TYPE_DOOR_OPEN].is_transparent = true;
-    game->object_info[OBJECT_TYPE_DOOR_OPEN].is_walkable = true;
-    game->object_info[OBJECT_TYPE_FOUNTAIN].name = "Fountain";
-    game->object_info[OBJECT_TYPE_FOUNTAIN].glyph = '{';
-    game->object_info[OBJECT_TYPE_FOUNTAIN].is_transparent = true;
-    game->object_info[OBJECT_TYPE_FOUNTAIN].is_walkable = false;
-    game->object_info[OBJECT_TYPE_STAIR_DOWN].name = "Stair Down";
-    game->object_info[OBJECT_TYPE_STAIR_DOWN].glyph = '>';
-    game->object_info[OBJECT_TYPE_STAIR_DOWN].is_transparent = true;
-    game->object_info[OBJECT_TYPE_STAIR_DOWN].is_walkable = true;
-    game->object_info[OBJECT_TYPE_STAIR_UP].name = "Stair Up";
-    game->object_info[OBJECT_TYPE_STAIR_UP].glyph = '<';
-    game->object_info[OBJECT_TYPE_STAIR_UP].is_transparent = true;
-    game->object_info[OBJECT_TYPE_STAIR_UP].is_walkable = true;
-    game->object_info[OBJECT_TYPE_THRONE].name = "Throne";
-    game->object_info[OBJECT_TYPE_THRONE].glyph = '\\';
-    game->object_info[OBJECT_TYPE_THRONE].is_transparent = true;
-    game->object_info[OBJECT_TYPE_THRONE].is_walkable = false;
+    OBJECT_INFO(OBJECT_TYPE_BRAZIER, "Brazier", '*', true, false)
+    OBJECT_INFO(OBJECT_TYPE_DOOR_CLOSED, "Closed Door", '+', false, false)
+    OBJECT_INFO(OBJECT_TYPE_DOOR_OPEN, "Open Door", '-', true, true)
+    OBJECT_INFO(OBJECT_TYPE_FOUNTAIN, "Fountain", '{', true, false)
+    OBJECT_INFO(OBJECT_TYPE_STAIR_DOWN, "Stair Down", '>', true, true)
+    OBJECT_INFO(OBJECT_TYPE_STAIR_UP, "Stair Up", '<', true, true)
+    OBJECT_INFO(OBJECT_TYPE_THRONE, "Throne", '\\', true, false)
 
-    game->actor_common.turns_to_chase = 10;
-    game->actor_common.glow_radius = 5;
-    game->actor_common.glow_color = TCOD_white;
-    game->actor_common.torch_radius = 10;
-    game->actor_common.torch_color = TCOD_light_amber;
+    ACTOR_COMMON(10, 5, TCOD_white, 10, TCOD_light_amber)
 
-    game->race_info[RACE_DWARF].name = "Dwarf";
-    game->race_info[RACE_DWARF].glyph = '@';
-    game->race_info[RACE_DWARF].energy_per_turn = 0.5f;
-    game->race_info[RACE_ELF].name = "Elf";
-    game->race_info[RACE_ELF].glyph = '@';
-    game->race_info[RACE_ELF].energy_per_turn = 0.5f;
-    game->race_info[RACE_GNOME].name = "Gnome";
-    game->race_info[RACE_GNOME].glyph = '@';
-    game->race_info[RACE_GNOME].energy_per_turn = 0.5f;
-    game->race_info[RACE_HALF_ELF].name = "Half-Elf";
-    game->race_info[RACE_HALF_ELF].glyph = '@';
-    game->race_info[RACE_HALF_ELF].energy_per_turn = 0.5f;
-    game->race_info[RACE_HALF_ORC].name = "Half-Orc";
-    game->race_info[RACE_HALF_ORC].glyph = '@';
-    game->race_info[RACE_HALF_ORC].energy_per_turn = 0.5f;
-    game->race_info[RACE_HALFLING].name = "Halfling";
-    game->race_info[RACE_HALFLING].glyph = '@';
-    game->race_info[RACE_HALFLING].energy_per_turn = 0.5f;
-    game->race_info[RACE_HUMAN].name = "Human";
-    game->race_info[RACE_HUMAN].glyph = '@';
-    game->race_info[RACE_HUMAN].energy_per_turn = 0.5f;
-    game->race_info[RACE_ABBERATION].name = "Abberation";
-    game->race_info[RACE_ABBERATION].glyph = 'A';
-    game->race_info[RACE_ABBERATION].energy_per_turn = 0.5f;
-    game->race_info[RACE_ANIMAL].name = "Animal";
-    game->race_info[RACE_ANIMAL].glyph = 'a';
-    game->race_info[RACE_ANIMAL].energy_per_turn = 0.5f;
-    game->race_info[RACE_BEAST].name = "Beast";
-    game->race_info[RACE_BEAST].glyph = 'b';
-    game->race_info[RACE_BEAST].energy_per_turn = 0.5f;
-    game->race_info[RACE_CONSTRUCT].name = "Construct";
-    game->race_info[RACE_CONSTRUCT].glyph = 'c';
-    game->race_info[RACE_CONSTRUCT].energy_per_turn = 0.5f;
-    game->race_info[RACE_DRAGON].name = "Dragon";
-    game->race_info[RACE_DRAGON].glyph = 'D';
-    game->race_info[RACE_DRAGON].energy_per_turn = 0.5f;
-    game->race_info[RACE_ELEMENTAL].name = "Elemental";
-    game->race_info[RACE_ELEMENTAL].glyph = 'e';
-    game->race_info[RACE_ELEMENTAL].energy_per_turn = 0.5f;
-    game->race_info[RACE_FEY].name = "Fey";
-    game->race_info[RACE_FEY].glyph = 'f';
-    game->race_info[RACE_FEY].energy_per_turn = 0.5f;
-    game->race_info[RACE_GIANT].name = "Giant";
-    game->race_info[RACE_GIANT].glyph = 'G';
-    game->race_info[RACE_GIANT].energy_per_turn = 0.5f;
-    game->race_info[RACE_GOBLINOID].name = "Goblinoid";
-    game->race_info[RACE_GOBLINOID].glyph = 'g';
-    game->race_info[RACE_GOBLINOID].energy_per_turn = 0.5f;
-    game->race_info[RACE_MAGICAL_BEAST].name = "Magical Beast";
-    game->race_info[RACE_MAGICAL_BEAST].glyph = 'M';
-    game->race_info[RACE_MAGICAL_BEAST].energy_per_turn = 0.5f;
-    game->race_info[RACE_MONSTROUS_HUMANOID].name = "Monstrous Humanoid";
-    game->race_info[RACE_MONSTROUS_HUMANOID].glyph = 'm';
-    game->race_info[RACE_MONSTROUS_HUMANOID].energy_per_turn = 0.5f;
-    game->race_info[RACE_OOZE].name = "Ooze";
-    game->race_info[RACE_OOZE].glyph = 'O';
-    game->race_info[RACE_OOZE].energy_per_turn = 0.5f;
-    game->race_info[RACE_ORC].name = "Orc";
-    game->race_info[RACE_ORC].glyph = 'o';
-    game->race_info[RACE_ORC].energy_per_turn = 0.5f;
-    game->race_info[RACE_OUTSIDER].name = "Outsider";
-    game->race_info[RACE_OUTSIDER].glyph = 'z';
-    game->race_info[RACE_OUTSIDER].energy_per_turn = 0.5f;
-    game->race_info[RACE_REPTILLIAN].name = "Reptillian";
-    game->race_info[RACE_REPTILLIAN].glyph = 'r';
-    game->race_info[RACE_REPTILLIAN].energy_per_turn = 0.5f;
-    game->race_info[RACE_SHAPECHANGER].name = "Shapechanger";
-    game->race_info[RACE_SHAPECHANGER].glyph = 's';
-    game->race_info[RACE_SHAPECHANGER].energy_per_turn = 0.5f;
-    game->race_info[RACE_UNDEAD].name = "Undead";
-    game->race_info[RACE_UNDEAD].glyph = 'u';
-    game->race_info[RACE_UNDEAD].energy_per_turn = 0.5f;
-    game->race_info[RACE_VERMIN].name = "Vermin";
-    game->race_info[RACE_VERMIN].glyph = 'v';
-    game->race_info[RACE_VERMIN].energy_per_turn = 0.5f;
+    RACE_INFO(RACE_DWARF, "Dwarf", '@', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_ELF, "Elf", '@', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_GNOME, "Gnome", '@', RACE_SIZE_SMALL);
+    RACE_INFO(RACE_HALF_ELF, "Half-Elf", '@', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_HALF_ORC, "Half-Orc", '@', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_HALFLING, "Halfling", '@', RACE_SIZE_SMALL);
+    RACE_INFO(RACE_HUMAN, "Human", '@', RACE_SIZE_MEDIUM);
+
+    RACE_INFO(RACE_ABBERATION, "Abberation", 'A', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_ANIMAL, "Animal", 'a', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_BEAST, "Beast", 'b', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_CONSTRUCT, "Construct", 'c', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_DRAGON, "Dragon", 'D', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_ELEMENTAL, "Elemental", 'e', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_FEY, "Fey", 'f', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_GIANT, "Giant", 'G', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_GOBLINOID, "Goblinoid", 'g', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_MAGICAL_BEAST, "Magical Beast", 'M', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_MONSTROUS_HUMANOID, "Monstrous Humanoid", 'm', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_OOZE, "Ooze", 'O', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_ORC, "Orc", 'o', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_OUTSIDER, "Outsider", 'z', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_REPTILLIAN, "Reptillian", 'r', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_SHAPECHANGER, "Shapechanger", 's', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_UNDEAD, "Undead", 'u', RACE_SIZE_MEDIUM);
+    RACE_INFO(RACE_VERMIN, "Vermin", 'v', RACE_SIZE_MEDIUM);
 
     game->class_info[CLASS_BARBARIAN].name = "Barbarian";
     game->class_info[CLASS_BARBARIAN].color = TCOD_amber;
@@ -835,7 +774,6 @@ struct game *game_create(void)
     game->player = NULL;
 
     game->turn = 0;
-    game->turn_available = true;
     game->should_update = true;
     game->should_restart = false;
 
@@ -913,9 +851,9 @@ void game_load(struct game *game)
 
 void game_update(struct game *game, struct engine *engine)
 {
-    if (engine->state == ENGINE_STATE_PLAYING)
+    if (engine->state == ENGINE_STATE_PLAY)
     {
-        game->turn_available = true;
+        game->state = game->player->dead ? GAME_STATE_LOSE : GAME_STATE_PLAY;
 
         struct map *map = &game->maps[game->player->level];
 

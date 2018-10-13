@@ -40,7 +40,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
     {
     case TCOD_EVENT_KEY_PRESS:
     {
-        if (engine->state == ENGINE_STATE_PLAYING)
+        if (engine->state == ENGINE_STATE_PLAY)
         {
             input->automoving = false;
         }
@@ -60,7 +60,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                     ui->menu_state = MENU_STATE_MAIN;
                 }
             }
-            else if (engine->state == ENGINE_STATE_PLAYING)
+            else if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->tooltip_visible)
                 {
@@ -108,7 +108,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_PAGEDOWN:
         {
-            if (engine->state == ENGINE_STATE_PLAYING && ui->panel_visible)
+            if (engine->state == ENGINE_STATE_PLAY && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -118,7 +118,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_PAGEUP:
         {
-            if (engine->state == ENGINE_STATE_PLAYING && ui->panel_visible)
+            if (engine->state == ENGINE_STATE_PLAY && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -128,14 +128,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP1:
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
                     ui->target_x--;
                     ui->target_y++;
                 }
-                else if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                else if (game->state == GAME_STATE_PLAY)
                 {
                     int x = game->player->x - 1;
                     int y = game->player->y + 1;
@@ -164,14 +164,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_KP2:
         case TCODK_DOWN:
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
                     ui->target_x;
                     ui->target_y++;
                 }
-                else if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                else if (game->state == GAME_STATE_PLAY)
                 {
                     int x = game->player->x;
                     int y = game->player->y + 1;
@@ -199,14 +199,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP3:
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
                     ui->target_x++;
                     ui->target_y++;
                 }
-                else if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                else if (game->state == GAME_STATE_PLAY)
                 {
                     int x = game->player->x + 1;
                     int y = game->player->y + 1;
@@ -235,14 +235,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_KP4:
         case TCODK_LEFT:
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
                     ui->target_x--;
                     ui->target_y;
                 }
-                else if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                else if (game->state == GAME_STATE_PLAY)
                 {
                     int x = game->player->x - 1;
                     int y = game->player->y;
@@ -270,7 +270,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP5:
         {
-            if (engine->state == ENGINE_STATE_PLAYING && game->turn_available)
+            if (engine->state == ENGINE_STATE_PLAY && game->state != GAME_STATE_WAIT)
             {
                 game->should_update = true;
             }
@@ -279,14 +279,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_KP6:
         case TCODK_RIGHT:
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
                     ui->target_x++;
                     ui->target_y;
                 }
-                else if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                else if (game->state == GAME_STATE_PLAY)
                 {
                     int x = game->player->x + 1;
                     int y = game->player->y;
@@ -314,14 +314,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP7:
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
                     ui->target_x--;
                     ui->target_y--;
                 }
-                else if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                else if (game->state == GAME_STATE_PLAY)
                 {
                     int x = game->player->x - 1;
                     int y = game->player->y - 1;
@@ -350,14 +350,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_KP8:
         case TCODK_UP:
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
                     ui->target_x;
                     ui->target_y--;
                 }
-                else if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                else if (game->state == GAME_STATE_PLAY)
                 {
                     int x = game->player->x;
                     int y = game->player->y - 1;
@@ -385,14 +385,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP9:
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
                     ui->target_x++;
                     ui->target_y--;
                 }
-                else if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                else if (game->state == GAME_STATE_PLAY)
                 {
                     int x = game->player->x + 1;
                     int y = game->player->y - 1;
@@ -421,102 +421,117 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_CHAR:
         {
             bool handled = false;
+            int alpha = key.c - 'a';
 
-            if (key.c >= 97 && key.c <= 122)
+            if (engine->state == ENGINE_STATE_MENU && ui->menu_state == MENU_STATE_MAIN && alpha >= 0 && alpha < NUM_MAIN_MENU_OPTIONS)
             {
-                int alpha = key.c - 97;
+                enum main_menu_option main_menu_option = (enum main_menu_option)alpha;
 
-                if (engine->state == ENGINE_STATE_MENU)
+                switch (main_menu_option)
                 {
-                    enum main_menu_option main_menu_option = (enum main_menu_option)alpha;
+                case MAIN_MENU_OPTION_START:
+                {
+                    engine->state = ENGINE_STATE_PLAY;
 
-                    switch (main_menu_option)
+                    if (TCOD_sys_file_exists(SAVE_PATH))
                     {
-                    case MAIN_MENU_OPTION_START:
-                    {
-                        engine->state = ENGINE_STATE_PLAYING;
-
-                        if (TCOD_sys_file_exists(SAVE_PATH))
-                        {
-                            game_load(game);
-                        }
-                        else
-                        {
-                            game_new(game);
-                        }
-
-                        handled = true;
+                        game_load(game);
                     }
-                    break;
-                    case MAIN_MENU_OPTION_ABOUT:
+                    else
                     {
-                        ui->menu_state = MENU_STATE_ABOUT;
-
-                        handled = true;
-                    }
-                    break;
-                    case MAIN_MENU_OPTION_QUIT:
-                    {
-                        engine->should_quit = true;
-
-                        handled = true;
-                    }
-                    break;
+                        game_new(game);
                     }
                 }
-                else if (engine->state == ENGINE_STATE_PLAYING)
+                break;
+                case MAIN_MENU_OPTION_ABOUT:
                 {
-                    if (game->state == GAME_STATE_PLAYING && game->turn_available)
+                    ui->menu_state = MENU_STATE_ABOUT;
+                }
+                break;
+                case MAIN_MENU_OPTION_QUIT:
+                {
+                    engine->should_quit = true;
+                }
+                break;
+                }
+
+                handled = true;
+            }
+            else if (engine->state == ENGINE_STATE_PLAY)
+            {
+                if (input->inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(game->player->items))
+                {
+                    struct item *item = TCOD_list_get(game->player->items, alpha);
+
+                    switch (input->inventory_action)
                     {
-                        if (input->inventory_action != INVENTORY_ACTION_NONE)
+                    case INVENTORY_ACTION_EQUIP:
+                    {
+                        if (game->state == GAME_STATE_PLAY)
                         {
-                            struct item *item = TCOD_list_get(game->player->items, alpha);
-
-                            if (item)
-                            {
-                                switch (input->inventory_action)
-                                {
-                                case INVENTORY_ACTION_EQUIP:
-                                {
-                                    game->should_update = actor_equip(game->player, item);
-
-                                    input->inventory_action = INVENTORY_ACTION_NONE;
-
-                                    ui->panel_status[PANEL_INVENTORY].selection_mode = false;
-
-                                    handled = true;
-                                }
-                                break;
-                                case INVENTORY_ACTION_DROP:
-                                {
-                                    game->should_update = actor_drop(game->player, item);
-
-                                    input->inventory_action = INVENTORY_ACTION_NONE;
-
-                                    ui->panel_status[PANEL_INVENTORY].selection_mode = false;
-
-                                    handled = true;
-                                }
-                                break;
-                                }
-                            }
-                        }
-                        else if (input->character_action != CHARACTER_ACTION_NONE)
-                        {
-                            enum equip_slot equip_slot = (enum equip_slot)alpha + 1;
-
-                            if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
-                            {
-                                game->should_update = actor_unequip(game->player, equip_slot);
-
-                                input->character_action = CHARACTER_ACTION_NONE;
-
-                                ui->panel_status[PANEL_CHARACTER].selection_mode = false;
-
-                                handled = true;
-                            }
+                            game->should_update = actor_equip(game->player, item);
                         }
                     }
+                    break;
+                    case INVENTORY_ACTION_EXAMINE:
+                    {
+                        // TODO: send examine target to ui
+
+                        ui_panel_show(ui, PANEL_EXAMINE);
+                    }
+                    break;
+                    case INVENTORY_ACTION_DROP:
+                    {
+                        if (game->state == GAME_STATE_PLAY)
+                        {
+                            game->should_update = actor_drop(game->player, item);
+                        }
+                    }
+                    break;
+                    case INVENTORY_ACTION_QUAFF:
+                    {
+                        if (game->state == GAME_STATE_PLAY)
+                        {
+                            game->should_update = actor_quaff(game->player, item);
+                        }
+                    }
+                    break;
+                    }
+
+                    input->inventory_action = INVENTORY_ACTION_NONE;
+
+                    ui->panel_status[PANEL_INVENTORY].selection_mode = false;
+
+                    handled = true;
+                }
+                else if (input->character_action != CHARACTER_ACTION_NONE && alpha >= 1 && alpha < NUM_EQUIP_SLOTS)
+                {
+                    enum equip_slot equip_slot = (enum equip_slot)alpha + 1;
+
+                    switch (input->character_action)
+                    {
+                    case CHARACTER_ACTION_EXAMINE:
+                    {
+                        // TODO: send examine target to ui
+
+                        ui_panel_show(ui, PANEL_EXAMINE);
+                    }
+                    break;
+                    case CHARACTER_ACTION_UNEQUIP:
+                    {
+                        if (game->state == GAME_STATE_PLAY)
+                        {
+                            game->should_update = actor_unequip(game->player, equip_slot);
+                        }
+                    }
+                    break;
+                    }
+
+                    input->character_action = CHARACTER_ACTION_NONE;
+
+                    ui->panel_status[PANEL_CHARACTER].selection_mode = false;
+
+                    handled = true;
                 }
             }
 
@@ -529,7 +544,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             {
             case '<':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_ascend(game->player);
                 }
@@ -537,7 +552,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case '>':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_descend(game->player);
                 }
@@ -545,7 +560,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'b':
             {
-                if (engine->state == ENGINE_STATE_PLAYING)
+                if (engine->state == ENGINE_STATE_PLAY)
                 {
                     ui_panel_toggle(ui, PANEL_SPELLBOOK);
                 }
@@ -553,7 +568,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'C':
             {
-                if (engine->state == ENGINE_STATE_PLAYING)
+                if (engine->state == ENGINE_STATE_PLAY)
                 {
                     ui_panel_toggle(ui, PANEL_CHARACTER);
                 }
@@ -561,7 +576,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'c':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
@@ -577,7 +592,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'D':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_DRINK;
 
@@ -593,7 +608,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'd':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(ui, PANEL_INVENTORY);
 
@@ -612,7 +627,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'e':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(ui, PANEL_INVENTORY);
 
@@ -631,7 +646,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'f':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     if (ui->targeting == TARGETING_SHOOT)
                     {
@@ -689,7 +704,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'g':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_grab(game->player, game->player->x, game->player->y);
                 }
@@ -697,7 +712,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'i':
             {
-                if (engine->state == ENGINE_STATE_PLAYING)
+                if (engine->state == ENGINE_STATE_PLAY)
                 {
                     ui_panel_toggle(ui, PANEL_INVENTORY);
                 }
@@ -705,7 +720,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'l':
             {
-                if (engine->state == ENGINE_STATE_PLAYING)
+                if (engine->state == ENGINE_STATE_PLAY)
                 {
                     if (ui->targeting == TARGETING_LOOK)
                     {
@@ -723,7 +738,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'm':
             {
-                if (engine->state == ENGINE_STATE_PLAYING)
+                if (engine->state == ENGINE_STATE_PLAY)
                 {
                     ui->message_log_visible = !ui->message_log_visible;
                 }
@@ -731,7 +746,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'o':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
 
@@ -747,7 +762,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'p':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_PRAY;
 
@@ -763,21 +778,26 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'q':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
-                    // TODO:
-                    // open inventory
-                    // enter "select item mode (quaff action)"
-                    // ESC or Right Click to leave
-                    // press a-z key or left click an item to select
-                    // from wherever that event gets picked up, use the mode and calculate what item was selected
-                    // drink it
+                    ui_panel_show(ui, PANEL_INVENTORY);
+
+                    input->inventory_action = INVENTORY_ACTION_QUAFF;
+                    ui->panel_status[PANEL_INVENTORY].selection_mode = true;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose an item to quaff, ESC to cancel");
                 }
             }
             break;
             case 'r':
             {
-                if (engine->state == ENGINE_STATE_PLAYING)
+                if (engine->state == ENGINE_STATE_PLAY)
                 {
                     ui->should_restart = true;
                 }
@@ -785,7 +805,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 's':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     if (key.lctrl)
                     {
@@ -816,7 +836,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 't':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     game->player->torch = !game->player->torch;
 
@@ -826,7 +846,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'u':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(ui, PANEL_CHARACTER);
 
@@ -843,31 +863,68 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 }
             }
             break;
+            case 'X':
+            {
+                if (engine->state == ENGINE_STATE_PLAY)
+                {
+                    ui_panel_show(ui, PANEL_INVENTORY);
+
+                    input->inventory_action = INVENTORY_ACTION_EXAMINE;
+                    ui->panel_status[PANEL_INVENTORY].selection_mode = true;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose an item to examine, ESC to cancel");
+                }
+            }
+            break;
             case 'x':
             {
-                if (engine->state == ENGINE_STATE_PLAYING)
+                if (engine->state == ENGINE_STATE_PLAY)
                 {
-                    if (ui->targeting == TARGETING_EXAMINE)
+                    if (key.lctrl)
                     {
-                        ui->targeting = TARGETING_NONE;
+                        ui_panel_show(ui, PANEL_CHARACTER);
 
-                        // TODO: send examine target to ui
+                        input->character_action = CHARACTER_ACTION_EXAMINE;
+                        ui->panel_status[PANEL_CHARACTER].selection_mode = true;
 
-                        ui_panel_show(ui, PANEL_EXAMINE);
+                        game_log(
+                            game,
+                            game->player->level,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_white,
+                            "Choose an equipment to examine, ESC to cancel");
                     }
                     else
                     {
-                        ui->targeting = TARGETING_EXAMINE;
+                        if (ui->targeting == TARGETING_EXAMINE)
+                        {
+                            ui->targeting = TARGETING_NONE;
 
-                        ui->target_x = game->player->x;
-                        ui->target_y = game->player->y;
+                            // TODO: send examine target to ui
+
+                            ui_panel_show(ui, PANEL_EXAMINE);
+                        }
+                        else
+                        {
+                            ui->targeting = TARGETING_EXAMINE;
+
+                            ui->target_x = game->player->x;
+                            ui->target_y = game->player->y;
+                        }
                     }
                 }
             }
             break;
             case 'z':
             {
-                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
                 {
                     if (ui->targeting == TARGETING_SPELL)
                     {
@@ -909,7 +966,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 {
                 case MAIN_MENU_OPTION_START:
                 {
-                    engine->state = ENGINE_STATE_PLAYING;
+                    engine->state = ENGINE_STATE_PLAY;
 
                     if (TCOD_sys_file_exists(SAVE_PATH))
                     {
@@ -933,7 +990,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 break;
                 }
             }
-            else if (engine->state == ENGINE_STATE_PLAYING)
+            else if (engine->state == ENGINE_STATE_PLAY)
             {
                 input->automoving = false;
 
@@ -1009,7 +1066,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         }
         else if (mouse.rbutton)
         {
-            if (engine->state == ENGINE_STATE_PLAYING)
+            if (engine->state == ENGINE_STATE_PLAY)
             {
                 if (ui_view_is_inside(ui, ui->mouse_x, ui->mouse_y) && map_is_inside(ui->mouse_tile_x, ui->mouse_tile_y))
                 {
@@ -1116,7 +1173,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         }
         else if (mouse.wheel_down)
         {
-            if (engine->state == ENGINE_STATE_PLAYING && ui->panel_visible)
+            if (engine->state == ENGINE_STATE_PLAY && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -1125,7 +1182,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         }
         else if (mouse.wheel_up)
         {
-            if (engine->state == ENGINE_STATE_PLAYING && ui->panel_visible)
+            if (engine->state == ENGINE_STATE_PLAY && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -1136,7 +1193,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
     break;
     }
 
-    if (input->automoving && engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+    if (input->automoving && engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
     {
         // probably shouldnt use the path function for this
         // we need to implement custom behavior depending on what the player is doing

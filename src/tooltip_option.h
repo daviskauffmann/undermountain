@@ -9,6 +9,7 @@ struct tooltip_data
     int x;
     int y;
     struct item *item;
+    enum equip_slot equip_slot;
 };
 
 struct tooltip_option

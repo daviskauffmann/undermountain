@@ -504,9 +504,9 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
 
                     handled = true;
                 }
-                else if (input->character_action != CHARACTER_ACTION_NONE && alpha >= 1 && alpha < NUM_EQUIP_SLOTS)
+                else if (input->character_action != CHARACTER_ACTION_NONE && alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
                 {
-                    enum equip_slot equip_slot = (enum equip_slot)alpha + 1;
+                    enum equip_slot equip_slot = (enum equip_slot)(alpha + 1);
 
                     switch (input->character_action)
                     {
@@ -531,6 +531,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
 
                     ui->panel_status[PANEL_CHARACTER].selection_mode = false;
 
+                    handled = true;
+                }
+            }
+
+            for (enum panel panel = 0; panel < NUM_PANELS; panel++)
+            {
+                if (ui->panel_status[panel].selection_mode)
+                {
                     handled = true;
                 }
             }

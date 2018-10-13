@@ -48,7 +48,7 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
                 struct main_menu_option_info *main_menu_option_info = &ui->main_menu_option_info[main_menu_option];
 
                 TCOD_console_set_default_foreground(NULL, main_menu_option == ui_main_menu_get_selected(ui) ? TCOD_yellow : TCOD_white);
-                TCOD_console_print(NULL, 1, y++, "%c) %s", main_menu_option + 97, main_menu_option_info->text);
+                TCOD_console_print(NULL, 1, y++, "%c) %s", main_menu_option + 'a', main_menu_option_info->text);
             }
         }
         break;
@@ -370,7 +370,7 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
                         if (panel_status->selection_mode)
                         {
                             TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: %s",
-                                               equip_slot + 97 - 1,
+                                               equip_slot + 'a' - 1,
                                                game->equip_slot_info[equip_slot].label,
                                                game->item_info[game->player->equipment[equip_slot]->type].name);
                         }
@@ -386,7 +386,7 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
                         if (panel_status->selection_mode)
                         {
                             TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: N/A",
-                                               equip_slot + 97 - 1,
+                                               equip_slot + 'a' - 1,
                                                game->equip_slot_info[equip_slot].label);
                         }
                         else
@@ -434,7 +434,7 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
                     TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected(ui, game) ? TCOD_yellow : game->base_item_info[game->item_info[item->type].base_item].color);
                     if (panel_status->selection_mode)
                     {
-                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 97 - panel_status->scroll, game->item_info[item->type].name);
+                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 'a' - panel_status->scroll, game->item_info[item->type].name);
                     }
                     else
                     {

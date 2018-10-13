@@ -1128,21 +1128,29 @@ bool actor_equip(struct actor *actor, struct item *item)
         return false;
     }
 
-    struct item *equipment = actor->equipment[base_item_info->equip_slot];
-
-    if (equipment)
+    if (actor->equipment[base_item_info->equip_slot])
     {
         actor_unequip(actor, base_item_info->equip_slot);
     }
 
-    // TODO: figure out two-handedness and unequip accordingly
-    if (base_item_info->equip_slot == EQUIP_SLOT_MAIN_HAND)
+    if (item_is_two_handed(item, actor))
     {
+        struct item *off_hand = actor->equipment[EQUIP_SLOT_OFF_HAND];
 
+        if (off_hand)
+        {
+            actor_unequip(actor, EQUIP_SLOT_OFF_HAND);
+        }
     }
 
     if (base_item_info->equip_slot == EQUIP_SLOT_OFF_HAND)
     {
+        struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+
+        if (main_hand && item_is_two_handed(main_hand, actor))
+        {
+            actor_unequip(actor, EQUIP_SLOT_MAIN_HAND);
+        }
     }
 
     TCOD_list_remove(actor->items, item);
@@ -1174,8 +1182,9 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s is not equipping anything in that slot",
-            actor->name);
+            "%s is not equipping anything their %s slot",
+            actor->name,
+            game->equip_slot_info[equip_slot].name);
 
         return false;
     }

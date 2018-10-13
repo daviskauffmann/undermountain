@@ -240,13 +240,21 @@ struct game *game_create(void)
 
     game->item_common.__placeholder = 0;
 
+    game->equip_slot_info[EQUIP_SLOT_ARMOR].name = "Armor";
     game->equip_slot_info[EQUIP_SLOT_ARMOR].label = "Armor ";
+    game->equip_slot_info[EQUIP_SLOT_BELT].name = "Belt";
     game->equip_slot_info[EQUIP_SLOT_BELT].label = "Belt  ";
+    game->equip_slot_info[EQUIP_SLOT_BOOTS].name = "Boots";
     game->equip_slot_info[EQUIP_SLOT_BOOTS].label = "Boots ";
+    game->equip_slot_info[EQUIP_SLOT_CLOAK].name = "Cloak";
     game->equip_slot_info[EQUIP_SLOT_CLOAK].label = "Cloak ";
+    game->equip_slot_info[EQUIP_SLOT_GLOVES].name = "Gloves";
     game->equip_slot_info[EQUIP_SLOT_GLOVES].label = "Gloves";
+    game->equip_slot_info[EQUIP_SLOT_HELMET].name = "Helmet";
     game->equip_slot_info[EQUIP_SLOT_HELMET].label = "Helmet";
+    game->equip_slot_info[EQUIP_SLOT_MAIN_HAND].name = "Main Hand";
     game->equip_slot_info[EQUIP_SLOT_MAIN_HAND].label = "M-Hand";
+    game->equip_slot_info[EQUIP_SLOT_OFF_HAND].name = "Off Hand";
     game->equip_slot_info[EQUIP_SLOT_OFF_HAND].label = "O-Hand";
 
     game->base_item_info[BASE_ITEM_BATTLEAXE].glyph = 'T';
@@ -803,6 +811,11 @@ void game_new(struct game *game)
 
         TCOD_list_push(map->actors, game->player);
         tile->actor = game->player;
+
+        struct item *longsword = item_create(ITEM_TYPE_LONGSWORD, game, level, x, y);
+
+        TCOD_list_push(map->items, longsword);
+        TCOD_list_push(game->player->items, longsword);
 
         struct item *greatsword = item_create(ITEM_TYPE_GREATSWORD, game, level, x, y);
 

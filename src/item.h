@@ -55,6 +55,7 @@ enum equip_slot
 
 struct equip_slot_info
 {
+    char *name;
     char *label;
 };
 

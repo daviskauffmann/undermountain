@@ -72,5 +72,7 @@ int engine_run(struct engine *engine)
 
 void engine_destroy(struct engine *engine)
 {
+    TCOD_console_delete(NULL);
+
     free(engine);
 }

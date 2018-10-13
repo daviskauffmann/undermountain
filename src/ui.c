@@ -27,9 +27,13 @@ struct ui *ui_create(void)
     ui->current_panel = PANEL_CHARACTER;
 
     ui->panel_status[PANEL_CHARACTER].scroll = 0;
+    ui->panel_status[PANEL_CHARACTER].selection_mode = false;
     ui->panel_status[PANEL_EXAMINE].scroll = 0;
+    ui->panel_status[PANEL_EXAMINE].selection_mode = false;
     ui->panel_status[PANEL_INVENTORY].scroll = 0;
+    ui->panel_status[PANEL_INVENTORY].selection_mode = false;
     ui->panel_status[PANEL_SPELLBOOK].scroll = 0;
+    ui->panel_status[PANEL_SPELLBOOK].selection_mode = false;
 
     ui->message_log_visible = true;
     ui->message_log_x = 0;
@@ -115,17 +119,20 @@ void ui_update(struct ui *ui, struct engine *engine, struct game *game)
 
 enum main_menu_option ui_main_menu_get_selected(struct ui *ui)
 {
-    int y = 1;
-    for (enum main_menu_option main_menu_option = 0; main_menu_option < NUM_MAIN_MENU_OPTIONS; main_menu_option++)
+    if (ui->menu_state == MENU_STATE_MAIN)
     {
-        struct main_menu_option_info *main_menu_option_info = &ui->main_menu_option_info[main_menu_option];
-
-        if (ui->mouse_x > 0 && ui->mouse_x < (int)strlen(main_menu_option_info->text) + 3 + 1 && ui->mouse_y == y)
+        int y = 1;
+        for (enum main_menu_option main_menu_option = 0; main_menu_option < NUM_MAIN_MENU_OPTIONS; main_menu_option++)
         {
-            return main_menu_option;
-        }
+            struct main_menu_option_info *main_menu_option_info = &ui->main_menu_option_info[main_menu_option];
 
-        y++;
+            if (ui->mouse_x > 0 && ui->mouse_x < (int)strlen(main_menu_option_info->text) + 3 + 1 && ui->mouse_y == y)
+            {
+                return main_menu_option;
+            }
+
+            y++;
+        }
     }
 
     return -1;
@@ -169,19 +176,41 @@ void ui_panel_show(struct ui *ui, enum panel panel)
     }
 }
 
+enum equip_slot ui_panel_character_get_selected(struct ui *ui, struct game *game)
+{
+    if (ui->panel_visible && ui->current_panel == PANEL_CHARACTER)
+    {
+        int y = 15;
+        for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+        {
+            if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(game->equip_slot_info[equip_slot].label) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+            {
+                return equip_slot;
+            }
+
+            y++;
+        }
+    }
+
+    return -1;
+}
+
 struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game)
 {
-    int y = 1;
-    for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
+    if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
     {
-        struct item *item = *iterator;
-
-        if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(game->item_info[item->type].name) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+        int y = 1;
+        for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
         {
-            return item;
-        }
+            struct item *item = *iterator;
 
-        y++;
+            if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(game->item_info[item->type].name) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+            {
+                return item;
+            }
+
+            y++;
+        }
     }
 
     return NULL;
@@ -234,17 +263,20 @@ void ui_tooltip_options_clear(struct ui *ui)
 
 struct tooltip_option *ui_tooltip_get_selected(struct ui *ui)
 {
-    int y = 1;
-    for (void **i = TCOD_list_begin(ui->tooltip_options); i != TCOD_list_end(ui->tooltip_options); i++)
+    if (ui->tooltip_visible)
     {
-        struct tooltip_option *option = *i;
-
-        if (ui->mouse_x > ui->tooltip_x && ui->mouse_x < ui->tooltip_x + (int)strlen(option->text) + 1 && ui->mouse_y == y + ui->tooltip_y)
+        int y = 1;
+        for (void **i = TCOD_list_begin(ui->tooltip_options); i != TCOD_list_end(ui->tooltip_options); i++)
         {
-            return option;
-        }
+            struct tooltip_option *option = *i;
 
-        y++;
+            if (ui->mouse_x > ui->tooltip_x && ui->mouse_x < ui->tooltip_x + (int)strlen(option->text) + 1 && ui->mouse_y == y + ui->tooltip_y)
+            {
+                return option;
+            }
+
+            y++;
+        }
     }
 
     return NULL;

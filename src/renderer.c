@@ -362,17 +362,40 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
                 y++;
                 for (enum equip_slot equip_slot = EQUIP_SLOT_ARMOR; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                 {
+                    TCOD_console_set_default_foreground(renderer->panel, equip_slot == ui_panel_character_get_selected(ui, game) ? TCOD_yellow : TCOD_white);
+
                     if (game->player->equipment[equip_slot])
                     {
-                        TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: %s",
-                                           game->equip_slot_info[equip_slot].label,
-                                           game->item_info[game->player->equipment[equip_slot]->type].name);
+                        if (panel_status->selection_mode)
+                        {
+                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: %s",
+                                               equip_slot + 97 - 1,
+                                               game->equip_slot_info[equip_slot].label,
+                                               game->item_info[game->player->equipment[equip_slot]->type].name);
+                        }
+                        else
+                        {
+                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: %s",
+                                               game->equip_slot_info[equip_slot].label,
+                                               game->item_info[game->player->equipment[equip_slot]->type].name);
+                        }
                     }
                     else
                     {
-                        TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: N/A",
-                                           game->equip_slot_info[equip_slot].label);
+                        if (panel_status->selection_mode)
+                        {
+                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: N/A",
+                                               equip_slot + 97 - 1,
+                                               game->equip_slot_info[equip_slot].label);
+                        }
+                        else
+                        {
+                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: N/A",
+                                               game->equip_slot_info[equip_slot].label);
+                        }
                     }
+
+                    TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
                 }
                 y++;
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "AC: %d", actor_calc_armor_class(game->player));
@@ -408,7 +431,14 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
                     struct item *item = *iterator;
 
                     TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected(ui, game) ? TCOD_yellow : game->base_item_info[game->item_info[item->type].base_item].color);
-                    TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 97 - panel_status->scroll, game->item_info[item->type].name);
+                    if (panel_status->selection_mode)
+                    {
+                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 97 - panel_status->scroll, game->item_info[item->type].name);
+                    }
+                    else
+                    {
+                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, game->item_info[item->type].name);
+                    }
 
                     y++;
                 }

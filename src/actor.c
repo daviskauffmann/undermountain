@@ -1131,8 +1131,7 @@ bool actor_equip(struct actor *actor, struct item *item)
 
     if (equipment)
     {
-        TCOD_list_push(actor->items, equipment);
-        actor->equipment[base_item_info->equip_slot] = NULL;
+        actor_unequip(actor, base_item_info->equip_slot);
     }
 
     TCOD_list_remove(actor->items, item);
@@ -1145,6 +1144,43 @@ bool actor_equip(struct actor *actor, struct item *item)
         actor->y,
         TCOD_white,
         "%s equips %s",
+        actor->name,
+        item_info->name);
+
+    return true;
+}
+
+bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
+{
+    struct game *game = actor->game;
+    struct item *equipment = actor->equipment[equip_slot];
+
+    if (!equipment)
+    {
+        game_log(
+            game,
+            actor->level,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s is not equipping anything in that slot",
+            actor->name);
+
+        return false;
+    }
+
+    struct item_info *item_info = &game->item_info[equipment->type];
+
+    TCOD_list_push(actor->items, equipment);
+    actor->equipment[equip_slot] = NULL;
+
+    game_log(
+        game,
+        actor->level,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s unequips %s",
         actor->name,
         item_info->name);
 

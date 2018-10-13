@@ -23,10 +23,17 @@ enum inventory_action
     INVENTORY_ACTION_EQUIP
 };
 
+enum character_action
+{
+    CHARACTER_ACTION_NONE,
+    CHARACTER_ACTION_UNEQUIP
+};
+
 struct input
 {
     enum directional_action directional_action;
     enum inventory_action inventory_action;
+    enum character_action character_action;
     bool automoving;
     int automove_x;
     int automove_y;

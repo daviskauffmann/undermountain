@@ -21,6 +21,7 @@ struct input *input_create(void)
 
     input->directional_action = DIRECTIONAL_ACTION_NONE;
     input->inventory_action = INVENTORY_ACTION_NONE;
+    input->character_action = CHARACTER_ACTION_NONE;
     input->automoving = false;
     input->automove_x = -1;
     input->automove_y = -1;
@@ -64,13 +65,18 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 {
                     ui_tooltip_hide(ui);
                 }
-                else if (input->directional_action != DIRECTIONAL_ACTION_NONE)
+                else if (input->directional_action != DIRECTIONAL_ACTION_NONE ||
+                         input->inventory_action != INVENTORY_ACTION_NONE ||
+                         input->character_action != CHARACTER_ACTION_NONE)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_NONE;
-                }
-                else if (input->inventory_action != INVENTORY_ACTION_NONE)
-                {
                     input->inventory_action = INVENTORY_ACTION_NONE;
+                    input->character_action = CHARACTER_ACTION_NONE;
+
+                    for (enum panel panel = 0; panel < NUM_PANELS; panel++)
+                    {
+                        ui->panel_status[panel].selection_mode = false;
+                    }
                 }
                 else if (ui->panel_visible)
                 {
@@ -413,55 +419,17 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_CHAR:
         {
-            if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available && input->inventory_action != INVENTORY_ACTION_NONE && key.c >= 97 && key.c <= 122)
+            bool handled = false;
+
+            if (key.c >= 97 && key.c <= 122)
             {
-                int index = key.c - 97 + ui->panel_status[PANEL_INVENTORY].scroll; // ui_panel_get_key_selected?
-                struct item *item = TCOD_list_get(game->player->items, index);
+                if (engine->state == ENGINE_STATE_MENU)
+                {
+                    enum main_menu_option main_menu_option = key.c - 97;
 
-                if (item)
-                {
-                    switch (input->inventory_action)
+                    switch (main_menu_option)
                     {
-                    case INVENTORY_ACTION_EQUIP:
-                    {
-                        actor_equip(game->player, item);
-
-                        input->inventory_action = INVENTORY_ACTION_NONE;
-                    }
-                    break;
-                    case INVENTORY_ACTION_DROP:
-                    {
-                        actor_drop(game->player, item);
-
-                        input->inventory_action = INVENTORY_ACTION_NONE;
-                    }
-                    break;
-                    }
-                }
-            }
-            else
-            {
-                switch (key.c)
-                {
-                case '<':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        game->should_update = actor_ascend(game->player);
-                    }
-                }
-                break;
-                case '>':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        game->should_update = actor_descend(game->player);
-                    }
-                }
-                break;
-                case 'a':
-                {
-                    if (engine->state == ENGINE_STATE_MENU)
+                    case MAIN_MENU_OPTION_START:
                     {
                         engine->state = ENGINE_STATE_PLAYING;
 
@@ -473,206 +441,364 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                         {
                             game_new(game);
                         }
+
+                        handled = true;
                     }
-                }
-                break;
-                case 'b':
-                {
-                    if (engine->state == ENGINE_STATE_MENU)
+                    break;
+                    case MAIN_MENU_OPTION_ABOUT:
                     {
                         ui->menu_state = MENU_STATE_ABOUT;
+
+                        handled = true;
                     }
-                    else if (engine->state == ENGINE_STATE_PLAYING)
-                    {
-                        ui_panel_toggle(ui, PANEL_SPELLBOOK);
-                    }
-                }
-                break;
-                case 'C':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING)
-                    {
-                        ui_panel_toggle(ui, PANEL_CHARACTER);
-                    }
-                }
-                break;
-                case 'c':
-                {
-                    if (engine->state == ENGINE_STATE_MENU)
+                    break;
+                    case MAIN_MENU_OPTION_QUIT:
                     {
                         engine->should_quit = true;
-                    }
-                    else if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        input->directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
-                        game_log(
-                            game,
-                            game->player->level,
-                            game->player->x,
-                            game->player->y,
-                            TCOD_white,
-                            "Choose a direction, ESC to cancel");
+                        handled = true;
+                    }
+                    break;
                     }
                 }
-                break;
-                case 'D':
+                else if (engine->state == ENGINE_STATE_PLAYING)
                 {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                    if (game->state == GAME_STATE_PLAYING && game->turn_available)
                     {
-                        input->directional_action = DIRECTIONAL_ACTION_DRINK;
-
-                        game_log(
-                            game,
-                            game->player->level,
-                            game->player->x,
-                            game->player->y,
-                            TCOD_white,
-                            "Choose a direction, ESC to cancel");
-                    }
-                }
-                break;
-                case 'd':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        ui_panel_show(ui, PANEL_INVENTORY);
-
-                        input->inventory_action = INVENTORY_ACTION_DROP;
-
-                        game_log(
-                            game,
-                            game->player->level,
-                            game->player->x,
-                            game->player->y,
-                            TCOD_white,
-                            "Choose an item to drop, ESC to cancel");
-                    }
-                }
-                break;
-                case 'e':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        ui_panel_show(ui, PANEL_INVENTORY);
-
-                        input->inventory_action = INVENTORY_ACTION_EQUIP;
-
-                        game_log(
-                            game,
-                            game->player->level,
-                            game->player->x,
-                            game->player->y,
-                            TCOD_white,
-                            "Choose an item to equip, ESC to cancel");
-                    }
-                }
-                break;
-                case 'f':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        if (ui->targeting == TARGETING_SHOOT)
+                        if (input->inventory_action != INVENTORY_ACTION_NONE)
                         {
-                            actor_shoot(game->player, ui->target_x, ui->target_y, &cb_should_update, game);
+                            struct item *item = TCOD_list_get(game->player->items, key.c - 97);
 
-                            ui->targeting = TARGETING_NONE;
-                        }
-                        else
-                        {
-                            ui->targeting = TARGETING_SHOOT;
-
-                            bool target_found = false;
-
-                            struct map *map = &game->maps[game->player->level];
-
+                            if (item)
                             {
-                                struct actor *target = NULL;
-                                float min_distance = 1000.0f;
-
-                                for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                                switch (input->inventory_action)
                                 {
-                                    struct actor *actor = *iterator;
+                                case INVENTORY_ACTION_EQUIP:
+                                {
+                                    game->should_update = actor_equip(game->player, item);
 
-                                    if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
-                                        actor->faction != game->player->faction &&
-                                        !actor->dead)
+                                    input->inventory_action = INVENTORY_ACTION_NONE;
+
+                                    ui->panel_status[PANEL_INVENTORY].selection_mode = false;
+
+                                    handled = true;
+                                }
+                                break;
+                                case INVENTORY_ACTION_DROP:
+                                {
+                                    game->should_update = actor_drop(game->player, item);
+
+                                    input->inventory_action = INVENTORY_ACTION_NONE;
+
+                                    ui->panel_status[PANEL_INVENTORY].selection_mode = false;
+
+                                    handled = true;
+                                }
+                                break;
+                                }
+                            }
+                        }
+                        else if (input->character_action != CHARACTER_ACTION_NONE)
+                        {
+                            enum equip_slot equip_slot = key.c - 97 + 1;
+
+                            if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
+                            {
+                                game->should_update = actor_unequip(game->player, equip_slot);
+
+                                input->character_action = CHARACTER_ACTION_NONE;
+
+                                ui->panel_status[PANEL_CHARACTER].selection_mode = false;
+
+                                handled = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (handled)
+            {
+                break;
+            }
+
+            switch (key.c)
+            {
+            case '<':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    game->should_update = actor_ascend(game->player);
+                }
+            }
+            break;
+            case '>':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    game->should_update = actor_descend(game->player);
+                }
+            }
+            break;
+            case 'b':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING)
+                {
+                    ui_panel_toggle(ui, PANEL_SPELLBOOK);
+                }
+            }
+            break;
+            case 'C':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING)
+                {
+                    ui_panel_toggle(ui, PANEL_CHARACTER);
+                }
+            }
+            break;
+            case 'c':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    input->directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose a direction, ESC to cancel");
+                }
+            }
+            break;
+            case 'D':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    input->directional_action = DIRECTIONAL_ACTION_DRINK;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose a direction, ESC to cancel");
+                }
+            }
+            break;
+            case 'd':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    ui_panel_show(ui, PANEL_INVENTORY);
+
+                    input->inventory_action = INVENTORY_ACTION_DROP;
+                    ui->panel_status[PANEL_INVENTORY].selection_mode = true;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose an item to drop, ESC to cancel");
+                }
+            }
+            break;
+            case 'e':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    ui_panel_show(ui, PANEL_INVENTORY);
+
+                    input->inventory_action = INVENTORY_ACTION_EQUIP;
+                    ui->panel_status[PANEL_INVENTORY].selection_mode = true;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose an item to equip, ESC to cancel");
+                }
+            }
+            break;
+            case 'f':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    if (ui->targeting == TARGETING_SHOOT)
+                    {
+                        actor_shoot(game->player, ui->target_x, ui->target_y, &cb_should_update, game);
+
+                        ui->targeting = TARGETING_NONE;
+                    }
+                    else
+                    {
+                        ui->targeting = TARGETING_SHOOT;
+
+                        bool target_found = false;
+
+                        struct map *map = &game->maps[game->player->level];
+
+                        {
+                            struct actor *target = NULL;
+                            float min_distance = 1000.0f;
+
+                            for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                            {
+                                struct actor *actor = *iterator;
+
+                                if (TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y) &&
+                                    actor->faction != game->player->faction &&
+                                    !actor->dead)
+                                {
+                                    float dist = distance_sq(game->player->x, game->player->y, actor->x, actor->y);
+
+                                    if (dist < min_distance)
                                     {
-                                        float dist = distance_sq(game->player->x, game->player->y, actor->x, actor->y);
-
-                                        if (dist < min_distance)
-                                        {
-                                            target = actor;
-                                            min_distance = dist;
-                                        }
+                                        target = actor;
+                                        min_distance = dist;
                                     }
                                 }
-
-                                if (target)
-                                {
-                                    target_found = true;
-
-                                    ui->target_x = target->x;
-                                    ui->target_y = target->y;
-                                }
                             }
 
-                            if (!target_found)
+                            if (target)
                             {
-                                ui->target_x = game->player->x;
-                                ui->target_y = game->player->y;
+                                target_found = true;
+
+                                ui->target_x = target->x;
+                                ui->target_y = target->y;
                             }
                         }
-                    }
-                }
-                break;
-                case 'g':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        game->should_update = actor_grab(game->player, game->player->x, game->player->y);
-                    }
-                }
-                break;
-                case 'i':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING)
-                    {
-                        ui_panel_toggle(ui, PANEL_INVENTORY);
-                    }
-                }
-                break;
-                case 'l':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING)
-                    {
-                        if (ui->targeting == TARGETING_LOOK)
-                        {
-                            ui->targeting = TARGETING_NONE;
-                        }
-                        else
-                        {
-                            ui->targeting = TARGETING_LOOK;
 
+                        if (!target_found)
+                        {
                             ui->target_x = game->player->x;
                             ui->target_y = game->player->y;
                         }
                     }
                 }
-                break;
-                case 'm':
+            }
+            break;
+            case 'g':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
                 {
-                    if (engine->state == ENGINE_STATE_PLAYING)
+                    game->should_update = actor_grab(game->player, game->player->x, game->player->y);
+                }
+            }
+            break;
+            case 'i':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING)
+                {
+                    ui_panel_toggle(ui, PANEL_INVENTORY);
+                }
+            }
+            break;
+            case 'l':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING)
+                {
+                    if (ui->targeting == TARGETING_LOOK)
                     {
-                        ui->message_log_visible = !ui->message_log_visible;
+                        ui->targeting = TARGETING_NONE;
+                    }
+                    else
+                    {
+                        ui->targeting = TARGETING_LOOK;
+
+                        ui->target_x = game->player->x;
+                        ui->target_y = game->player->y;
                     }
                 }
-                break;
-                case 'o':
+            }
+            break;
+            case 'm':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING)
                 {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                    ui->message_log_visible = !ui->message_log_visible;
+                }
+            }
+            break;
+            case 'o':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    input->directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose a direction, ESC to cancel");
+                }
+            }
+            break;
+            case 'p':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    input->directional_action = DIRECTIONAL_ACTION_PRAY;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose a direction, ESC to cancel");
+                }
+            }
+            break;
+            case 'q':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    // TODO:
+                    // open inventory
+                    // enter "select item mode (quaff action)"
+                    // ESC or Right Click to leave
+                    // press a-z key or left click an item to select
+                    // from wherever that event gets picked up, use the mode and calculate what item was selected
+                    // drink it
+                }
+            }
+            break;
+            case 'r':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING)
+                {
+                    ui->should_restart = true;
+                }
+            }
+            break;
+            case 's':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    if (key.lctrl)
                     {
-                        input->directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
+                        game_save(game);
+
+                        game_log(
+                            game,
+                            game->player->level,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_green,
+                            "Game saved!");
+                    }
+                    else
+                    {
+                        input->directional_action = DIRECTIONAL_ACTION_SIT;
 
                         game_log(
                             game,
@@ -683,127 +809,77 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                             "Choose a direction, ESC to cancel");
                     }
                 }
-                break;
-                case 'p':
+            }
+            break;
+            case 't':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
                 {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        input->directional_action = DIRECTIONAL_ACTION_PRAY;
+                    game->player->torch = !game->player->torch;
 
-                        game_log(
-                            game,
-                            game->player->level,
-                            game->player->x,
-                            game->player->y,
-                            TCOD_white,
-                            "Choose a direction, ESC to cancel");
+                    game->should_update = true;
+                }
+            }
+            break;
+            case 'u':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                {
+                    ui_panel_show(ui, PANEL_CHARACTER);
+
+                    input->character_action = CHARACTER_ACTION_UNEQUIP;
+                    ui->panel_status[PANEL_CHARACTER].selection_mode = true;
+
+                    game_log(
+                        game,
+                        game->player->level,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose an item to unequip, ESC to cancel");
+                }
+            }
+            break;
+            case 'x':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING)
+                {
+                    if (ui->targeting == TARGETING_EXAMINE)
+                    {
+                        ui->targeting = TARGETING_NONE;
+
+                        // TODO: send examine target to ui
+
+                        ui_panel_show(ui, PANEL_EXAMINE);
+                    }
+                    else
+                    {
+                        ui->targeting = TARGETING_EXAMINE;
+
+                        ui->target_x = game->player->x;
+                        ui->target_y = game->player->y;
                     }
                 }
-                break;
-                case 'q':
+            }
+            break;
+            case 'z':
+            {
+                if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
                 {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
+                    if (ui->targeting == TARGETING_SPELL)
                     {
-                        // TODO:
-                        // open inventory
-                        // enter "select item mode (quaff action)"
-                        // ESC or Right Click to leave
-                        // press a-z key or left click an item to select
-                        // from wherever that event gets picked up, use the mode and calculate what item was selected
-                        // drink it
+                        ui->targeting = TARGETING_NONE;
+                    }
+                    else
+                    {
+                        ui->targeting = TARGETING_SPELL;
+
+                        ui->target_x = game->player->x;
+                        ui->target_y = game->player->y;
                     }
                 }
-                break;
-                case 'r':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING)
-                    {
-                        ui->should_restart = true;
-                    }
-                }
-                break;
-                case 's':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        if (key.lctrl)
-                        {
-                            game_save(game);
-
-                            game_log(
-                                game,
-                                game->player->level,
-                                game->player->x,
-                                game->player->y,
-                                TCOD_green,
-                                "Game saved!");
-                        }
-                        else
-                        {
-                            input->directional_action = DIRECTIONAL_ACTION_SIT;
-
-                            game_log(
-                                game,
-                                game->player->level,
-                                game->player->x,
-                                game->player->y,
-                                TCOD_white,
-                                "Choose a direction, ESC to cancel");
-                        }
-                    }
-                }
-                break;
-                case 't':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        game->player->torch = !game->player->torch;
-
-                        game->should_update = true;
-                    }
-                }
-                break;
-                case 'x':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING)
-                    {
-                        if (ui->targeting == TARGETING_EXAMINE)
-                        {
-                            ui->targeting = TARGETING_NONE;
-
-                            // TODO: send examine target to ui
-
-                            ui_panel_show(ui, PANEL_EXAMINE);
-                        }
-                        else
-                        {
-                            ui->targeting = TARGETING_EXAMINE;
-
-                            ui->target_x = game->player->x;
-                            ui->target_y = game->player->y;
-                        }
-                    }
-                }
-                break;
-                case 'z':
-                {
-                    if (engine->state == ENGINE_STATE_PLAYING && game->state == GAME_STATE_PLAYING && game->turn_available)
-                    {
-                        if (ui->targeting == TARGETING_SPELL)
-                        {
-                            ui->targeting = TARGETING_NONE;
-                        }
-                        else
-                        {
-                            ui->targeting = TARGETING_SPELL;
-
-                            ui->target_x = game->player->x;
-                            ui->target_y = game->player->y;
-                        }
-                    }
-                }
-                break;
-                }
+            }
+            break;
             }
         }
         break;
@@ -887,9 +963,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 }
                 else if (ui_panel_is_inside(ui, ui->mouse_x, ui->mouse_y))
                 {
-                    switch (ui->current_panel)
-                    {
-                    case PANEL_INVENTORY:
+                    if (input->inventory_action != INVENTORY_ACTION_NONE)
                     {
                         struct item *item = ui_panel_inventory_get_selected(ui, game);
 
@@ -899,14 +973,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                             {
                             case INVENTORY_ACTION_EQUIP:
                             {
-                                actor_equip(game->player, item);
+                                game->should_update = actor_equip(game->player, item);
 
                                 input->inventory_action = INVENTORY_ACTION_NONE;
                             }
                             break;
                             case INVENTORY_ACTION_DROP:
                             {
-                                actor_drop(game->player, item);
+                                game->should_update = actor_drop(game->player, item);
 
                                 input->inventory_action = INVENTORY_ACTION_NONE;
                             }
@@ -914,7 +988,18 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                             }
                         }
                     }
-                    break;
+                    else if (input->character_action != CHARACTER_ACTION_NONE)
+                    {
+                        enum equip_slot equip_slot = ui_panel_character_get_selected(ui, game);
+
+                        if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
+                        {
+                            game->should_update = actor_unequip(game->player, equip_slot);
+
+                            input->character_action = CHARACTER_ACTION_NONE;
+
+                            ui->panel_status[PANEL_CHARACTER].selection_mode = false;
+                        }
                     }
                 }
             }
@@ -972,7 +1057,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                     {
                         struct item *item = ui_panel_inventory_get_selected(ui, game);
 
-                        if (item != NULL)
+                        if (item)
                         {
                             struct item_info *item_info = &game->item_info[item->type];
                             struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
@@ -993,9 +1078,33 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                             {
                                 ui_tooltip_options_add(ui, "Quaff", NULL, data);
                             }
+
+                            ui_tooltip_options_add(ui, "Cancel", NULL, data);
                         }
 
                         break;
+                    }
+                    break;
+                    case PANEL_CHARACTER:
+                    {
+                        enum equip_slot equip_slot = ui_panel_character_get_selected(ui, game);
+
+                        if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
+                        {
+                            struct item *equipment = game->player->equipment[equip_slot];
+
+                            if (equipment)
+                            {
+                                ui_tooltip_show(ui);
+
+                                struct tooltip_data data;
+                                // data.equip_slot = equip_slot;
+
+                                ui_tooltip_options_add(ui, "Unequip", NULL, data);
+
+                                ui_tooltip_options_add(ui, "Cancel", NULL, data);
+                            }
+                        }
                     }
                     break;
                     }

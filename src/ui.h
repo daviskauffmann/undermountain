@@ -49,6 +49,7 @@ enum panel
 struct panel_status
 {
     int scroll;
+    bool selection_mode;
 };
 
 struct tooltip_data
@@ -108,6 +109,7 @@ bool ui_message_log_is_inside(struct ui *ui, int x, int y);
 bool ui_panel_is_inside(struct ui *ui, int x, int y);
 void ui_panel_toggle(struct ui *ui, enum panel panel);
 void ui_panel_show(struct ui *ui, enum panel panel);
+enum equip_slot ui_panel_character_get_selected(struct ui *ui, struct game *game);
 struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game);
 bool ui_tooltip_is_inside(struct ui *ui, int x, int y);
 void ui_tooltip_show(struct ui *ui);

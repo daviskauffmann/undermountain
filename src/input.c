@@ -423,9 +423,11 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
 
             if (key.c >= 97 && key.c <= 122)
             {
+                int alpha = key.c - 97;
+
                 if (engine->state == ENGINE_STATE_MENU)
                 {
-                    enum main_menu_option main_menu_option = key.c - 97;
+                    enum main_menu_option main_menu_option = (enum main_menu_option)alpha;
 
                     switch (main_menu_option)
                     {
@@ -467,7 +469,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                     {
                         if (input->inventory_action != INVENTORY_ACTION_NONE)
                         {
-                            struct item *item = TCOD_list_get(game->player->items, key.c - 97);
+                            struct item *item = TCOD_list_get(game->player->items, alpha);
 
                             if (item)
                             {
@@ -500,7 +502,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                         }
                         else if (input->character_action != CHARACTER_ACTION_NONE)
                         {
-                            enum equip_slot equip_slot = key.c - 97 + 1;
+                            enum equip_slot equip_slot = (enum equip_slot)alpha + 1;
 
                             if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                             {

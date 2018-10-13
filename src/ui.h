@@ -3,6 +3,8 @@
 
 #include <libtcod/libtcod.h>
 
+#include "tooltip_option.h"
+
 struct game;
 struct input;
 struct item;
@@ -50,20 +52,6 @@ struct panel_status
 {
     int scroll;
     bool selection_mode;
-};
-
-struct tooltip_data
-{
-    int x;
-    int y;
-    struct item *item;
-};
-
-struct tooltip_option
-{
-    char *text;
-    bool (*fn)(struct game *game, struct input *input, struct tooltip_data data);
-    struct tooltip_data data;
 };
 
 struct ui

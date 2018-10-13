@@ -3,14 +3,14 @@
 #include "config.h"
 
 const char *font_file;
-int font_flags;
+TCOD_font_flags_t font_flags;
 int font_char_horiz;
 int font_char_vertic;
 
 int console_width;
 int console_height;
 bool fullscreen;
-int console_renderer;
+TCOD_renderer_t console_renderer;
 
 void config_load(void)
 {

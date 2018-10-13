@@ -6,6 +6,7 @@
 #include "engine.h"
 #include "game.h"
 #include "map.h"
+#include "tooltip_option.h"
 #include "ui.h"
 
 #include "CMemleak.h"
@@ -239,25 +240,20 @@ void ui_tooltip_hide(struct ui *ui)
 
 void ui_tooltip_options_add(struct ui *ui, char *text, bool (*fn)(struct game *game, struct input *input, struct tooltip_data data), struct tooltip_data data)
 {
-    struct tooltip_option *option = (struct tooltip_option *)calloc(1, sizeof(struct tooltip_option));
+    struct tooltip_option *tooltip_option = tooltip_option_create(text, fn, data);
 
-    option->text = strdup(text);
-    option->fn = fn;
-    option->data = data;
-
-    TCOD_list_push(ui->tooltip_options, option);
+    TCOD_list_push(ui->tooltip_options, tooltip_option);
 }
 
 void ui_tooltip_options_clear(struct ui *ui)
 {
-    for (void **i = TCOD_list_begin(ui->tooltip_options); i != TCOD_list_end(ui->tooltip_options); i++)
+    for (void **iterator = TCOD_list_begin(ui->tooltip_options); iterator != TCOD_list_end(ui->tooltip_options); iterator++)
     {
-        struct tooltip_option *option = *i;
+        struct tooltip_option *tooltip_option = *iterator;
 
-        i = TCOD_list_remove_iterator(ui->tooltip_options, i);
+        iterator = TCOD_list_remove_iterator(ui->tooltip_options, iterator);
 
-        free(option->text);
-        free(option);
+        tooltip_option_destroy(tooltip_option);
     }
 }
 
@@ -289,11 +285,11 @@ bool ui_view_is_inside(struct ui *ui, int x, int y)
 
 void ui_destroy(struct ui *ui)
 {
-    for (void **i = TCOD_list_begin(ui->tooltip_options); i != TCOD_list_end(ui->tooltip_options); i++)
+    for (void **iterator = TCOD_list_begin(ui->tooltip_options); iterator != TCOD_list_end(ui->tooltip_options); iterator++)
     {
-        struct tooltip_option *option = *i;
+        struct tooltip_option *tooltip_option = *iterator;
 
-        free(option);
+        tooltip_option_destroy(tooltip_option);
     }
 
     TCOD_list_delete(ui->tooltip_options);

@@ -10,6 +10,7 @@
 #include "message.h"
 #include "projectile.h"
 #include "renderer.h"
+#include "tooltip_option.h"
 #include "ui.h"
 
 #include "CMemleak.h"

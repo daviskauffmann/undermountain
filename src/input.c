@@ -7,6 +7,7 @@
 #include "game.h"
 #include "input.h"
 #include "ui.h"
+#include "tooltip_option.h"
 #include "util.h"
 
 #include "CMemleak.h"

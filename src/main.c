@@ -1,8 +1,11 @@
 #include "config.h"
 #include "engine.h"
 
-int main(void)
+int main(int argc, char *args[])
 {
+    (void)argc;
+    (void)args;
+
     config_load();
 
     struct engine *engine = engine_create();

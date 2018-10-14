@@ -5,8 +5,6 @@
 #include "game.h"
 #include "item.h"
 
-#include "CMemleak.h"
-
 struct item *item_create(enum item_type type, struct game *game, int level, int x, int y)
 {
     struct item *item = calloc(1, sizeof(struct item));

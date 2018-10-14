@@ -3,8 +3,6 @@
 
 #include "util.h"
 
-#include "CMemleak.h"
-
 float distance_sq(int x1, int y1, int x2, int y2)
 {
     float dx = (float)(x1 - x2);

@@ -13,8 +13,6 @@
 #include "tile.h"
 #include "util.h"
 
-#include "CMemleak.h"
-
 static int calc_ability_modifier(int ability);
 
 struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int class_level, int level, int x, int y)
@@ -22,7 +20,7 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     struct actor *actor = calloc(1, sizeof(struct actor));
 
     actor->game = game;
-    actor->name = strdup(name);
+    actor->name = _strdup(name);
     actor->race = race;
     actor->class = class;
     actor->faction = faction;

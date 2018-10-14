@@ -3,8 +3,6 @@
 
 #include "room.h"
 
-#include "CMemleak.h"
-
 struct room *room_create(int x, int y, int w, int h)
 {
     struct room *room = calloc(1, sizeof(struct room));

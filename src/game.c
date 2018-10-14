@@ -14,8 +14,6 @@
 #include "projectile.h"
 #include "tile.h"
 
-#include "CMemleak.h"
-
 #define TILE_COMMON(_shadow_color) game->tile_common.shadow_color = _shadow_color;
 
 #define TILE_INFO(_type, _name, _glyph, _color, _is_transparent, _is_walkable) \
@@ -850,6 +848,8 @@ void game_new(struct game *game)
 
 void game_save(struct game *game)
 {
+    (void)game;
+
     TCOD_zip_t zip = TCOD_zip_new();
 
     TCOD_zip_save_to_file(zip, SAVE_PATH);

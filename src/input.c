@@ -10,8 +10,6 @@
 #include "tooltip_option.h"
 #include "util.h"
 
-#include "CMemleak.h"
-
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
 static void cb_should_update(struct game *game);
 static bool tooltip_option_move(struct game *game, struct input *input, struct tooltip_data data);
@@ -1166,7 +1164,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                                 ui_tooltip_show(ui);
 
                                 struct tooltip_data data;
-                                // data.equip_slot = equip_slot;
+                                data.equip_slot = equip_slot;
 
                                 ui_tooltip_options_add(ui, "Unequip", NULL, data);
 
@@ -1247,6 +1245,8 @@ static void cb_should_update(struct game *game)
 
 static bool tooltip_option_move(struct game *game, struct input *input, struct tooltip_data data)
 {
+    (void)game;
+
     input->automoving = true;
     input->automove_x = data.x;
     input->automove_y = data.y;

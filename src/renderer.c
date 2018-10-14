@@ -13,8 +13,6 @@
 #include "tooltip_option.h"
 #include "ui.h"
 
-#include "CMemleak.h"
-
 struct renderer *renderer_create(void)
 {
     struct renderer *renderer = calloc(1, sizeof(struct renderer));

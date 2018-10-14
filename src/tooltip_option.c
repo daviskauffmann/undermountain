@@ -4,13 +4,11 @@
 
 #include "tooltip_option.h"
 
-#include "CMemleak.h"
-
 struct tooltip_option *tooltip_option_create(char *text, bool (*fn)(struct game *game, struct input *input, struct tooltip_data data), struct tooltip_data data)
 {
     struct tooltip_option *tooltip_option = calloc(1, sizeof(struct tooltip_option));
 
-    tooltip_option->text = strdup(text);
+    tooltip_option->text = _strdup(text);
     tooltip_option->fn = fn;
     tooltip_option->data = data;
 

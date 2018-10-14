@@ -9,8 +9,6 @@
 #include "tooltip_option.h"
 #include "ui.h"
 
-#include "CMemleak.h"
-
 struct ui *ui_create(void)
 {
     struct ui *ui = calloc(1, sizeof(struct ui));

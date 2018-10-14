@@ -4,13 +4,11 @@
 
 #include "message.h"
 
-#include "CMemleak.h"
-
 struct message *message_create(char *text, TCOD_color_t color)
 {
     struct message *message = calloc(1, sizeof(struct message));
 
-    message->text = strdup(text);
+    message->text = _strdup(text);
     message->color = color;
 
     return message;

@@ -6,11 +6,11 @@
 
 #include "actor.h"
 #include "config.h"
-#include "engine.h"
 #include "game.h"
 #include "input.h"
 #include "map.h"
 #include "message.h"
+#include "program.h"
 #include "projectile.h"
 #include "tile.h"
 
@@ -862,9 +862,9 @@ void game_load(struct game *game)
     game_new(game);
 }
 
-void game_update(struct game *game, struct engine *engine)
+void game_update(struct game *game, struct program *program)
 {
-    if (engine->state == ENGINE_STATE_PLAY)
+    if (program->state == PROGRAM_STATE_GAME)
     {
         game->state = game->player->dead ? GAME_STATE_LOSE : GAME_STATE_PLAY;
 

@@ -16,7 +16,7 @@ struct renderer
 };
 
 struct renderer *renderer_create(void);
-void renderer_draw(struct renderer *renderer, struct engine *engine, struct game *game, struct ui *ui);
+void renderer_draw(struct renderer *renderer, struct program *program, struct game *game, struct ui *ui);
 void renderer_destroy(struct renderer *renderer);
 
 #endif

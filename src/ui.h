@@ -91,7 +91,7 @@ struct ui
 };
 
 struct ui *ui_create(void);
-void ui_update(struct ui *ui, struct engine *engine, struct game *game);
+void ui_update(struct ui *ui, struct program *program, struct game *game);
 enum main_menu_option ui_main_menu_get_selected(struct ui *ui);
 bool ui_message_log_is_inside(struct ui *ui, int x, int y);
 bool ui_panel_is_inside(struct ui *ui, int x, int y);

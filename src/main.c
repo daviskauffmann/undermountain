@@ -2,9 +2,9 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "engine.h"
 #include "input.h"
 #include "game.h"
+#include "program.h"
 #include "renderer.h"
 #include "ui.h"
 
@@ -15,7 +15,7 @@ int main(int argc, char *args[])
 
     config_load();
 
-    struct engine *engine = engine_create();
+    struct program *program = program_create();
     struct input *input = input_create();
     struct game *game = game_create();
     struct ui *ui = ui_create();
@@ -32,10 +32,10 @@ int main(int argc, char *args[])
         sprintf(title, "%s - FPS: %d", WINDOW_TITLE, TCOD_sys_get_fps());
         TCOD_console_set_window_title(title);
 
-        input_handle(input, engine, game, ui);
-        game_update(game, engine);
-        ui_update(ui, engine, game);
-        renderer_draw(renderer, engine, game, ui);
+        input_handle(input, program, game, ui);
+        game_update(game, program);
+        ui_update(ui, program, game);
+        renderer_draw(renderer, program, game, ui);
 
         if (game->should_restart)
         {
@@ -49,7 +49,7 @@ int main(int argc, char *args[])
             ui = ui_create();
         }
 
-        if (engine->should_quit)
+        if (program->should_quit)
         {
             break;
         }
@@ -61,7 +61,7 @@ int main(int argc, char *args[])
     ui_destroy(ui);
     game_destroy(game);
     input_destroy(input);
-    engine_destroy(engine);
+    program_destroy(program);
 
     config_save();
 

@@ -13,13 +13,13 @@
 
 #define NUM_MAPS 60
 
-struct engine;
+struct program;
 
 enum game_state
 {
     GAME_STATE_PLAY,
-    GAME_STATE_LOSE,
-    GAME_STATE_WAIT
+    GAME_STATE_WAIT,
+    GAME_STATE_LOSE
 };
 
 struct game
@@ -50,7 +50,7 @@ struct game *game_create(void);
 void game_new(struct game *game);
 void game_save(struct game *game);
 void game_load(struct game *game);
-void game_update(struct game *game, struct engine *engine);
+void game_update(struct game *game, struct program *program);
 void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, char *fmt, ...);
 void game_destroy(struct game *game);
 

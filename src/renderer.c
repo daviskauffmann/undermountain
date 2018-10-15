@@ -4,11 +4,11 @@
 #include <string.h>
 
 #include "config.h"
-#include "engine.h"
 #include "game.h"
 #include "input.h"
 #include "message.h"
 #include "projectile.h"
+#include "program.h"
 #include "renderer.h"
 #include "tooltip_option.h"
 #include "ui.h"
@@ -26,15 +26,15 @@ struct renderer *renderer_create(void)
     return renderer;
 }
 
-void renderer_draw(struct renderer *renderer, struct engine *engine, struct game *game, struct ui *ui)
+void renderer_draw(struct renderer *renderer, struct program *program, struct game *game, struct ui *ui)
 {
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
     TCOD_console_clear(NULL);
 
-    switch (engine->state)
+    switch (program->state)
     {
-    case ENGINE_STATE_MENU:
+    case PROGRAM_STATE_MENU:
     {
         switch (ui->menu_state)
         {
@@ -65,7 +65,7 @@ void renderer_draw(struct renderer *renderer, struct engine *engine, struct game
         TCOD_console_print_frame(NULL, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, WINDOW_TITLE);
     }
     break;
-    case ENGINE_STATE_PLAY:
+    case PROGRAM_STATE_GAME:
     {
         struct map *map = &game->maps[game->player->level];
 

@@ -3,11 +3,11 @@
 
 #include "actor.h"
 #include "config.h"
-#include "engine.h"
 #include "game.h"
 #include "input.h"
-#include "ui.h"
+#include "program.h"
 #include "tooltip_option.h"
+#include "ui.h"
 #include "util.h"
 
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
@@ -28,7 +28,7 @@ struct input *input_create(void)
     return input;
 }
 
-void input_handle(struct input *input, struct engine *engine, struct game *game, struct ui *ui)
+void input_handle(struct input *input, struct program *program, struct game *game, struct ui *ui)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;
@@ -38,7 +38,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
     {
     case TCOD_EVENT_KEY_PRESS:
     {
-        if (engine->state == ENGINE_STATE_PLAY)
+        if (program->state == PROGRAM_STATE_GAME)
         {
             input->automoving = false;
         }
@@ -47,18 +47,18 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         {
         case TCODK_ESCAPE:
         {
-            if (engine->state == ENGINE_STATE_MENU)
+            if (program->state == PROGRAM_STATE_MENU)
             {
                 if (ui->menu_state == MENU_STATE_MAIN)
                 {
-                    engine->should_quit = true;
+                    program->should_quit = true;
                 }
                 else if (ui->menu_state == MENU_STATE_ABOUT)
                 {
                     ui->menu_state = MENU_STATE_MAIN;
                 }
             }
-            else if (engine->state == ENGINE_STATE_PLAY)
+            else if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->tooltip_visible)
                 {
@@ -87,7 +87,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 }
                 else
                 {
-                    engine->state = ENGINE_STATE_MENU;
+                    program->state = PROGRAM_STATE_MENU;
 
                     game->should_restart = true;
                 }
@@ -106,7 +106,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_PAGEDOWN:
         {
-            if (engine->state == ENGINE_STATE_PLAY && ui->panel_visible)
+            if (program->state == PROGRAM_STATE_GAME && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -116,7 +116,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_PAGEUP:
         {
-            if (engine->state == ENGINE_STATE_PLAY && ui->panel_visible)
+            if (program->state == PROGRAM_STATE_GAME && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -126,7 +126,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP1:
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -162,7 +162,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_KP2:
         case TCODK_DOWN:
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -197,7 +197,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP3:
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -233,7 +233,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_KP4:
         case TCODK_LEFT:
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -268,7 +268,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP5:
         {
-            if (engine->state == ENGINE_STATE_PLAY && game->state != GAME_STATE_WAIT)
+            if (program->state == PROGRAM_STATE_GAME && game->state != GAME_STATE_WAIT)
             {
                 game->should_update = true;
             }
@@ -277,7 +277,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_KP6:
         case TCODK_RIGHT:
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -312,7 +312,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP7:
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -348,7 +348,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         case TCODK_KP8:
         case TCODK_UP:
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -383,7 +383,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         break;
         case TCODK_KP9:
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -421,7 +421,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             bool handled = false;
             int alpha = key.c - 'a';
 
-            if (engine->state == ENGINE_STATE_MENU && ui->menu_state == MENU_STATE_MAIN && alpha >= 0 && alpha < NUM_MAIN_MENU_OPTIONS)
+            if (program->state == PROGRAM_STATE_MENU && ui->menu_state == MENU_STATE_MAIN && alpha >= 0 && alpha < NUM_MAIN_MENU_OPTIONS)
             {
                 enum main_menu_option main_menu_option = (enum main_menu_option)alpha;
 
@@ -429,7 +429,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 {
                 case MAIN_MENU_OPTION_START:
                 {
-                    engine->state = ENGINE_STATE_PLAY;
+                    program->state = PROGRAM_STATE_GAME;
 
                     if (TCOD_sys_file_exists(SAVE_PATH))
                     {
@@ -448,14 +448,14 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 break;
                 case MAIN_MENU_OPTION_QUIT:
                 {
-                    engine->should_quit = true;
+                    program->should_quit = true;
                 }
                 break;
                 }
 
                 handled = true;
             }
-            else if (engine->state == ENGINE_STATE_PLAY)
+            else if (program->state == PROGRAM_STATE_GAME)
             {
                 if (input->inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(game->player->items))
                 {
@@ -550,7 +550,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             {
             case '<':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_ascend(game->player);
                 }
@@ -558,7 +558,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case '>':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_descend(game->player);
                 }
@@ -566,7 +566,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'b':
             {
-                if (engine->state == ENGINE_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME)
                 {
                     ui_panel_toggle(ui, PANEL_SPELLBOOK);
                 }
@@ -574,7 +574,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'C':
             {
-                if (engine->state == ENGINE_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME)
                 {
                     ui_panel_toggle(ui, PANEL_CHARACTER);
                 }
@@ -582,7 +582,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'c':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
@@ -598,7 +598,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'D':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_DRINK;
 
@@ -614,7 +614,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'd':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(ui, PANEL_INVENTORY);
 
@@ -633,7 +633,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'e':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(ui, PANEL_INVENTORY);
 
@@ -652,7 +652,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'f':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     if (ui->targeting == TARGETING_SHOOT)
                     {
@@ -710,7 +710,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'g':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_grab(game->player, game->player->x, game->player->y);
                 }
@@ -718,7 +718,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'i':
             {
-                if (engine->state == ENGINE_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME)
                 {
                     ui_panel_toggle(ui, PANEL_INVENTORY);
                 }
@@ -726,7 +726,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'l':
             {
-                if (engine->state == ENGINE_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME)
                 {
                     if (ui->targeting == TARGETING_LOOK)
                     {
@@ -744,7 +744,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'm':
             {
-                if (engine->state == ENGINE_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME)
                 {
                     ui->message_log_visible = !ui->message_log_visible;
                 }
@@ -752,7 +752,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'o':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
 
@@ -768,7 +768,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'p':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_PRAY;
 
@@ -784,7 +784,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'q':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(ui, PANEL_INVENTORY);
 
@@ -803,7 +803,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'r':
             {
-                if (engine->state == ENGINE_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME)
                 {
                     ui->should_restart = true;
                 }
@@ -811,7 +811,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 's':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     if (key.lctrl)
                     {
@@ -842,7 +842,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 't':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     game->player->torch = !game->player->torch;
 
@@ -852,7 +852,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'u':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(ui, PANEL_CHARACTER);
 
@@ -871,7 +871,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'X':
             {
-                if (engine->state == ENGINE_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME)
                 {
                     ui_panel_show(ui, PANEL_INVENTORY);
 
@@ -890,7 +890,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'x':
             {
-                if (engine->state == ENGINE_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME)
                 {
                     if (key.lctrl)
                     {
@@ -930,7 +930,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
             break;
             case 'z':
             {
-                if (engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+                if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     if (ui->targeting == TARGETING_SPELL)
                     {
@@ -964,7 +964,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
     {
         if (mouse.lbutton)
         {
-            if (engine->state == ENGINE_STATE_MENU)
+            if (program->state == PROGRAM_STATE_MENU)
             {
                 enum main_menu_option main_menu_option = ui_main_menu_get_selected(ui);
 
@@ -972,7 +972,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 {
                 case MAIN_MENU_OPTION_START:
                 {
-                    engine->state = ENGINE_STATE_PLAY;
+                    program->state = PROGRAM_STATE_GAME;
 
                     if (TCOD_sys_file_exists(SAVE_PATH))
                     {
@@ -991,12 +991,12 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
                 break;
                 case MAIN_MENU_OPTION_QUIT:
                 {
-                    engine->should_quit = true;
+                    program->should_quit = true;
                 }
                 break;
                 }
             }
-            else if (engine->state == ENGINE_STATE_PLAY)
+            else if (program->state == PROGRAM_STATE_GAME)
             {
                 input->automoving = false;
 
@@ -1072,7 +1072,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         }
         else if (mouse.rbutton)
         {
-            if (engine->state == ENGINE_STATE_PLAY)
+            if (program->state == PROGRAM_STATE_GAME)
             {
                 if (ui_view_is_inside(ui, ui->mouse_x, ui->mouse_y) && map_is_inside(ui->mouse_tile_x, ui->mouse_tile_y))
                 {
@@ -1179,7 +1179,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         }
         else if (mouse.wheel_down)
         {
-            if (engine->state == ENGINE_STATE_PLAY && ui->panel_visible)
+            if (program->state == PROGRAM_STATE_GAME && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -1188,7 +1188,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
         }
         else if (mouse.wheel_up)
         {
-            if (engine->state == ENGINE_STATE_PLAY && ui->panel_visible)
+            if (program->state == PROGRAM_STATE_GAME && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -1199,7 +1199,7 @@ void input_handle(struct input *input, struct engine *engine, struct game *game,
     break;
     }
 
-    if (input->automoving && engine->state == ENGINE_STATE_PLAY && game->state == GAME_STATE_PLAY)
+    if (input->automoving && program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
     {
         // probably shouldnt use the path function for this
         // we need to implement custom behavior depending on what the player is doing

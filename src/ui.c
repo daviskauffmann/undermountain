@@ -3,9 +3,9 @@
 #include <string.h>
 
 #include "config.h"
-#include "engine.h"
 #include "game.h"
 #include "map.h"
+#include "program.h"
 #include "tooltip_option.h"
 #include "ui.h"
 
@@ -68,11 +68,15 @@ struct ui *ui_create(void)
     return ui;
 }
 
-void ui_update(struct ui *ui, struct engine *engine, struct game *game)
+void ui_update(struct ui *ui, struct program *program, struct game *game)
 {
-    switch (engine->state)
+    switch (program->state)
     {
-    case ENGINE_STATE_PLAY:
+    case PROGRAM_STATE_MENU:
+    {
+    }
+    break;
+    case PROGRAM_STATE_GAME:
     {
         ui->message_log_x = 0;
         ui->message_log_height = console_height / 4;

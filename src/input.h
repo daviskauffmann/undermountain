@@ -4,6 +4,7 @@
 #include "actor.h"
 
 struct game;
+struct program;
 struct ui;
 
 enum directional_action
@@ -43,7 +44,7 @@ struct input
 };
 
 struct input *input_create(void);
-void input_handle(struct input *input, struct engine *engine, struct game *game, struct ui *ui);
+void input_handle(struct input *input, struct program *program, struct game *game, struct ui *ui);
 void input_destroy(struct input *input);
 
 #endif

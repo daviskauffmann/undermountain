@@ -10,11 +10,10 @@
 #include "projectile.h"
 #include "util.h"
 
-struct projectile *projectile_create(struct game *game, unsigned char glyph, int level, int x1, int y1, int x2, int y2, struct actor *shooter, void (*on_hit)(void *on_hit_params), void *on_hit_params)
+struct projectile *projectile_create(unsigned char glyph, int level, int x1, int y1, int x2, int y2, struct actor *shooter, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     struct projectile *projectile = calloc(1, sizeof(struct projectile));
 
-    projectile->game = game;
     projectile->glyph = glyph;
     projectile->level = level;
     projectile->x = (float)x1;
@@ -44,7 +43,6 @@ void projectile_update(struct projectile *projectile)
         should_move = false;
     }
 
-    struct game *game = projectile->game;
     struct map *map = &game->maps[projectile->level];
     struct tile *tile = &map->tiles[x][y];
 

@@ -5,12 +5,11 @@
 #include "map.h"
 #include "object.h"
 
-struct object *object_create(enum object_type type, struct game *game, int level, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, bool light_flicker)
+struct object *object_create(enum object_type type, int level, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, bool light_flicker)
 {
     struct object *object = calloc(1, sizeof(struct object));
 
     object->type = type;
-    object->game = game;
     object->level = level;
     object->x = x;
     object->y = y;
@@ -26,7 +25,6 @@ struct object *object_create(enum object_type type, struct game *game, int level
 
 void object_calc_light(struct object *object)
 {
-    struct game *game = object->game;
     struct map *map = &game->maps[object->level];
 
     if (object->light_fov != NULL)

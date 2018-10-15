@@ -15,8 +15,10 @@ struct renderer
     TCOD_console_t tooltip;
 };
 
-struct renderer *renderer_create(void);
-void renderer_draw(struct renderer *renderer, struct program *program, struct game *game, struct ui *ui);
-void renderer_destroy(struct renderer *renderer);
+extern struct renderer *renderer;
+
+void renderer_init(void);
+void renderer_draw(void);
+void renderer_quit(void);
 
 #endif

@@ -10,13 +10,16 @@
 #include "input.h"
 #include "map.h"
 #include "message.h"
+#include "object.h"
 #include "program.h"
 #include "projectile.h"
 #include "tile.h"
 
-struct game *game_create(void)
+struct game *game;
+
+void game_init(void)
 {
-    struct game *game = calloc(1, sizeof(struct game));
+    game = calloc(1, sizeof(struct game));
 
     game->state = GAME_STATE_PLAY;
 
@@ -24,7 +27,7 @@ struct game *game_create(void)
     {
         struct map *map = &game->maps[level];
 
-        map_init(map, game, level);
+        map_init(map, level);
     }
 
     game->messages = TCOD_list_new();
@@ -33,12 +36,9 @@ struct game *game_create(void)
 
     game->turn = 0;
     game->should_update = true;
-    game->should_restart = false;
-
-    return game;
 }
 
-void game_new(struct game *game)
+void game_new(void)
 {
     TCOD_sys_delete_file(SAVE_PATH);
 
@@ -56,39 +56,38 @@ void game_new(struct game *game)
         int y = map->stair_up_y;
         struct tile *tile = &map->tiles[x][y];
 
-        game->player = actor_create(game, "Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, level, x, y);
+        game->player = actor_create("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, level, x, y);
         game->player->glow = false;
 
         TCOD_list_push(map->actors, game->player);
         tile->actor = game->player;
 
-        struct item *longsword = item_create(ITEM_TYPE_LONGSWORD, game, level, x, y);
+        struct item *longsword = item_create(ITEM_TYPE_LONGSWORD, level, x, y);
 
         TCOD_list_push(map->items, longsword);
         TCOD_list_push(game->player->items, longsword);
 
-        struct item *greatsword = item_create(ITEM_TYPE_GREATSWORD, game, level, x, y);
+        struct item *greatsword = item_create(ITEM_TYPE_GREATSWORD, level, x, y);
 
         TCOD_list_push(map->items, greatsword);
         TCOD_list_push(game->player->items, greatsword);
 
-        struct item *longbow = item_create(ITEM_TYPE_LONGBOW, game, level, x, y);
+        struct item *longbow = item_create(ITEM_TYPE_LONGBOW, level, x, y);
 
         TCOD_list_push(map->items, longbow);
         TCOD_list_push(game->player->items, longbow);
 
-        struct item *tower_shield = item_create(ITEM_TYPE_TOWER_SHIELD, game, level, x, y);
+        struct item *tower_shield = item_create(ITEM_TYPE_TOWER_SHIELD, level, x, y);
 
         TCOD_list_push(map->items, tower_shield);
         TCOD_list_push(game->player->items, tower_shield);
 
-        struct item *potion_cure_light_wounds = item_create(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, game, level, x, y);
+        struct item *potion_cure_light_wounds = item_create(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, level, x, y);
 
         TCOD_list_push(map->items, potion_cure_light_wounds);
         TCOD_list_push(game->player->items, potion_cure_light_wounds);
 
         game_log(
-            game,
             level,
             x,
             y,
@@ -98,10 +97,8 @@ void game_new(struct game *game)
     }
 }
 
-void game_save(struct game *game)
+void game_save(void)
 {
-    (void)game;
-
     TCOD_zip_t zip = TCOD_zip_new();
 
     TCOD_zip_save_to_file(zip, SAVE_PATH);
@@ -109,12 +106,12 @@ void game_save(struct game *game)
     TCOD_zip_delete(zip);
 }
 
-void game_load(struct game *game)
+void game_load(void)
 {
-    game_new(game);
+    game_new();
 }
 
-void game_update(struct game *game, struct program *program)
+void game_update(void)
 {
     if (program->state == PROGRAM_STATE_GAME)
     {
@@ -189,7 +186,7 @@ void game_update(struct game *game, struct program *program)
     }
 }
 
-void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, char *fmt, ...)
+void game_log(int level, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
     if (level != game->player->level ||
         !game->player->fov ||
@@ -234,7 +231,7 @@ void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, ch
     } while (line_end);
 }
 
-void game_destroy(struct game *game)
+void game_quit(void)
 {
     for (int i = 0; i < NUM_MAPS; i++)
     {

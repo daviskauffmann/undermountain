@@ -33,7 +33,6 @@ struct object_info
 struct object
 {
     enum object_type type;
-    struct game *game;
     int level;
     int x;
     int y;
@@ -45,7 +44,7 @@ struct object
     bool destroyed;
 };
 
-struct object *object_create(enum object_type type, struct game *game, int level, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, bool light_flicker);
+struct object *object_create(enum object_type type, int level, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, bool light_flicker);
 void object_calc_light(struct object *object);
 void object_destroy(struct object *object);
 

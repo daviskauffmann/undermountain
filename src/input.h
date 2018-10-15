@@ -43,8 +43,10 @@ struct input
     int automove_y;
 };
 
-struct input *input_create(void);
-void input_handle(struct input *input, struct program *program, struct game *game, struct ui *ui);
-void input_destroy(struct input *input);
+extern struct input *input;
+
+void input_init(void);
+void input_handle(void);
+void input_quit(void);
 
 #endif

@@ -37,9 +37,8 @@ static void vline_up(struct map *map, int x, int y);
 static void vline_down(struct map *map, int x, int y);
 static bool traverse_node(TCOD_bsp_t *node, struct map *map);
 
-void map_init(struct map *map, struct game *game, int level)
+void map_init(struct map *map, int level)
 {
-    map->game = game;
     map->level = level;
 
     for (int x = 0; x < MAP_WIDTH; x++)
@@ -242,7 +241,6 @@ void map_generate(struct map *map)
             {
                 struct object *object = object_create(
                     OBJECT_TYPE_DOOR_CLOSED,
-                    map->game,
                     map->level,
                     x,
                     y,
@@ -266,7 +264,6 @@ void map_generate(struct map *map)
 
         struct object *object = object_create(
             OBJECT_TYPE_STAIR_DOWN,
-            map->game,
             map->level,
             map->stair_down_x,
             map->stair_down_y,
@@ -290,7 +287,6 @@ void map_generate(struct map *map)
 
         struct object *object = object_create(
             OBJECT_TYPE_STAIR_UP,
-            map->game,
             map->level,
             map->stair_up_x,
             map->stair_up_y,
@@ -360,7 +356,6 @@ void map_generate(struct map *map)
 
         struct object *object = object_create(
             type,
-            map->game,
             map->level,
             x,
             y,
@@ -428,7 +423,6 @@ void map_generate(struct map *map)
         TCOD_namegen_destroy();
 
         struct actor *actor = actor_create(
-            map->game,
             name,
             race,
             class,
@@ -458,7 +452,6 @@ void map_generate(struct map *map)
         struct prototype *prototype = &monster_prototypes[monster_prototype];
 
         struct actor *actor = actor_create(
-            map->game,
             prototype->name,
             prototype->race,
             prototype->class,
@@ -483,7 +476,6 @@ void map_generate(struct map *map)
 
         struct item *item = item_create(
             TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1),
-            map->game,
             map->level,
             x,
             y);

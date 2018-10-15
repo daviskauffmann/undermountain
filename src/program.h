@@ -15,7 +15,9 @@ struct program
     bool should_quit;
 };
 
-struct program *program_create(void);
-void program_destroy(struct program *program);
+extern struct program *program;
+
+void program_init(void);
+void program_quit(void);
 
 #endif

@@ -16,12 +16,11 @@ int main(int argc, char *args[])
 
     config_load();
     assets_load();
-
-    struct program *program = program_create();
-    struct input *input = input_create();
-    struct game *game = game_create();
-    struct ui *ui = ui_create();
-    struct renderer *renderer = renderer_create();
+    program_init();
+    input_init();
+    game_init();
+    ui_init();
+    renderer_init();
 
     TCOD_sys_set_fps(FPS);
 
@@ -34,22 +33,10 @@ int main(int argc, char *args[])
         sprintf(title, "%s - FPS: %d", WINDOW_TITLE, TCOD_sys_get_fps());
         TCOD_console_set_window_title(title);
 
-        input_handle(input, program, game, ui);
-        game_update(game, program);
-        ui_update(ui, program, game);
-        renderer_draw(renderer, program, game, ui);
-
-        if (game->should_restart)
-        {
-            game_destroy(game);
-            game = game_create();
-        }
-
-        if (ui->should_restart)
-        {
-            ui_destroy(ui);
-            ui = ui_create();
-        }
+        input_handle();
+        game_update();
+        ui_update();
+        renderer_draw();
 
         if (program->should_quit)
         {
@@ -59,12 +46,11 @@ int main(int argc, char *args[])
 
     TCOD_console_delete(NULL);
 
-    renderer_destroy(renderer);
-    ui_destroy(ui);
-    game_destroy(game);
-    input_destroy(input);
-    program_destroy(program);
-
+    renderer_quit();
+    ui_quit();
+    game_quit();
+    input_quit();
+    program_quit();
     config_save();
 
     return 0;

@@ -6,12 +6,11 @@
 #include "game.h"
 #include "item.h"
 
-struct item *item_create(enum item_type type, struct game *game, int level, int x, int y)
+struct item *item_create(enum item_type type, int level, int x, int y)
 {
     struct item *item = calloc(1, sizeof(struct item));
 
     item->type = type;
-    item->game = game;
     item->level = level;
     item->x = x;
     item->y = y;

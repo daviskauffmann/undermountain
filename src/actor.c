@@ -16,11 +16,10 @@
 
 static int calc_ability_modifier(int ability);
 
-struct actor *actor_create(struct game *game, const char *name, enum race race, enum class class, enum faction faction, int class_level, int level, int x, int y)
+struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int class_level, int level, int x, int y)
 {
     struct actor *actor = calloc(1, sizeof(struct actor));
 
-    actor->game = game;
     actor->name = _strdup(name);
     actor->race = race;
     actor->class = class;
@@ -65,14 +64,11 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
 
 void actor_level_up(struct actor *actor)
 {
-    struct game *game = actor->game;
-
     actor->class_level++;
     actor->base_hp += roll(1, class_info[actor->class].hit_die);
     actor->current_hp = actor_calc_max_hp(actor);
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -196,7 +192,6 @@ void actor_update_flash(struct actor *actor)
 
 void actor_calc_light(struct actor *actor)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
 
     if (actor->glow_fov)
@@ -225,7 +220,6 @@ void actor_calc_light(struct actor *actor)
 
 void actor_calc_fov(struct actor *actor)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
 
     if (actor->fov)
@@ -276,7 +270,6 @@ void actor_calc_fov(struct actor *actor)
 
 void actor_ai(struct actor *actor)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
@@ -444,7 +437,6 @@ void actor_ai(struct actor *actor)
 
 bool actor_path_towards(struct actor *actor, int x, int y)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
 
     TCOD_map_t TCOD_map = map_to_TCOD_map(map);
@@ -498,7 +490,6 @@ bool actor_move(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
@@ -584,7 +575,6 @@ bool actor_move(struct actor *actor, int x, int y)
 
 bool actor_swap(struct actor *actor, struct actor *other)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
 
     if (other == game->player)
@@ -627,7 +617,6 @@ bool actor_swap(struct actor *actor, struct actor *other)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -646,7 +635,6 @@ bool actor_open_door(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
@@ -655,7 +643,6 @@ bool actor_open_door(struct actor *actor, int x, int y)
         tile->object->type = OBJECT_TYPE_DOOR_OPEN;
 
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -667,7 +654,6 @@ bool actor_open_door(struct actor *actor, int x, int y)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -685,7 +671,6 @@ bool actor_close_door(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
@@ -694,7 +679,6 @@ bool actor_close_door(struct actor *actor, int x, int y)
         tile->object->type = OBJECT_TYPE_DOOR_CLOSED;
 
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -706,7 +690,6 @@ bool actor_close_door(struct actor *actor, int x, int y)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -719,14 +702,12 @@ bool actor_close_door(struct actor *actor, int x, int y)
 
 bool actor_descend(struct actor *actor)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
     if (actor->level >= NUM_MAPS)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -780,7 +761,6 @@ bool actor_descend(struct actor *actor)
         }
 
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -792,7 +772,6 @@ bool actor_descend(struct actor *actor)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -805,14 +784,12 @@ bool actor_descend(struct actor *actor)
 
 bool actor_ascend(struct actor *actor)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
     if (actor->level == 0)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -866,7 +843,6 @@ bool actor_ascend(struct actor *actor)
         }
 
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -878,7 +854,6 @@ bool actor_ascend(struct actor *actor)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -896,14 +871,12 @@ bool actor_pray(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
     if (tile->object && tile->object->type == OBJECT_TYPE_ALTAR)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -915,7 +888,6 @@ bool actor_pray(struct actor *actor, int x, int y)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -933,7 +905,6 @@ bool actor_drink(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
@@ -950,7 +921,6 @@ bool actor_drink(struct actor *actor, int x, int y)
         }
 
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -963,7 +933,6 @@ bool actor_drink(struct actor *actor, int x, int y)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -981,14 +950,12 @@ bool actor_sit(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
     if (tile->object && tile->object->type == OBJECT_TYPE_THRONE)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1000,7 +967,6 @@ bool actor_sit(struct actor *actor, int x, int y)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -1018,14 +984,12 @@ bool actor_grab(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
     if (TCOD_list_size(tile->items) == 0)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1046,7 +1010,6 @@ bool actor_grab(struct actor *actor, int x, int y)
     TCOD_list_push(actor->items, item);
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -1060,7 +1023,6 @@ bool actor_grab(struct actor *actor, int x, int y)
 
 bool actor_drop(struct actor *actor, struct item *item)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
@@ -1072,7 +1034,6 @@ bool actor_drop(struct actor *actor, struct item *item)
     TCOD_list_remove(actor->items, item);
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -1086,19 +1047,16 @@ bool actor_drop(struct actor *actor, struct item *item)
 
 bool actor_equip(struct actor *actor, struct item *item)
 {
-    struct game *game = actor->game;
-
     if (base_item_info[item_info[item->type].base_item].equip_slot == EQUIP_SLOT_NONE)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
             TCOD_white,
             "%s cannot equip %s",
             actor->name,
-            item_info->name);
+            item_info[item->type].name);
 
         return false;
     }
@@ -1132,27 +1090,24 @@ bool actor_equip(struct actor *actor, struct item *item)
     actor->equipment[base_item_info[item_info[item->type].base_item].equip_slot] = item;
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
         TCOD_white,
         "%s equips %s",
         actor->name,
-        item_info->name);
+        item_info[item->type].name);
 
     return true;
 }
 
 bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
 {
-    struct game *game = actor->game;
     struct item *equipment = actor->equipment[equip_slot];
 
     if (!equipment)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1168,7 +1123,6 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
     actor->equipment[equip_slot] = NULL;
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -1182,12 +1136,9 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
 
 bool actor_quaff(struct actor *actor, struct item *item)
 {
-    struct game *game = actor->game;
-
     if (item_info[item->type].base_item != BASE_ITEM_POTION)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1202,7 +1153,6 @@ bool actor_quaff(struct actor *actor, struct item *item)
     // TODO: cast the spell stored in the potion
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -1216,12 +1166,9 @@ bool actor_quaff(struct actor *actor, struct item *item)
 
 bool actor_bash(struct actor *actor, struct object *object)
 {
-    struct game *game = actor->game;
-
     if (object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1236,7 +1183,6 @@ bool actor_bash(struct actor *actor, struct object *object)
     object->destroyed = true;
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -1255,7 +1201,6 @@ bool actor_swing(struct actor *actor, int x, int y)
         return false;
     }
 
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
 
@@ -1284,7 +1229,6 @@ bool actor_swing(struct actor *actor, int x, int y)
     if (!hit)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1298,8 +1242,6 @@ bool actor_swing(struct actor *actor, int x, int y)
 
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
-    struct game *game = actor->game;
-
     if (x == actor->x && y == actor->y)
     {
         return false;
@@ -1311,7 +1253,6 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     if (!weapon)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1325,7 +1266,6 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     if (!base_item_info[item_info[weapon->type].base_item].ranged)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1337,7 +1277,6 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     }
 
     struct projectile *projectile = projectile_create(
-        game,
         '`',
         actor->level,
         actor->x,
@@ -1355,12 +1294,9 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
 
 bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
 {
-    struct game *game = actor->game;
-
     if (other->dead)
     {
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1415,7 +1351,6 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
         }
 
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,
@@ -1444,7 +1379,6 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
         case 0:
         {
             game_log(
-                game,
                 actor->level,
                 actor->x,
                 actor->y,
@@ -1457,7 +1391,6 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
         case 1:
         {
             game_log(
-                game,
                 actor->level,
                 actor->x,
                 actor->y,
@@ -1470,7 +1403,6 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
         case 2:
         {
             game_log(
-                game,
                 actor->level,
                 actor->x,
                 actor->y,
@@ -1495,7 +1427,6 @@ bool actor_cast_spell(struct actor *actor)
 
 void actor_die(struct actor *actor, struct actor *killer)
 {
-    struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
@@ -1527,7 +1458,6 @@ void actor_die(struct actor *actor, struct actor *killer)
     }
 
     game_log(
-        game,
         actor->level,
         actor->x,
         actor->y,
@@ -1543,7 +1473,6 @@ void actor_die(struct actor *actor, struct actor *killer)
         killer->kills++;
 
         game_log(
-            game,
             killer->level,
             killer->x,
             killer->y,
@@ -1558,7 +1487,6 @@ void actor_die(struct actor *actor, struct actor *killer)
         TCOD_sys_delete_file(SAVE_PATH);
 
         game_log(
-            game,
             actor->level,
             actor->x,
             actor->y,

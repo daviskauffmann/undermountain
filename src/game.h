@@ -26,15 +26,17 @@ struct game
     struct actor *player;
     int turn;
     bool should_update;
-    bool should_restart;
 };
 
-struct game *game_create(void);
-void game_new(struct game *game);
-void game_save(struct game *game);
-void game_load(struct game *game);
-void game_update(struct game *game, struct program *program);
-void game_log(struct game *game, int level, int x, int y, TCOD_color_t color, char *fmt, ...);
-void game_destroy(struct game *game);
+extern struct game *game;
+
+void game_init(void);
+void game_new(void);
+void game_save();
+void game_load(void);
+void game_update(void);
+void game_log(int level, int x, int y, TCOD_color_t color, char *fmt, ...);
+void game_restart(void);
+void game_quit(void);
 
 #endif

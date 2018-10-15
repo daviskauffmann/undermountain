@@ -10,12 +10,15 @@
 #include "tooltip_option.h"
 #include "ui.h"
 
-struct ui *ui_create(void)
+struct ui *ui;
+
+void ui_init(void)
 {
-    struct ui *ui = calloc(1, sizeof(struct ui));
+    ui = calloc(1, sizeof(struct ui));
 
     ui->menu_state = MENU_STATE_MAIN;
 
+    // TODO: asset?
     ui->main_menu_option_info[MAIN_MENU_OPTION_START].text = "Start";
     ui->main_menu_option_info[MAIN_MENU_OPTION_ABOUT].text = "About";
     ui->main_menu_option_info[MAIN_MENU_OPTION_QUIT].text = "Quit";
@@ -63,13 +66,9 @@ struct ui *ui_create(void)
     ui->mouse_y = 0;
     ui->mouse_tile_x = 0;
     ui->mouse_tile_y = 0;
-
-    ui->should_restart = false;
-
-    return ui;
 }
 
-void ui_update(struct ui *ui, struct program *program, struct game *game)
+void ui_update(void)
 {
     switch (program->state)
     {
@@ -121,7 +120,7 @@ void ui_update(struct ui *ui, struct program *program, struct game *game)
     }
 }
 
-enum main_menu_option ui_main_menu_get_selected(struct ui *ui)
+enum main_menu_option ui_main_menu_get_selected(void)
 {
     if (ui->menu_state == MENU_STATE_MAIN)
     {
@@ -142,17 +141,17 @@ enum main_menu_option ui_main_menu_get_selected(struct ui *ui)
     return -1;
 }
 
-bool ui_message_log_is_inside(struct ui *ui, int x, int y)
+bool ui_message_log_is_inside(int x, int y)
 {
     return ui->message_log_visible && x >= ui->message_log_x && x < ui->message_log_x + ui->message_log_width && y >= ui->message_log_y && y < ui->message_log_y + ui->message_log_height;
 }
 
-bool ui_panel_is_inside(struct ui *ui, int x, int y)
+bool ui_panel_is_inside(int x, int y)
 {
     return ui->panel_visible && x >= ui->panel_x && x < ui->panel_x + ui->panel_width && y >= ui->panel_y && y < ui->panel_y + ui->panel_height;
 }
 
-void ui_panel_toggle(struct ui *ui, enum panel panel)
+void ui_panel_toggle(enum panel panel)
 {
     if (ui->panel_visible)
     {
@@ -172,15 +171,15 @@ void ui_panel_toggle(struct ui *ui, enum panel panel)
     }
 }
 
-void ui_panel_show(struct ui *ui, enum panel panel)
+void ui_panel_show(enum panel panel)
 {
     if (!ui->panel_visible || ui->current_panel != panel)
     {
-        ui_panel_toggle(ui, panel);
+        ui_panel_toggle(panel);
     }
 }
 
-enum equip_slot ui_panel_character_get_selected(struct ui *ui)
+enum equip_slot ui_panel_character_get_selected(void)
 {
     if (ui->panel_visible && ui->current_panel == PANEL_CHARACTER)
     {
@@ -199,7 +198,7 @@ enum equip_slot ui_panel_character_get_selected(struct ui *ui)
     return -1;
 }
 
-struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game)
+struct item *ui_panel_inventory_get_selected(void)
 {
     if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
     {
@@ -220,35 +219,35 @@ struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game)
     return NULL;
 }
 
-bool ui_tooltip_is_inside(struct ui *ui, int x, int y)
+bool ui_tooltip_is_inside(int x, int y)
 {
     return ui->tooltip_visible && x >= ui->tooltip_x && x < ui->tooltip_x + ui->tooltip_width && y >= ui->tooltip_y && y < ui->tooltip_y + ui->tooltip_height;
 }
 
-void ui_tooltip_show(struct ui *ui)
+void ui_tooltip_show(void)
 {
-    ui_tooltip_options_clear(ui);
+    ui_tooltip_options_clear();
 
     ui->tooltip_visible = true;
     ui->tooltip_x = ui->mouse_x;
     ui->tooltip_y = ui->mouse_y;
 }
 
-void ui_tooltip_hide(struct ui *ui)
+void ui_tooltip_hide(void)
 {
-    ui_tooltip_options_clear(ui);
+    ui_tooltip_options_clear();
 
     ui->tooltip_visible = false;
 }
 
-void ui_tooltip_options_add(struct ui *ui, char *text, bool (*fn)(struct game *game, struct input *input, struct tooltip_data data), struct tooltip_data data)
+void ui_tooltip_options_add(char *text, struct tooltip_data tooltip_data, bool (*fn)(struct tooltip_data tooltip_data))
 {
-    struct tooltip_option *tooltip_option = tooltip_option_create(text, fn, data);
+    struct tooltip_option *tooltip_option = tooltip_option_create(text, tooltip_data, fn);
 
     TCOD_list_push(ui->tooltip_options, tooltip_option);
 }
 
-void ui_tooltip_options_clear(struct ui *ui)
+void ui_tooltip_options_clear(void)
 {
     for (void **iterator = TCOD_list_begin(ui->tooltip_options); iterator != TCOD_list_end(ui->tooltip_options); iterator++)
     {
@@ -260,7 +259,7 @@ void ui_tooltip_options_clear(struct ui *ui)
     }
 }
 
-struct tooltip_option *ui_tooltip_get_selected(struct ui *ui)
+struct tooltip_option *ui_tooltip_get_selected(void)
 {
     if (ui->tooltip_visible)
     {
@@ -281,12 +280,12 @@ struct tooltip_option *ui_tooltip_get_selected(struct ui *ui)
     return NULL;
 }
 
-bool ui_view_is_inside(struct ui *ui, int x, int y)
+bool ui_view_is_inside(int x, int y)
 {
     return x >= 0 && x < ui->view_width && y >= 0 && y < ui->view_height;
 }
 
-void ui_destroy(struct ui *ui)
+void ui_quit(void)
 {
     for (void **iterator = TCOD_list_begin(ui->tooltip_options); iterator != TCOD_list_end(ui->tooltip_options); iterator++)
     {

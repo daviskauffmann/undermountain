@@ -12,12 +12,14 @@
 #include "util.h"
 
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
-static void cb_should_update(struct game *game);
-static bool tooltip_option_move(struct game *game, struct input *input, struct tooltip_data data);
+static void cb_should_update(void *on_hit_params);
+static bool tooltip_option_move(struct tooltip_data data);
 
-struct input *input_create(void)
+struct input *input;
+
+void input_init(void)
 {
-    struct input *input = calloc(1, sizeof(struct input));
+    input = calloc(1, sizeof(struct input));
 
     input->directional_action = DIRECTIONAL_ACTION_NONE;
     input->inventory_action = INVENTORY_ACTION_NONE;
@@ -25,11 +27,9 @@ struct input *input_create(void)
     input->automoving = false;
     input->automove_x = -1;
     input->automove_y = -1;
-
-    return input;
 }
 
-void input_handle(struct input *input, struct program *program, struct game *game, struct ui *ui)
+void input_handle(void)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;
@@ -63,7 +63,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (ui->tooltip_visible)
                 {
-                    ui_tooltip_hide(ui);
+                    ui_tooltip_hide();
                 }
                 else if (input->directional_action != DIRECTIONAL_ACTION_NONE ||
                          input->inventory_action != INVENTORY_ACTION_NONE ||
@@ -90,7 +90,8 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                 {
                     program->state = PROGRAM_STATE_MENU;
 
-                    game->should_restart = true;
+                    game_quit();
+                    game_init();
                 }
             }
         }
@@ -434,11 +435,11 @@ void input_handle(struct input *input, struct program *program, struct game *gam
 
                     if (TCOD_sys_file_exists(SAVE_PATH))
                     {
-                        game_load(game);
+                        game_load();
                     }
                     else
                     {
-                        game_new(game);
+                        game_new();
                     }
                 }
                 break;
@@ -476,7 +477,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     {
                         // TODO: send examine target to ui
 
-                        ui_panel_show(ui, PANEL_EXAMINE);
+                        ui_panel_show(PANEL_EXAMINE);
                     }
                     break;
                     case INVENTORY_ACTION_DROP:
@@ -513,7 +514,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     {
                         // TODO: send examine target to ui
 
-                        ui_panel_show(ui, PANEL_EXAMINE);
+                        ui_panel_show(PANEL_EXAMINE);
                     }
                     break;
                     case CHARACTER_ACTION_UNEQUIP:
@@ -569,7 +570,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (program->state == PROGRAM_STATE_GAME)
                 {
-                    ui_panel_toggle(ui, PANEL_SPELLBOOK);
+                    ui_panel_toggle(PANEL_SPELLBOOK);
                 }
             }
             break;
@@ -577,7 +578,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (program->state == PROGRAM_STATE_GAME)
                 {
-                    ui_panel_toggle(ui, PANEL_CHARACTER);
+                    ui_panel_toggle(PANEL_CHARACTER);
                 }
             }
             break;
@@ -588,7 +589,6 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     input->directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
@@ -604,7 +604,6 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     input->directional_action = DIRECTIONAL_ACTION_DRINK;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
@@ -617,13 +616,12 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
-                    ui_panel_show(ui, PANEL_INVENTORY);
+                    ui_panel_show(PANEL_INVENTORY);
 
                     input->inventory_action = INVENTORY_ACTION_DROP;
                     ui->panel_status[PANEL_INVENTORY].selection_mode = true;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
@@ -636,13 +634,12 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
-                    ui_panel_show(ui, PANEL_INVENTORY);
+                    ui_panel_show(PANEL_INVENTORY);
 
                     input->inventory_action = INVENTORY_ACTION_EQUIP;
                     ui->panel_status[PANEL_INVENTORY].selection_mode = true;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
@@ -657,7 +654,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                 {
                     if (ui->targeting == TARGETING_SHOOT)
                     {
-                        actor_shoot(game->player, ui->target_x, ui->target_y, &cb_should_update, game);
+                        actor_shoot(game->player, ui->target_x, ui->target_y, &cb_should_update, NULL);
 
                         ui->targeting = TARGETING_NONE;
                     }
@@ -721,7 +718,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (program->state == PROGRAM_STATE_GAME)
                 {
-                    ui_panel_toggle(ui, PANEL_INVENTORY);
+                    ui_panel_toggle(PANEL_INVENTORY);
                 }
             }
             break;
@@ -758,7 +755,6 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     input->directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
@@ -774,7 +770,6 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     input->directional_action = DIRECTIONAL_ACTION_PRAY;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
@@ -787,26 +782,17 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
-                    ui_panel_show(ui, PANEL_INVENTORY);
+                    ui_panel_show(PANEL_INVENTORY);
 
                     input->inventory_action = INVENTORY_ACTION_QUAFF;
                     ui->panel_status[PANEL_INVENTORY].selection_mode = true;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
                         "Choose an item to quaff, ESC to cancel");
-                }
-            }
-            break;
-            case 'r':
-            {
-                if (program->state == PROGRAM_STATE_GAME)
-                {
-                    ui->should_restart = true;
                 }
             }
             break;
@@ -816,10 +802,9 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                 {
                     if (key.lctrl)
                     {
-                        game_save(game);
+                        game_save();
 
                         game_log(
-                            game,
                             game->player->level,
                             game->player->x,
                             game->player->y,
@@ -831,7 +816,6 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                         input->directional_action = DIRECTIONAL_ACTION_SIT;
 
                         game_log(
-                            game,
                             game->player->level,
                             game->player->x,
                             game->player->y,
@@ -855,13 +839,12 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (program->state == PROGRAM_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
-                    ui_panel_show(ui, PANEL_CHARACTER);
+                    ui_panel_show(PANEL_CHARACTER);
 
                     input->character_action = CHARACTER_ACTION_UNEQUIP;
                     ui->panel_status[PANEL_CHARACTER].selection_mode = true;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
@@ -874,13 +857,12 @@ void input_handle(struct input *input, struct program *program, struct game *gam
             {
                 if (program->state == PROGRAM_STATE_GAME)
                 {
-                    ui_panel_show(ui, PANEL_INVENTORY);
+                    ui_panel_show(PANEL_INVENTORY);
 
                     input->inventory_action = INVENTORY_ACTION_EXAMINE;
                     ui->panel_status[PANEL_INVENTORY].selection_mode = true;
 
                     game_log(
-                        game,
                         game->player->level,
                         game->player->x,
                         game->player->y,
@@ -895,13 +877,12 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                 {
                     if (key.lctrl)
                     {
-                        ui_panel_show(ui, PANEL_CHARACTER);
+                        ui_panel_show(PANEL_CHARACTER);
 
                         input->character_action = CHARACTER_ACTION_EXAMINE;
                         ui->panel_status[PANEL_CHARACTER].selection_mode = true;
 
                         game_log(
-                            game,
                             game->player->level,
                             game->player->x,
                             game->player->y,
@@ -916,7 +897,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
 
                             // TODO: send examine target to ui
 
-                            ui_panel_show(ui, PANEL_EXAMINE);
+                            ui_panel_show(PANEL_EXAMINE);
                         }
                         else
                         {
@@ -967,7 +948,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
         {
             if (program->state == PROGRAM_STATE_MENU)
             {
-                enum main_menu_option main_menu_option = ui_main_menu_get_selected(ui);
+                enum main_menu_option main_menu_option = ui_main_menu_get_selected();
 
                 switch (main_menu_option)
                 {
@@ -977,11 +958,11 @@ void input_handle(struct input *input, struct program *program, struct game *gam
 
                     if (TCOD_sys_file_exists(SAVE_PATH))
                     {
-                        game_load(game);
+                        game_load();
                     }
                     else
                     {
-                        game_new(game);
+                        game_new();
                     }
                 }
                 break;
@@ -1003,36 +984,36 @@ void input_handle(struct input *input, struct program *program, struct game *gam
 
                 if (ui->tooltip_visible)
                 {
-                    if (ui_tooltip_is_inside(ui, ui->mouse_x, ui->mouse_y))
+                    if (ui_tooltip_is_inside(ui->mouse_x, ui->mouse_y))
                     {
-                        struct tooltip_option *option = ui_tooltip_get_selected(ui);
+                        struct tooltip_option *tooltip_option = ui_tooltip_get_selected();
 
-                        if (option)
+                        if (tooltip_option)
                         {
-                            if (option->fn)
+                            if (tooltip_option->fn)
                             {
-                                game->should_update = option->fn(game, input, option->data);
+                                game->should_update = tooltip_option->fn(tooltip_option->tooltip_data);
                             }
 
-                            ui_tooltip_hide(ui);
+                            ui_tooltip_hide();
                         }
                     }
                     else
                     {
-                        ui_tooltip_hide(ui);
+                        ui_tooltip_hide();
                     }
                 }
-                else if (ui_view_is_inside(ui, ui->mouse_x, ui->mouse_y))
+                else if (ui_view_is_inside(ui->mouse_x, ui->mouse_y))
                 {
                     input->automoving = true;
                     input->automove_x = ui->mouse_tile_x;
                     input->automove_y = ui->mouse_tile_y;
                 }
-                else if (ui_panel_is_inside(ui, ui->mouse_x, ui->mouse_y))
+                else if (ui_panel_is_inside(ui->mouse_x, ui->mouse_y))
                 {
                     if (input->inventory_action != INVENTORY_ACTION_NONE)
                     {
-                        struct item *item = ui_panel_inventory_get_selected(ui, game);
+                        struct item *item = ui_panel_inventory_get_selected();
 
                         if (item)
                         {
@@ -1057,7 +1038,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     }
                     else if (input->character_action != CHARACTER_ACTION_NONE)
                     {
-                        enum equip_slot equip_slot = ui_panel_character_get_selected(ui);
+                        enum equip_slot equip_slot = ui_panel_character_get_selected();
 
                         if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                         {
@@ -1075,75 +1056,75 @@ void input_handle(struct input *input, struct program *program, struct game *gam
         {
             if (program->state == PROGRAM_STATE_GAME)
             {
-                if (ui_view_is_inside(ui, ui->mouse_x, ui->mouse_y) && map_is_inside(ui->mouse_tile_x, ui->mouse_tile_y))
+                if (ui_view_is_inside(ui->mouse_x, ui->mouse_y) && map_is_inside(ui->mouse_tile_x, ui->mouse_tile_y))
                 {
                     struct map *map = &game->maps[game->player->level];
                     struct tile *tile = &map->tiles[ui->mouse_tile_x][ui->mouse_tile_y];
 
-                    ui_tooltip_show(ui);
+                    ui_tooltip_show();
 
-                    struct tooltip_data data;
-                    data.x = ui->mouse_tile_x;
-                    data.y = ui->mouse_tile_y;
+                    struct tooltip_data tooltip_data;
+                    tooltip_data.x = ui->mouse_tile_x;
+                    tooltip_data.y = ui->mouse_tile_y;
 
-                    ui_tooltip_options_add(ui, "Move", &tooltip_option_move, data);
+                    ui_tooltip_options_add("Move", tooltip_data, &tooltip_option_move);
 
                     if (tile->object)
                     {
-                        ui_tooltip_options_add(ui, "Examine Object", NULL, data);
-                        ui_tooltip_options_add(ui, "Interact", NULL, data);
-                        ui_tooltip_options_add(ui, "Bash", NULL, data);
+                        ui_tooltip_options_add("Examine Object", tooltip_data, NULL);
+                        ui_tooltip_options_add("Interact", tooltip_data, NULL);
+                        ui_tooltip_options_add("Bash", tooltip_data, NULL);
                     }
 
                     if (tile->actor)
                     {
-                        ui_tooltip_options_add(ui, "Examine Actor", NULL, data);
-                        ui_tooltip_options_add(ui, "Talk", NULL, data);
-                        ui_tooltip_options_add(ui, "Swap", NULL, data);
-                        ui_tooltip_options_add(ui, "Attack", NULL, data);
+                        ui_tooltip_options_add("Examine Actor", tooltip_data, NULL);
+                        ui_tooltip_options_add("Talk", tooltip_data, NULL);
+                        ui_tooltip_options_add("Swap", tooltip_data, NULL);
+                        ui_tooltip_options_add("Attack", tooltip_data, NULL);
                     }
 
                     if (TCOD_list_peek(tile->items))
                     {
-                        ui_tooltip_options_add(ui, "Examine Item", NULL, data);
-                        ui_tooltip_options_add(ui, "Take Item", NULL, data);
+                        ui_tooltip_options_add("Examine Item", tooltip_data, NULL);
+                        ui_tooltip_options_add("Take Item", tooltip_data, NULL);
                     }
 
                     if (TCOD_list_size(tile->items) > 1)
                     {
-                        ui_tooltip_options_add(ui, "Take All", NULL, data);
+                        ui_tooltip_options_add("Take All", tooltip_data, NULL);
                     }
 
-                    ui_tooltip_options_add(ui, "Cancel", NULL, data);
+                    ui_tooltip_options_add("Cancel", tooltip_data, NULL);
                 }
-                else if (ui_panel_is_inside(ui, ui->mouse_x, ui->mouse_y))
+                else if (ui_panel_is_inside(ui->mouse_x, ui->mouse_y))
                 {
                     switch (ui->current_panel)
                     {
                     case PANEL_INVENTORY:
                     {
-                        struct item *item = ui_panel_inventory_get_selected(ui, game);
+                        struct item *item = ui_panel_inventory_get_selected();
 
                         if (item)
                         {
-                            ui_tooltip_show(ui);
+                            ui_tooltip_show();
 
-                            struct tooltip_data data;
-                            data.item = item;
+                            struct tooltip_data tooltip_data;
+                            tooltip_data.item = item;
 
-                            ui_tooltip_options_add(ui, "Drop", NULL, data);
+                            ui_tooltip_options_add("Drop", tooltip_data, NULL);
 
                             if (base_item_info[item_info[item->type].base_item].equip_slot != EQUIP_SLOT_NONE)
                             {
-                                ui_tooltip_options_add(ui, "Equip", NULL, data);
+                                ui_tooltip_options_add("Equip", tooltip_data, NULL);
                             }
 
                             if (item_info[item->type].base_item == BASE_ITEM_POTION)
                             {
-                                ui_tooltip_options_add(ui, "Quaff", NULL, data);
+                                ui_tooltip_options_add("Quaff", tooltip_data, NULL);
                             }
 
-                            ui_tooltip_options_add(ui, "Cancel", NULL, data);
+                            ui_tooltip_options_add("Cancel", tooltip_data, NULL);
                         }
 
                         break;
@@ -1151,7 +1132,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     break;
                     case PANEL_CHARACTER:
                     {
-                        enum equip_slot equip_slot = ui_panel_character_get_selected(ui);
+                        enum equip_slot equip_slot = ui_panel_character_get_selected();
 
                         if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                         {
@@ -1159,14 +1140,14 @@ void input_handle(struct input *input, struct program *program, struct game *gam
 
                             if (equipment)
                             {
-                                ui_tooltip_show(ui);
+                                ui_tooltip_show();
 
-                                struct tooltip_data data;
-                                data.equip_slot = equip_slot;
+                                struct tooltip_data tooltip_data;
+                                tooltip_data.equip_slot = equip_slot;
 
-                                ui_tooltip_options_add(ui, "Unequip", NULL, data);
+                                ui_tooltip_options_add("Unequip", tooltip_data, NULL);
 
-                                ui_tooltip_options_add(ui, "Cancel", NULL, data);
+                                ui_tooltip_options_add("Cancel", tooltip_data, NULL);
                             }
                         }
                     }
@@ -1212,7 +1193,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
     }
 }
 
-void input_destroy(struct input *input)
+void input_quit(void)
 {
     free(input);
 }
@@ -1236,15 +1217,15 @@ static bool do_directional_action(struct actor *player, enum directional_action 
     return false;
 }
 
-static void cb_should_update(struct game *game)
+static void cb_should_update(void *on_hit_params)
 {
+    (void)on_hit_params;
+
     game->should_update = true;
 }
 
-static bool tooltip_option_move(struct game *game, struct input *input, struct tooltip_data data)
+static bool tooltip_option_move(struct tooltip_data data)
 {
-    (void)game;
-
     input->automoving = true;
     input->automove_x = data.x;
     input->automove_y = data.y;

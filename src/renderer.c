@@ -15,20 +15,20 @@
 #include "tooltip_option.h"
 #include "ui.h"
 
-struct renderer *renderer_create(void)
+struct renderer *renderer;
+
+void renderer_init(void)
 {
-    struct renderer *renderer = calloc(1, sizeof(struct renderer));
+    renderer = calloc(1, sizeof(struct renderer));
 
     renderer->noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
     renderer->noise_x = 0.0f;
     renderer->panel = TCOD_console_new(console_width, console_height);
     renderer->message_log = TCOD_console_new(console_width, console_height);
     renderer->tooltip = TCOD_console_new(console_width, console_height);
-
-    return renderer;
 }
 
-void renderer_draw(struct renderer *renderer, struct program *program, struct game *game, struct ui *ui)
+void renderer_draw(void)
 {
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
@@ -47,7 +47,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
             {
                 struct main_menu_option_info *main_menu_option_info = &ui->main_menu_option_info[main_menu_option];
 
-                TCOD_console_set_default_foreground(NULL, main_menu_option == ui_main_menu_get_selected(ui) ? TCOD_yellow : TCOD_white);
+                TCOD_console_set_default_foreground(NULL, main_menu_option == ui_main_menu_get_selected() ? TCOD_yellow : TCOD_white);
                 TCOD_console_print(NULL, 1, y++, "%c) %s", main_menu_option + 'a', main_menu_option_info->text);
             }
         }
@@ -362,7 +362,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                 y++;
                 for (enum equip_slot equip_slot = EQUIP_SLOT_ARMOR; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                 {
-                    TCOD_console_set_default_foreground(renderer->panel, equip_slot == ui_panel_character_get_selected(ui) ? TCOD_yellow : TCOD_white);
+                    TCOD_console_set_default_foreground(renderer->panel, equip_slot == ui_panel_character_get_selected() ? TCOD_yellow : TCOD_white);
 
                     if (game->player->equipment[equip_slot])
                     {
@@ -430,7 +430,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                 {
                     struct item *item = *iterator;
 
-                    TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected(ui, game) ? TCOD_yellow : base_item_info[item_info[item->type].base_item].color);
+                    TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected() ? TCOD_yellow : base_item_info[item_info[item->type].base_item].color);
                     if (panel_status->selection_mode)
                     {
                         TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 'a' - panel_status->scroll, item_info[item->type].name);
@@ -474,7 +474,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
             {
                 struct tooltip_option *option = *i;
 
-                TCOD_console_set_default_foreground(renderer->tooltip, option == ui_tooltip_get_selected(ui) ? TCOD_yellow : TCOD_white);
+                TCOD_console_set_default_foreground(renderer->tooltip, option == ui_tooltip_get_selected() ? TCOD_yellow : TCOD_white);
                 TCOD_console_print(renderer->tooltip, 1, y, option->text);
 
                 y++;
@@ -500,7 +500,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
     TCOD_console_flush();
 }
 
-void renderer_destroy(struct renderer *renderer)
+void renderer_quit(void)
 {
     TCOD_noise_delete(renderer->noise);
     TCOD_console_delete(renderer->message_log);

@@ -87,25 +87,26 @@ struct ui
     int mouse_y;
     int mouse_tile_x;
     int mouse_tile_y;
-    bool should_restart;
 };
 
-struct ui *ui_create(void);
-void ui_update(struct ui *ui, struct program *program, struct game *game);
-enum main_menu_option ui_main_menu_get_selected(struct ui *ui);
-bool ui_message_log_is_inside(struct ui *ui, int x, int y);
-bool ui_panel_is_inside(struct ui *ui, int x, int y);
-void ui_panel_toggle(struct ui *ui, enum panel panel);
-void ui_panel_show(struct ui *ui, enum panel panel);
-enum equip_slot ui_panel_character_get_selected(struct ui *ui);
-struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game);
-bool ui_tooltip_is_inside(struct ui *ui, int x, int y);
-void ui_tooltip_show(struct ui *ui);
-void ui_tooltip_hide(struct ui *ui);
-void ui_tooltip_options_add(struct ui *ui, char *text, bool (*fn)(struct game *game, struct input *input, struct tooltip_data data), struct tooltip_data data);
-void ui_tooltip_options_clear(struct ui *ui);
-struct tooltip_option *ui_tooltip_get_selected(struct ui *ui);
-bool ui_view_is_inside(struct ui *ui, int x, int y);
-void ui_destroy(struct ui *ui);
+extern struct ui *ui;
+
+void ui_init(void);
+void ui_update(void);
+enum main_menu_option ui_main_menu_get_selected(void);
+bool ui_message_log_is_inside(int x, int y);
+bool ui_panel_is_inside(int x, int y);
+void ui_panel_toggle(enum panel panel);
+void ui_panel_show(enum panel panel);
+enum equip_slot ui_panel_character_get_selected(void);
+struct item *ui_panel_inventory_get_selected(void);
+bool ui_tooltip_is_inside(int x, int y);
+void ui_tooltip_show(void);
+void ui_tooltip_hide(void);
+void ui_tooltip_options_add(char *text, struct tooltip_data tooltip_data, bool (*fn)(struct tooltip_data tooltip_data));
+void ui_tooltip_options_clear(void);
+struct tooltip_option *ui_tooltip_get_selected(void);
+bool ui_view_is_inside(int x, int y);
+void ui_quit(void);
 
 #endif

@@ -1,6 +1,7 @@
 #include <libtcod/libtcod.h>
 #include <malloc.h>
 
+#include "assets.h"
 #include "actor.h"
 #include "config.h"
 #include "game.h"
@@ -1056,7 +1057,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     }
                     else if (input->character_action != CHARACTER_ACTION_NONE)
                     {
-                        enum equip_slot equip_slot = ui_panel_character_get_selected(ui, game);
+                        enum equip_slot equip_slot = ui_panel_character_get_selected(ui);
 
                         if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                         {
@@ -1125,9 +1126,6 @@ void input_handle(struct input *input, struct program *program, struct game *gam
 
                         if (item)
                         {
-                            struct item_info *item_info = &game->item_info[item->type];
-                            struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
-
                             ui_tooltip_show(ui);
 
                             struct tooltip_data data;
@@ -1135,12 +1133,12 @@ void input_handle(struct input *input, struct program *program, struct game *gam
 
                             ui_tooltip_options_add(ui, "Drop", NULL, data);
 
-                            if (base_item_info->equip_slot != EQUIP_SLOT_NONE)
+                            if (base_item_info[item_info[item->type].base_item].equip_slot != EQUIP_SLOT_NONE)
                             {
                                 ui_tooltip_options_add(ui, "Equip", NULL, data);
                             }
 
-                            if (item_info->base_item == BASE_ITEM_POTION)
+                            if (item_info[item->type].base_item == BASE_ITEM_POTION)
                             {
                                 ui_tooltip_options_add(ui, "Quaff", NULL, data);
                             }
@@ -1153,7 +1151,7 @@ void input_handle(struct input *input, struct program *program, struct game *gam
                     break;
                     case PANEL_CHARACTER:
                     {
-                        enum equip_slot equip_slot = ui_panel_character_get_selected(ui, game);
+                        enum equip_slot equip_slot = ui_panel_character_get_selected(ui);
 
                         if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                         {

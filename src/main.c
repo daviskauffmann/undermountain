@@ -1,6 +1,7 @@
 #include <libtcod/libtcod.h>
 #include <stdio.h>
 
+#include "assets.h"
 #include "config.h"
 #include "input.h"
 #include "game.h"
@@ -14,6 +15,7 @@ int main(int argc, char *args[])
     (void)args;
 
     config_load();
+    assets_load();
 
     struct program *program = program_create();
     struct input *input = input_create();

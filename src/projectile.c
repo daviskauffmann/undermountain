@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "actor.h"
+#include "assets.h"
 #include "game.h"
 #include "map.h"
 #include "object.h"
@@ -46,9 +47,8 @@ void projectile_update(struct projectile *projectile)
     struct game *game = projectile->game;
     struct map *map = &game->maps[projectile->level];
     struct tile *tile = &map->tiles[x][y];
-    struct tile_info *tile_info = &game->tile_info[tile->type];
 
-    if (!tile_info->is_walkable)
+    if (!tile_info[tile->type].is_walkable)
     {
         should_move = false;
     }
@@ -60,7 +60,7 @@ void projectile_update(struct projectile *projectile)
         should_move = false;
     }
 
-    if (tile->object && !game->object_info[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
+    if (tile->object && !object_info[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
     {
         actor_bash(projectile->shooter, tile->object);
 

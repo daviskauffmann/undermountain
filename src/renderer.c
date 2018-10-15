@@ -3,6 +3,8 @@
 #include <math.h>
 #include <string.h>
 
+#include "actor.h"
+#include "assets.h"
 #include "config.h"
 #include "game.h"
 #include "input.h"
@@ -84,9 +86,8 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                     if (map_is_inside(x, y))
                     {
                         struct tile *tile = &map->tiles[x][y];
-                        struct tile_info *tile_info = &game->tile_info[tile->type];
 
-                        TCOD_color_t color = game->tile_common.shadow_color;
+                        TCOD_color_t color = tile_common.shadow_color;
 
                         if (TCOD_map_is_in_fov(game->player->fov, x, y))
                         {
@@ -98,11 +99,11 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
 
                                 if (actor->glow_fov && TCOD_map_is_in_fov(actor->glow_fov, x, y))
                                 {
-                                    float r2 = powf((float)game->actor_common.glow_radius, 2);
+                                    float r2 = powf((float)actor_common.glow_radius, 2);
                                     float d = powf((float)(x - actor->x), 2) + powf((float)(y - actor->y), 2);
                                     float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 
-                                    color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, game->actor_common.glow_color, l), l);
+                                    color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, actor_common.glow_color, l), l);
                                 }
                             }
 
@@ -116,7 +117,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                                     float d = powf((float)(x - object->x + (object->light_flicker ? dx : 0)), 2) + powf((float)(y - object->y + (object->light_flicker ? dy : 0)), 2);
                                     float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (object->light_flicker ? di : 0));
 
-                                    color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, object->light_color, l), l);
+                                    color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, object->light_color, l), l);
                                 }
                             }
 
@@ -126,11 +127,11 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
 
                                 if (actor->torch_fov && TCOD_map_is_in_fov(actor->torch_fov, x, y))
                                 {
-                                    float r2 = powf((float)game->actor_common.torch_radius, 2);
+                                    float r2 = powf((float)actor_common.torch_radius, 2);
                                     float d = powf(x - actor->x + dx, 2) + powf(y - actor->y + dy, 2);
                                     float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
 
-                                    color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info->color, game->actor_common.torch_color, l), l);
+                                    color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, actor_common.torch_color, l), l);
                                 }
                             }
                         }
@@ -138,7 +139,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                         if (tile->seen)
                         {
                             TCOD_console_set_char_foreground(NULL, x - ui->view_x, y - ui->view_y, color);
-                            TCOD_console_set_char(NULL, x - ui->view_x, y - ui->view_y, tile_info->glyph);
+                            TCOD_console_set_char(NULL, x - ui->view_x, y - ui->view_y, tile_info[tile->type].glyph);
                         }
                     }
                 }
@@ -162,7 +163,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                 if (TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
                 {
                     TCOD_console_set_char_foreground(NULL, object->x - ui->view_x, object->y - ui->view_y, object->color);
-                    TCOD_console_set_char(NULL, object->x - ui->view_x, object->y - ui->view_y, game->object_info[object->type].glyph);
+                    TCOD_console_set_char(NULL, object->x - ui->view_x, object->y - ui->view_y, object_info[object->type].glyph);
                 }
             }
 
@@ -172,8 +173,8 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
 
                 if (TCOD_map_is_in_fov(game->player->fov, item->x, item->y))
                 {
-                    TCOD_console_set_char_foreground(NULL, item->x - ui->view_x, item->y - ui->view_y, game->base_item_info[game->item_info[item->type].base_item].color);
-                    TCOD_console_set_char(NULL, item->x - ui->view_x, item->y - ui->view_y, game->base_item_info[game->item_info[item->type].base_item].glyph);
+                    TCOD_console_set_char_foreground(NULL, item->x - ui->view_x, item->y - ui->view_y, base_item_info[item_info[item->type].base_item].color);
+                    TCOD_console_set_char(NULL, item->x - ui->view_x, item->y - ui->view_y, base_item_info[item_info[item->type].base_item].glyph);
                 }
             }
 
@@ -198,7 +199,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                 if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) && TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
                 {
                     TCOD_console_set_char_foreground(NULL, object->x - ui->view_x, object->y - ui->view_y, object->color);
-                    TCOD_console_set_char(NULL, object->x - ui->view_x, object->y - ui->view_y, game->object_info[object->type].glyph);
+                    TCOD_console_set_char(NULL, object->x - ui->view_x, object->y - ui->view_y, object_info[object->type].glyph);
                 }
             }
 
@@ -208,7 +209,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
 
                 if (!actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
                 {
-                    TCOD_color_t color = game->class_info[actor->class].color;
+                    TCOD_color_t color = class_info[actor->class].color;
 
                     if (actor->flash_fade > 0)
                     {
@@ -216,7 +217,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                     }
 
                     TCOD_console_set_char_foreground(NULL, actor->x - ui->view_x, actor->y - ui->view_y, color);
-                    TCOD_console_set_char(NULL, actor->x - ui->view_x, actor->y - ui->view_y, game->race_info[actor->race].glyph);
+                    TCOD_console_set_char(NULL, actor->x - ui->view_x, actor->y - ui->view_y, race_info[actor->race].glyph);
                 }
             }
         }
@@ -254,7 +255,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                             ui->view_height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
-                            game->item_info[item->type].name);
+                            item_info[item->type].name);
 
                         goto done;
                     }
@@ -268,7 +269,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                         ui->view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
-                        game->object_info[tile->object->type].name);
+                        object_info[tile->object->type].name);
 
                     goto done;
                 }
@@ -279,7 +280,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                     ui->view_height - 2,
                     TCOD_BKGND_NONE,
                     TCOD_CENTER,
-                    game->tile_info[tile->type].name);
+                    tile_info[tile->type].name);
 
             done:;
             }
@@ -294,7 +295,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
                         "%s (known)",
-                        game->tile_info[tile->type].name);
+                        tile_info[tile->type].name);
                 }
                 else
                 {
@@ -347,8 +348,8 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                 int y = 1;
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "NAME     : %s", game->player->name);
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "ALIGNMENT: Neutral Good");
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "RACE     : %s", game->race_info[game->player->race].name);
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "CLASS    : %s", game->class_info[game->player->class].name);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "RACE     : %s", race_info[game->player->race].name);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "CLASS    : %s", class_info[game->player->class].name);
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "LEVEL    : %d", game->player->class_level);
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "EXP      : %d", game->player->experience);
                 y++;
@@ -361,7 +362,7 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                 y++;
                 for (enum equip_slot equip_slot = EQUIP_SLOT_ARMOR; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                 {
-                    TCOD_console_set_default_foreground(renderer->panel, equip_slot == ui_panel_character_get_selected(ui, game) ? TCOD_yellow : TCOD_white);
+                    TCOD_console_set_default_foreground(renderer->panel, equip_slot == ui_panel_character_get_selected(ui) ? TCOD_yellow : TCOD_white);
 
                     if (game->player->equipment[equip_slot])
                     {
@@ -369,14 +370,14 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                         {
                             TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: %s",
                                                equip_slot + 'a' - 1,
-                                               game->equip_slot_info[equip_slot].label,
-                                               game->item_info[game->player->equipment[equip_slot]->type].name);
+                                               equip_slot_info[equip_slot].label,
+                                               item_info[game->player->equipment[equip_slot]->type].name);
                         }
                         else
                         {
                             TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: %s",
-                                               game->equip_slot_info[equip_slot].label,
-                                               game->item_info[game->player->equipment[equip_slot]->type].name);
+                                               equip_slot_info[equip_slot].label,
+                                               item_info[game->player->equipment[equip_slot]->type].name);
                         }
                     }
                     else
@@ -385,12 +386,12 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                         {
                             TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: N/A",
                                                equip_slot + 'a' - 1,
-                                               game->equip_slot_info[equip_slot].label);
+                                               equip_slot_info[equip_slot].label);
                         }
                         else
                         {
                             TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: N/A",
-                                               game->equip_slot_info[equip_slot].label);
+                                               equip_slot_info[equip_slot].label);
                         }
                     }
 
@@ -429,14 +430,14 @@ void renderer_draw(struct renderer *renderer, struct program *program, struct ga
                 {
                     struct item *item = *iterator;
 
-                    TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected(ui, game) ? TCOD_yellow : game->base_item_info[game->item_info[item->type].base_item].color);
+                    TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected(ui, game) ? TCOD_yellow : base_item_info[item_info[item->type].base_item].color);
                     if (panel_status->selection_mode)
                     {
-                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 'a' - panel_status->scroll, game->item_info[item->type].name);
+                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 'a' - panel_status->scroll, item_info[item->type].name);
                     }
                     else
                     {
-                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, game->item_info[item->type].name);
+                        TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, item_info[item->type].name);
                     }
 
                     y++;

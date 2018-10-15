@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "actor.h"
+#include "assets.h"
 #include "game.h"
 #include "map.h"
 #include "object.h"
@@ -454,7 +455,7 @@ void map_generate(struct map *map)
         } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
 
         enum monster_prototype monster_prototype = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
-        struct prototype *prototype = &map->game->monster_prototypes[monster_prototype];
+        struct prototype *prototype = &monster_prototypes[monster_prototype];
 
         struct actor *actor = actor_create(
             map->game,
@@ -508,19 +509,19 @@ bool map_is_transparent(struct map *map, int x, int y)
 {
     struct tile *tile = &map->tiles[x][y];
 
-    if (tile->object && !map->game->object_info[tile->object->type].is_transparent)
+    if (tile->object && !object_info[tile->object->type].is_transparent)
     {
         return false;
     }
 
-    return map->game->tile_info[tile->type].is_transparent;
+    return tile_info[tile->type].is_transparent;
 }
 
 bool map_is_walkable(struct map *map, int x, int y)
 {
     struct tile *tile = &map->tiles[x][y];
 
-    if (tile->object && !map->game->object_info[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_CLOSED)
+    if (tile->object && !object_info[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_CLOSED)
     {
         return false;
     }
@@ -530,7 +531,7 @@ bool map_is_walkable(struct map *map, int x, int y)
         return false;
     }
 
-    return map->game->tile_info[tile->type].is_walkable;
+    return tile_info[tile->type].is_walkable;
 }
 
 TCOD_map_t map_to_TCOD_map(struct map *map)

@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "actor.h"
+#include "assets.h"
 #include "config.h"
 #include "game.h"
 #include "item.h"
@@ -40,7 +41,7 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
     actor->level = level;
     actor->x = x;
     actor->y = y;
-    actor->base_hp = game->class_info[actor->class].hit_die * actor->class_level;
+    actor->base_hp = class_info[actor->class].hit_die * actor->class_level;
     actor->current_hp = actor_calc_max_hp(actor);
     actor->speed = 0.5f;
     actor->energy = 1.0f;
@@ -65,10 +66,9 @@ struct actor *actor_create(struct game *game, const char *name, enum race race, 
 void actor_level_up(struct actor *actor)
 {
     struct game *game = actor->game;
-    struct class_info *class_info = &game->class_info[actor->class];
 
     actor->class_level++;
-    actor->base_hp += roll(1, class_info->hit_die);
+    actor->base_hp += roll(1, class_info[actor->class].hit_die);
     actor->current_hp = actor_calc_max_hp(actor);
 
     game_log(
@@ -88,25 +88,19 @@ int actor_calc_max_hp(struct actor *actor)
 
 int actor_calc_enhancement_bonus(struct actor *actor)
 {
-    struct game *game = actor->game;
-
     int enhancement_bonus = 0;
 
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+    for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
-        struct item *equipment = actor->equipment[i];
+        struct item *equipment = actor->equipment[equip_slot];
 
         if (equipment)
         {
-            struct item_info *item_info = &game->item_info[equipment->type];
-
-            for (int j = 0; j < NUM_ITEM_PROPERTIES; j++)
+            for (enum item_property item_property = 0; item_property < NUM_ITEM_PROPERTIES; item_property++)
             {
-                if (item_info->item_properties[j])
+                if (item_info[equipment->type].item_properties[item_property])
                 {
-                    struct item_property_info *item_property_info = &game->item_property_info[j];
-
-                    enhancement_bonus += item_property_info->enhancement_bonus;
+                    enhancement_bonus += item_property_info[item_property].enhancement_bonus;
                 }
             }
         }
@@ -124,8 +118,6 @@ int actor_calc_attack_bonus(struct actor *actor)
 
 int actor_calc_armor_class(struct actor *actor)
 {
-    struct game *game = actor->game;
-
     int armor_class = 10;
 
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
@@ -134,19 +126,14 @@ int actor_calc_armor_class(struct actor *actor)
 
         if (equipment)
         {
-            struct item_info *item_info = &game->item_info[equipment->type];
-            struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
-
-            armor_class += base_item_info->base_ac;
+            armor_class += base_item_info[item_info[equipment->type].base_item].base_ac;
 
             // TODO: deal with stacking AC types
-            for (int j = 0; j < NUM_ITEM_PROPERTIES; j++)
+            for (enum item_property item_property = 0; item_property < NUM_ITEM_PROPERTIES; item_property++)
             {
-                if (item_info->item_properties[j])
+                if (item_info[equipment->type].item_properties[item_property])
                 {
-                    struct item_property_info *item_property_info = &game->item_property_info[j];
-
-                    armor_class += item_property_info->ac_bonus;
+                    armor_class += item_property_info[item_property].ac_bonus;
                 }
             }
         }
@@ -157,7 +144,6 @@ int actor_calc_armor_class(struct actor *actor)
 
 void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult, bool ranged)
 {
-    struct game *game = actor->game;
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
 
     if (ranged)
@@ -177,15 +163,12 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
 
     if (weapon)
     {
-        struct item_info *item_info = &game->item_info[weapon->type];
-        struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
-
-        if (base_item_info->ranged == ranged)
+        if (base_item_info[item_info[weapon->type].base_item].ranged == ranged)
         {
-            *num_dice = base_item_info->num_dice;
-            *die_to_roll = base_item_info->die_to_roll;
-            *crit_threat = base_item_info->crit_threat;
-            *crit_mult = base_item_info->crit_mult;
+            *num_dice = base_item_info[item_info[weapon->type].base_item].num_dice;
+            *die_to_roll = base_item_info[item_info[weapon->type].base_item].die_to_roll;
+            *crit_threat = base_item_info[item_info[weapon->type].base_item].crit_threat;
+            *crit_mult = base_item_info[item_info[weapon->type].base_item].crit_mult;
         }
     }
 }
@@ -232,11 +215,11 @@ void actor_calc_light(struct actor *actor)
 
     if (actor->torch)
     {
-        actor->torch_fov = map_to_fov_map(map, actor->x, actor->y, game->actor_common.torch_radius);
+        actor->torch_fov = map_to_fov_map(map, actor->x, actor->y, actor_common.torch_radius);
     }
     else if (actor->glow)
     {
-        actor->glow_fov = map_to_fov_map(map, actor->x, actor->y, game->actor_common.glow_radius);
+        actor->glow_fov = map_to_fov_map(map, actor->x, actor->y, actor_common.glow_radius);
     }
 }
 
@@ -387,10 +370,7 @@ void actor_ai(struct actor *actor)
 
                 if (weapon)
                 {
-                    struct item_info *item_info = &game->item_info[weapon->type];
-                    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
-
-                    if (base_item_info->ranged && actor_shoot(actor, target->x, target->y, NULL, NULL))
+                    if (base_item_info[item_info[weapon->type].base_item].ranged && actor_shoot(actor, target->x, target->y, NULL, NULL))
                     {
                         continue;
                     }
@@ -406,7 +386,7 @@ void actor_ai(struct actor *actor)
         if (actor->last_seen_x != -1 && actor->last_seen_y != -1)
         {
             if ((actor->x == actor->last_seen_x && actor->y == actor->last_seen_y) ||
-                actor->turns_chased > game->actor_common.turns_to_chase)
+                actor->turns_chased > actor_common.turns_to_chase)
             {
                 actor->last_seen_x = -1;
                 actor->last_seen_y = -1;
@@ -521,9 +501,8 @@ bool actor_move(struct actor *actor, int x, int y)
     struct game *game = actor->game;
     struct map *map = &game->maps[actor->level];
     struct tile *tile = &map->tiles[x][y];
-    struct tile_info *tile_info = &game->tile_info[tile->type];
 
-    if (!tile_info->is_walkable)
+    if (!tile_info[tile->type].is_walkable)
     {
         return false;
     }
@@ -554,7 +533,7 @@ bool actor_move(struct actor *actor, int x, int y)
         break;
         }
 
-        if (!actor->game->object_info[tile->object->type].is_walkable)
+        if (!object_info[tile->object->type].is_walkable)
         {
             return false;
         }
@@ -1074,7 +1053,7 @@ bool actor_grab(struct actor *actor, int x, int y)
         TCOD_white,
         "%s picks up %s",
         actor->name,
-        game->item_info[item->type].name);
+        item_info[item->type].name);
 
     return true;
 }
@@ -1100,7 +1079,7 @@ bool actor_drop(struct actor *actor, struct item *item)
         TCOD_white,
         "%s drops %s",
         actor->name,
-        game->item_info[item->type].name);
+        item_info[item->type].name);
 
     return true;
 }
@@ -1108,10 +1087,8 @@ bool actor_drop(struct actor *actor, struct item *item)
 bool actor_equip(struct actor *actor, struct item *item)
 {
     struct game *game = actor->game;
-    struct item_info *item_info = &game->item_info[item->type];
-    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
 
-    if (base_item_info->equip_slot == EQUIP_SLOT_NONE)
+    if (base_item_info[item_info[item->type].base_item].equip_slot == EQUIP_SLOT_NONE)
     {
         game_log(
             game,
@@ -1126,9 +1103,9 @@ bool actor_equip(struct actor *actor, struct item *item)
         return false;
     }
 
-    if (actor->equipment[base_item_info->equip_slot])
+    if (actor->equipment[base_item_info[item_info[item->type].base_item].equip_slot])
     {
-        actor_unequip(actor, base_item_info->equip_slot);
+        actor_unequip(actor, base_item_info[item_info[item->type].base_item].equip_slot);
     }
 
     if (item_is_two_handed(item, actor))
@@ -1141,7 +1118,7 @@ bool actor_equip(struct actor *actor, struct item *item)
         }
     }
 
-    if (base_item_info->equip_slot == EQUIP_SLOT_OFF_HAND)
+    if (base_item_info[item_info[item->type].base_item].equip_slot == EQUIP_SLOT_OFF_HAND)
     {
         struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
 
@@ -1152,7 +1129,7 @@ bool actor_equip(struct actor *actor, struct item *item)
     }
 
     TCOD_list_remove(actor->items, item);
-    actor->equipment[base_item_info->equip_slot] = item;
+    actor->equipment[base_item_info[item_info[item->type].base_item].equip_slot] = item;
 
     game_log(
         game,
@@ -1182,12 +1159,10 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
             TCOD_white,
             "%s is not equipping anything their %s slot",
             actor->name,
-            game->equip_slot_info[equip_slot].name);
+            equip_slot_info[equip_slot].name);
 
         return false;
     }
-
-    struct item_info *item_info = &game->item_info[equipment->type];
 
     TCOD_list_push(actor->items, equipment);
     actor->equipment[equip_slot] = NULL;
@@ -1200,7 +1175,7 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
         TCOD_white,
         "%s unequips %s",
         actor->name,
-        item_info->name);
+        item_info[equipment->type].name);
 
     return true;
 }
@@ -1208,9 +1183,8 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
 bool actor_quaff(struct actor *actor, struct item *item)
 {
     struct game *game = actor->game;
-    struct item_info *item_info = &game->item_info[item->type];
 
-    if (item_info->base_item != BASE_ITEM_POTION)
+    if (item_info[item->type].base_item != BASE_ITEM_POTION)
     {
         game_log(
             game,
@@ -1220,7 +1194,7 @@ bool actor_quaff(struct actor *actor, struct item *item)
             TCOD_white,
             "%s cannot quaff %s",
             actor->name,
-            item_info->name);
+            item_info[item->type].name);
 
         return false;
     }
@@ -1235,7 +1209,7 @@ bool actor_quaff(struct actor *actor, struct item *item)
         TCOD_white,
         "%s quaffs %s",
         actor->name,
-        item_info->name);
+        item_info[item->type].name);
 
     return true;
 }
@@ -1254,7 +1228,7 @@ bool actor_bash(struct actor *actor, struct object *object)
             TCOD_white,
             "%s cannot destroy the %s",
             actor->name,
-            game->object_info[object->type].name);
+            object_info[object->type].name);
 
         return false;
     }
@@ -1269,7 +1243,7 @@ bool actor_bash(struct actor *actor, struct object *object)
         TCOD_white,
         "%s destroys the %s",
         actor->name,
-        game->object_info[object->type].name);
+        object_info[object->type].name);
 
     return true;
 }
@@ -1348,10 +1322,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
-    struct item_info *item_info = &game->item_info[weapon->type];
-    struct base_item_info *base_item_info = &game->base_item_info[item_info->base_item];
-
-    if (!base_item_info->ranged)
+    if (!base_item_info[item_info[weapon->type].base_item].ranged)
     {
         game_log(
             game,

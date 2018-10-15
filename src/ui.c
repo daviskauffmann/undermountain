@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <string.h>
 
+#include "assets.h"
 #include "config.h"
 #include "game.h"
 #include "map.h"
@@ -179,14 +180,14 @@ void ui_panel_show(struct ui *ui, enum panel panel)
     }
 }
 
-enum equip_slot ui_panel_character_get_selected(struct ui *ui, struct game *game)
+enum equip_slot ui_panel_character_get_selected(struct ui *ui)
 {
     if (ui->panel_visible && ui->current_panel == PANEL_CHARACTER)
     {
         int y = 15;
         for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
         {
-            if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(game->equip_slot_info[equip_slot].label) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+            if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(equip_slot_info[equip_slot].label) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
             {
                 return equip_slot;
             }
@@ -207,7 +208,7 @@ struct item *ui_panel_inventory_get_selected(struct ui *ui, struct game *game)
         {
             struct item *item = *iterator;
 
-            if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(game->item_info[item->type].name) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+            if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(item_info[item->type].name) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
             {
                 return item;
             }

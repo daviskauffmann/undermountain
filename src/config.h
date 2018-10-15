@@ -3,6 +3,9 @@
 
 #include <libtcod/libtcod.h>
 
+#define WINDOW_TITLE "Roguelike v0.1"
+#define FPS 60
+
 extern const char *font_file;
 extern TCOD_font_flags_t font_flags;
 extern int font_char_horiz;

@@ -1,10 +1,9 @@
 #include <libtcod/libtcod.h>
 #include <malloc.h>
-#include <math.h> // TODO: remove?
 #include <string.h>
 
 #include "actor.h"
-#include "engine.h"
+#include "config.h"
 #include "game.h"
 #include "item.h"
 #include "map.h"

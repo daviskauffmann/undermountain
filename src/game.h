@@ -9,10 +9,9 @@
 
 #define NUM_MAPS 60
 
-struct program;
-
 enum game_state
 {
+    GAME_STATE_MENU,
     GAME_STATE_PLAY,
     GAME_STATE_WAIT,
     GAME_STATE_LOSE
@@ -26,6 +25,7 @@ struct game
     struct actor *player;
     int turn;
     bool should_update;
+    bool should_quit;
 };
 
 extern struct game *game;

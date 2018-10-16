@@ -10,7 +10,6 @@
 #include "input.h"
 #include "message.h"
 #include "projectile.h"
-#include "program.h"
 #include "renderer.h"
 #include "tooltip_option.h"
 #include "ui.h"
@@ -34,9 +33,7 @@ void renderer_draw(void)
     TCOD_console_set_default_foreground(NULL, TCOD_white);
     TCOD_console_clear(NULL);
 
-    switch (program->state)
-    {
-    case PROGRAM_STATE_MENU:
+    if (game->state == GAME_STATE_MENU)
     {
         switch (ui->menu_state)
         {
@@ -66,8 +63,7 @@ void renderer_draw(void)
         TCOD_console_set_default_foreground(NULL, TCOD_white);
         TCOD_console_print_frame(NULL, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, WINDOW_TITLE);
     }
-    break;
-    case PROGRAM_STATE_GAME:
+    else
     {
         struct map *map = &game->maps[game->player->level];
 
@@ -493,8 +489,6 @@ void renderer_draw(void)
         TCOD_console_print(NULL, 0, 3, "Y: %d", game->player->y);
         TCOD_console_print(NULL, 0, 4, "HP: %d", game->player->current_hp);
         TCOD_console_print(NULL, 0, 5, "Kills: %d", game->player->kills);
-    }
-    break;
     }
 
     TCOD_console_flush();

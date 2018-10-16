@@ -42,7 +42,7 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->y = y;
     actor->base_hp = class_info[actor->class].hit_die * actor->class_level;
     actor->current_hp = actor_calc_max_hp(actor);
-    actor->speed = 0.5f;
+    actor->speed = TCOD_random_get_float(NULL, 0.2f, 0.8f);
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;

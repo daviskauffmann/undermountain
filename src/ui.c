@@ -6,7 +6,6 @@
 #include "config.h"
 #include "game.h"
 #include "map.h"
-#include "program.h"
 #include "tooltip_option.h"
 #include "ui.h"
 
@@ -70,13 +69,7 @@ void ui_init(void)
 
 void ui_update(void)
 {
-    switch (program->state)
-    {
-    case PROGRAM_STATE_MENU:
-    {
-    }
-    break;
-    case PROGRAM_STATE_GAME:
+    if (game->state != GAME_STATE_MENU)
     {
         ui->message_log_x = 0;
         ui->message_log_height = console_height / 4;
@@ -115,8 +108,6 @@ void ui_update(void)
             ui->view_y = MAP_HEIGHT - ui->view_height;
         if (ui->view_y < 0)
             ui->view_y = 0;
-    }
-    break;
     }
 }
 

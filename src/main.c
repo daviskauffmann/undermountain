@@ -5,7 +5,6 @@
 #include "config.h"
 #include "input.h"
 #include "game.h"
-#include "program.h"
 #include "renderer.h"
 #include "ui.h"
 
@@ -16,7 +15,6 @@ int main(int argc, char *args[])
 
     config_load();
     assets_load();
-    program_init();
     input_init();
     game_init();
     ui_init();
@@ -38,7 +36,7 @@ int main(int argc, char *args[])
         ui_update();
         renderer_draw();
 
-        if (program->should_quit)
+        if (game->should_quit)
         {
             break;
         }
@@ -50,7 +48,6 @@ int main(int argc, char *args[])
     ui_quit();
     game_quit();
     input_quit();
-    program_quit();
     config_save();
 
     return 0;

@@ -448,8 +448,8 @@ void map_generate(struct map *map)
             room_get_random_pos(room, &x, &y);
         } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
 
-        enum monster_prototype monster_prototype = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
-        struct prototype *prototype = &monster_prototypes[monster_prototype];
+        enum monster monster = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
+        struct prototype *prototype = &monster_prototype[monster];
 
         struct actor *actor = actor_create(
             prototype->name,

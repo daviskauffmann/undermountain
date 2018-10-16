@@ -9,7 +9,7 @@ struct object_info object_info[NUM_OBJECT_TYPES];
 struct actor_common actor_common;
 struct race_info race_info[NUM_RACES];
 struct class_info class_info[NUM_CLASSES];
-struct prototype monster_prototypes[NUM_MONSTERS];
+struct prototype monster_prototype[NUM_MONSTERS];
 struct item_common item_common;
 struct equip_slot_info equip_slot_info[NUM_EQUIP_SLOTS];
 struct base_item_info base_item_info[NUM_BASE_ITEMS];
@@ -45,6 +45,16 @@ struct item_info item_info[NUM_ITEM_TYPES];
     race_info[_race].name = _name;             \
     race_info[_race].glyph = _glyph;           \
     race_info[_race].size = _size
+
+#define CLASS_INFO(_class, _name, _color, _hit_die) \
+    class_info[_class].name = _name;                \
+    class_info[_class].color = _color;              \
+    class_info[_class].hit_die = _hit_die;
+
+#define MONSTER_PROTOTYPE(_monster, _name, _race, _class) \
+    monster_prototype[_monster].name = _name;             \
+    monster_prototype[_monster].race = _race;             \
+    monster_prototype[_monster].class = _class;
 
 void assets_load(void)
 {
@@ -179,60 +189,60 @@ void assets_load(void)
     class_info[CLASS_VERMIN].color = TCOD_lightest_grey;
     class_info[CLASS_VERMIN].hit_die = 10;
 
-    monster_prototypes[MONSTER_BASILISK].name = "Basilisk";
-    monster_prototypes[MONSTER_BASILISK].race = RACE_BEAST;
-    monster_prototypes[MONSTER_BASILISK].class = CLASS_BEAST;
-    monster_prototypes[MONSTER_BEHOLDER].name = "Beholder";
-    monster_prototypes[MONSTER_BEHOLDER].race = RACE_ABBERATION;
-    monster_prototypes[MONSTER_BEHOLDER].class = CLASS_ABBERATION;
-    monster_prototypes[MONSTER_BUGBEAR].name = "Bugbear";
-    monster_prototypes[MONSTER_BUGBEAR].race = RACE_GOBLINOID;
-    monster_prototypes[MONSTER_BUGBEAR].class = CLASS_HUMANOID;
-    monster_prototypes[MONSTER_FIRE_ELEMENTAL].name = "Fire Elemental";
-    monster_prototypes[MONSTER_FIRE_ELEMENTAL].race = RACE_ELEMENTAL;
-    monster_prototypes[MONSTER_FIRE_ELEMENTAL].class = CLASS_ELEMENTAL;
-    monster_prototypes[MONSTER_GELATINOUS_CUBE].name = "Gelatinous Cube";
-    monster_prototypes[MONSTER_GELATINOUS_CUBE].race = RACE_OOZE;
-    monster_prototypes[MONSTER_GELATINOUS_CUBE].class = CLASS_OOZE;
-    monster_prototypes[MONSTER_GOBLIN].name = "Goblin";
-    monster_prototypes[MONSTER_GOBLIN].race = RACE_GOBLINOID;
-    monster_prototypes[MONSTER_GOBLIN].class = CLASS_HUMANOID;
-    monster_prototypes[MONSTER_IRON_GOLEM].name = "Iron Golem";
-    monster_prototypes[MONSTER_IRON_GOLEM].race = RACE_CONSTRUCT;
-    monster_prototypes[MONSTER_IRON_GOLEM].class = CLASS_CONSTRUCT;
-    monster_prototypes[MONSTER_OGRE].name = "Ogre";
-    monster_prototypes[MONSTER_OGRE].race = RACE_GIANT;
-    monster_prototypes[MONSTER_OGRE].class = CLASS_GIANT;
-    monster_prototypes[MONSTER_ORC_CLERIC].name = "Orc Cleric";
-    monster_prototypes[MONSTER_ORC_CLERIC].race = RACE_ORC;
-    monster_prototypes[MONSTER_ORC_CLERIC].class = CLASS_CLERIC;
-    monster_prototypes[MONSTER_ORC_FIGHTER].name = "Orc Fighter";
-    monster_prototypes[MONSTER_ORC_FIGHTER].race = RACE_ORC;
-    monster_prototypes[MONSTER_ORC_FIGHTER].class = CLASS_FIGHTER;
-    monster_prototypes[MONSTER_ORC_RANGER].name = "Orc Ranger";
-    monster_prototypes[MONSTER_ORC_RANGER].race = RACE_ORC;
-    monster_prototypes[MONSTER_ORC_RANGER].class = CLASS_RANGER;
-    monster_prototypes[MONSTER_PIXIE].name = "Pixie";
-    monster_prototypes[MONSTER_PIXIE].race = RACE_FEY;
-    monster_prototypes[MONSTER_PIXIE].class = CLASS_FEY;
-    monster_prototypes[MONSTER_RAKSHASA].name = "Rakshasa";
-    monster_prototypes[MONSTER_RAKSHASA].race = RACE_REPTILLIAN;
-    monster_prototypes[MONSTER_RAKSHASA].class = CLASS_SHAPESHIFTER;
-    monster_prototypes[MONSTER_RAT].name = "Rat";
-    monster_prototypes[MONSTER_RAT].race = RACE_VERMIN;
-    monster_prototypes[MONSTER_RAT].class = CLASS_VERMIN;
-    monster_prototypes[MONSTER_RED_SLAAD].name = "Red Slaad";
-    monster_prototypes[MONSTER_RED_SLAAD].race = RACE_OUTSIDER;
-    monster_prototypes[MONSTER_RED_SLAAD].class = CLASS_OUTSIDER;
-    monster_prototypes[MONSTER_WOLF].name = "Wolf";
-    monster_prototypes[MONSTER_WOLF].race = RACE_ANIMAL;
-    monster_prototypes[MONSTER_WOLF].class = CLASS_ANIMAL;
-    monster_prototypes[MONSTER_WYRMLING].name = "Wyrmling";
-    monster_prototypes[MONSTER_WYRMLING].race = RACE_DRAGON;
-    monster_prototypes[MONSTER_WYRMLING].class = CLASS_DRAGON;
-    monster_prototypes[MONSTER_ZOMBIE].name = "Zombie";
-    monster_prototypes[MONSTER_ZOMBIE].race = RACE_UNDEAD;
-    monster_prototypes[MONSTER_ZOMBIE].class = CLASS_UNDEAD;
+    monster_prototype[MONSTER_BASILISK].name = "Basilisk";
+    monster_prototype[MONSTER_BASILISK].race = RACE_BEAST;
+    monster_prototype[MONSTER_BASILISK].class = CLASS_BEAST;
+    monster_prototype[MONSTER_BEHOLDER].name = "Beholder";
+    monster_prototype[MONSTER_BEHOLDER].race = RACE_ABBERATION;
+    monster_prototype[MONSTER_BEHOLDER].class = CLASS_ABBERATION;
+    monster_prototype[MONSTER_BUGBEAR].name = "Bugbear";
+    monster_prototype[MONSTER_BUGBEAR].race = RACE_GOBLINOID;
+    monster_prototype[MONSTER_BUGBEAR].class = CLASS_HUMANOID;
+    monster_prototype[MONSTER_FIRE_ELEMENTAL].name = "Fire Elemental";
+    monster_prototype[MONSTER_FIRE_ELEMENTAL].race = RACE_ELEMENTAL;
+    monster_prototype[MONSTER_FIRE_ELEMENTAL].class = CLASS_ELEMENTAL;
+    monster_prototype[MONSTER_GELATINOUS_CUBE].name = "Gelatinous Cube";
+    monster_prototype[MONSTER_GELATINOUS_CUBE].race = RACE_OOZE;
+    monster_prototype[MONSTER_GELATINOUS_CUBE].class = CLASS_OOZE;
+    monster_prototype[MONSTER_GOBLIN].name = "Goblin";
+    monster_prototype[MONSTER_GOBLIN].race = RACE_GOBLINOID;
+    monster_prototype[MONSTER_GOBLIN].class = CLASS_HUMANOID;
+    monster_prototype[MONSTER_IRON_GOLEM].name = "Iron Golem";
+    monster_prototype[MONSTER_IRON_GOLEM].race = RACE_CONSTRUCT;
+    monster_prototype[MONSTER_IRON_GOLEM].class = CLASS_CONSTRUCT;
+    monster_prototype[MONSTER_OGRE].name = "Ogre";
+    monster_prototype[MONSTER_OGRE].race = RACE_GIANT;
+    monster_prototype[MONSTER_OGRE].class = CLASS_GIANT;
+    monster_prototype[MONSTER_ORC_CLERIC].name = "Orc Cleric";
+    monster_prototype[MONSTER_ORC_CLERIC].race = RACE_ORC;
+    monster_prototype[MONSTER_ORC_CLERIC].class = CLASS_CLERIC;
+    monster_prototype[MONSTER_ORC_FIGHTER].name = "Orc Fighter";
+    monster_prototype[MONSTER_ORC_FIGHTER].race = RACE_ORC;
+    monster_prototype[MONSTER_ORC_FIGHTER].class = CLASS_FIGHTER;
+    monster_prototype[MONSTER_ORC_RANGER].name = "Orc Ranger";
+    monster_prototype[MONSTER_ORC_RANGER].race = RACE_ORC;
+    monster_prototype[MONSTER_ORC_RANGER].class = CLASS_RANGER;
+    monster_prototype[MONSTER_PIXIE].name = "Pixie";
+    monster_prototype[MONSTER_PIXIE].race = RACE_FEY;
+    monster_prototype[MONSTER_PIXIE].class = CLASS_FEY;
+    monster_prototype[MONSTER_RAKSHASA].name = "Rakshasa";
+    monster_prototype[MONSTER_RAKSHASA].race = RACE_REPTILLIAN;
+    monster_prototype[MONSTER_RAKSHASA].class = CLASS_SHAPESHIFTER;
+    monster_prototype[MONSTER_RAT].name = "Rat";
+    monster_prototype[MONSTER_RAT].race = RACE_VERMIN;
+    monster_prototype[MONSTER_RAT].class = CLASS_VERMIN;
+    monster_prototype[MONSTER_RED_SLAAD].name = "Red Slaad";
+    monster_prototype[MONSTER_RED_SLAAD].race = RACE_OUTSIDER;
+    monster_prototype[MONSTER_RED_SLAAD].class = CLASS_OUTSIDER;
+    monster_prototype[MONSTER_WOLF].name = "Wolf";
+    monster_prototype[MONSTER_WOLF].race = RACE_ANIMAL;
+    monster_prototype[MONSTER_WOLF].class = CLASS_ANIMAL;
+    monster_prototype[MONSTER_WYRMLING].name = "Wyrmling";
+    monster_prototype[MONSTER_WYRMLING].race = RACE_DRAGON;
+    monster_prototype[MONSTER_WYRMLING].class = CLASS_DRAGON;
+    monster_prototype[MONSTER_ZOMBIE].name = "Zombie";
+    monster_prototype[MONSTER_ZOMBIE].race = RACE_UNDEAD;
+    monster_prototype[MONSTER_ZOMBIE].class = CLASS_UNDEAD;
 
     item_common.__placeholder = 0;
 

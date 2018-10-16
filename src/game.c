@@ -11,7 +11,6 @@
 #include "map.h"
 #include "message.h"
 #include "object.h"
-#include "program.h"
 #include "projectile.h"
 #include "tile.h"
 
@@ -21,7 +20,7 @@ void game_init(void)
 {
     game = calloc(1, sizeof(struct game));
 
-    game->state = GAME_STATE_PLAY;
+    game->state = GAME_STATE_MENU;
 
     for (int level = 0; level < NUM_MAPS; level++)
     {
@@ -36,10 +35,13 @@ void game_init(void)
 
     game->turn = 0;
     game->should_update = true;
+    game->should_quit = false;
 }
 
 void game_new(void)
 {
+    game->state = GAME_STATE_PLAY;
+
     TCOD_sys_delete_file(SAVE_PATH);
 
     for (int level = 0; level < NUM_MAPS; level++)
@@ -108,12 +110,14 @@ void game_save(void)
 
 void game_load(void)
 {
+    game->state = GAME_STATE_PLAY;
+
     game_new();
 }
 
 void game_update(void)
 {
-    if (program->state == PROGRAM_STATE_GAME)
+    if (game->state != GAME_STATE_MENU)
     {
         game->state = game->player->dead ? GAME_STATE_LOSE : GAME_STATE_PLAY;
 

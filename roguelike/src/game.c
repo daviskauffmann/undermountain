@@ -1,18 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "actor.h"
-#include "config.h"
-#include "game.h"
-#include "input.h"
-#include "map.h"
-#include "message.h"
-#include "object.h"
-#include "projectile.h"
-#include "tile.h"
+#include <roguelike/roguelike.h>
 
 struct game *game;
 

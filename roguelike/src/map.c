@@ -1,15 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-#include <string.h>
-
-#include "actor.h"
-#include "assets.h"
-#include "game.h"
-#include "map.h"
-#include "object.h"
-#include "projectile.h"
-#include "room.h"
-#include "tile.h"
+#include <roguelike/roguelike.h>
 
 #define MAP_ALGORITHM_CUSTOM
 

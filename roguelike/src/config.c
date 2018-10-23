@@ -1,6 +1,4 @@
-#include <libtcod/libtcod.h>
-
-#include "config.h"
+#include <roguelike/roguelike.h>
 
 const char *font_file;
 TCOD_font_flags_t font_flags;

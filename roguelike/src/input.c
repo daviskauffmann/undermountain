@@ -1,14 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-
-#include "assets.h"
-#include "actor.h"
-#include "config.h"
-#include "game.h"
-#include "input.h"
-#include "tooltip_option.h"
-#include "ui.h"
-#include "util.h"
+#include <roguelike/roguelike.h>
 
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
 static void cb_should_update(void *on_hit_params);

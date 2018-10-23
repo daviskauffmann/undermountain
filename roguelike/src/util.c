@@ -1,7 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <math.h>
-
-#include "util.h"
+#include <roguelike/roguelike.h>
 
 float distance_sq(int x1, int y1, int x2, int y2)
 {

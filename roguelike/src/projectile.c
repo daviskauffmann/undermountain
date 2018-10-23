@@ -1,14 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-#include <math.h>
-
-#include "actor.h"
-#include "assets.h"
-#include "game.h"
-#include "map.h"
-#include "object.h"
-#include "projectile.h"
-#include "util.h"
+#include <roguelike/roguelike.h>
 
 struct projectile *projectile_create(unsigned char glyph, int level, int x1, int y1, int x2, int y2, struct actor *shooter, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {

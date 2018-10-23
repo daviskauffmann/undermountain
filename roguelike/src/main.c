@@ -1,12 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <stdio.h>
-
-#include "assets.h"
-#include "config.h"
-#include "input.h"
-#include "game.h"
-#include "renderer.h"
-#include "ui.h"
+#include <roguelike/roguelike.h>
 
 int main(int argc, char *args[])
 {

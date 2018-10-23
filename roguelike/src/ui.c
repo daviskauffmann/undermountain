@@ -1,13 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-#include <string.h>
-
-#include "assets.h"
-#include "config.h"
-#include "game.h"
-#include "map.h"
-#include "tooltip_option.h"
-#include "ui.h"
+#include <roguelike/roguelike.h>
 
 struct ui *ui;
 

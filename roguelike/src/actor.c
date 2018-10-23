@@ -1,18 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-#include <math.h>
-#include <string.h>
-
-#include "actor.h"
-#include "assets.h"
-#include "config.h"
-#include "game.h"
-#include "item.h"
-#include "map.h"
-#include "object.h"
-#include "projectile.h"
-#include "tile.h"
-#include "util.h"
+#include <roguelike/roguelike.h>
 
 static int calc_ability_modifier(int ability);
 

@@ -1,8 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-#include <string.h>
-
-#include "message.h"
+#include <roguelike/roguelike.h>
 
 struct message *message_create(char *text, TCOD_color_t color)
 {

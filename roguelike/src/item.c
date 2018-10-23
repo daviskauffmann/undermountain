@@ -1,10 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-
-#include "assets.h"
-#include "actor.h"
-#include "game.h"
-#include "item.h"
+#include <roguelike/roguelike.h>
 
 struct item *item_create(enum item_type type, int level, int x, int y)
 {

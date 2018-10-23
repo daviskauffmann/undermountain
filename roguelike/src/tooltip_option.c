@@ -1,8 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-#include <string.h>
-
-#include "tooltip_option.h"
+#include <roguelike/roguelike.h>
 
 struct tooltip_option *tooltip_option_create(char *text, struct tooltip_data data, bool (*fn)(struct tooltip_data data))
 {

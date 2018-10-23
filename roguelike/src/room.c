@@ -1,7 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-
-#include "room.h"
+#include <roguelike/roguelike.h>
 
 struct room *room_create(int x, int y, int w, int h)
 {

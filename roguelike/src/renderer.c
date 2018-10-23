@@ -1,18 +1,4 @@
-#include <libtcod/libtcod.h>
-#include <malloc.h>
-#include <math.h>
-#include <string.h>
-
-#include "actor.h"
-#include "assets.h"
-#include "config.h"
-#include "game.h"
-#include "input.h"
-#include "message.h"
-#include "projectile.h"
-#include "renderer.h"
-#include "tooltip_option.h"
-#include "ui.h"
+#include <roguelike/roguelike.h>
 
 struct renderer *renderer;
 

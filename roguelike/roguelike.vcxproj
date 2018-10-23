@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{BABDE851-5D4E-415D-8924-78AC77B8F83A}</ProjectGuid>
+    <RootNamespace>roguelike</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(ProjectDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Platform)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\actor.c" />
+    <ClCompile Include="src\assets.c" />
+    <ClCompile Include="src\config.c" />
+    <ClCompile Include="src\game.c" />
+    <ClCompile Include="src\input.c" />
+    <ClCompile Include="src\item.c" />
+    <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\map.c" />
+    <ClCompile Include="src\message.c" />
+    <ClCompile Include="src\object.c" />
+    <ClCompile Include="src\projectile.c" />
+    <ClCompile Include="src\renderer.c" />
+    <ClCompile Include="src\room.c" />
+    <ClCompile Include="src\tile.c" />
+    <ClCompile Include="src\tooltip_option.c" />
+    <ClCompile Include="src\ui.c" />
+    <ClCompile Include="src\util.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\libtcod\bresenham.h" />
+    <ClInclude Include="include\libtcod\bresenham.hpp" />
+    <ClInclude Include="include\libtcod\bsp.h" />
+    <ClInclude Include="include\libtcod\bsp.hpp" />
+    <ClInclude Include="include\libtcod\color.h" />
+    <ClInclude Include="include\libtcod\color.hpp" />
+    <ClInclude Include="include\libtcod\console.h" />
+    <ClInclude Include="include\libtcod\console.hpp" />
+    <ClInclude Include="include\libtcod\console_types.h" />
+    <ClInclude Include="include\libtcod\fov.h" />
+    <ClInclude Include="include\libtcod\fov.hpp" />
+    <ClInclude Include="include\libtcod\fov_types.h" />
+    <ClInclude Include="include\libtcod\gui\button.hpp" />
+    <ClInclude Include="include\libtcod\gui\container.hpp" />
+    <ClInclude Include="include\libtcod\gui\flatlist.hpp" />
+    <ClInclude Include="include\libtcod\gui\gui.hpp" />
+    <ClInclude Include="include\libtcod\gui\hbox.hpp" />
+    <ClInclude Include="include\libtcod\gui\image.hpp" />
+    <ClInclude Include="include\libtcod\gui\label.hpp" />
+    <ClInclude Include="include\libtcod\gui\radiobutton.hpp" />
+    <ClInclude Include="include\libtcod\gui\slider.hpp" />
+    <ClInclude Include="include\libtcod\gui\statusbar.hpp" />
+    <ClInclude Include="include\libtcod\gui\textbox.hpp" />
+    <ClInclude Include="include\libtcod\gui\togglebutton.hpp" />
+    <ClInclude Include="include\libtcod\gui\toolbar.hpp" />
+    <ClInclude Include="include\libtcod\gui\vbox.hpp" />
+    <ClInclude Include="include\libtcod\gui\widget.hpp" />
+    <ClInclude Include="include\libtcod\heightmap.h" />
+    <ClInclude Include="include\libtcod\heightmap.hpp" />
+    <ClInclude Include="include\libtcod\image.h" />
+    <ClInclude Include="include\libtcod\image.hpp" />
+    <ClInclude Include="include\libtcod\lex.h" />
+    <ClInclude Include="include\libtcod\lex.hpp" />
+    <ClInclude Include="include\libtcod\libtcod.h" />
+    <ClInclude Include="include\libtcod\libtcod.hpp" />
+    <ClInclude Include="include\libtcod\libtcod_int.h" />
+    <ClInclude Include="include\libtcod\list.h" />
+    <ClInclude Include="include\libtcod\list.hpp" />
+    <ClInclude Include="include\libtcod\mersenne.h" />
+    <ClInclude Include="include\libtcod\mersenne.hpp" />
+    <ClInclude Include="include\libtcod\mersenne_types.h" />
+    <ClInclude Include="include\libtcod\mouse.h" />
+    <ClInclude Include="include\libtcod\mouse.hpp" />
+    <ClInclude Include="include\libtcod\mouse_types.h" />
+    <ClInclude Include="include\libtcod\namegen.h" />
+    <ClInclude Include="include\libtcod\namegen.hpp" />
+    <ClInclude Include="include\libtcod\noise.h" />
+    <ClInclude Include="include\libtcod\noise.hpp" />
+    <ClInclude Include="include\libtcod\noise_defaults.h" />
+    <ClInclude Include="include\libtcod\parser.h" />
+    <ClInclude Include="include\libtcod\parser.hpp" />
+    <ClInclude Include="include\libtcod\path.h" />
+    <ClInclude Include="include\libtcod\path.hpp" />
+    <ClInclude Include="include\libtcod\sys.h" />
+    <ClInclude Include="include\libtcod\sys.hpp" />
+    <ClInclude Include="include\libtcod\tree.h" />
+    <ClInclude Include="include\libtcod\tree.hpp" />
+    <ClInclude Include="include\libtcod\txtfield.h" />
+    <ClInclude Include="include\libtcod\txtfield.hpp" />
+    <ClInclude Include="include\libtcod\wrappers.h" />
+    <ClInclude Include="include\libtcod\zip.h" />
+    <ClInclude Include="include\libtcod\zip.hpp" />
+    <ClInclude Include="src\actor.h" />
+    <ClInclude Include="src\assets.h" />
+    <ClInclude Include="src\config.h" />
+    <ClInclude Include="src\game.h" />
+    <ClInclude Include="src\input.h" />
+    <ClInclude Include="src\item.h" />
+    <ClInclude Include="src\map.h" />
+    <ClInclude Include="src\message.h" />
+    <ClInclude Include="src\object.h" />
+    <ClInclude Include="src\projectile.h" />
+    <ClInclude Include="src\renderer.h" />
+    <ClInclude Include="src\room.h" />
+    <ClInclude Include="src\spell.h" />
+    <ClInclude Include="src\tile.h" />
+    <ClInclude Include="src\tooltip_option.h" />
+    <ClInclude Include="src\ui.h" />
+    <ClInclude Include="src\util.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

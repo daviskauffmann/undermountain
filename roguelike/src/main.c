@@ -28,7 +28,7 @@ int main(int argc, char *args[])
     while (!TCOD_console_is_window_closed())
     {
         char title[256];
-        sprintf(title, "%s - FPS: %d", WINDOW_TITLE, TCOD_sys_get_fps());
+        sprintf_s(title, sizeof(title), "%s - FPS: %d", WINDOW_TITLE, TCOD_sys_get_fps());
         TCOD_console_set_window_title(title);
 
         input_handle();

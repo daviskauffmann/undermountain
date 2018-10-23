@@ -203,7 +203,7 @@ void game_log(int level, int x, int y, TCOD_color_t color, char *fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-    vsprintf(buffer, fmt, args);
+    vsprintf_s(buffer, sizeof(buffer), fmt, args);
     va_end(args);
 
     char *line_begin = buffer;

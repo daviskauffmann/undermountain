@@ -390,7 +390,7 @@ void map_generate(struct map *map)
         {
         case RACE_DWARF:
         {
-            filename = "namegen/mingos_dwarf.cfg";
+            filename = "assets/namegen/mingos_dwarf.cfg";
 
             if (TCOD_random_get_int(NULL, 0, 1) == 0)
             {
@@ -404,7 +404,7 @@ void map_generate(struct map *map)
         break;
         default:
         {
-            filename = "namegen/mingos_standard.cfg";
+            filename = "assets/namegen/mingos_standard.cfg";
 
             if (TCOD_random_get_int(NULL, 0, 1) == 0)
             {

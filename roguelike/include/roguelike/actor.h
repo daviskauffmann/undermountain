@@ -152,8 +152,10 @@ struct actor
     enum race race;
     enum class class;
     enum faction faction;
-    int class_level;
     int experience;
+    int level;
+    int base_hp;
+    int current_hp;
     int strength;
     int dexterity;
     int constitution;
@@ -162,11 +164,9 @@ struct actor
     int charisma;
     struct item *equipment[NUM_EQUIP_SLOTS];
     TCOD_list_t items;
-    int level;
+    int floor;
     int x;
     int y;
-    int base_hp;
-    int current_hp;
     float speed;
     float energy;
     int last_seen_x;
@@ -183,7 +183,7 @@ struct actor
     bool dead;
 };
 
-struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int class_level, int level, int x, int y);
+struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
 void actor_level_up(struct actor *actor);
 int actor_calc_max_hp(struct actor *actor);
 int actor_calc_enhancement_bonus(struct actor *actor);

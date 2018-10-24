@@ -51,7 +51,7 @@ void renderer_draw(void)
     }
     else
     {
-        struct map *map = &game->maps[game->player->level];
+        struct map *map = &game->maps[game->player->floor];
 
         {
             renderer->noise_x += 0.2f;
@@ -295,7 +295,7 @@ void renderer_draw(void)
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "ALIGNMENT: Neutral Good");
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "RACE     : %s", race_info[game->player->race].name);
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "CLASS    : %s", class_info[game->player->class].name);
-                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "LEVEL    : %d", game->player->class_level);
+                TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "LEVEL    : %d", game->player->level);
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "EXP      : %d", game->player->experience);
                 y++;
                 TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "STR: %d", game->player->strength);
@@ -425,7 +425,7 @@ void renderer_draw(void)
 
         // DEBUG
         TCOD_console_print(NULL, 0, 0, "Turn: %d", game->turn);
-        TCOD_console_print(NULL, 0, 1, "Depth: %d", game->player->level);
+        TCOD_console_print(NULL, 0, 1, "Floor: %d", game->player->floor);
         TCOD_console_print(NULL, 0, 2, "X: %d", game->player->x);
         TCOD_console_print(NULL, 0, 3, "Y: %d", game->player->y);
         TCOD_console_print(NULL, 0, 4, "HP: %d", game->player->current_hp);

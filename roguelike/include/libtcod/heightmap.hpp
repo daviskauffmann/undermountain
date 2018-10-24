@@ -353,19 +353,19 @@ public :
 	@FuncTitle Dig along a Bezier curve
 	@FuncDesc This function carve a path along a cubic Bezier curve using the digHill function.
 		Could be used for roads/rivers/...
-		Both radius and depth can vary linearly along the path.
-	@Cpp void TCODHeightMap::digBezier(int px[4], int py[4], float startRadius, float startDepth, float endRadius, float endDepth)
-	@C void TCOD_heightmap_dig_bezier(TCOD_heightmap_t *hm, int px[4], int py[4], float startRadius, float startDepth, float endRadius, float endDepth)
-	@Py heightmap_dig_bezier(hm, px, py,  startRadius,  startDepth, endRadius, endDepth)
-	@C# void TCODHeightMap::digBezier(int[] px, int[] py, float startRadius, float startDepth, float endRadius, float endDepth)
+		Both radius and floor can vary linearly along the path.
+	@Cpp void TCODHeightMap::digBezier(int px[4], int py[4], float startRadius, float startfloor, float endRadius, float endfloor)
+	@C void TCOD_heightmap_dig_bezier(TCOD_heightmap_t *hm, int px[4], int py[4], float startRadius, float startfloor, float endRadius, float endfloor)
+	@Py heightmap_dig_bezier(hm, px, py,  startRadius,  startfloor, endRadius, endfloor)
+	@C# void TCODHeightMap::digBezier(int[] px, int[] py, float startRadius, float startfloor, float endRadius, float endfloor)
 	@Param hm	In the C version, the address of the heightmap struct returned by the creation function.
 	@Param px,py	The coordinates of the 4 Bezier control points.
 	@Param startRadius	The path radius in map cells at point P0. Might be < 1.0
-	@Param startDepth	The path depth at point P0.
+	@Param startfloor	The path floor at point P0.
 	@Param endRadius	The path radius in map cells at point P3. Might be < 1.0
-	@Param endDepth	The path depth at point P3.
+	@Param endfloor	The path floor at point P3.
 	*/
-	void digBezier(int px[4], int py[4], float startRadius, float startDepth, float endRadius, float endDepth);
+	void digBezier(int px[4], int py[4], float startRadius, float startfloor, float endRadius, float endfloor);
 
 	/**
 	@PageName heightmap_read

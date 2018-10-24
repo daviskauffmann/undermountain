@@ -576,7 +576,7 @@ void input_handle(void)
                     input->directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -591,7 +591,7 @@ void input_handle(void)
                     input->directional_action = DIRECTIONAL_ACTION_DRINK;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -609,7 +609,7 @@ void input_handle(void)
                     ui->panel_status[PANEL_INVENTORY].selection_mode = true;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -627,7 +627,7 @@ void input_handle(void)
                     ui->panel_status[PANEL_INVENTORY].selection_mode = true;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -651,7 +651,7 @@ void input_handle(void)
 
                         bool target_found = false;
 
-                        struct map *map = &game->maps[game->player->level];
+                        struct map *map = &game->maps[game->player->floor];
 
                         {
                             struct actor *target = NULL;
@@ -742,7 +742,7 @@ void input_handle(void)
                     input->directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -757,7 +757,7 @@ void input_handle(void)
                     input->directional_action = DIRECTIONAL_ACTION_PRAY;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -775,7 +775,7 @@ void input_handle(void)
                     ui->panel_status[PANEL_INVENTORY].selection_mode = true;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -792,7 +792,7 @@ void input_handle(void)
                         game_save();
 
                         game_log(
-                            game->player->level,
+                            game->player->floor,
                             game->player->x,
                             game->player->y,
                             TCOD_green,
@@ -803,7 +803,7 @@ void input_handle(void)
                         input->directional_action = DIRECTIONAL_ACTION_SIT;
 
                         game_log(
-                            game->player->level,
+                            game->player->floor,
                             game->player->x,
                             game->player->y,
                             TCOD_white,
@@ -832,7 +832,7 @@ void input_handle(void)
                     ui->panel_status[PANEL_CHARACTER].selection_mode = true;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -850,7 +850,7 @@ void input_handle(void)
                     ui->panel_status[PANEL_INVENTORY].selection_mode = true;
 
                     game_log(
-                        game->player->level,
+                        game->player->floor,
                         game->player->x,
                         game->player->y,
                         TCOD_white,
@@ -870,7 +870,7 @@ void input_handle(void)
                         ui->panel_status[PANEL_CHARACTER].selection_mode = true;
 
                         game_log(
-                            game->player->level,
+                            game->player->floor,
                             game->player->x,
                             game->player->y,
                             TCOD_white,
@@ -1043,7 +1043,7 @@ void input_handle(void)
             {
                 if (ui_view_is_inside(ui->mouse_x, ui->mouse_y) && map_is_inside(ui->mouse_tile_x, ui->mouse_tile_y))
                 {
-                    struct map *map = &game->maps[game->player->level];
+                    struct map *map = &game->maps[game->player->floor];
                     struct tile *tile = &map->tiles[ui->mouse_tile_x][ui->mouse_tile_y];
 
                     ui_tooltip_show();

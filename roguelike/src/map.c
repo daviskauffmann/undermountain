@@ -26,9 +26,9 @@ static void vline_up(struct map *map, int x, int y);
 static void vline_down(struct map *map, int x, int y);
 static bool traverse_node(TCOD_bsp_t *node, struct map *map);
 
-void map_init(struct map *map, int level)
+void map_init(struct map *map, int floor)
 {
-    map->level = level;
+    map->floor = floor;
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -230,7 +230,7 @@ void map_generate(struct map *map)
             {
                 struct object *object = object_create(
                     OBJECT_TYPE_DOOR_CLOSED,
-                    map->level,
+                    map->floor,
                     x,
                     y,
                     TCOD_white,
@@ -254,7 +254,7 @@ void map_generate(struct map *map)
 
         struct object *object = object_create(
             OBJECT_TYPE_STAIR_DOWN,
-            map->level,
+            map->floor,
             map->stair_down_x,
             map->stair_down_y,
             TCOD_white,
@@ -278,7 +278,7 @@ void map_generate(struct map *map)
 
         struct object *object = object_create(
             OBJECT_TYPE_STAIR_UP,
-            map->level,
+            map->floor,
             map->stair_up_x,
             map->stair_up_y,
             TCOD_white,
@@ -348,7 +348,7 @@ void map_generate(struct map *map)
 
         struct object *object = object_create(
             type,
-            map->level,
+            map->floor,
             x,
             y,
             color,
@@ -420,8 +420,8 @@ void map_generate(struct map *map)
             race,
             class,
             FACTION_GOOD,
-            map->level + 1,
-            map->level,
+            map->floor + 1,
+            map->floor,
             x,
             y);
 
@@ -450,8 +450,8 @@ void map_generate(struct map *map)
             prototype->race,
             prototype->class,
             FACTION_EVIL,
-            map->level + 1,
-            map->level,
+            map->floor + 1,
+            map->floor,
             x,
             y);
 
@@ -470,7 +470,7 @@ void map_generate(struct map *map)
 
         struct item *item = item_create(
             TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1),
-            map->level,
+            map->floor,
             x,
             y);
 

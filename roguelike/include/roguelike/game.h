@@ -35,8 +35,7 @@ void game_new(void);
 void game_save();
 void game_load(void);
 void game_update(void);
-void game_log(int level, int x, int y, TCOD_color_t color, char *fmt, ...);
-void game_restart(void);
+void game_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...);
 void game_quit(void);
 
 #endif

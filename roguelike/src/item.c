@@ -1,11 +1,11 @@
 #include <roguelike/roguelike.h>
 
-struct item *item_create(enum item_type type, int level, int x, int y)
+struct item *item_create(enum item_type type, int floor, int x, int y)
 {
     struct item *item = calloc(1, sizeof(struct item));
 
     item->type = type;
-    item->level = level;
+    item->floor = floor;
     item->x = x;
     item->y = y;
 

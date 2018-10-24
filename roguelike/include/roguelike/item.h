@@ -190,12 +190,12 @@ struct item_info
 struct item
 {
     enum item_type type;
-    int level;
+    int floor;
     int x;
     int y;
 };
 
-struct item *item_create(enum item_type type, int level, int x, int y);
+struct item *item_create(enum item_type type, int floor, int x, int y);
 bool item_is_two_handed(struct item *item, struct actor *actor);
 void item_destroy(struct item *item);
 

@@ -59,6 +59,11 @@ struct item_info item_info[NUM_ITEM_TYPES];
     class_info[_class].color = _color;              \
     class_info[_class].hit_die = _hit_die;
 
+#define MONSTER_PROTOTYPE(_monster, _name, _race, _class) \
+    monster_prototype[_monster].name = _name;             \
+    monster_prototype[_monster].race = _race;             \
+    monster_prototype[_monster].class = _class;
+
 void assets_load(void)
 {
     TILE_COMMON(TCOD_color_RGB(16, 16, 32));
@@ -133,34 +138,16 @@ void assets_load(void)
     CLASS_INFO(CLASS_MONSTROUS, "Monstrous", TCOD_lightest_grey, 10);
     CLASS_INFO(CLASS_OOZE, "Ooze", TCOD_lightest_grey, 10);
     CLASS_INFO(CLASS_OUTSIDER, "Outsider", TCOD_lightest_grey, 10);
-    class_info[CLASS_SHAPESHIFTER].name = "Shapeshifter";
-    class_info[CLASS_SHAPESHIFTER].color = TCOD_lightest_grey;
-    class_info[CLASS_SHAPESHIFTER].hit_die = 10;
-    class_info[CLASS_UNDEAD].name = "Undead";
-    class_info[CLASS_UNDEAD].color = TCOD_lightest_grey;
-    class_info[CLASS_UNDEAD].hit_die = 10;
-    class_info[CLASS_VERMIN].name = "Vermin";
-    class_info[CLASS_VERMIN].color = TCOD_lightest_grey;
-    class_info[CLASS_VERMIN].hit_die = 10;
+    CLASS_INFO(CLASS_SHAPESHIFTER, "Shapeshifter", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_UNDEAD, "Undead", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_VERMIN, "Vermin", TCOD_lightest_grey, 10);
 
-    monster_prototype[MONSTER_BASILISK].name = "Basilisk";
-    monster_prototype[MONSTER_BASILISK].race = RACE_BEAST;
-    monster_prototype[MONSTER_BASILISK].class = CLASS_BEAST;
-    monster_prototype[MONSTER_BEHOLDER].name = "Beholder";
-    monster_prototype[MONSTER_BEHOLDER].race = RACE_ABBERATION;
-    monster_prototype[MONSTER_BEHOLDER].class = CLASS_ABBERATION;
-    monster_prototype[MONSTER_BUGBEAR].name = "Bugbear";
-    monster_prototype[MONSTER_BUGBEAR].race = RACE_GOBLINOID;
-    monster_prototype[MONSTER_BUGBEAR].class = CLASS_HUMANOID;
-    monster_prototype[MONSTER_FIRE_ELEMENTAL].name = "Fire Elemental";
-    monster_prototype[MONSTER_FIRE_ELEMENTAL].race = RACE_ELEMENTAL;
-    monster_prototype[MONSTER_FIRE_ELEMENTAL].class = CLASS_ELEMENTAL;
-    monster_prototype[MONSTER_GELATINOUS_CUBE].name = "Gelatinous Cube";
-    monster_prototype[MONSTER_GELATINOUS_CUBE].race = RACE_OOZE;
-    monster_prototype[MONSTER_GELATINOUS_CUBE].class = CLASS_OOZE;
-    monster_prototype[MONSTER_GOBLIN].name = "Goblin";
-    monster_prototype[MONSTER_GOBLIN].race = RACE_GOBLINOID;
-    monster_prototype[MONSTER_GOBLIN].class = CLASS_HUMANOID;
+    MONSTER_PROTOTYPE(MONSTER_BASILISK, "Basilisk", RACE_BEAST, CLASS_BEAST);
+    MONSTER_PROTOTYPE(MONSTER_BEHOLDER, "Beholder", RACE_ABBERATION, CLASS_ABBERATION);
+    MONSTER_PROTOTYPE(MONSTER_BUGBEAR, "Bugbear", RACE_GOBLINOID, CLASS_HUMANOID);
+    MONSTER_PROTOTYPE(MONSTER_FIRE_ELEMENTAL, "Fire Elemental", RACE_ELEMENTAL, CLASS_ELEMENTAL);
+    MONSTER_PROTOTYPE(MONSTER_GELATINOUS_CUBE, "Gelatinous Cube", RACE_OOZE, CLASS_OOZE);
+    MONSTER_PROTOTYPE(MONSTER_GOBLIN, "Goblin", RACE_GOBLINOID, CLASS_HUMANOID);
     monster_prototype[MONSTER_IRON_GOLEM].name = "Iron Golem";
     monster_prototype[MONSTER_IRON_GOLEM].race = RACE_CONSTRUCT;
     monster_prototype[MONSTER_IRON_GOLEM].class = CLASS_CONSTRUCT;

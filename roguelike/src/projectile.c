@@ -1,11 +1,11 @@
 #include <roguelike/roguelike.h>
 
-struct projectile *projectile_create(unsigned char glyph, int level, int x1, int y1, int x2, int y2, struct actor *shooter, void(*on_hit)(void *on_hit_params), void *on_hit_params)
+struct projectile *projectile_create(unsigned char glyph, int floor, int x1, int y1, int x2, int y2, struct actor *shooter, void(*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     struct projectile *projectile = calloc(1, sizeof(struct projectile));
 
     projectile->glyph = glyph;
-    projectile->level = level;
+    projectile->floor = floor;
     projectile->x = (float)x1;
     projectile->y = (float)y1;
     projectile->dx = ((float)x2 - (float)x1) / distance(x1, y1, x2, y2);
@@ -33,7 +33,7 @@ void projectile_update(struct projectile *projectile)
         should_move = false;
     }
 
-    struct map *map = &game->maps[projectile->level];
+    struct map *map = &game->maps[projectile->floor];
     struct tile *tile = &map->tiles[x][y];
 
     if (!tile_info[tile->type].is_walkable)

@@ -8,7 +8,7 @@
 
 struct map
 {
-    int level;
+    int floor;
     int stair_down_x;
     int stair_down_y;
     int stair_up_x;
@@ -21,7 +21,7 @@ struct map
     TCOD_list_t projectiles;
 };
 
-void map_init(struct map *map, int level);
+void map_init(struct map *map, int floor);
 void map_generate(struct map *map);
 bool map_is_inside(int x, int y);
 struct room *map_get_random_room(struct map *map);

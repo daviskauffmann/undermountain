@@ -17,7 +17,7 @@ int main(int argc, char *args[])
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
     TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, console_renderer);
 
-    while (!TCOD_console_is_window_closed())
+    while (!TCOD_console_is_window_closed() && !game->should_quit)
     {
         char title[256];
         sprintf_s(title, sizeof(title), "%s - FPS: %d", WINDOW_TITLE, TCOD_sys_get_fps());
@@ -27,11 +27,6 @@ int main(int argc, char *args[])
         game_update();
         ui_update();
         renderer_draw();
-
-        if (game->should_quit)
-        {
-            break;
-        }
     }
 
     TCOD_console_delete(NULL);

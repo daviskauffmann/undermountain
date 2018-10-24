@@ -249,7 +249,8 @@ void map_generate(struct map *map)
         {
             struct room *stair_down_room = map_get_random_room(map);
             room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
-        } while (map->tiles[map->stair_down_x][map->stair_down_y].object != NULL);
+        }
+        while (map->tiles[map->stair_down_x][map->stair_down_y].object != NULL);
 
         struct object *object = object_create(
             OBJECT_TYPE_STAIR_DOWN,
@@ -272,7 +273,8 @@ void map_generate(struct map *map)
         {
             struct room *stair_up_room = map_get_random_room(map);
             room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
-        } while (map->tiles[map->stair_up_x][map->stair_up_y].object != NULL);
+        }
+        while (map->tiles[map->stair_up_x][map->stair_up_y].object != NULL);
 
         struct object *object = object_create(
             OBJECT_TYPE_STAIR_UP,
@@ -298,7 +300,8 @@ void map_generate(struct map *map)
         do
         {
             room_get_random_pos(room, &x, &y);
-        } while (map->tiles[x][y].object != NULL);
+        }
+        while (map->tiles[x][y].object != NULL);
 
         enum object_type type = 0;
         TCOD_color_t color = TCOD_white;
@@ -367,7 +370,8 @@ void map_generate(struct map *map)
         do
         {
             room_get_random_pos(room, &x, &y);
-        } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
+        }
+        while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
 
         enum race race = TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN);
         enum class class = TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD);
@@ -435,7 +439,8 @@ void map_generate(struct map *map)
         do
         {
             room_get_random_pos(room, &x, &y);
-        } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
+        }
+        while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
 
         enum monster monster = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
         struct prototype *prototype = &monster_prototype[monster];
@@ -611,7 +616,8 @@ static void hline(struct map *map, int x1, int y, int x2)
             x += dx;
 
             map->tiles[x][y].type = TILE_TYPE_FLOOR;
-        } while (x != x2);
+        }
+        while (x != x2);
     }
 }
 
@@ -649,7 +655,8 @@ static void vline(struct map *map, int x, int y1, int y2)
             y += dy;
 
             map->tiles[x][y].type = TILE_TYPE_FLOOR;
-        } while (y != y2);
+        }
+        while (y != y2);
     }
 }
 

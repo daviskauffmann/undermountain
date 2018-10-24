@@ -212,7 +212,7 @@ bool actor_equip(struct actor *actor, struct item *item);
 bool actor_unequip(struct actor *actor, enum equip_slot equip_slot);
 bool actor_quaff(struct actor *actor, struct item *item);
 bool actor_bash(struct actor *actor, struct object *object);
-bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params);
+bool actor_shoot(struct actor *actor, int x, int y, void(*on_hit)(void *on_hit_params), void *on_hit_params);
 bool actor_swing(struct actor *actor, int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other, bool ranged);
 bool actor_cast_spell(struct actor *actor);

@@ -218,7 +218,8 @@ void game_log(int level, int x, int y, TCOD_color_t color, char *fmt, ...)
         TCOD_list_push(game->messages, message);
 
         line_begin = line_end + 1;
-    } while (line_end);
+    }
+    while (line_end);
 }
 
 void game_quit(void)

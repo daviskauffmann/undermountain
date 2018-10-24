@@ -215,13 +215,7 @@ void renderer_draw(void)
             {
                 if (tile->actor)
                 {
-                    TCOD_console_print_ex(
-                        NULL,
-                        ui->view_width / 2,
-                        ui->view_height - 2,
-                        TCOD_BKGND_NONE,
-                        TCOD_CENTER,
-                        tile->actor->name);
+                    TCOD_console_print_ex(NULL, ui->view_width / 2, ui->view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile->actor->name);
 
                     goto done;
                 }
@@ -231,13 +225,7 @@ void renderer_draw(void)
 
                     if (item)
                     {
-                        TCOD_console_print_ex(
-                            NULL,
-                            ui->view_width / 2,
-                            ui->view_height - 2,
-                            TCOD_BKGND_NONE,
-                            TCOD_CENTER,
-                            item_info[item->type].name);
+                        TCOD_console_print_ex(NULL, ui->view_width / 2, ui->view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, item_info[item->type].name);
 
                         goto done;
                     }
@@ -245,24 +233,12 @@ void renderer_draw(void)
 
                 if (tile->object)
                 {
-                    TCOD_console_print_ex(
-                        NULL,
-                        ui->view_width / 2,
-                        ui->view_height - 2,
-                        TCOD_BKGND_NONE,
-                        TCOD_CENTER,
-                        object_info[tile->object->type].name);
+                    TCOD_console_print_ex(NULL, ui->view_width / 2, ui->view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, object_info[tile->object->type].name);
 
                     goto done;
                 }
 
-                TCOD_console_print_ex(
-                    NULL,
-                    ui->view_width / 2,
-                    ui->view_height - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    tile_info[tile->type].name);
+                TCOD_console_print_ex(NULL, ui->view_width / 2, ui->view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile_info[tile->type].name);
 
             done:;
             }
@@ -270,24 +246,11 @@ void renderer_draw(void)
             {
                 if (tile->seen)
                 {
-                    TCOD_console_print_ex(
-                        NULL,
-                        ui->view_width / 2,
-                        ui->view_height - 2,
-                        TCOD_BKGND_NONE,
-                        TCOD_CENTER,
-                        "%s (known)",
-                        tile_info[tile->type].name);
+                    TCOD_console_print_ex(NULL, ui->view_width / 2, ui->view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (known)", tile_info[tile->type].name);
                 }
                 else
                 {
-                    TCOD_console_print_ex(
-                        NULL,
-                        ui->view_width / 2,
-                        ui->view_height - 2,
-                        TCOD_BKGND_NONE,
-                        TCOD_CENTER,
-                        "Unknown");
+                    TCOD_console_print_ex(NULL, ui->view_width / 2, ui->view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
                 }
             }
         }
@@ -350,30 +313,22 @@ void renderer_draw(void)
                     {
                         if (panel_status->selection_mode)
                         {
-                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: %s",
-                                               equip_slot + 'a' - 1,
-                                               equip_slot_info[equip_slot].label,
-                                               item_info[game->player->equipment[equip_slot]->type].name);
+                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: %s", equip_slot + 'a' - 1, equip_slot_info[equip_slot].label, item_info[game->player->equipment[equip_slot]->type].name);
                         }
                         else
                         {
-                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: %s",
-                                               equip_slot_info[equip_slot].label,
-                                               item_info[game->player->equipment[equip_slot]->type].name);
+                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: %s", equip_slot_info[equip_slot].label, item_info[game->player->equipment[equip_slot]->type].name);
                         }
                     }
                     else
                     {
                         if (panel_status->selection_mode)
                         {
-                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: N/A",
-                                               equip_slot + 'a' - 1,
-                                               equip_slot_info[equip_slot].label);
+                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%c) %s: N/A", equip_slot + 'a' - 1, equip_slot_info[equip_slot].label);
                         }
                         else
                         {
-                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: N/A",
-                                               equip_slot_info[equip_slot].label);
+                            TCOD_console_print(renderer->panel, 1, y++ - panel_status->scroll, "%s: N/A", equip_slot_info[equip_slot].label);
                         }
                     }
 

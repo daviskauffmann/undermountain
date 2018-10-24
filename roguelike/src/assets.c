@@ -42,7 +42,7 @@ struct item_info item_info[NUM_ITEM_TYPES];
 #define RACE_INFO(_race, _name, _glyph, _size) \
     race_info[_race].name = _name;             \
     race_info[_race].glyph = _glyph;           \
-    race_info[_race].size = _size
+    race_info[_race].size = _size;
 
 #define CLASS_INFO(_class, _name, _color, _hit_die) \
     class_info[_class].name = _name;                \
@@ -54,26 +54,31 @@ struct item_info item_info[NUM_ITEM_TYPES];
     monster_prototype[_monster].race = _race;             \
     monster_prototype[_monster].class = _class;
 
+#define CLASS_INFO(_class, _name, _color, _hit_die) \
+    class_info[_class].name = _name;                \
+    class_info[_class].color = _color;              \
+    class_info[_class].hit_die = _hit_die;
+
 void assets_load(void)
 {
-    TILE_COMMON(TCOD_color_RGB(16, 16, 32))
+    TILE_COMMON(TCOD_color_RGB(16, 16, 32));
 
-    TILE_INFO(TILE_TYPE_EMPTY, "Empty", ' ', TCOD_white, true, true)
-    TILE_INFO(TILE_TYPE_FLOOR, "Floor", '.', TCOD_white, true, true)
-    TILE_INFO(TILE_TYPE_WALL, "Wall", '#', TCOD_white, false, false)
+    TILE_INFO(TILE_TYPE_EMPTY, "Empty", ' ', TCOD_white, true, true);
+    TILE_INFO(TILE_TYPE_FLOOR, "Floor", '.', TCOD_white, true, true);
+    TILE_INFO(TILE_TYPE_WALL, "Wall", '#', TCOD_white, false, false);
 
-    OBJECT_COMMON(0)
+    OBJECT_COMMON(0);
 
-    OBJECT_INFO(OBJECT_TYPE_ALTAR, "Altar", '_', true, false)
-    OBJECT_INFO(OBJECT_TYPE_BRAZIER, "Brazier", '*', true, false)
-    OBJECT_INFO(OBJECT_TYPE_DOOR_CLOSED, "Closed Door", '+', false, false)
-    OBJECT_INFO(OBJECT_TYPE_DOOR_OPEN, "Open Door", '-', true, true)
-    OBJECT_INFO(OBJECT_TYPE_FOUNTAIN, "Fountain", '{', true, false)
-    OBJECT_INFO(OBJECT_TYPE_STAIR_DOWN, "Stair Down", '>', true, true)
-    OBJECT_INFO(OBJECT_TYPE_STAIR_UP, "Stair Up", '<', true, true)
-    OBJECT_INFO(OBJECT_TYPE_THRONE, "Throne", '\\', true, false)
+    OBJECT_INFO(OBJECT_TYPE_ALTAR, "Altar", '_', true, false);
+    OBJECT_INFO(OBJECT_TYPE_BRAZIER, "Brazier", '*', true, false);
+    OBJECT_INFO(OBJECT_TYPE_DOOR_CLOSED, "Closed Door", '+', false, false);
+    OBJECT_INFO(OBJECT_TYPE_DOOR_OPEN, "Open Door", '-', true, true);
+    OBJECT_INFO(OBJECT_TYPE_FOUNTAIN, "Fountain", '{', true, false);
+    OBJECT_INFO(OBJECT_TYPE_STAIR_DOWN, "Stair Down", '>', true, true);
+    OBJECT_INFO(OBJECT_TYPE_STAIR_UP, "Stair Up", '<', true, true);
+    OBJECT_INFO(OBJECT_TYPE_THRONE, "Throne", '\\', true, false);
 
-    ACTOR_COMMON(10, 5, TCOD_white, 10, TCOD_light_amber)
+    ACTOR_COMMON(10, 5, TCOD_white, 10, TCOD_light_amber);
 
     RACE_INFO(RACE_DWARF, "Dwarf", '@', RACE_SIZE_MEDIUM);
     RACE_INFO(RACE_ELF, "Elf", '@', RACE_SIZE_MEDIUM);
@@ -102,81 +107,32 @@ void assets_load(void)
     RACE_INFO(RACE_UNDEAD, "Undead", 'u', RACE_SIZE_MEDIUM);
     RACE_INFO(RACE_VERMIN, "Vermin", 'v', RACE_SIZE_MEDIUM);
 
-    class_info[CLASS_BARBARIAN].name = "Barbarian";
-    class_info[CLASS_BARBARIAN].color = TCOD_amber;
-    class_info[CLASS_BARBARIAN].hit_die = 10;
-    class_info[CLASS_BARD].name = "Bard";
-    class_info[CLASS_BARD].color = TCOD_purple;
-    class_info[CLASS_BARD].hit_die = 10;
-    class_info[CLASS_CLERIC].name = "Cleric";
-    class_info[CLASS_CLERIC].color = TCOD_white;
-    class_info[CLASS_CLERIC].hit_die = 10;
-    class_info[CLASS_DRUID].name = "Druid";
-    class_info[CLASS_DRUID].color = TCOD_orange;
-    class_info[CLASS_DRUID].hit_die = 10;
-    class_info[CLASS_FIGHTER].name = "Fighter";
-    class_info[CLASS_FIGHTER].color = TCOD_brass;
-    class_info[CLASS_FIGHTER].hit_die = 10;
-    class_info[CLASS_MONK].name = "Monk";
-    class_info[CLASS_MONK].color = TCOD_sea;
-    class_info[CLASS_MONK].hit_die = 10;
-    class_info[CLASS_PALADIN].name = "Paladin";
-    class_info[CLASS_PALADIN].color = TCOD_pink;
-    class_info[CLASS_PALADIN].hit_die = 10;
-    class_info[CLASS_RANGER].name = "Ranger";
-    class_info[CLASS_RANGER].color = TCOD_green;
-    class_info[CLASS_RANGER].hit_die = 10;
-    class_info[CLASS_ROGUE].name = "Rogue";
-    class_info[CLASS_ROGUE].color = TCOD_yellow;
-    class_info[CLASS_ROGUE].hit_die = 10;
-    class_info[CLASS_SORCERER].name = "Sorcerer";
-    class_info[CLASS_SORCERER].color = TCOD_flame;
-    class_info[CLASS_SORCERER].hit_die = 10;
-    class_info[CLASS_WIZARD].name = "Wizard";
-    class_info[CLASS_WIZARD].color = TCOD_azure;
-    class_info[CLASS_WIZARD].hit_die = 10;
-    class_info[CLASS_ABBERATION].name = "Abberation";
-    class_info[CLASS_ABBERATION].color = TCOD_lightest_grey;
-    class_info[CLASS_ABBERATION].hit_die = 10;
-    class_info[CLASS_ANIMAL].name = "Animal";
-    class_info[CLASS_ANIMAL].color = TCOD_lightest_grey;
-    class_info[CLASS_ANIMAL].hit_die = 10;
-    class_info[CLASS_BEAST].name = "Beast";
-    class_info[CLASS_BEAST].color = TCOD_lightest_grey;
-    class_info[CLASS_BEAST].hit_die = 10;
-    class_info[CLASS_COMMONER].name = "Commoner";
-    class_info[CLASS_COMMONER].color = TCOD_lightest_grey;
-    class_info[CLASS_COMMONER].hit_die = 10;
-    class_info[CLASS_CONSTRUCT].name = "Construct";
-    class_info[CLASS_CONSTRUCT].color = TCOD_lightest_grey;
-    class_info[CLASS_CONSTRUCT].hit_die = 10;
-    class_info[CLASS_DRAGON].name = "Dragon";
-    class_info[CLASS_DRAGON].color = TCOD_lightest_grey;
-    class_info[CLASS_DRAGON].hit_die = 10;
-    class_info[CLASS_ELEMENTAL].name = "Elemental";
-    class_info[CLASS_ELEMENTAL].color = TCOD_lightest_grey;
-    class_info[CLASS_ELEMENTAL].hit_die = 10;
-    class_info[CLASS_FEY].name = "Fey";
-    class_info[CLASS_FEY].color = TCOD_lightest_grey;
-    class_info[CLASS_FEY].hit_die = 10;
-    class_info[CLASS_GIANT].name = "Giant";
-    class_info[CLASS_GIANT].color = TCOD_lightest_grey;
-    class_info[CLASS_GIANT].hit_die = 10;
-    class_info[CLASS_HUMANOID].name = "Humanoid";
-    class_info[CLASS_HUMANOID].color = TCOD_lightest_grey;
-    class_info[CLASS_HUMANOID].hit_die = 10;
-    class_info[CLASS_MAGICAL_BEAST].name = "Magical Beast";
-    class_info[CLASS_MAGICAL_BEAST].color = TCOD_lightest_grey;
-    class_info[CLASS_MAGICAL_BEAST].hit_die = 10;
-    class_info[CLASS_MONSTROUS].name = "Monstrous";
-    class_info[CLASS_MONSTROUS].color = TCOD_lightest_grey;
-    class_info[CLASS_MONSTROUS].hit_die = 10;
-    class_info[CLASS_OOZE].name = "Ooze";
-    class_info[CLASS_OOZE].color = TCOD_lightest_grey;
-    class_info[CLASS_OOZE].hit_die = 10;
-    class_info[CLASS_OUTSIDER].name = "Outsider";
-    class_info[CLASS_OUTSIDER].color = TCOD_lightest_grey;
-    class_info[CLASS_OUTSIDER].hit_die = 10;
+    CLASS_INFO(CLASS_BARBARIAN, "Barbarian", TCOD_amber, 12);
+    CLASS_INFO(CLASS_BARD, "Bard", TCOD_purple, 6);
+    CLASS_INFO(CLASS_CLERIC, "Cleric", TCOD_white, 8);
+    CLASS_INFO(CLASS_DRUID, "Druid", TCOD_orange, 8);
+    CLASS_INFO(CLASS_FIGHTER, "Fighter", TCOD_brass, 10);
+    CLASS_INFO(CLASS_MONK, "Monk", TCOD_sea, 8);
+    CLASS_INFO(CLASS_PALADIN, "Paladin", TCOD_pink, 10);
+    CLASS_INFO(CLASS_RANGER, "Ranger", TCOD_green, 10);
+    CLASS_INFO(CLASS_ROGUE, "Rogue", TCOD_yellow, 6);
+    CLASS_INFO(CLASS_SORCERER, "Sorcerer", TCOD_flame, 4);
+    CLASS_INFO(CLASS_WIZARD, "Wizard", TCOD_azure, 4);
+
+    CLASS_INFO(CLASS_ABBERATION, "Abberation", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_ANIMAL, "Animal", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_BEAST, "Beast", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_COMMONER, "Commonder", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_CONSTRUCT, "Construct", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_DRAGON, "Dragon", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_ELEMENTAL, "Elemental", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_FEY, "Fey", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_GIANT, "Giant", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_HUMANOID, "Humanoid", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_MAGICAL_BEAST, "Magical Beast", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_MONSTROUS, "Monstrous", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_OOZE, "Ooze", TCOD_lightest_grey, 10);
+    CLASS_INFO(CLASS_OUTSIDER, "Outsider", TCOD_lightest_grey, 10);
     class_info[CLASS_SHAPESHIFTER].name = "Shapeshifter";
     class_info[CLASS_SHAPESHIFTER].color = TCOD_lightest_grey;
     class_info[CLASS_SHAPESHIFTER].hit_die = 10;

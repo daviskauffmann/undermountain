@@ -103,7 +103,7 @@ struct item *ui_panel_inventory_get_selected(void);
 bool ui_tooltip_is_inside(int x, int y);
 void ui_tooltip_show(void);
 void ui_tooltip_hide(void);
-void ui_tooltip_options_add(char *text, struct tooltip_data tooltip_data, bool (*fn)(struct tooltip_data tooltip_data));
+void ui_tooltip_options_add(char *text, struct tooltip_data tooltip_data, bool(*fn)(struct tooltip_data tooltip_data));
 void ui_tooltip_options_clear(void);
 struct tooltip_option *ui_tooltip_get_selected(void);
 bool ui_view_is_inside(int x, int y);

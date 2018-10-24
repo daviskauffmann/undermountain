@@ -222,7 +222,7 @@ void ui_tooltip_hide(void)
     ui->tooltip_visible = false;
 }
 
-void ui_tooltip_options_add(char *text, struct tooltip_data tooltip_data, bool (*fn)(struct tooltip_data tooltip_data))
+void ui_tooltip_options_add(char *text, struct tooltip_data tooltip_data, bool(*fn)(struct tooltip_data tooltip_data))
 {
     struct tooltip_option *tooltip_option = tooltip_option_create(text, tooltip_data, fn);
 

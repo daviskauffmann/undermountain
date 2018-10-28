@@ -1204,8 +1204,6 @@ static bool do_directional_action(struct actor *player, enum directional_action 
 
 static void cb_should_update(void *on_hit_params)
 {
-    (void)on_hit_params;
-
     game->should_update = true;
 }
 

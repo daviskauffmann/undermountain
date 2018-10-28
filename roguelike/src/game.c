@@ -98,6 +98,7 @@ void game_load(void)
 {
     game->state = GAME_STATE_PLAY;
 
+    // TODO: load state from file
     game_new();
 }
 

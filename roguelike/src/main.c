@@ -2,9 +2,6 @@
 
 int main(int argc, char *args[])
 {
-    (void)argc;
-    (void)args;
-
     config_load();
     assets_load();
     input_init();

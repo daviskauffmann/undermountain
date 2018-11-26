@@ -1,4 +1,6 @@
-#include <roguelike/roguelike.h>
+#ifdef PLATFORM_LIBTCOD
+
+#include <platform/libtcod/libtcod.h>
 
 struct renderer *renderer;
 
@@ -444,3 +446,5 @@ void renderer_quit(void)
 
     free(renderer);
 }
+
+#endif

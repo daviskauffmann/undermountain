@@ -1,11 +1,9 @@
-#ifndef INPUT_H
-#define INPUT_H
+#ifdef PLATFORM_LIBTCOD
 
-#include "actor.h"
+#ifndef PLATFORM_LIBTCOD_INPUT_H
+#define PLATFORM_LIBTCOD_INPUT_H
 
-struct game;
-struct program;
-struct ui;
+#include <libtcod/libtcod.h>
 
 enum directional_action
 {
@@ -48,5 +46,7 @@ extern struct input *input;
 void input_init(void);
 void input_handle(void);
 void input_quit(void);
+
+#endif
 
 #endif

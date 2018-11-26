@@ -57,6 +57,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PLATFORM_LIBTCOD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -73,6 +74,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include\</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PLATFORM_LIBTCOD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -83,23 +85,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\actor.c" />
-    <ClCompile Include="src\assets.c" />
-    <ClCompile Include="src\config.c" />
-    <ClCompile Include="src\game.c" />
-    <ClCompile Include="src\input.c" />
-    <ClCompile Include="src\item.c" />
+    <ClCompile Include="src\platform\libtcod\config.c" />
+    <ClCompile Include="src\platform\libtcod\input.c" />
+    <ClCompile Include="src\platform\libtcod\platform.c" />
+    <ClCompile Include="src\roguelike\actor.c" />
+    <ClCompile Include="src\roguelike\assets.c" />
+    <ClCompile Include="src\roguelike\game.c" />
+    <ClCompile Include="src\roguelike\item.c" />
     <ClCompile Include="src\main.c" />
-    <ClCompile Include="src\map.c" />
-    <ClCompile Include="src\message.c" />
-    <ClCompile Include="src\object.c" />
-    <ClCompile Include="src\projectile.c" />
-    <ClCompile Include="src\renderer.c" />
-    <ClCompile Include="src\room.c" />
-    <ClCompile Include="src\tile.c" />
-    <ClCompile Include="src\tooltip_option.c" />
-    <ClCompile Include="src\ui.c" />
-    <ClCompile Include="src\util.c" />
+    <ClCompile Include="src\roguelike\map.c" />
+    <ClCompile Include="src\roguelike\message.c" />
+    <ClCompile Include="src\roguelike\object.c" />
+    <ClCompile Include="src\roguelike\projectile.c" />
+    <ClCompile Include="src\platform\libtcod\renderer.c" />
+    <ClCompile Include="src\roguelike\room.c" />
+    <ClCompile Include="src\roguelike\tile.c" />
+    <ClCompile Include="src\roguelike\tooltip_option.c" />
+    <ClCompile Include="src\roguelike\ui.c" />
+    <ClCompile Include="src\roguelike\util.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\libtcod\bresenham.h" />
@@ -164,17 +167,18 @@
     <ClInclude Include="include\libtcod\wrappers.h" />
     <ClInclude Include="include\libtcod\zip.h" />
     <ClInclude Include="include\libtcod\zip.hpp" />
+    <ClInclude Include="include\platform\libtcod\config.h" />
+    <ClInclude Include="include\platform\libtcod\input.h" />
+    <ClInclude Include="include\platform\libtcod\libtcod.h" />
+    <ClInclude Include="include\platform\libtcod\renderer.h" />
     <ClInclude Include="include\roguelike\actor.h" />
     <ClInclude Include="include\roguelike\assets.h" />
-    <ClInclude Include="include\roguelike\config.h" />
     <ClInclude Include="include\roguelike\game.h" />
-    <ClInclude Include="include\roguelike\input.h" />
     <ClInclude Include="include\roguelike\item.h" />
     <ClInclude Include="include\roguelike\map.h" />
     <ClInclude Include="include\roguelike\message.h" />
     <ClInclude Include="include\roguelike\object.h" />
     <ClInclude Include="include\roguelike\projectile.h" />
-    <ClInclude Include="include\roguelike\renderer.h" />
     <ClInclude Include="include\roguelike\roguelike.h" />
     <ClInclude Include="include\roguelike\room.h" />
     <ClInclude Include="include\roguelike\spell.h" />
@@ -182,6 +186,7 @@
     <ClInclude Include="include\roguelike\tooltip_option.h" />
     <ClInclude Include="include\roguelike\ui.h" />
     <ClInclude Include="include\roguelike\util.h" />
+    <ClInclude Include="include\platform\platform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -24,6 +24,7 @@ struct game
     TCOD_list_t messages;
     struct actor *player;
     int turn;
+    // TODO: remove these?
     bool should_update;
     bool should_quit;
 };

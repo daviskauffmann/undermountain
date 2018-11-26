@@ -1,10 +1,12 @@
-#include <roguelike/roguelike.h>
+#ifdef PLATFORM_LIBTCOD
+
+#include <platform/libtcod/libtcod.h>
+
+struct input *input;
 
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
 static void cb_should_update(void *on_hit_params);
 static bool tooltip_option_move(struct tooltip_data data);
-
-struct input *input;
 
 void input_init(void)
 {
@@ -55,8 +57,8 @@ void input_handle(void)
                     ui_tooltip_hide();
                 }
                 else if (input->directional_action != DIRECTIONAL_ACTION_NONE ||
-                         input->inventory_action != INVENTORY_ACTION_NONE ||
-                         input->character_action != CHARACTER_ACTION_NONE)
+                    input->inventory_action != INVENTORY_ACTION_NONE ||
+                    input->character_action != CHARACTER_ACTION_NONE)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_NONE;
                     input->inventory_action = INVENTORY_ACTION_NONE;
@@ -89,9 +91,9 @@ void input_handle(void)
         {
             if (key.lalt)
             {
-                fullscreen = !fullscreen;
+                // fullscreen = !fullscreen;
 
-                TCOD_console_set_fullscreen(fullscreen);
+                // TCOD_console_set_fullscreen(fullscreen);
             }
         }
         break;
@@ -1215,3 +1217,5 @@ static bool tooltip_option_move(struct tooltip_data data)
 
     return false;
 }
+
+#endif

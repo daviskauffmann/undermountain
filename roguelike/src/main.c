@@ -1,38 +1,13 @@
-#include <roguelike/roguelike.h>
+#include <platform/platform.h>
+
+// TODO: remove all platform specific code from the game
 
 int main(int argc, char *args[])
 {
-    config_load();
-    assets_load();
-    input_init();
-    game_init();
-    ui_init();
-    renderer_init();
-
-    TCOD_sys_set_fps(FPS);
-
-    TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
-    TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, console_renderer);
-
-    while (!TCOD_console_is_window_closed() && !game->should_quit)
+    for (int i = 1; i < argc; i++)
     {
-        char title[256];
-        sprintf_s(title, sizeof(title), "%s - FPS: %d", WINDOW_TITLE, TCOD_sys_get_fps());
-        TCOD_console_set_window_title(title);
-
-        input_handle();
-        game_update();
-        ui_update();
-        renderer_draw();
+        // TODO: process command line args
     }
 
-    TCOD_console_delete(NULL);
-
-    renderer_quit();
-    ui_quit();
-    game_quit();
-    input_quit();
-    config_save();
-
-    return 0;
+    return platform_run();
 }

@@ -15,55 +15,58 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\actor.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\assets.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\config.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\input.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\item.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\map.c">
+    <ClCompile Include="src\roguelike\actor.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\message.c">
+    <ClCompile Include="src\roguelike\assets.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\object.c">
+    <ClCompile Include="src\roguelike\game.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\projectile.c">
+    <ClCompile Include="src\roguelike\item.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\renderer.c">
+    <ClCompile Include="src\roguelike\map.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\room.c">
+    <ClCompile Include="src\roguelike\message.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\tile.c">
+    <ClCompile Include="src\roguelike\object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\tooltip_option.c">
+    <ClCompile Include="src\roguelike\projectile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ui.c">
+    <ClCompile Include="src\roguelike\room.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\util.c">
+    <ClCompile Include="src\roguelike\tile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\roguelike\tooltip_option.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\roguelike\ui.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\roguelike\util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\libtcod\platform.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\libtcod\input.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\libtcod\renderer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\libtcod\config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -260,13 +263,7 @@
     <ClInclude Include="include\roguelike\assets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\roguelike\config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\roguelike\game.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\roguelike\input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\roguelike\item.h">
@@ -282,9 +279,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\roguelike\projectile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\roguelike\renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\roguelike\roguelike.h">
@@ -306,6 +300,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\roguelike\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\libtcod\input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\libtcod\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\libtcod\renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\libtcod\libtcod.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

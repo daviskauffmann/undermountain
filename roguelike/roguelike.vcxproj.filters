@@ -48,12 +48,6 @@
     <ClCompile Include="src\roguelike\tile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\roguelike\tooltip_option.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\roguelike\ui.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\roguelike\util.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -70,6 +64,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\platform\platform_bearlibterminal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\libtcod\ui.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\libtcod\tooltip_option.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

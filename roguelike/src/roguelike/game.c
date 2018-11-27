@@ -198,6 +198,8 @@ void game_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 
     do
     {
+        // TODO: maybe not destroy messages?
+        // perhaps we should keep all messages around
         if (TCOD_list_size(game->messages) == (console_height / 4) - 2)
         {
             struct message *message = TCOD_list_get(game->messages, 0);

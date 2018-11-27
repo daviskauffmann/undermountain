@@ -101,8 +101,8 @@
     <ClCompile Include="src\platform\libtcod\renderer.c" />
     <ClCompile Include="src\roguelike\room.c" />
     <ClCompile Include="src\roguelike\tile.c" />
-    <ClCompile Include="src\roguelike\tooltip_option.c" />
-    <ClCompile Include="src\roguelike\ui.c" />
+    <ClCompile Include="src\platform\libtcod\tooltip_option.c" />
+    <ClCompile Include="src\platform\libtcod\ui.c" />
     <ClCompile Include="src\roguelike\util.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

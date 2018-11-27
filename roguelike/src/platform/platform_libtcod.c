@@ -12,26 +12,26 @@ int platform_run(void)
     TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, console_renderer);
 
     input_init();
+    ui_init();
     renderer_init();
 
     assets_load();
     game_init();
-    ui_init();
 
     while (!TCOD_console_is_window_closed() && !game->should_quit)
     {
         input_handle();
+        ui_update();
 
         game_update();
-        ui_update();
 
         renderer_draw();
     }
 
-    ui_quit();
     game_quit();
 
     renderer_quit();
+    ui_quit();
     input_quit();
 
     TCOD_console_delete(NULL);

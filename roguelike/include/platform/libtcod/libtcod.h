@@ -10,6 +10,8 @@
 #include "config.h"
 #include "input.h"
 #include "renderer.h"
+#include "tooltip_option.h"
+#include "ui.h"
 
 #endif
 

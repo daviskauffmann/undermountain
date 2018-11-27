@@ -23,8 +23,6 @@
 #include "room.h"
 #include "spell.h"
 #include "tile.h"
-#include "tooltip_option.h"
-#include "ui.h"
 #include "util.h"
 
 

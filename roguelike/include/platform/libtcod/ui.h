@@ -1,3 +1,5 @@
+#ifdef PLATFORM_LIBTCOD
+
 #ifndef UI_H
 #define UI_H
 
@@ -106,5 +108,7 @@ void ui_tooltip_options_clear(void);
 struct tooltip_option *ui_tooltip_get_selected(void);
 bool ui_view_is_inside(int x, int y);
 void ui_quit(void);
+
+#endif
 
 #endif

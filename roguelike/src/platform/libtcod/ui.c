@@ -1,4 +1,6 @@
-#include <roguelike/roguelike.h>
+#ifdef PLATFORM_LIBTCOD
+
+#include <platform/libtcod/libtcod.h>
 
 struct ui *ui;
 
@@ -8,7 +10,6 @@ void ui_init(void)
 
     ui->menu_state = MENU_STATE_MAIN;
 
-    // TODO: asset?
     ui->main_menu_option_info[MAIN_MENU_OPTION_START].text = "Start";
     ui->main_menu_option_info[MAIN_MENU_OPTION_ABOUT].text = "About";
     ui->main_menu_option_info[MAIN_MENU_OPTION_QUIT].text = "Quit";
@@ -280,3 +281,5 @@ void ui_quit(void)
 
     free(ui);
 }
+
+#endif

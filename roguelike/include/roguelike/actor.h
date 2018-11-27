@@ -1,8 +1,6 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 
-#include <libtcod/libtcod.h>
-
 #include "item.h"
 
 struct object;

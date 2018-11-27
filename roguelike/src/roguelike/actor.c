@@ -25,7 +25,7 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->floor = floor;
     actor->x = x;
     actor->y = y;
-    actor->speed = TCOD_random_get_float(NULL, 0.2f, 0.8f);
+    actor->speed = TCOD_random_get_float_mean(NULL, 0.5f, 1.5f, 1.0f);
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;

@@ -1,8 +1,6 @@
 #ifndef ITEM_H
 #define ITEM_H
 
-#include <libtcod/libtcod.h>
-
 struct actor;
 
 struct item_common
@@ -153,6 +151,7 @@ enum item_type
     NUM_ITEM_TYPES
 };
 
+// TODO: redo how item properties work?
 enum item_property
 {
     ITEM_PROPERTY_AC_SHIELD_1,

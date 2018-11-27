@@ -3,7 +3,7 @@
 #ifndef PLATFORM_LIBTCOD_INPUT_H
 #define PLATFORM_LIBTCOD_INPUT_H
 
-#include <libtcod/libtcod.h>
+// TODO: prompts
 
 enum directional_action
 {

@@ -1,8 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <libtcod/libtcod.h>
-
 #include "map.h"
 
 #define SAVE_PATH "save.gz"

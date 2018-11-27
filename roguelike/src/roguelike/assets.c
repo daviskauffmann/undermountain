@@ -148,12 +148,8 @@ void assets_load(void)
     MONSTER_PROTOTYPE(MONSTER_FIRE_ELEMENTAL, "Fire Elemental", RACE_ELEMENTAL, CLASS_ELEMENTAL);
     MONSTER_PROTOTYPE(MONSTER_GELATINOUS_CUBE, "Gelatinous Cube", RACE_OOZE, CLASS_OOZE);
     MONSTER_PROTOTYPE(MONSTER_GOBLIN, "Goblin", RACE_GOBLINOID, CLASS_HUMANOID);
-    monster_prototype[MONSTER_IRON_GOLEM].name = "Iron Golem";
-    monster_prototype[MONSTER_IRON_GOLEM].race = RACE_CONSTRUCT;
-    monster_prototype[MONSTER_IRON_GOLEM].class = CLASS_CONSTRUCT;
-    monster_prototype[MONSTER_OGRE].name = "Ogre";
-    monster_prototype[MONSTER_OGRE].race = RACE_GIANT;
-    monster_prototype[MONSTER_OGRE].class = CLASS_GIANT;
+    MONSTER_PROTOTYPE(MONSTER_IRON_GOLEM, "Iron Golem", RACE_CONSTRUCT, CLASS_CONSTRUCT);
+    MONSTER_PROTOTYPE(MONSTER_OGRE, "Ogre", RACE_GIANT, CLASS_GIANT);
     monster_prototype[MONSTER_ORC_CLERIC].name = "Orc Cleric";
     monster_prototype[MONSTER_ORC_CLERIC].race = RACE_ORC;
     monster_prototype[MONSTER_ORC_CLERIC].class = CLASS_CLERIC;

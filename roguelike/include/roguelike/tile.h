@@ -1,8 +1,6 @@
 #ifndef TILE_H
 #define TILE_H
 
-#include <libtcod/libtcod.h>
-
 enum tile_type
 {
     TILE_TYPE_EMPTY,

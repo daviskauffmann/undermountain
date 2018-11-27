@@ -1,8 +1,6 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include <libtcod/libtcod.h>
-
 struct object_common
 {
     char __placeholder;

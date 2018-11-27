@@ -6,13 +6,13 @@ int platform_run(void)
 {
     config_load();
 
-    input_init();
-    renderer_init();
-
     TCOD_sys_set_fps(FPS);
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
 
     TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, console_renderer);
+
+    input_init();
+    renderer_init();
 
     assets_load();
     game_init();
@@ -28,13 +28,13 @@ int platform_run(void)
         renderer_draw();
     }
 
-    TCOD_console_delete(NULL);
-
     ui_quit();
     game_quit();
 
     renderer_quit();
     input_quit();
+
+    TCOD_console_delete(NULL);
 
     config_save();
 

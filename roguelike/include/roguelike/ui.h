@@ -1,8 +1,6 @@
 #ifndef UI_H
 #define UI_H
 
-#include <libtcod/libtcod.h>
-
 #include "tooltip_option.h"
 
 struct game;

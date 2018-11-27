@@ -3,8 +3,6 @@
 #ifndef PLATFORM_LIBTCOD_RENDERER_H
 #define PLATFORM_LIBTCOD_RENDERER_H
 
-#include <libtcod/libtcod.h>
-
 struct renderer
 {
     TCOD_noise_t noise;

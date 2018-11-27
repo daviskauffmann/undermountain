@@ -62,7 +62,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BearLibTerminal.lib;libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -81,13 +81,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>BearLibTerminal.lib;libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\platform\libtcod\config.c" />
     <ClCompile Include="src\platform\libtcod\input.c" />
-    <ClCompile Include="src\platform\libtcod\platform.c" />
+    <ClCompile Include="src\platform\platform_bearlibterminal.c" />
+    <ClCompile Include="src\platform\platform_libtcod.c" />
     <ClCompile Include="src\roguelike\actor.c" />
     <ClCompile Include="src\roguelike\assets.c" />
     <ClCompile Include="src\roguelike\game.c" />
@@ -103,90 +104,6 @@
     <ClCompile Include="src\roguelike\tooltip_option.c" />
     <ClCompile Include="src\roguelike\ui.c" />
     <ClCompile Include="src\roguelike\util.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\libtcod\bresenham.h" />
-    <ClInclude Include="include\libtcod\bresenham.hpp" />
-    <ClInclude Include="include\libtcod\bsp.h" />
-    <ClInclude Include="include\libtcod\bsp.hpp" />
-    <ClInclude Include="include\libtcod\color.h" />
-    <ClInclude Include="include\libtcod\color.hpp" />
-    <ClInclude Include="include\libtcod\console.h" />
-    <ClInclude Include="include\libtcod\console.hpp" />
-    <ClInclude Include="include\libtcod\console_types.h" />
-    <ClInclude Include="include\libtcod\fov.h" />
-    <ClInclude Include="include\libtcod\fov.hpp" />
-    <ClInclude Include="include\libtcod\fov_types.h" />
-    <ClInclude Include="include\libtcod\gui\button.hpp" />
-    <ClInclude Include="include\libtcod\gui\container.hpp" />
-    <ClInclude Include="include\libtcod\gui\flatlist.hpp" />
-    <ClInclude Include="include\libtcod\gui\gui.hpp" />
-    <ClInclude Include="include\libtcod\gui\hbox.hpp" />
-    <ClInclude Include="include\libtcod\gui\image.hpp" />
-    <ClInclude Include="include\libtcod\gui\label.hpp" />
-    <ClInclude Include="include\libtcod\gui\radiobutton.hpp" />
-    <ClInclude Include="include\libtcod\gui\slider.hpp" />
-    <ClInclude Include="include\libtcod\gui\statusbar.hpp" />
-    <ClInclude Include="include\libtcod\gui\textbox.hpp" />
-    <ClInclude Include="include\libtcod\gui\togglebutton.hpp" />
-    <ClInclude Include="include\libtcod\gui\toolbar.hpp" />
-    <ClInclude Include="include\libtcod\gui\vbox.hpp" />
-    <ClInclude Include="include\libtcod\gui\widget.hpp" />
-    <ClInclude Include="include\libtcod\heightmap.h" />
-    <ClInclude Include="include\libtcod\heightmap.hpp" />
-    <ClInclude Include="include\libtcod\image.h" />
-    <ClInclude Include="include\libtcod\image.hpp" />
-    <ClInclude Include="include\libtcod\lex.h" />
-    <ClInclude Include="include\libtcod\lex.hpp" />
-    <ClInclude Include="include\libtcod\libtcod.h" />
-    <ClInclude Include="include\libtcod\libtcod.hpp" />
-    <ClInclude Include="include\libtcod\libtcod_int.h" />
-    <ClInclude Include="include\libtcod\list.h" />
-    <ClInclude Include="include\libtcod\list.hpp" />
-    <ClInclude Include="include\libtcod\mersenne.h" />
-    <ClInclude Include="include\libtcod\mersenne.hpp" />
-    <ClInclude Include="include\libtcod\mersenne_types.h" />
-    <ClInclude Include="include\libtcod\mouse.h" />
-    <ClInclude Include="include\libtcod\mouse.hpp" />
-    <ClInclude Include="include\libtcod\mouse_types.h" />
-    <ClInclude Include="include\libtcod\namegen.h" />
-    <ClInclude Include="include\libtcod\namegen.hpp" />
-    <ClInclude Include="include\libtcod\noise.h" />
-    <ClInclude Include="include\libtcod\noise.hpp" />
-    <ClInclude Include="include\libtcod\noise_defaults.h" />
-    <ClInclude Include="include\libtcod\parser.h" />
-    <ClInclude Include="include\libtcod\parser.hpp" />
-    <ClInclude Include="include\libtcod\path.h" />
-    <ClInclude Include="include\libtcod\path.hpp" />
-    <ClInclude Include="include\libtcod\sys.h" />
-    <ClInclude Include="include\libtcod\sys.hpp" />
-    <ClInclude Include="include\libtcod\tree.h" />
-    <ClInclude Include="include\libtcod\tree.hpp" />
-    <ClInclude Include="include\libtcod\txtfield.h" />
-    <ClInclude Include="include\libtcod\txtfield.hpp" />
-    <ClInclude Include="include\libtcod\wrappers.h" />
-    <ClInclude Include="include\libtcod\zip.h" />
-    <ClInclude Include="include\libtcod\zip.hpp" />
-    <ClInclude Include="include\platform\libtcod\config.h" />
-    <ClInclude Include="include\platform\libtcod\input.h" />
-    <ClInclude Include="include\platform\libtcod\libtcod.h" />
-    <ClInclude Include="include\platform\libtcod\renderer.h" />
-    <ClInclude Include="include\roguelike\actor.h" />
-    <ClInclude Include="include\roguelike\assets.h" />
-    <ClInclude Include="include\roguelike\game.h" />
-    <ClInclude Include="include\roguelike\item.h" />
-    <ClInclude Include="include\roguelike\map.h" />
-    <ClInclude Include="include\roguelike\message.h" />
-    <ClInclude Include="include\roguelike\object.h" />
-    <ClInclude Include="include\roguelike\projectile.h" />
-    <ClInclude Include="include\roguelike\roguelike.h" />
-    <ClInclude Include="include\roguelike\room.h" />
-    <ClInclude Include="include\roguelike\spell.h" />
-    <ClInclude Include="include\roguelike\tile.h" />
-    <ClInclude Include="include\roguelike\tooltip_option.h" />
-    <ClInclude Include="include\roguelike\ui.h" />
-    <ClInclude Include="include\roguelike\util.h" />
-    <ClInclude Include="include\platform\platform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

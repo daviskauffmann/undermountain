@@ -1,6 +1,7 @@
 #ifndef ROGUELIKE_H
 #define ROGUELIKE_H
 
+#include <float.h>
 #include <malloc.h>
 #include <math.h>
 #include <stdarg.h>

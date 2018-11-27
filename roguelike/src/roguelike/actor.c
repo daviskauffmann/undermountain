@@ -25,7 +25,7 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->floor = floor;
     actor->x = x;
     actor->y = y;
-    actor->speed = TCOD_random_get_float_mean(NULL, 0.5f, 1.5f, 1.0f);
+    actor->speed = TCOD_random_get_float(NULL, 0.2f, 0.8f);
     actor->energy = 1.0f;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -270,7 +270,7 @@ void actor_ai(struct actor *actor)
         if (actor->current_hp < actor_calc_max_hp(actor) / 2)
         {
             struct object *target = NULL;
-            float min_distance = 1000.0f;
+            float min_distance = FLT_MAX;
 
             for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
             {
@@ -310,7 +310,7 @@ void actor_ai(struct actor *actor)
 
         {
             struct actor *target = NULL;
-            float min_distance = 1000.0f;
+            float min_distance = FLT_MAX;
 
             for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
             {

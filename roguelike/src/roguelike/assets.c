@@ -150,9 +150,7 @@ void assets_load(void)
     MONSTER_PROTOTYPE(MONSTER_GOBLIN, "Goblin", RACE_GOBLINOID, CLASS_HUMANOID);
     MONSTER_PROTOTYPE(MONSTER_IRON_GOLEM, "Iron Golem", RACE_CONSTRUCT, CLASS_CONSTRUCT);
     MONSTER_PROTOTYPE(MONSTER_OGRE, "Ogre", RACE_GIANT, CLASS_GIANT);
-    monster_prototype[MONSTER_ORC_CLERIC].name = "Orc Cleric";
-    monster_prototype[MONSTER_ORC_CLERIC].race = RACE_ORC;
-    monster_prototype[MONSTER_ORC_CLERIC].class = CLASS_CLERIC;
+    MONSTER_PROTOTYPE(MONSTER_ORC_CLERIC, "Orc Cleric", RACE_ORC, CLASS_CLERIC);
     monster_prototype[MONSTER_ORC_FIGHTER].name = "Orc Fighter";
     monster_prototype[MONSTER_ORC_FIGHTER].race = RACE_ORC;
     monster_prototype[MONSTER_ORC_FIGHTER].class = CLASS_FIGHTER;

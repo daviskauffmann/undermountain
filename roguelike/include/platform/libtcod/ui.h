@@ -9,15 +9,23 @@ struct game;
 struct input;
 struct item;
 
+enum ui_state
+{
+    UI_STATE_MENU,
+    UI_STATE_GAME
+};
+
 enum menu_state
 {
     MENU_STATE_MAIN,
+    MENU_STATE_LOAD,
     MENU_STATE_ABOUT
 };
 
 enum main_menu_option
 {
-    MAIN_MENU_OPTION_START,
+    MAIN_MENU_OPTION_NEW,
+    MAIN_MENU_OPTION_LOAD,
     MAIN_MENU_OPTION_ABOUT,
     MAIN_MENU_OPTION_QUIT,
 
@@ -56,6 +64,7 @@ struct panel_status
 
 struct ui
 {
+    enum ui_state state;
     enum menu_state menu_state;
     struct main_menu_option_info main_menu_option_info[NUM_MAIN_MENU_OPTIONS];
     enum targeting targeting;

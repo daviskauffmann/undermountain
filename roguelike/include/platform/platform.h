@@ -1,7 +1,8 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#define WINDOW_TITLE "Roguelike v0.1"
+#define TITLE "Roguelike"
+#define VERSION "0.1"
 #define FPS 60
 
 extern int console_width;

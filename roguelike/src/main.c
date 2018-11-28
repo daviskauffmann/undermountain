@@ -3,8 +3,6 @@
 
 #include <platform/platform.h>
 
-// TODO: remove all platform specific code from the game
-
 int main(int argc, char *args[])
 {
     for (int i = 1; i < argc; i++)
@@ -18,7 +16,7 @@ int main(int argc, char *args[])
 
         if (strcmp(args[i], "--version") == 0 || strcmp(args[i], "-v") == 0)
         {
-            printf("Roguelike v0.1\n");
+            printf("%s v%s\n", TITLE, VERSION);
         }
     }
 

@@ -21,7 +21,7 @@ void renderer_draw(void)
     TCOD_console_set_default_foreground(NULL, TCOD_white);
     TCOD_console_clear(NULL);
 
-    if (game->state == GAME_STATE_MENU)
+    if (ui->state == UI_STATE_MENU)
     {
         switch (ui->menu_state)
         {
@@ -49,7 +49,7 @@ void renderer_draw(void)
         }
 
         TCOD_console_set_default_foreground(NULL, TCOD_white);
-        TCOD_console_print_frame(NULL, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, WINDOW_TITLE);
+        TCOD_console_print_frame(NULL, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, TITLE);
     }
     else
     {

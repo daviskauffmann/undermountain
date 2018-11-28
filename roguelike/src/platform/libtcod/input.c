@@ -30,7 +30,7 @@ void input_handle(void)
     {
     case TCOD_EVENT_KEY_PRESS:
     {
-        if (game->state != GAME_STATE_MENU)
+        if (ui->state == UI_STATE_GAME)
         {
             input->automoving = false;
         }
@@ -39,7 +39,7 @@ void input_handle(void)
         {
         case TCODK_ESCAPE:
         {
-            if (game->state == GAME_STATE_MENU)
+            if (ui->state == UI_STATE_MENU)
             {
                 if (ui->menu_state == MENU_STATE_MAIN)
                 {
@@ -79,7 +79,7 @@ void input_handle(void)
                 }
                 else
                 {
-                    game->state = GAME_STATE_MENU;
+                    ui->state = UI_STATE_MENU;
 
                     game_quit();
                     game_init();
@@ -91,15 +91,15 @@ void input_handle(void)
         {
             if (key.lalt)
             {
-                // fullscreen = !fullscreen;
+                fullscreen = !fullscreen;
 
-                // TCOD_console_set_fullscreen(fullscreen);
+                TCOD_console_set_fullscreen(fullscreen);
             }
         }
         break;
         case TCODK_PAGEDOWN:
         {
-            if (game->state != GAME_STATE_MENU && ui->panel_visible)
+            if (ui->state == UI_STATE_GAME && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -109,7 +109,7 @@ void input_handle(void)
         break;
         case TCODK_PAGEUP:
         {
-            if (game->state != GAME_STATE_MENU && ui->panel_visible)
+            if (ui->state == UI_STATE_GAME && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -119,7 +119,7 @@ void input_handle(void)
         break;
         case TCODK_KP1:
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -155,7 +155,7 @@ void input_handle(void)
         case TCODK_KP2:
         case TCODK_DOWN:
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -190,7 +190,7 @@ void input_handle(void)
         break;
         case TCODK_KP3:
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -226,7 +226,7 @@ void input_handle(void)
         case TCODK_KP4:
         case TCODK_LEFT:
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -261,7 +261,7 @@ void input_handle(void)
         break;
         case TCODK_KP5:
         {
-            if (game->state != GAME_STATE_MENU && game->state != GAME_STATE_WAIT)
+            if (ui->state == UI_STATE_GAME && game->state != GAME_STATE_WAIT)
             {
                 game->should_update = true;
             }
@@ -270,7 +270,7 @@ void input_handle(void)
         case TCODK_KP6:
         case TCODK_RIGHT:
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -305,7 +305,7 @@ void input_handle(void)
         break;
         case TCODK_KP7:
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -341,7 +341,7 @@ void input_handle(void)
         case TCODK_KP8:
         case TCODK_UP:
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -376,7 +376,7 @@ void input_handle(void)
         break;
         case TCODK_KP9:
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui->targeting != TARGETING_NONE)
                 {
@@ -414,22 +414,22 @@ void input_handle(void)
             bool handled = false;
             int alpha = key.c - 'a';
 
-            if (game->state == GAME_STATE_MENU && ui->menu_state == MENU_STATE_MAIN && alpha >= 0 && alpha < NUM_MAIN_MENU_OPTIONS)
+            if (ui->state == UI_STATE_MENU && ui->menu_state == MENU_STATE_MAIN && alpha >= 0 && alpha < NUM_MAIN_MENU_OPTIONS)
             {
                 enum main_menu_option main_menu_option = (enum main_menu_option)alpha;
 
                 switch (main_menu_option)
                 {
-                case MAIN_MENU_OPTION_START:
+                case MAIN_MENU_OPTION_NEW:
                 {
-                    if (TCOD_sys_file_exists(SAVE_PATH))
-                    {
-                        game_load();
-                    }
-                    else
-                    {
-                        game_new();
-                    }
+                    game_new();
+
+                    ui->state = UI_STATE_GAME;
+                }
+                break;
+                case MAIN_MENU_OPTION_LOAD:
+                {
+                    // ui->menu_state = MENU_STATE_LOAD;
                 }
                 break;
                 case MAIN_MENU_OPTION_ABOUT:
@@ -446,7 +446,7 @@ void input_handle(void)
 
                 handled = true;
             }
-            else if (game->state != GAME_STATE_MENU)
+            else if (ui->state == UI_STATE_GAME)
             {
                 if (input->inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(game->player->items))
                 {
@@ -541,7 +541,7 @@ void input_handle(void)
             {
             case '<':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_ascend(game->player);
                 }
@@ -549,7 +549,7 @@ void input_handle(void)
             break;
             case '>':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_descend(game->player);
                 }
@@ -557,7 +557,7 @@ void input_handle(void)
             break;
             case 'b':
             {
-                if (game->state != GAME_STATE_MENU)
+                if (ui->state == UI_STATE_GAME)
                 {
                     ui_panel_toggle(PANEL_SPELLBOOK);
                 }
@@ -565,7 +565,7 @@ void input_handle(void)
             break;
             case 'C':
             {
-                if (game->state != GAME_STATE_MENU)
+                if (ui->state == UI_STATE_GAME)
                 {
                     ui_panel_toggle(PANEL_CHARACTER);
                 }
@@ -573,7 +573,7 @@ void input_handle(void)
             break;
             case 'c':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
@@ -588,7 +588,7 @@ void input_handle(void)
             break;
             case 'D':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_DRINK;
 
@@ -603,7 +603,7 @@ void input_handle(void)
             break;
             case 'd':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(PANEL_INVENTORY);
 
@@ -621,7 +621,7 @@ void input_handle(void)
             break;
             case 'e':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(PANEL_INVENTORY);
 
@@ -639,7 +639,7 @@ void input_handle(void)
             break;
             case 'f':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     if (ui->targeting == TARGETING_SHOOT)
                     {
@@ -697,7 +697,7 @@ void input_handle(void)
             break;
             case 'g':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     game->should_update = actor_grab(game->player, game->player->x, game->player->y);
                 }
@@ -705,7 +705,7 @@ void input_handle(void)
             break;
             case 'i':
             {
-                if (game->state != GAME_STATE_MENU)
+                if (ui->state == UI_STATE_GAME)
                 {
                     ui_panel_toggle(PANEL_INVENTORY);
                 }
@@ -713,7 +713,7 @@ void input_handle(void)
             break;
             case 'l':
             {
-                if (game->state != GAME_STATE_MENU)
+                if (ui->state == UI_STATE_GAME)
                 {
                     if (ui->targeting == TARGETING_LOOK)
                     {
@@ -731,7 +731,7 @@ void input_handle(void)
             break;
             case 'm':
             {
-                if (game->state != GAME_STATE_MENU)
+                if (ui->state == UI_STATE_GAME)
                 {
                     ui->message_log_visible = !ui->message_log_visible;
                 }
@@ -739,7 +739,7 @@ void input_handle(void)
             break;
             case 'o':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
 
@@ -754,7 +754,7 @@ void input_handle(void)
             break;
             case 'p':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     input->directional_action = DIRECTIONAL_ACTION_PRAY;
 
@@ -769,7 +769,7 @@ void input_handle(void)
             break;
             case 'q':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(PANEL_INVENTORY);
 
@@ -787,11 +787,11 @@ void input_handle(void)
             break;
             case 's':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     if (key.lctrl)
                     {
-                        game_save();
+                        // game_save();
 
                         game_log(
                             game->player->floor,
@@ -816,7 +816,7 @@ void input_handle(void)
             break;
             case 't':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     game->player->torch = !game->player->torch;
 
@@ -826,7 +826,7 @@ void input_handle(void)
             break;
             case 'u':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     ui_panel_show(PANEL_CHARACTER);
 
@@ -844,7 +844,7 @@ void input_handle(void)
             break;
             case 'X':
             {
-                if (game->state != GAME_STATE_MENU)
+                if (ui->state == UI_STATE_GAME)
                 {
                     ui_panel_show(PANEL_INVENTORY);
 
@@ -862,7 +862,7 @@ void input_handle(void)
             break;
             case 'x':
             {
-                if (game->state != GAME_STATE_MENU)
+                if (ui->state == UI_STATE_GAME)
                 {
                     if (key.lctrl)
                     {
@@ -901,7 +901,7 @@ void input_handle(void)
             break;
             case 'z':
             {
-                if (game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+                if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
                     if (ui->targeting == TARGETING_SPELL)
                     {
@@ -935,22 +935,22 @@ void input_handle(void)
     {
         if (mouse.lbutton)
         {
-            if (game->state == GAME_STATE_MENU)
+            if (ui->state == UI_STATE_MENU)
             {
                 enum main_menu_option main_menu_option = ui_main_menu_get_selected();
 
                 switch (main_menu_option)
                 {
-                case MAIN_MENU_OPTION_START:
+                case MAIN_MENU_OPTION_NEW:
                 {
-                    if (TCOD_sys_file_exists(SAVE_PATH))
-                    {
-                        game_load();
-                    }
-                    else
-                    {
-                        game_new();
-                    }
+                    game_new();
+
+                    ui->state = UI_STATE_GAME;
+                }
+                break;
+                case MAIN_MENU_OPTION_LOAD:
+                {
+                    // ui->menu_state = MENU_STATE_LOAD;
                 }
                 break;
                 case MAIN_MENU_OPTION_ABOUT:
@@ -965,7 +965,7 @@ void input_handle(void)
                 break;
                 }
             }
-            else if (game->state != GAME_STATE_MENU)
+            else if (ui->state == UI_STATE_GAME)
             {
                 input->automoving = false;
 
@@ -1041,7 +1041,7 @@ void input_handle(void)
         }
         else if (mouse.rbutton)
         {
-            if (game->state != GAME_STATE_MENU)
+            if (ui->state == UI_STATE_GAME)
             {
                 if (ui_view_is_inside(ui->mouse_x, ui->mouse_y) && map_is_inside(ui->mouse_tile_x, ui->mouse_tile_y))
                 {
@@ -1145,7 +1145,7 @@ void input_handle(void)
         }
         else if (mouse.wheel_down)
         {
-            if (game->state != GAME_STATE_MENU && ui->panel_visible)
+            if (ui->state == UI_STATE_GAME && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -1154,7 +1154,7 @@ void input_handle(void)
         }
         else if (mouse.wheel_up)
         {
-            if (game->state != GAME_STATE_MENU && ui->panel_visible)
+            if (ui->state == UI_STATE_GAME && ui->panel_visible)
             {
                 struct panel_status *panel_status = &ui->panel_status[ui->current_panel];
 
@@ -1165,7 +1165,7 @@ void input_handle(void)
     break;
     }
 
-    if (input->automoving && game->state != GAME_STATE_MENU && game->state == GAME_STATE_PLAY)
+    if (input->automoving && ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
     {
         // probably shouldnt use the path function for this
         // we need to implement custom behavior depending on what the player is doing

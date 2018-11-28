@@ -1467,8 +1467,6 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
-        TCOD_sys_delete_file(SAVE_PATH);
-
         game_log(
             actor->floor,
             actor->x,

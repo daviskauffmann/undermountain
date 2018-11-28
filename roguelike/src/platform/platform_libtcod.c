@@ -9,7 +9,7 @@ int platform_run(void)
     TCOD_sys_set_fps(FPS);
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
 
-    TCOD_console_init_root(console_width, console_height, WINDOW_TITLE, fullscreen, console_renderer);
+    TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer);
 
     input_init();
     ui_init();
@@ -22,7 +22,7 @@ int platform_run(void)
     {
         input_handle();
         ui_update();
-
+        
         game_update();
 
         renderer_draw();

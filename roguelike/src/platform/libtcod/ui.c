@@ -8,9 +8,11 @@ void ui_init(void)
 {
     ui = calloc(1, sizeof(struct ui));
 
+    ui->state = UI_STATE_MENU;
     ui->menu_state = MENU_STATE_MAIN;
 
-    ui->main_menu_option_info[MAIN_MENU_OPTION_START].text = "Start";
+    ui->main_menu_option_info[MAIN_MENU_OPTION_NEW].text = "New";
+    ui->main_menu_option_info[MAIN_MENU_OPTION_LOAD].text = "Load";
     ui->main_menu_option_info[MAIN_MENU_OPTION_ABOUT].text = "About";
     ui->main_menu_option_info[MAIN_MENU_OPTION_QUIT].text = "Quit";
 
@@ -61,7 +63,7 @@ void ui_init(void)
 
 void ui_update(void)
 {
-    if (game->state != GAME_STATE_MENU)
+    if (ui->state == UI_STATE_GAME)
     {
         ui->message_log_x = 0;
         ui->message_log_height = console_height / 4;
@@ -105,7 +107,7 @@ void ui_update(void)
 
 enum main_menu_option ui_main_menu_get_selected(void)
 {
-    if (ui->menu_state == MENU_STATE_MAIN)
+    if (ui->state == UI_STATE_MENU && ui->menu_state == MENU_STATE_MAIN)
     {
         int y = 1;
         for (enum main_menu_option main_menu_option = 0; main_menu_option < NUM_MAIN_MENU_OPTIONS; main_menu_option++)
@@ -126,12 +128,12 @@ enum main_menu_option ui_main_menu_get_selected(void)
 
 bool ui_message_log_is_inside(int x, int y)
 {
-    return ui->message_log_visible && x >= ui->message_log_x && x < ui->message_log_x + ui->message_log_width && y >= ui->message_log_y && y < ui->message_log_y + ui->message_log_height;
+    return ui->state == UI_STATE_GAME && ui->message_log_visible && x >= ui->message_log_x && x < ui->message_log_x + ui->message_log_width && y >= ui->message_log_y && y < ui->message_log_y + ui->message_log_height;
 }
 
 bool ui_panel_is_inside(int x, int y)
 {
-    return ui->panel_visible && x >= ui->panel_x && x < ui->panel_x + ui->panel_width && y >= ui->panel_y && y < ui->panel_y + ui->panel_height;
+    return ui->state == UI_STATE_GAME && ui->panel_visible && x >= ui->panel_x && x < ui->panel_x + ui->panel_width && y >= ui->panel_y && y < ui->panel_y + ui->panel_height;
 }
 
 void ui_panel_toggle(enum panel panel)
@@ -164,17 +166,20 @@ void ui_panel_show(enum panel panel)
 
 enum equip_slot ui_panel_character_get_selected(void)
 {
-    if (ui->panel_visible && ui->current_panel == PANEL_CHARACTER)
+    if (ui->state == UI_STATE_GAME && ui->panel_visible)
     {
-        int y = 15;
-        for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+        if (ui->panel_visible && ui->current_panel == PANEL_CHARACTER)
         {
-            if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(equip_slot_info[equip_slot].label) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+            int y = 15;
+            for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
-                return equip_slot;
-            }
+                if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(equip_slot_info[equip_slot].label) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+                {
+                    return equip_slot;
+                }
 
-            y++;
+                y++;
+            }
         }
     }
 
@@ -183,19 +188,22 @@ enum equip_slot ui_panel_character_get_selected(void)
 
 struct item *ui_panel_inventory_get_selected(void)
 {
-    if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
+    if (ui->state == UI_STATE_GAME && ui->panel_visible)
     {
-        int y = 1;
-        for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
+        if (ui->panel_visible && ui->current_panel == PANEL_INVENTORY)
         {
-            struct item *item = *iterator;
-
-            if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(item_info[item->type].name) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+            int y = 1;
+            for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
             {
-                return item;
-            }
+                struct item *item = *iterator;
 
-            y++;
+                if (ui->mouse_x > ui->panel_x && ui->mouse_x < ui->panel_x + (int)strlen(item_info[item->type].name) + 1 + 3 && ui->mouse_y == y + ui->panel_y - ui->panel_status[ui->current_panel].scroll)
+                {
+                    return item;
+                }
+
+                y++;
+            }
         }
     }
 
@@ -204,7 +212,7 @@ struct item *ui_panel_inventory_get_selected(void)
 
 bool ui_tooltip_is_inside(int x, int y)
 {
-    return ui->tooltip_visible && x >= ui->tooltip_x && x < ui->tooltip_x + ui->tooltip_width && y >= ui->tooltip_y && y < ui->tooltip_y + ui->tooltip_height;
+    return ui->state == UI_STATE_GAME && ui->tooltip_visible && x >= ui->tooltip_x && x < ui->tooltip_x + ui->tooltip_width && y >= ui->tooltip_y && y < ui->tooltip_y + ui->tooltip_height;
 }
 
 void ui_tooltip_show(void)
@@ -244,7 +252,7 @@ void ui_tooltip_options_clear(void)
 
 struct tooltip_option *ui_tooltip_get_selected(void)
 {
-    if (ui->tooltip_visible)
+    if (ui->state == UI_STATE_GAME && ui->tooltip_visible)
     {
         int y = 1;
         for (void **i = TCOD_list_begin(ui->tooltip_options); i != TCOD_list_end(ui->tooltip_options); i++)
@@ -265,7 +273,7 @@ struct tooltip_option *ui_tooltip_get_selected(void)
 
 bool ui_view_is_inside(int x, int y)
 {
-    return x >= 0 && x < ui->view_width && y >= 0 && y < ui->view_height;
+    return ui->state == UI_STATE_GAME && x >= 0 && x < ui->view_width && y >= 0 && y < ui->view_height;
 }
 
 void ui_quit(void)

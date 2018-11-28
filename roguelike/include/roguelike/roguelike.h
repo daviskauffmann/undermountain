@@ -25,5 +25,4 @@
 #include "tile.h"
 #include "util.h"
 
-
 #endif

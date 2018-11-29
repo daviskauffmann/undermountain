@@ -57,12 +57,12 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include\</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PLATFORM_LIBTCOD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>BearLibTerminal.lib;libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -74,21 +74,20 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include\</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>PLATFORM_LIBTCOD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Platform)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>BearLibTerminal.lib;libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libtcod-gui-VS.lib;libtcod-VS.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\platform\libtcod\config.c" />
-    <ClCompile Include="src\platform\libtcod\input.c" />
-    <ClCompile Include="src\platform\platform_bearlibterminal.c" />
-    <ClCompile Include="src\platform\platform_libtcod.c" />
+    <ClCompile Include="src\platform\config.c" />
+    <ClCompile Include="src\platform\input.c" />
+    <ClCompile Include="src\platform\platform.c" />
     <ClCompile Include="src\roguelike\actor.c" />
     <ClCompile Include="src\roguelike\assets.c" />
     <ClCompile Include="src\roguelike\game.c" />
@@ -98,11 +97,11 @@
     <ClCompile Include="src\roguelike\message.c" />
     <ClCompile Include="src\roguelike\object.c" />
     <ClCompile Include="src\roguelike\projectile.c" />
-    <ClCompile Include="src\platform\libtcod\renderer.c" />
+    <ClCompile Include="src\platform\renderer.c" />
     <ClCompile Include="src\roguelike\room.c" />
     <ClCompile Include="src\roguelike\tile.c" />
-    <ClCompile Include="src\platform\libtcod\tooltip_option.c" />
-    <ClCompile Include="src\platform\libtcod\ui.c" />
+    <ClCompile Include="src\platform\tooltip_option.c" />
+    <ClCompile Include="src\platform\ui.c" />
     <ClCompile Include="src\roguelike\util.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

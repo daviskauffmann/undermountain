@@ -1,7 +1,5 @@
-#ifdef PLATFORM_LIBTCOD
-
-#ifndef PLATFORM_LIBTCOD_INPUT_H
-#define PLATFORM_LIBTCOD_INPUT_H
+#ifndef PLATFORM_INPUT_H
+#define PLATFORM_INPUT_H
 
 // TODO: prompts
 
@@ -46,7 +44,5 @@ extern struct input *input;
 void input_init(void);
 void input_handle(void);
 void input_quit(void);
-
-#endif
 
 #endif

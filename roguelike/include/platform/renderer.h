@@ -1,7 +1,5 @@
-#ifdef PLATFORM_LIBTCOD
-
-#ifndef PLATFORM_LIBTCOD_RENDERER_H
-#define PLATFORM_LIBTCOD_RENDERER_H
+#ifndef PLATFORM_RENDERER_H
+#define PLATFORM_RENDERER_H
 
 struct renderer
 {
@@ -17,7 +15,5 @@ extern struct renderer *renderer;
 void renderer_init(void);
 void renderer_draw(void);
 void renderer_quit(void);
-
-#endif
 
 #endif

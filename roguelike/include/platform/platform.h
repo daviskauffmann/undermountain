@@ -1,13 +1,16 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#define TITLE "Roguelike"
-#define VERSION "0.1"
-#define FPS 60
+#include <libtcod/libtcod.h>
+#include <platform/platform.h>
+#include <roguelike/roguelike.h>
 
-extern int console_width;
-extern int console_height;
+#include "config.h"
+#include "input.h"
+#include "renderer.h"
+#include "tooltip_option.h"
+#include "ui.h"
 
-extern int platform_run(void);
+int platform_run(void);
 
 #endif

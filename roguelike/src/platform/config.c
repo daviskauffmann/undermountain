@@ -1,6 +1,4 @@
-#ifdef PLATFORM_LIBTCOD
-
-#include <platform/libtcod/libtcod.h>
+#include <platform/platform.h>
 
 const char *font_file;
 TCOD_font_flags_t font_flags;
@@ -30,5 +28,3 @@ void config_save(void)
 {
     // TODO: save any variables that changed to the file
 }
-
-#endif

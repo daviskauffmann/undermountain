@@ -1,6 +1,4 @@
-#ifdef PLATFORM_LIBTCOD
-
-#include <platform/libtcod/libtcod.h>
+#include <platform/platform.h>
 
 struct ui *ui;
 
@@ -289,5 +287,3 @@ void ui_quit(void)
 
     free(ui);
 }
-
-#endif

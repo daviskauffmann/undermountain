@@ -1,6 +1,4 @@
-#ifdef PLATFORM_LIBTCOD
-
-#include <platform/libtcod/libtcod.h>
+#include <platform/platform.h>
 
 struct input *input;
 
@@ -1217,5 +1215,3 @@ static bool tooltip_option_move(struct tooltip_data data)
 
     return false;
 }
-
-#endif

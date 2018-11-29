@@ -1,6 +1,4 @@
-#ifdef PLATFORM_LIBTCOD
-
-#include <platform/libtcod/libtcod.h>
+#include <platform/platform.h>
 
 int platform_run(void)
 {
@@ -40,5 +38,3 @@ int platform_run(void)
 
     return 0;
 }
-
-#endif

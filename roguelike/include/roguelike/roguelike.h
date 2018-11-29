@@ -5,12 +5,10 @@
 #include <malloc.h>
 #include <math.h>
 #include <stdarg.h>
-// #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <libtcod/libtcod.h> // TODO: this is only here during the transition, eventually the game should be totally platform independent and not include this header
-#include <platform/platform.h>
+#include <libtcod/libtcod.h>
 
 #include "actor.h"
 #include "assets.h"

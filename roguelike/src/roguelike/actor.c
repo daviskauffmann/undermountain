@@ -163,7 +163,7 @@ void actor_update_flash(struct actor *actor)
 
     if (actor->flash_fade > 0)
     {
-        actor->flash_fade -= (1.0f / (float)FPS) * 4.0f;
+        actor->flash_fade -= (1.0f / 60.0f) * 4.0f; // TODO: use delta_time instead
 
         // game->state == GAME_STATE_WAIT;
     }

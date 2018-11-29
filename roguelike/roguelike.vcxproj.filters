@@ -51,25 +51,22 @@
     <ClCompile Include="src\roguelike\util.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\libtcod\input.c">
+    <ClCompile Include="src\platform\platform.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\libtcod\renderer.c">
+    <ClCompile Include="src\platform\input.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\libtcod\config.c">
+    <ClCompile Include="src\platform\config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\platform_libtcod.c">
+    <ClCompile Include="src\platform\renderer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\platform_bearlibterminal.c">
+    <ClCompile Include="src\platform\tooltip_option.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\libtcod\ui.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\platform\libtcod\tooltip_option.c">
+    <ClCompile Include="src\platform\ui.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

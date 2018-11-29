@@ -1,6 +1,4 @@
-#ifdef PLATFORM_LIBTCOD
-
-#include <platform/libtcod/libtcod.h>
+#include <platform/platform.h>
 
 struct renderer *renderer;
 
@@ -370,6 +368,7 @@ void renderer_draw(void)
                     struct item *item = *iterator;
 
                     TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected() ? TCOD_yellow : base_item_info[item_info[item->type].base_item].color);
+                    
                     if (panel_status->selection_mode)
                     {
                         TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 'a' - panel_status->scroll, item_info[item->type].name);
@@ -379,10 +378,10 @@ void renderer_draw(void)
                         TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, item_info[item->type].name);
                     }
 
+                    TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
+
                     y++;
                 }
-
-                TCOD_console_set_default_foreground(renderer->panel, TCOD_white);
                 TCOD_console_print_frame(renderer->panel, 0, 0, ui->panel_width, ui->panel_height, false, TCOD_BKGND_SET, "Inventory");
             }
             break;
@@ -446,5 +445,3 @@ void renderer_quit(void)
 
     free(renderer);
 }
-
-#endif

@@ -168,6 +168,10 @@ void game_update(void)
     }
 }
 
+// TODO: we should proably redo the logging system
+// instead of logging messages directly, the game should store all the events that have happened
+// the renderer can read the last few events to generate a message
+// this allows us to read the entire history of the game and do anything with it
 void game_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
     if (floor != game->player->floor ||
@@ -189,9 +193,7 @@ void game_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 
     do
     {
-        // TODO: maybe not destroy messages?
-        // perhaps we should keep all messages around
-        if (TCOD_list_size(game->messages) == (console_height / 4) - 2)
+        if (TCOD_list_size(game->messages) == (50 / 4) - 2) // TODO: hardcoded console_height for now because we're gonna throw all this away soon
         {
             struct message *message = TCOD_list_get(game->messages, 0);
 

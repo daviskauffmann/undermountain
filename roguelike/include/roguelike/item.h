@@ -1,5 +1,5 @@
-#ifndef ITEM_H
-#define ITEM_H
+#ifndef ROGUELIKE_ITEM_H
+#define ROGUELIKE_ITEM_H
 
 struct actor;
 

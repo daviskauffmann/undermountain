@@ -18,7 +18,8 @@ struct projectile *projectile_create(unsigned char glyph, int floor, int x1, int
     return projectile;
 }
 
-void projectile_update(struct projectile *projectile)
+// TODO: use delta_time
+void projectile_update(struct projectile *projectile, float delta_time)
 {
     float next_x = projectile->x + projectile->dx;
     float next_y = projectile->y + projectile->dy;

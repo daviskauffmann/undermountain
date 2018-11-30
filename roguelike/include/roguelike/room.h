@@ -1,5 +1,5 @@
-#ifndef ROOM_H
-#define ROOM_H
+#ifndef ROGUELIKE_ROOM_H
+#define ROGUELIKE_ROOM_H
 
 struct room
 {

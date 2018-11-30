@@ -13,7 +13,7 @@ void renderer_init(void)
     renderer->tooltip = TCOD_console_new(console_width, console_height);
 }
 
-void renderer_draw(void)
+void renderer_draw(float delta_time)
 {
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
@@ -54,6 +54,7 @@ void renderer_draw(void)
         struct map *map = &game->maps[game->player->floor];
 
         {
+            // TODO: use delta_time
             renderer->noise_x += 0.2f;
             float noise_dx = renderer->noise_x + 20.0f;
             float dx = TCOD_noise_get(renderer->noise, &noise_dx) * 0.5f;

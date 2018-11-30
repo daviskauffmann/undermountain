@@ -1,5 +1,5 @@
-#ifndef MAP_H
-#define MAP_H
+#ifndef ROGUELIKE_MAP_H
+#define ROGUELIKE_MAP_H
 
 #include "tile.h"
 

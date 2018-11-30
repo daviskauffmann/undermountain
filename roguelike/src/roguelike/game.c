@@ -12,7 +12,6 @@ void game_init(void)
     game->player = NULL;
     game->turn = 0;
     game->should_update = true;
-    game->should_quit = false;
 
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -94,7 +93,7 @@ void game_load(const char *file)
     game_new();
 }
 
-void game_update(void)
+void game_update(float delta_time)
 {
     if (!game || !game->player) return;
 
@@ -106,14 +105,14 @@ void game_update(void)
     {
         struct actor *actor = *iterator;
 
-        actor_update_flash(actor);
+        actor_update_flash(actor, delta_time);
     }
 
     for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
     {
         struct projectile *projectile = *iterator;
 
-        projectile_update(projectile);
+        projectile_update(projectile, delta_time);
 
         if (projectile->destroyed)
         {

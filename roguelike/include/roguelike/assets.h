@@ -1,5 +1,5 @@
-#ifndef ASSETS_H
-#define ASSETS_H
+#ifndef ROGUELIKE_ASSETS_H
+#define ROGUELIKE_ASSETS_H
 
 #include "actor.h"
 #include "item.h"

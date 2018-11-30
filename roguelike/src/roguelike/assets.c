@@ -64,6 +64,9 @@ struct item_info item_info[NUM_ITEM_TYPES];
     monster_prototype[_monster].race = _race;             \
     monster_prototype[_monster].class = _class;
 
+#define ITEM_COMMON(_placeholder) \
+    item_common.__placeholder = _placeholder;
+
 void assets_load(void)
 {
     TILE_COMMON(TCOD_color_RGB(16, 16, 32));
@@ -151,35 +154,17 @@ void assets_load(void)
     MONSTER_PROTOTYPE(MONSTER_IRON_GOLEM, "Iron Golem", RACE_CONSTRUCT, CLASS_CONSTRUCT);
     MONSTER_PROTOTYPE(MONSTER_OGRE, "Ogre", RACE_GIANT, CLASS_GIANT);
     MONSTER_PROTOTYPE(MONSTER_ORC_CLERIC, "Orc Cleric", RACE_ORC, CLASS_CLERIC);
-    monster_prototype[MONSTER_ORC_FIGHTER].name = "Orc Fighter";
-    monster_prototype[MONSTER_ORC_FIGHTER].race = RACE_ORC;
-    monster_prototype[MONSTER_ORC_FIGHTER].class = CLASS_FIGHTER;
-    monster_prototype[MONSTER_ORC_RANGER].name = "Orc Ranger";
-    monster_prototype[MONSTER_ORC_RANGER].race = RACE_ORC;
-    monster_prototype[MONSTER_ORC_RANGER].class = CLASS_RANGER;
-    monster_prototype[MONSTER_PIXIE].name = "Pixie";
-    monster_prototype[MONSTER_PIXIE].race = RACE_FEY;
-    monster_prototype[MONSTER_PIXIE].class = CLASS_FEY;
-    monster_prototype[MONSTER_RAKSHASA].name = "Rakshasa";
-    monster_prototype[MONSTER_RAKSHASA].race = RACE_REPTILLIAN;
-    monster_prototype[MONSTER_RAKSHASA].class = CLASS_SHAPESHIFTER;
-    monster_prototype[MONSTER_RAT].name = "Rat";
-    monster_prototype[MONSTER_RAT].race = RACE_VERMIN;
-    monster_prototype[MONSTER_RAT].class = CLASS_VERMIN;
-    monster_prototype[MONSTER_RED_SLAAD].name = "Red Slaad";
-    monster_prototype[MONSTER_RED_SLAAD].race = RACE_OUTSIDER;
-    monster_prototype[MONSTER_RED_SLAAD].class = CLASS_OUTSIDER;
-    monster_prototype[MONSTER_WOLF].name = "Wolf";
-    monster_prototype[MONSTER_WOLF].race = RACE_ANIMAL;
-    monster_prototype[MONSTER_WOLF].class = CLASS_ANIMAL;
-    monster_prototype[MONSTER_WYRMLING].name = "Wyrmling";
-    monster_prototype[MONSTER_WYRMLING].race = RACE_DRAGON;
-    monster_prototype[MONSTER_WYRMLING].class = CLASS_DRAGON;
-    monster_prototype[MONSTER_ZOMBIE].name = "Zombie";
-    monster_prototype[MONSTER_ZOMBIE].race = RACE_UNDEAD;
-    monster_prototype[MONSTER_ZOMBIE].class = CLASS_UNDEAD;
+    MONSTER_PROTOTYPE(MONSTER_ORC_FIGHTER, "Orc Fighter", RACE_ORC, CLASS_FIGHTER);
+    MONSTER_PROTOTYPE(MONSTER_ORC_RANGER, "Orc Ranger", RACE_ORC, CLASS_RANGER);
+    MONSTER_PROTOTYPE(MONSTER_PIXIE, "Pixie", RACE_FEY, CLASS_FEY);
+    MONSTER_PROTOTYPE(MONSTER_RAKSHASA, "Rakshasa", RACE_REPTILLIAN, CLASS_SHAPESHIFTER);
+    MONSTER_PROTOTYPE(MONSTER_RAT, "Rat", RACE_VERMIN, CLASS_VERMIN);
+    MONSTER_PROTOTYPE(MONSTER_RED_SLAAD, "Red Slaad", RACE_OUTSIDER, CLASS_OUTSIDER);
+    MONSTER_PROTOTYPE(MONSTER_WOLF, "Wolf", RACE_ANIMAL, CLASS_ANIMAL);
+    MONSTER_PROTOTYPE(MONSTER_WYRMLING, "Wyrmling", RACE_DRAGON, CLASS_DRAGON);
+    MONSTER_PROTOTYPE(MONSTER_ZOMBIE, "Zombie", RACE_UNDEAD, CLASS_UNDEAD);
 
-    item_common.__placeholder = 0;
+    ITEM_COMMON(0);
 
     equip_slot_info[EQUIP_SLOT_ARMOR].name = "Armor";
     equip_slot_info[EQUIP_SLOT_ARMOR].label = "Armor ";

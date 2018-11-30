@@ -16,14 +16,14 @@ int platform_run(void)
     assets_load();
     game_init();
 
-    while (!TCOD_console_is_window_closed() && !game->should_quit)
+    while (!TCOD_console_is_window_closed() && !input->should_quit)
     {
-        input_handle();
-        ui_update();
-        
-        game_update();
+        float delta_time = TCOD_sys_get_last_frame_length();
 
-        renderer_draw();
+        input_handle(delta_time);
+        game_update(delta_time);
+        ui_update(delta_time);
+        renderer_draw(delta_time);
     }
 
     game_quit();

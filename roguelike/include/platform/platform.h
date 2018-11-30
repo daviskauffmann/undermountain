@@ -2,7 +2,6 @@
 #define PLATFORM_H
 
 #include <libtcod/libtcod.h>
-#include <platform/platform.h>
 #include <roguelike/roguelike.h>
 
 #include "config.h"

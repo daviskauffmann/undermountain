@@ -29,6 +29,11 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map);
 void map_init(struct map *map, int floor)
 {
     map->floor = floor;
+    map->rooms = TCOD_list_new();
+    map->objects = TCOD_list_new();
+    map->actors = TCOD_list_new();
+    map->items = TCOD_list_new();
+    map->projectiles = TCOD_list_new();
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -39,12 +44,6 @@ void map_init(struct map *map, int floor)
             tile_init(tile, TILE_TYPE_EMPTY, false);
         }
     }
-
-    map->rooms = TCOD_list_new();
-    map->objects = TCOD_list_new();
-    map->actors = TCOD_list_new();
-    map->items = TCOD_list_new();
-    map->projectiles = TCOD_list_new();
 }
 
 void map_generate(struct map *map)

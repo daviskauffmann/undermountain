@@ -1,5 +1,5 @@
-#ifndef SPELL_H
-#define SPELL_H
+#ifndef ROGUELIKE_SPELL_H
+#define ROGUELIKE_SPELL_H
 
 // ideas:
 // spell types: arcane or divine

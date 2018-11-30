@@ -1,5 +1,5 @@
-#ifndef TILE_H
-#define TILE_H
+#ifndef ROGUELIKE_TILE_H
+#define ROGUELIKE_TILE_H
 
 enum tile_type
 {

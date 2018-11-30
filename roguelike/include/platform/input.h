@@ -37,12 +37,13 @@ struct input
     bool automoving;
     int automove_x;
     int automove_y;
+    bool should_quit;
 };
 
 extern struct input *input;
 
 void input_init(void);
-void input_handle(void);
+void input_handle(float delta_time);
 void input_quit(void);
 
 #endif

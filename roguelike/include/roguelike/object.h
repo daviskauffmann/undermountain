@@ -1,5 +1,5 @@
-#ifndef OBJECT_H
-#define OBJECT_H
+#ifndef ROGUELIKE_OBJECT_H
+#define ROGUELIKE_OBJECT_H
 
 struct object_common
 {

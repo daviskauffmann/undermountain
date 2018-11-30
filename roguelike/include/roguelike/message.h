@@ -1,5 +1,5 @@
-#ifndef MESSAGE_H
-#define MESSAGE_H
+#ifndef ROGUELIKE_MESSAGE_H
+#define ROGUELIKE_MESSAGE_H
 
 struct message
 {

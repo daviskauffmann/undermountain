@@ -11,8 +11,6 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->class = class;
     actor->faction = faction;
     actor->level = level;
-    actor->base_hp = class_info[actor->class].hit_die * actor->level;
-    actor->current_hp = actor_calc_max_hp(actor);
     actor->experience = (actor->level - 1) * 1000;
     actor->strength = 10;
     actor->dexterity = 10;
@@ -20,7 +18,9 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->intelligence = 10;
     actor->wisdom = 10;
     actor->charisma = 10;
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++) { actor->equipment[i] = NULL; }
+    actor->base_hp = class_info[actor->class].hit_die * actor->level;
+    actor->current_hp = actor_calc_max_hp(actor);
+    for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++) { actor->equipment[equip_slot] = NULL; }
     actor->items = TCOD_list_new();
     actor->floor = floor;
     actor->x = x;
@@ -157,13 +157,13 @@ int actor_calc_damage_bonus(struct actor *actor)
     return calc_ability_modifier(actor->strength) + actor_calc_enhancement_bonus(actor);
 }
 
-void actor_update_flash(struct actor *actor)
+void actor_update_flash(struct actor *actor, float delta_time)
 {
     // struct game *game = actor->game;
 
     if (actor->flash_fade > 0)
     {
-        actor->flash_fade -= (1.0f / 60.0f) * 4.0f; // TODO: use delta_time instead
+        actor->flash_fade -= 4.0f * delta_time;
 
         // game->state == GAME_STATE_WAIT;
     }

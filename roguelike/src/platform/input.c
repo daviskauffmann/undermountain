@@ -3,7 +3,7 @@
 struct input *input;
 
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
-static void cb_should_update(void *on_hit_params);
+static void set_game_update(void *on_hit_params);
 static bool tooltip_option_move(struct tooltip_data data);
 
 void input_init(void)
@@ -16,9 +16,10 @@ void input_init(void)
     input->automoving = false;
     input->automove_x = -1;
     input->automove_y = -1;
+    input->should_quit = false;
 }
 
-void input_handle(void)
+void input_handle(float delta_time)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;
@@ -41,7 +42,7 @@ void input_handle(void)
             {
                 if (ui->menu_state == MENU_STATE_MAIN)
                 {
-                    game->should_quit = true;
+                    input->should_quit = true;
                 }
                 else if (ui->menu_state == MENU_STATE_ABOUT)
                 {
@@ -437,7 +438,7 @@ void input_handle(void)
                 break;
                 case MAIN_MENU_OPTION_QUIT:
                 {
-                    game->should_quit = true;
+                    input->should_quit = true;
                 }
                 break;
                 }
@@ -641,7 +642,7 @@ void input_handle(void)
                 {
                     if (ui->targeting == TARGETING_SHOOT)
                     {
-                        actor_shoot(game->player, ui->target_x, ui->target_y, &cb_should_update, NULL);
+                        actor_shoot(game->player, ui->target_x, ui->target_y, &set_game_update, NULL);
 
                         ui->targeting = TARGETING_NONE;
                     }
@@ -958,7 +959,7 @@ void input_handle(void)
                 break;
                 case MAIN_MENU_OPTION_QUIT:
                 {
-                    game->should_quit = true;
+                    input->should_quit = true;
                 }
                 break;
                 }
@@ -1202,7 +1203,7 @@ static bool do_directional_action(struct actor *player, enum directional_action 
     return false;
 }
 
-static void cb_should_update(void *on_hit_params)
+static void set_game_update(void *on_hit_params)
 {
     game->should_update = true;
 }

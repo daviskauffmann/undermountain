@@ -1,5 +1,5 @@
-#ifndef ACTOR_H
-#define ACTOR_H
+#ifndef ROGUELIKE_ACTOR_H
+#define ROGUELIKE_ACTOR_H
 
 #include "item.h"
 
@@ -142,6 +142,8 @@ struct prototype
     const char *name;
     enum race race;
     enum class class;
+    // TODO: level + stats
+    // TODO: base equipment + inventory
 };
 
 struct actor
@@ -152,14 +154,14 @@ struct actor
     enum faction faction;
     int experience;
     int level;
-    int base_hp;
-    int current_hp;
     int strength;
     int dexterity;
     int constitution;
     int intelligence;
     int wisdom;
     int charisma;
+    int base_hp;
+    int current_hp;
     struct item *equipment[NUM_EQUIP_SLOTS];
     TCOD_list_t items;
     int floor;
@@ -189,7 +191,7 @@ int actor_calc_attack_bonus(struct actor *actor);
 int actor_calc_armor_class(struct actor *actor);
 void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult, bool ranged);
 int actor_calc_damage_bonus(struct actor *actor);
-void actor_update_flash(struct actor *actor);
+void actor_update_flash(struct actor *actor, float delta);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);

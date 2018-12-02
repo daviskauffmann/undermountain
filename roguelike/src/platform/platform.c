@@ -20,10 +20,15 @@ int platform_run(void)
     {
         float delta_time = TCOD_sys_get_last_frame_length();
 
-        input_handle(delta_time);
-        game_update(delta_time);
-        ui_update(delta_time);
-        renderer_draw(delta_time);
+        input_handle();
+
+        if (ui->state == UI_STATE_GAME)
+        {
+            game_update(delta_time);
+        }
+
+        ui_update();
+        renderer_draw();
     }
 
     game_quit();

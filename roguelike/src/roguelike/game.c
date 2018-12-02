@@ -7,7 +7,6 @@ void game_init(void)
     game = calloc(1, sizeof(struct game));
 
     game->state = GAME_STATE_PLAY;
-
     game->messages = TCOD_list_new();
     game->player = NULL;
     game->turn = 0;
@@ -38,7 +37,6 @@ void game_new(void)
         struct tile *tile = &map->tiles[x][y];
 
         game->player = actor_create("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, floor, x, y);
-        game->player->glow = false;
 
         TCOD_list_push(map->actors, game->player);
         tile->actor = game->player;
@@ -95,8 +93,6 @@ void game_load(const char *file)
 
 void game_update(float delta_time)
 {
-    if (!game || !game->player) return;
-
     game->state = game->player->dead ? GAME_STATE_LOSE : GAME_STATE_PLAY;
 
     struct map *map = &game->maps[game->player->floor];

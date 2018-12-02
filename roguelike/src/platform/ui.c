@@ -59,7 +59,7 @@ void ui_init(void)
     ui->mouse_tile_y = 0;
 }
 
-void ui_update(float delta_time)
+void ui_update(void)
 {
     if (ui->state == UI_STATE_GAME)
     {

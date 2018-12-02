@@ -13,7 +13,7 @@ struct renderer
 extern struct renderer *renderer;
 
 void renderer_init(void);
-void renderer_draw(float delta_time);
+void renderer_draw(void);
 void renderer_quit(void);
 
 #endif

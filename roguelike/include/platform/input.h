@@ -43,7 +43,7 @@ struct input
 extern struct input *input;
 
 void input_init(void);
-void input_handle(float delta_time);
+void input_handle(void);
 void input_quit(void);
 
 #endif

@@ -13,13 +13,15 @@ void renderer_init(void)
     renderer->tooltip = TCOD_console_new(console_width, console_height);
 }
 
-void renderer_draw(float delta_time)
+void renderer_draw(void)
 {
     TCOD_console_set_default_background(NULL, TCOD_black);
     TCOD_console_set_default_foreground(NULL, TCOD_white);
     TCOD_console_clear(NULL);
 
-    if (ui->state == UI_STATE_MENU)
+    switch (ui->state)
+    {
+    case UI_STATE_MENU:
     {
         switch (ui->menu_state)
         {
@@ -49,12 +51,12 @@ void renderer_draw(float delta_time)
         TCOD_console_set_default_foreground(NULL, TCOD_white);
         TCOD_console_print_frame(NULL, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, TITLE);
     }
-    else
+    break;
+    case UI_STATE_GAME:
     {
         struct map *map = &game->maps[game->player->floor];
 
         {
-            // TODO: use delta_time
             renderer->noise_x += 0.2f;
             float noise_dx = renderer->noise_x + 20.0f;
             float dx = TCOD_noise_get(renderer->noise, &noise_dx) * 0.5f;
@@ -369,7 +371,7 @@ void renderer_draw(float delta_time)
                     struct item *item = *iterator;
 
                     TCOD_console_set_default_foreground(renderer->panel, item == ui_panel_inventory_get_selected() ? TCOD_yellow : base_item_info[item_info[item->type].base_item].color);
-                    
+
                     if (panel_status->selection_mode)
                     {
                         TCOD_console_print(renderer->panel, 1, y - panel_status->scroll, "%c) %s", y - 1 + 'a' - panel_status->scroll, item_info[item->type].name);
@@ -432,6 +434,8 @@ void renderer_draw(float delta_time)
         TCOD_console_print(NULL, 0, 3, "Y: %d", game->player->y);
         TCOD_console_print(NULL, 0, 4, "HP: %d", game->player->current_hp);
         TCOD_console_print(NULL, 0, 5, "Kills: %d", game->player->kills);
+    }
+    break;
     }
 
     TCOD_console_flush();

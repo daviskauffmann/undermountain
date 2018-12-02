@@ -99,7 +99,7 @@ struct ui
 extern struct ui *ui;
 
 void ui_init(void);
-void ui_update(float delta_time);
+void ui_update(void);
 enum main_menu_option ui_main_menu_get_selected(void);
 bool ui_message_log_is_inside(int x, int y);
 bool ui_panel_is_inside(int x, int y);

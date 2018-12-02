@@ -19,7 +19,7 @@ void input_init(void)
     input->should_quit = false;
 }
 
-void input_handle(float delta_time)
+void input_handle(void)
 {
     TCOD_key_t key;
     TCOD_mouse_t mouse;

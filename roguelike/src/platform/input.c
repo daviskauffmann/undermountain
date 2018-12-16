@@ -3,7 +3,7 @@
 struct input *input;
 
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
-static void set_game_update(void *on_hit_params);
+static void set_took_turn(void *on_hit_params);
 static bool tooltip_option_move(struct tooltip_data data);
 
 void input_init(void)
@@ -13,10 +13,14 @@ void input_init(void)
     input->directional_action = DIRECTIONAL_ACTION_NONE;
     input->inventory_action = INVENTORY_ACTION_NONE;
     input->character_action = CHARACTER_ACTION_NONE;
+
     input->automoving = false;
     input->automove_x = -1;
     input->automove_y = -1;
-    input->should_quit = false;
+
+    input->took_turn = true;
+
+    input->request_close = false;
 }
 
 void input_handle(void)
@@ -42,7 +46,7 @@ void input_handle(void)
             {
                 if (ui->menu_state == MENU_STATE_MAIN)
                 {
-                    input->should_quit = true;
+                    input->request_close = true;
                 }
                 else if (ui->menu_state == MENU_STATE_ABOUT)
                 {
@@ -134,16 +138,16 @@ void input_handle(void)
                     {
                         if (key.lctrl)
                         {
-                            game->should_update = actor_swing(game->player, x, y);
+                            input->took_turn = actor_swing(game->player, x, y);
                         }
                         else
                         {
-                            game->should_update = actor_move(game->player, x, y);
+                            input->took_turn = actor_move(game->player, x, y);
                         }
                     }
                     else
                     {
-                        game->should_update = do_directional_action(game->player, input->directional_action, x, y);
+                        input->took_turn = do_directional_action(game->player, input->directional_action, x, y);
 
                         input->directional_action = DIRECTIONAL_ACTION_NONE;
                     }
@@ -170,16 +174,16 @@ void input_handle(void)
                     {
                         if (key.lctrl)
                         {
-                            game->should_update = actor_swing(game->player, x, y);
+                            input->took_turn = actor_swing(game->player, x, y);
                         }
                         else
                         {
-                            game->should_update = actor_move(game->player, x, y);
+                            input->took_turn = actor_move(game->player, x, y);
                         }
                     }
                     else
                     {
-                        game->should_update = do_directional_action(game->player, input->directional_action, x, y);
+                        input->took_turn = do_directional_action(game->player, input->directional_action, x, y);
 
                         input->directional_action = DIRECTIONAL_ACTION_NONE;
                     }
@@ -205,16 +209,16 @@ void input_handle(void)
                     {
                         if (key.lctrl)
                         {
-                            game->should_update = actor_swing(game->player, x, y);
+                            input->took_turn = actor_swing(game->player, x, y);
                         }
                         else
                         {
-                            game->should_update = actor_move(game->player, x, y);
+                            input->took_turn = actor_move(game->player, x, y);
                         }
                     }
                     else
                     {
-                        game->should_update = do_directional_action(game->player, input->directional_action, x, y);
+                        input->took_turn = do_directional_action(game->player, input->directional_action, x, y);
 
                         input->directional_action = DIRECTIONAL_ACTION_NONE;
                     }
@@ -241,16 +245,16 @@ void input_handle(void)
                     {
                         if (key.lctrl)
                         {
-                            game->should_update = actor_swing(game->player, x, y);
+                            input->took_turn = actor_swing(game->player, x, y);
                         }
                         else
                         {
-                            game->should_update = actor_move(game->player, x, y);
+                            input->took_turn = actor_move(game->player, x, y);
                         }
                     }
                     else
                     {
-                        game->should_update = do_directional_action(game->player, input->directional_action, x, y);
+                        input->took_turn = do_directional_action(game->player, input->directional_action, x, y);
 
                         input->directional_action = DIRECTIONAL_ACTION_NONE;
                     }
@@ -262,7 +266,7 @@ void input_handle(void)
         {
             if (ui->state == UI_STATE_GAME && game->state != GAME_STATE_WAIT)
             {
-                game->should_update = true;
+                input->took_turn = true;
             }
         }
         break;
@@ -285,16 +289,16 @@ void input_handle(void)
                     {
                         if (key.lctrl)
                         {
-                            game->should_update = actor_swing(game->player, x, y);
+                            input->took_turn = actor_swing(game->player, x, y);
                         }
                         else
                         {
-                            game->should_update = actor_move(game->player, x, y);
+                            input->took_turn = actor_move(game->player, x, y);
                         }
                     }
                     else
                     {
-                        game->should_update = do_directional_action(game->player, input->directional_action, x, y);
+                        input->took_turn = do_directional_action(game->player, input->directional_action, x, y);
 
                         input->directional_action = DIRECTIONAL_ACTION_NONE;
                     }
@@ -320,16 +324,16 @@ void input_handle(void)
                     {
                         if (key.lctrl)
                         {
-                            game->should_update = actor_swing(game->player, x, y);
+                            input->took_turn = actor_swing(game->player, x, y);
                         }
                         else
                         {
-                            game->should_update = actor_move(game->player, x, y);
+                            input->took_turn = actor_move(game->player, x, y);
                         }
                     }
                     else
                     {
-                        game->should_update = do_directional_action(game->player, input->directional_action, x, y);
+                        input->took_turn = do_directional_action(game->player, input->directional_action, x, y);
 
                         input->directional_action = DIRECTIONAL_ACTION_NONE;
                     }
@@ -356,16 +360,16 @@ void input_handle(void)
                     {
                         if (key.lctrl)
                         {
-                            game->should_update = actor_swing(game->player, x, y);
+                            input->took_turn = actor_swing(game->player, x, y);
                         }
                         else
                         {
-                            game->should_update = actor_move(game->player, x, y);
+                            input->took_turn = actor_move(game->player, x, y);
                         }
                     }
                     else
                     {
-                        game->should_update = do_directional_action(game->player, input->directional_action, x, y);
+                        input->took_turn = do_directional_action(game->player, input->directional_action, x, y);
 
                         input->directional_action = DIRECTIONAL_ACTION_NONE;
                     }
@@ -391,16 +395,16 @@ void input_handle(void)
                     {
                         if (key.lctrl)
                         {
-                            game->should_update = actor_swing(game->player, x, y);
+                            input->took_turn = actor_swing(game->player, x, y);
                         }
                         else
                         {
-                            game->should_update = actor_move(game->player, x, y);
+                            input->took_turn = actor_move(game->player, x, y);
                         }
                     }
                     else
                     {
-                        game->should_update = do_directional_action(game->player, input->directional_action, x, y);
+                        input->took_turn = do_directional_action(game->player, input->directional_action, x, y);
 
                         input->directional_action = DIRECTIONAL_ACTION_NONE;
                     }
@@ -438,7 +442,7 @@ void input_handle(void)
                 break;
                 case MAIN_MENU_OPTION_QUIT:
                 {
-                    input->should_quit = true;
+                    input->request_close = true;
                 }
                 break;
                 }
@@ -457,7 +461,7 @@ void input_handle(void)
                     {
                         if (game->state == GAME_STATE_PLAY)
                         {
-                            game->should_update = actor_equip(game->player, item);
+                            input->took_turn = actor_equip(game->player, item);
                         }
                     }
                     break;
@@ -472,7 +476,7 @@ void input_handle(void)
                     {
                         if (game->state == GAME_STATE_PLAY)
                         {
-                            game->should_update = actor_drop(game->player, item);
+                            input->took_turn = actor_drop(game->player, item);
                         }
                     }
                     break;
@@ -480,7 +484,7 @@ void input_handle(void)
                     {
                         if (game->state == GAME_STATE_PLAY)
                         {
-                            game->should_update = actor_quaff(game->player, item);
+                            input->took_turn = actor_quaff(game->player, item);
                         }
                     }
                     break;
@@ -509,7 +513,7 @@ void input_handle(void)
                     {
                         if (game->state == GAME_STATE_PLAY)
                         {
-                            game->should_update = actor_unequip(game->player, equip_slot);
+                            input->took_turn = actor_unequip(game->player, equip_slot);
                         }
                     }
                     break;
@@ -542,7 +546,7 @@ void input_handle(void)
             {
                 if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
-                    game->should_update = actor_ascend(game->player);
+                    input->took_turn = actor_ascend(game->player);
                 }
             }
             break;
@@ -550,7 +554,7 @@ void input_handle(void)
             {
                 if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
-                    game->should_update = actor_descend(game->player);
+                    input->took_turn = actor_descend(game->player);
                 }
             }
             break;
@@ -642,7 +646,7 @@ void input_handle(void)
                 {
                     if (ui->targeting == TARGETING_SHOOT)
                     {
-                        actor_shoot(game->player, ui->target_x, ui->target_y, &set_game_update, NULL);
+                        actor_shoot(game->player, ui->target_x, ui->target_y, &set_took_turn, NULL);
 
                         ui->targeting = TARGETING_NONE;
                     }
@@ -698,7 +702,7 @@ void input_handle(void)
             {
                 if (ui->state == UI_STATE_GAME && game->state == GAME_STATE_PLAY)
                 {
-                    game->should_update = actor_grab(game->player, game->player->x, game->player->y);
+                    input->took_turn = actor_grab(game->player, game->player->x, game->player->y);
                 }
             }
             break;
@@ -819,7 +823,7 @@ void input_handle(void)
                 {
                     game->player->torch = !game->player->torch;
 
-                    game->should_update = true;
+                    input->took_turn = true;
                 }
             }
             break;
@@ -959,7 +963,7 @@ void input_handle(void)
                 break;
                 case MAIN_MENU_OPTION_QUIT:
                 {
-                    input->should_quit = true;
+                    input->request_close = true;
                 }
                 break;
                 }
@@ -978,7 +982,7 @@ void input_handle(void)
                         {
                             if (tooltip_option->fn)
                             {
-                                game->should_update = tooltip_option->fn(tooltip_option->tooltip_data);
+                                input->took_turn = tooltip_option->fn(tooltip_option->tooltip_data);
                             }
 
                             ui_tooltip_hide();
@@ -1007,14 +1011,14 @@ void input_handle(void)
                             {
                             case INVENTORY_ACTION_EQUIP:
                             {
-                                game->should_update = actor_equip(game->player, item);
+                                input->took_turn = actor_equip(game->player, item);
 
                                 input->inventory_action = INVENTORY_ACTION_NONE;
                             }
                             break;
                             case INVENTORY_ACTION_DROP:
                             {
-                                game->should_update = actor_drop(game->player, item);
+                                input->took_turn = actor_drop(game->player, item);
 
                                 input->inventory_action = INVENTORY_ACTION_NONE;
                             }
@@ -1028,7 +1032,7 @@ void input_handle(void)
 
                         if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                         {
-                            game->should_update = actor_unequip(game->player, equip_slot);
+                            input->took_turn = actor_unequip(game->player, equip_slot);
 
                             input->character_action = CHARACTER_ACTION_NONE;
 
@@ -1170,9 +1174,9 @@ void input_handle(void)
         // we need to implement custom behavior depending on what the player is doing
         // for example, if the player selects the interact option on a tooltip for an object far away,
         //      the player should navigate there but not interact/attack anything along the way
-        game->should_update = actor_path_towards(game->player, input->automove_x, input->automove_y);
+        input->took_turn = actor_path_towards(game->player, input->automove_x, input->automove_y);
 
-        if (!game->should_update)
+        if (!input->took_turn)
         {
             input->automoving = false;
         }
@@ -1203,9 +1207,9 @@ static bool do_directional_action(struct actor *player, enum directional_action 
     return false;
 }
 
-static void set_game_update(void *on_hit_params)
+static void set_took_turn(void *on_hit_params)
 {
-    game->should_update = true;
+    input->took_turn = true;
 }
 
 static bool tooltip_option_move(struct tooltip_data data)

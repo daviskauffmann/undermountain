@@ -157,13 +157,13 @@ int actor_calc_damage_bonus(struct actor *actor)
     return calc_ability_modifier(actor->strength) + actor_calc_enhancement_bonus(actor);
 }
 
-void actor_update_flash(struct actor *actor, float delta_time)
+void actor_update_flash(struct actor *actor)
 {
     // struct game *game = actor->game;
 
     if (actor->flash_fade > 0)
     {
-        actor->flash_fade -= 4.0f * delta_time;
+        actor->flash_fade -= 4.0f * TCOD_sys_get_last_frame_length();
 
         // game->state == GAME_STATE_WAIT;
     }

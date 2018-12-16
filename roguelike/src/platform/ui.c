@@ -61,7 +61,14 @@ void ui_init(void)
 
 void ui_update(void)
 {
-    if (ui->state == UI_STATE_GAME)
+    switch (ui->state)
+    {
+    case UI_STATE_MENU:
+    {
+
+    }
+    break;
+    case UI_STATE_GAME:
     {
         ui->message_log_x = 0;
         ui->message_log_height = console_height / 4;
@@ -100,6 +107,8 @@ void ui_update(void)
             ui->view_y = MAP_HEIGHT - ui->view_height;
         if (ui->view_y < 0)
             ui->view_y = 0;
+    }
+    break;
     }
 }
 

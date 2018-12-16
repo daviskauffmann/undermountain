@@ -10,7 +10,6 @@ void game_init(void)
     game->messages = TCOD_list_new();
     game->player = NULL;
     game->turn = 0;
-    game->should_update = true;
 
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -91,7 +90,7 @@ void game_load(const char *file)
     game_new();
 }
 
-void game_update(float delta_time)
+void game_update(void)
 {
     game->state = game->player->dead ? GAME_STATE_LOSE : GAME_STATE_PLAY;
 
@@ -101,14 +100,14 @@ void game_update(float delta_time)
     {
         struct actor *actor = *iterator;
 
-        actor_update_flash(actor, delta_time);
+        actor_update_flash(actor);
     }
 
     for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
     {
         struct projectile *projectile = *iterator;
 
-        projectile_update(projectile, delta_time);
+        projectile_update(projectile);
 
         if (projectile->destroyed)
         {
@@ -117,48 +116,49 @@ void game_update(float delta_time)
             projectile_destroy(projectile);
         }
     }
+}
 
-    if (game->should_update)
+void game_turn(void)
+{
+    game->turn++;
+
+    struct map *map = &game->maps[game->player->floor];
+
+    for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
     {
-        game->should_update = false;
-        game->turn++;
+        struct object *object = *iterator;
 
-        for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+        if (object->destroyed)
         {
-            struct object *object = *iterator;
+            struct tile *tile = &map->tiles[object->x][object->y];
 
-            if (object->destroyed)
-            {
-                struct tile *tile = &map->tiles[object->x][object->y];
+            tile->object = NULL;
+            iterator = TCOD_list_remove_iterator(map->objects, iterator);
 
-                tile->object = NULL;
-                iterator = TCOD_list_remove_iterator(map->objects, iterator);
+            object_destroy(object);
 
-                object_destroy(object);
-
-                continue;
-            }
-
-            object_calc_light(object);
+            continue;
         }
 
-        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+        object_calc_light(object);
+    }
+
+    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    {
+        struct actor *actor = *iterator;
+
+        actor_calc_light(actor);
+    }
+
+    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    {
+        struct actor *actor = *iterator;
+
+        actor_calc_fov(actor);
+
+        if (!actor->dead)
         {
-            struct actor *actor = *iterator;
-
-            actor_calc_light(actor);
-        }
-
-        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
-        {
-            struct actor *actor = *iterator;
-
-            actor_calc_fov(actor);
-
-            if (!actor->dead)
-            {
-                actor_ai(actor);
-            }
+            actor_ai(actor);
         }
     }
 }

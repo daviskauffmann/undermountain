@@ -19,7 +19,6 @@ struct game
     TCOD_list_t messages;
     struct actor *player;
     int turn;
-    bool should_update;
 };
 
 extern struct game *game;
@@ -28,7 +27,8 @@ void game_init(void);
 void game_new(void);
 void game_save(const char *file);
 void game_load(const char *file);
-void game_update(float delta_time);
+void game_update(void);
+void game_turn(void);
 void game_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...);
 void game_quit(void);
 

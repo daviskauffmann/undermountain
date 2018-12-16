@@ -191,7 +191,7 @@ int actor_calc_attack_bonus(struct actor *actor);
 int actor_calc_armor_class(struct actor *actor);
 void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult, bool ranged);
 int actor_calc_damage_bonus(struct actor *actor);
-void actor_update_flash(struct actor *actor, float delta);
+void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);

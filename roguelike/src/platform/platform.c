@@ -16,15 +16,25 @@ int platform_run(void)
     assets_load();
     game_init();
 
-    while (!TCOD_console_is_window_closed() && !input->should_quit)
+    while (!TCOD_console_is_window_closed())
     {
-        float delta_time = TCOD_sys_get_last_frame_length();
-
         input_handle();
+
+        if (input->request_close)
+        {
+            break;
+        }
 
         if (ui->state == UI_STATE_GAME)
         {
-            game_update(delta_time);
+            game_update();
+
+            if (input->took_turn)
+            {
+                input->took_turn = false;
+
+                game_turn();
+            }
         }
 
         ui_update();

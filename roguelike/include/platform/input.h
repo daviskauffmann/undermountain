@@ -37,7 +37,8 @@ struct input
     bool automoving;
     int automove_x;
     int automove_y;
-    bool should_quit;
+    bool took_turn;
+    bool request_close;
 };
 
 extern struct input *input;

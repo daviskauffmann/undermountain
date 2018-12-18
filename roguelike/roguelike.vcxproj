@@ -15,7 +15,7 @@
     <ProjectGuid>{BABDE851-5D4E-415D-8924-78AC77B8F83A}</ProjectGuid>
     <RootNamespace>roguelike</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
-    <ProjectName>`</ProjectName>
+    <ProjectName>roguelike</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -104,6 +104,27 @@
     <ClCompile Include="src\platform\tooltip_option.c" />
     <ClCompile Include="src\platform\ui.c" />
     <ClCompile Include="src\roguelike\util.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\platform\config.h" />
+    <ClInclude Include="include\platform\input.h" />
+    <ClInclude Include="include\platform\platform.h" />
+    <ClInclude Include="include\platform\renderer.h" />
+    <ClInclude Include="include\platform\tooltip_option.h" />
+    <ClInclude Include="include\platform\ui.h" />
+    <ClInclude Include="include\roguelike\actor.h" />
+    <ClInclude Include="include\roguelike\assets.h" />
+    <ClInclude Include="include\roguelike\game.h" />
+    <ClInclude Include="include\roguelike\item.h" />
+    <ClInclude Include="include\roguelike\map.h" />
+    <ClInclude Include="include\roguelike\message.h" />
+    <ClInclude Include="include\roguelike\object.h" />
+    <ClInclude Include="include\roguelike\projectile.h" />
+    <ClInclude Include="include\roguelike\roguelike.h" />
+    <ClInclude Include="include\roguelike\room.h" />
+    <ClInclude Include="include\roguelike\spell.h" />
+    <ClInclude Include="include\roguelike\tile.h" />
+    <ClInclude Include="include\roguelike\util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,14 +7,14 @@ int main(int argc, char *args[])
 {
     for (int i = 1; i < argc; i++)
     {
-        if (strcmp(args[i], "--help") == 0 || strcmp(args[i], "-h") == 0)
+        if (strcmp(args[i], "-h") == 0 || strcmp(args[i], "--help") == 0)
         {
-            printf("Command      Shortcut    Description\n");
-            printf("--help       -h          Print this message\n");
-            printf("--version    -v          Print current version\n");
+            printf("Options:\n");
+            printf("  -h, --help\tPrint this message\n");
+            printf("  -v, --version\tPrint current version\n");
         }
 
-        if (strcmp(args[i], "--version") == 0 || strcmp(args[i], "-v") == 0)
+        if (strcmp(args[i], "-v") == 0 || strcmp(args[i], "--version") == 0)
         {
             printf("%s v%s\n", TITLE, VERSION);
         }

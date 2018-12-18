@@ -19,7 +19,6 @@ void input_init(void)
     input->automove_y = -1;
 
     input->took_turn = true;
-
     input->request_close = false;
 }
 

@@ -14,7 +14,6 @@ int platform_run(void)
     renderer_init();
 
     assets_load();
-    game_init();
 
     while (!TCOD_console_is_window_closed())
     {
@@ -40,8 +39,6 @@ int platform_run(void)
         ui_update();
         renderer_draw();
     }
-
-    game_quit();
 
     renderer_quit();
     ui_quit();

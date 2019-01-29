@@ -4,14 +4,13 @@ struct ui *ui;
 
 void ui_init(void)
 {
-    ui = calloc(1, sizeof(struct ui));
+    ui = malloc(sizeof(struct ui));
 
     ui->state = UI_STATE_MENU;
     ui->menu_state = MENU_STATE_MAIN;
 
     // TODO: platform assets?
-    ui->main_menu_option_info[MAIN_MENU_OPTION_NEW].text = "New";
-    ui->main_menu_option_info[MAIN_MENU_OPTION_LOAD].text = "Load";
+    ui->main_menu_option_info[MAIN_MENU_OPTION_START].text = "Start";
     ui->main_menu_option_info[MAIN_MENU_OPTION_ABOUT].text = "About";
     ui->main_menu_option_info[MAIN_MENU_OPTION_QUIT].text = "Quit";
 

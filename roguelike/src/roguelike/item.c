@@ -2,7 +2,7 @@
 
 struct item *item_create(enum item_type type, int floor, int x, int y)
 {
-    struct item *item = calloc(1, sizeof(struct item));
+    struct item *item = malloc(sizeof(struct item));
 
     item->type = type;
     item->floor = floor;

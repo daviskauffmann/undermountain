@@ -2,7 +2,7 @@
 
 struct tooltip_option *tooltip_option_create(char *text, struct tooltip_data data, bool(*fn)(struct tooltip_data data))
 {
-    struct tooltip_option *tooltip_option = calloc(1, sizeof(struct tooltip_option));
+    struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
 
     tooltip_option->text = _strdup(text);
     tooltip_option->tooltip_data = data;

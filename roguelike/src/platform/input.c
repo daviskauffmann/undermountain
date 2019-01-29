@@ -8,7 +8,7 @@ static bool tooltip_option_move(struct tooltip_data data);
 
 void input_init(void)
 {
-    input = calloc(1, sizeof(struct input));
+    input = malloc(sizeof(struct input));
 
     input->directional_action = DIRECTIONAL_ACTION_NONE;
     input->inventory_action = INVENTORY_ACTION_NONE;
@@ -99,17 +99,16 @@ void input_handle(void)
 
                         switch (main_menu_option)
                         {
-                        case MAIN_MENU_OPTION_NEW:
+                        case MAIN_MENU_OPTION_START:
                         {
                             game_init();
+
+                            // TODO: check if save file exists
+                            // if so, load it
+                            // if not, new game
                             game_new();
 
                             ui->state = UI_STATE_GAME;
-                        }
-                        break;
-                        case MAIN_MENU_OPTION_LOAD:
-                        {
-                            // ui->menu_state = MENU_STATE_LOAD;
                         }
                         break;
                         case MAIN_MENU_OPTION_ABOUT:
@@ -147,17 +146,16 @@ void input_handle(void)
 
                 switch (main_menu_option)
                 {
-                case MAIN_MENU_OPTION_NEW:
+                case MAIN_MENU_OPTION_START:
                 {
                     game_init();
+
+                    // TODO: check if save file exists
+                    // if so, load it
+                    // if not, new game
                     game_new();
 
                     ui->state = UI_STATE_GAME;
-                }
-                break;
-                case MAIN_MENU_OPTION_LOAD:
-                {
-                    // ui->menu_state = MENU_STATE_LOAD;
                 }
                 break;
                 case MAIN_MENU_OPTION_ABOUT:

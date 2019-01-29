@@ -4,7 +4,7 @@ static int calc_ability_modifier(int ability);
 
 struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
 {
-    struct actor *actor = calloc(1, sizeof(struct actor));
+    struct actor *actor = malloc(sizeof(struct actor));
 
     actor->name = _strdup(name);
     actor->race = race;

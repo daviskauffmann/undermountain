@@ -2,7 +2,7 @@
 
 struct room *room_create(int x, int y, int w, int h)
 {
-    struct room *room = calloc(1, sizeof(struct room));
+    struct room *room = malloc(sizeof(struct room));
 
     room->x = x;
     room->y = y;

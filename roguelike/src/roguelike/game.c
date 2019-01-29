@@ -2,9 +2,13 @@
 
 struct game *game;
 
+// IMPORTANT: there is a memory leak when freeing the game
+// something is not being cleaned up properly because less memory is freed when calling game_quit() than was allocated with game_init()
+// not sure what is causing this, so keep looking into it
+
 void game_init(void)
 {
-    game = calloc(1, sizeof(struct game));
+    game = malloc(sizeof(struct game));
 
     game->state = GAME_STATE_PLAY;
     game->messages = TCOD_list_new();

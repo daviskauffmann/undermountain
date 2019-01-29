@@ -16,14 +16,12 @@ enum ui_state
 enum menu_state
 {
     MENU_STATE_MAIN,
-    MENU_STATE_LOAD,
     MENU_STATE_ABOUT
 };
 
 enum main_menu_option
 {
-    MAIN_MENU_OPTION_NEW,
-    MAIN_MENU_OPTION_LOAD,
+    MAIN_MENU_OPTION_START,
     MAIN_MENU_OPTION_ABOUT,
     MAIN_MENU_OPTION_QUIT,
 

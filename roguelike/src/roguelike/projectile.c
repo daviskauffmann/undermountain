@@ -2,7 +2,7 @@
 
 struct projectile *projectile_create(unsigned char glyph, int floor, int x1, int y1, int x2, int y2, struct actor *shooter, void(*on_hit)(void *on_hit_params), void *on_hit_params)
 {
-    struct projectile *projectile = calloc(1, sizeof(struct projectile));
+    struct projectile *projectile = malloc(sizeof(struct projectile));
 
     projectile->glyph = glyph;
     projectile->floor = floor;

@@ -4,7 +4,7 @@ struct renderer *renderer;
 
 void renderer_init(void)
 {
-    renderer = calloc(1, sizeof(struct renderer));
+    renderer = malloc(sizeof(struct renderer));
 
     renderer->noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
     renderer->noise_x = 0.0f;

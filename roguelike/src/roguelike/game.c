@@ -79,18 +79,28 @@ void game_new(void)
     }
 }
 
-void game_save(const char *file)
+void game_save(void)
 {
     TCOD_zip_t zip = TCOD_zip_new();
 
-    TCOD_zip_save_to_file(zip, file);
+    TCOD_zip_save_to_file(zip, SAVE_PATH);
+
+    // TODO: save state to zip
 
     TCOD_zip_delete(zip);
 }
 
-void game_load(const char *file)
+void game_load(void)
 {
-    // TODO: load state from file
+    TCOD_zip_t zip = TCOD_zip_new();
+
+    TCOD_zip_load_from_file(zip, SAVE_PATH);
+
+    // TODO: load state from zip
+
+    TCOD_zip_delete(zip);
+
+    // DEBUG: just start a new game
     game_new();
 }
 

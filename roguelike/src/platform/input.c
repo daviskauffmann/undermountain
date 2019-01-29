@@ -103,10 +103,14 @@ void input_handle(void)
                         {
                             game_init();
 
-                            // TODO: check if save file exists
-                            // if so, load it
-                            // if not, new game
-                            game_new();
+                            if (TCOD_sys_file_exists(SAVE_PATH))
+                            {
+                                game_load();
+                            }
+                            else
+                            {
+                                game_new();
+                            }
 
                             ui->state = UI_STATE_GAME;
                         }
@@ -150,10 +154,14 @@ void input_handle(void)
                 {
                     game_init();
 
-                    // TODO: check if save file exists
-                    // if so, load it
-                    // if not, new game
-                    game_new();
+                    if (TCOD_sys_file_exists(SAVE_PATH))
+                    {
+                        game_load();
+                    }
+                    else
+                    {
+                        game_new();
+                    }
 
                     ui->state = UI_STATE_GAME;
                 }
@@ -216,6 +224,7 @@ void input_handle(void)
                 {
                     ui->state = UI_STATE_MENU;
 
+                    game_save();
                     game_quit();
                 }
             }
@@ -838,28 +847,14 @@ void input_handle(void)
                 {
                     if (game->state == GAME_STATE_PLAY)
                     {
-                        if (key.lctrl)
-                        {
-                            // game_save();
+                        input->directional_action = DIRECTIONAL_ACTION_SIT;
 
-                            game_log(
-                                game->player->floor,
-                                game->player->x,
-                                game->player->y,
-                                TCOD_green,
-                                "Game saved!");
-                        }
-                        else
-                        {
-                            input->directional_action = DIRECTIONAL_ACTION_SIT;
-
-                            game_log(
-                                game->player->floor,
-                                game->player->x,
-                                game->player->y,
-                                TCOD_white,
-                                "Choose a direction, ESC to cancel");
-                        }
+                        game_log(
+                            game->player->floor,
+                            game->player->x,
+                            game->player->y,
+                            TCOD_white,
+                            "Choose a direction, ESC to cancel");
                     }
                 }
                 break;

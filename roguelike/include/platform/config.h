@@ -4,7 +4,6 @@
 #define TITLE "Roguelike"
 #define VERSION "0.1"
 #define FPS 60
-#define SAVE_PATH "save.gz"
 
 extern const char *font_file;
 extern TCOD_font_flags_t font_flags;

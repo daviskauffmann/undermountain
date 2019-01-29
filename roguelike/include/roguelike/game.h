@@ -3,6 +3,7 @@
 
 #include "map.h"
 
+#define SAVE_PATH "save.gz"
 #define NUM_MAPS 60
 
 enum game_state
@@ -25,8 +26,8 @@ extern struct game *game;
 
 void game_init(void);
 void game_new(void);
-void game_save(const char *file);
-void game_load(const char *file);
+void game_save(void);
+void game_load(void);
 void game_update(void);
 void game_turn(void);
 void game_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...);

@@ -195,6 +195,7 @@ struct item
 };
 
 struct item *item_create(enum item_type type, int floor, int x, int y);
+bool item_can_equip(struct item *item, struct actor *actor);
 bool item_is_two_handed(struct item *item, struct actor *actor);
 void item_destroy(struct item *item);
 

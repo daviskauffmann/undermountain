@@ -411,7 +411,7 @@ void map_generate(struct map *map)
         }
 
         TCOD_namegen_parse(filename, NULL);
-        char *name = TCOD_namegen_generate(sex, false);
+        char *name = TCOD_namegen_generate(sex, true);
         TCOD_namegen_destroy();
 
         struct actor *actor = actor_create(

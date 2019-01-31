@@ -1030,7 +1030,7 @@ bool actor_drop(struct actor *actor, struct item *item)
 
 bool actor_equip(struct actor *actor, struct item *item)
 {
-    if (base_item_info[item_info[item->type].base_item].equip_slot == EQUIP_SLOT_NONE)
+    if (base_item_info[item_info[item->type].base_item].equip_slot == EQUIP_SLOT_NONE || !item_can_equip(item, actor))
     {
         game_log(
             actor->floor,
@@ -1289,6 +1289,11 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
 
         return false;
     }
+
+    // TODO: support dual-wield weapons
+    // should just attack with both weapons in one move, applying relevant penalties
+
+    // TODO: is attack and damage affected by two-handedness?
 
     int attack_roll = roll(1, 20);
     int attack_bonus = actor_calc_attack_bonus(actor);

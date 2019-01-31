@@ -12,6 +12,12 @@ struct item *item_create(enum item_type type, int floor, int x, int y)
     return item;
 }
 
+bool item_can_equip(struct item *item, struct actor *actor)
+{
+    // TODO: small races cannot equip large weapons
+    return true;
+}
+
 bool item_is_two_handed(struct item *item, struct actor *actor)
 {
     enum equip_slot equip_slot = base_item_info[item_info[item->type].base_item].equip_slot;
@@ -44,7 +50,7 @@ bool item_is_two_handed(struct item *item, struct actor *actor)
         {
             return false;
         }
-        else if (weapon_size == WEAPON_SIZE_LARGE || weapon_size == WEAPON_SIZE_MEDIUM)
+        else if (weapon_size == WEAPON_SIZE_MEDIUM)
         {
             return true;
         }

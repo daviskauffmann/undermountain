@@ -2,7 +2,7 @@
 
 struct game *game;
 
-// IMPORTANT: there is a memory leak when freeing the game
+// NOTE: there is a memory leak when freeing the game
 // something is not being cleaned up properly because less memory is freed when calling game_quit() than was allocated with game_init()
 // not sure what is causing this, so keep looking into it
 
@@ -179,7 +179,7 @@ void game_turn(void)
 
 // TODO: we should proably redo the logging system
 // instead of logging messages directly, the game should store all the events that have happened
-// the renderer can read the last few events to generate a message
+// the renderer can read the last few events to generate a message (using assets as template strings)
 // this allows us to read the entire history of the game and do anything with it
 void game_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 {

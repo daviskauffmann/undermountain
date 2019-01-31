@@ -1,29 +1,30 @@
-/*
-* libtcod 1.5.1
-* Copyright (c) 2008,2009,2010,2012 Jice & Mingos
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * The name of Jice or Mingos may not be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY JICE AND MINGOS ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL JICE OR MINGOS BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+/* libtcod
+ * Copyright © 2008-2019 Jice and the libtcod contributors.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * The name of copyright holder nor the names of its contributors may not
+ *       be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 /*
 * Mingos' NameGen
 * This file was written by Dominik "Mingos" Marczuk.
@@ -32,11 +33,14 @@
 #ifndef _TCOD_NAMEGEN_HPP
 #define _TCOD_NAMEGEN_HPP
 
+#include "list.hpp"
+#include "mersenne.hpp"
+#include "namegen.h"
 /**
  @PageName namegen
  @PageCategory Roguelike toolkits
  @PageTitle Name generator
- @PageDesc This tool allows to generate random names out of custom made syllable sets.
+ @PageDesc This tool allows one to generate random names out of custom made syllable sets.
  */
 class TCODLIB_API TCODNamegen {
 	public:
@@ -46,9 +50,9 @@ class TCODLIB_API TCODNamegen {
 		@PageTitle Creating a generator
 		@FuncDesc In order to be able to generate names, the name generator needs to be fed proper data. It will then be ready to generate random names defined in the file(s) it is fed. Syllable set parsing is achieved via the following.
 			Note 1: Each file will be parsed once only. If, for some reason, you would like to parse the same file twice, you will need to destroy the generator first, which will empty the list of parsed files along with erasing all the data retrieved from those files.
-			
+
 			Note 2: The generator can be fed data multiple times if you have it in separate files. Just make sure the structure names in them aren't duplicated, otherwise they will be silently ignored.
-			
+
 			Note 3: In the C++ version, you are not obliged to specify the random number generator. If you skip it in the function call, the generator will assume you would like to use an instance of the default generator.
 
 		@Cpp static void TCODNamegen::parse (const char * filename, TCODRandom * random = NULL)
@@ -59,7 +63,7 @@ class TCODLIB_API TCODNamegen {
 			static void TCODNameGenerator::parse(string filename, TCODRandom random)
 		@Param filename 	The file where the desired syllable set is saved, along with its relative parh, for instance, "data/names.txt".
 		@Param random 	A random number generator object. Use NULL for the default random number generator
-		@CppEx 
+		@CppEx
 			TCODNamegen::parse("data/names.txt",TCODRandom::getInstance());
 			TCODNamegen::parse("data/names2.txt");
 		@CEx TCOD_namegen_parse("data/names.txt",TCOD_random_get_instance());
@@ -71,7 +75,7 @@ class TCODLIB_API TCODNamegen {
 		@PageName namegen_init
 		@FuncTitle Destroying a generator
 		@FuncDesc To release the resources used by a name generator, you may call:
-			This will free all memory used by the generator. In order to generate a name again, you have to parse a file again. 
+			This will free all memory used by the generator. In order to generate a name again, you have to parse a file again.
 		@Cpp static void TCODNamegen::destroy (void)
 		@C void TCOD_namegen_destroy (void)
 		@Py namegen_destroy ()
@@ -86,9 +90,9 @@ class TCODLIB_API TCODNamegen {
 		@FuncTitle Generating a default name
 		@FuncDesc The following will output a random name generated using one of the generation rules specified in the syllable set:
 			Should you choose to allocate memory for the output, you need to remember to deallocate it once you don't need the name anymore using the free() function. This applies to C++ as well (delete won't work - you have to use free()).
-			
+
 			On the other hand, should you choose not to allocate memory, be aware that subsequent calls will overwrite the previously returned pointer, so make sure to copy the output using strcpy(), strdup() or other means of your choosing.
-			
+
 			The name you specify needs to be in one of the files the generator has previously parsed (see Creating a generator). If such a name doesn't exist, a warning will be displayed and NULL will be returned.
 		@Cpp static char * TCODNamegen::generate (char * name, bool allocate = false)
 		@C char * TCOD_namegen_generate (char * name, bool allocate)
@@ -97,13 +101,13 @@ class TCODLIB_API TCODNamegen {
 		@Param name 	The structure name you wish to refer to, for instance, "celtic female".
 			For more about how structure names work, please refer to <a href="namegen_file.html">those</a> <a href="parser_format.html">chapters</a>.
 		@Param allocate 	Whether memory should be allocated for the output or not.
-		@CppEx 
+		@CppEx
 			TCODNamegen::parse("data/names.txt",TCODRandom::getInstance());
 			char * myName = TCODNamegen::generate("fantasy female");
-		@CEx 
+		@CEx
 			TCOD_namegen_parse("data/names.txt",TCOD_random_get_instance());
 			char * my_name = TCOD_namegen_generate("Celtic male",false);
-		@PyEx 
+		@PyEx
 			libtcod.namegen_parse('data/names.txt')
 			name = libtcod.namegen_generate('Nordic female')
 		*/
@@ -121,13 +125,13 @@ class TCODLIB_API TCODNamegen {
 			For more about how structure names work, please refer to <a href="namegen_file.html">those</a> <a href="parser_format.html">chapters</a>.
 		@Param rule 	The name generation rule. See <a href="namegen_file.html">this chapter</a> for more details.
 		@Param allocate 	Whether memory should be allocated for the output or not.
-		@CppEx 
+		@CppEx
 			TCODNamegen::parse("data/names.txt",TCODRandom::getInstance());
 			char * myName = TCODNamegen::generateCustom("Nordic male","$s$e");
-		@CEx 
+		@CEx
 			TCOD_namegen_parse("data/names.txt",TCOD_random_get_instance());
 			char * my_name = TCOD_namegen_generate_custom("Mesopotamian female","$s$e",false);
-		@PyEx 
+		@PyEx
 			libtcod.namegen_parse('data/names.txt')
 			name = libtcod.namegen_generate_custom('Nordic female','$s$e')
 		*/

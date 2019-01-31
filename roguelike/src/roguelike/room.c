@@ -1,4 +1,4 @@
-#include <roguelike/roguelike.h>
+#include <roguelike.h>
 
 struct room *room_create(int x, int y, int w, int h)
 {

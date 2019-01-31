@@ -1,37 +1,40 @@
-/*
-* libtcod 1.5.1
-* Copyright (c) 2008,2009,2010,2012 Jice & Mingos
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * The name of Jice or Mingos may not be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY JICE AND MINGOS ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL JICE OR MINGOS BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+/* libtcod
+ * Copyright © 2008-2019 Jice and the libtcod contributors.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * The name of copyright holder nor the names of its contributors may not
+ *       be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef _TCOD_HEIGHTMAP_HPP
 #define _TCOD_HEIGHTMAP_HPP
 
+#include "heightmap.h"
+#include "noise.hpp"
 /**
  @PageName heightmap
  @PageCategory Roguelike toolkits
  @PageTitle Heightmap toolkit
- @PageDesc This toolkit allows to create a 2D grid of float values using various algorithms.
+ @PageDesc This toolkit allows one to create a 2D grid of float values using various algorithms.
 
 The code using the heightmap toolkit can be automatically generated with the heightmap tool (hmtool) included in the libtcod package.
  */
@@ -156,7 +159,7 @@ public :
 	@C# void TCODHeightMap::copy(TCODHeightMap source)
 	@Param source	Each cell value from the source heightmap is copied in the destination (this for C++) heightmap.
 		The source and destination heightmap must have the same width and height.
-	@Param dest	In the C and python versions, the address of the destination heightmap.
+	@Param dest	In the C and Python versions, the address of the destination heightmap.
 	*/
 	void copy(const TCODHeightMap *source);
 
@@ -187,7 +190,7 @@ public :
 	@Param b	Second heightmap in the lerp operation.
 	@Param coef	lerp coefficient.
 		For each cell in the destination map (this for C++), value = a.value + (b.value - a.value) * coef
-	@Param res	In the C and python versions, the address of the destination heightmap.
+	@Param res	In the C and Python versions, the address of the destination heightmap.
 	*/
 	void lerp(const TCODHeightMap *a, const TCODHeightMap *b,float coef);
 
@@ -200,7 +203,7 @@ public :
 	@C# void TCODHeightMap::add(TCODHeightMap a, TCODHeightMap b)
 	@Param a	First heightmap.
 	@Param b	Second heightmap. For each cell in the destination map (this for C++), value = a.value + b.value
-	@Param res	In the C and python versions, the address of the destination heightmap.
+	@Param res	In the C and Python versions, the address of the destination heightmap.
 	*/
 	void add(const TCODHeightMap *a, const TCODHeightMap *b);
 
@@ -213,7 +216,7 @@ public :
 	@C# void TCODHeightMap::multiply(TCODHeightMap a, TCODHeightMap b)
 	@Param a	First heightmap.
 	@Param b	Second heightmap. For each cell in the destination map (this for C++), value = a.value * b.value
-	@Param res	In the C and python versions, the address of the destination heightmap.
+	@Param res	In the C and Python versions, the address of the destination heightmap.
 	*/
 	void multiply(const TCODHeightMap *a, const TCODHeightMap *b);
 
@@ -474,7 +477,22 @@ public :
 	void getMinMax(float *min, float *max) const;
 
 //	void heatErosion(int nbPass,float minSlope,float erosionCoef,float sedimentationCoef,TCODRandom *rnd);
-//	void midPointDeplacement(TCODRandom *rnd);
+	/**
+	@PageName heightmap_modify
+	@FuncTitle Generate a map with mid-point displacement
+	@FuncDesc This algorithm generates a realistic fractal heightmap using the <a href="http://en.wikipedia.org/wiki/Diamond-square_algorithm">diamond-square</a> (or random midpoint displacement) algorithm.
+		The roughness range should be comprised between 0.4 and 0.6. The image below show the same map with roughness varying from 0.4 to 0.6.
+		<img src="midpoint.png" />
+		It's also a good habit to normalize the map after using this algorithm to avoid unexpected heights.
+
+	@Cpp void TCODHeightMap::midPointDisplacement(TCODRandom *rng=NULL,float roughness=0.45f)
+	@C void TCOD_heightmap_mid_point_displacement(TCOD_heightmap_t *hm, TCOD_random_t rnd, float roughness)
+	@Py heightmap_mid_point_displacement(hm, rng, roughness)
+	@Param hm	In the C and Python version, the address of the heightmap struct returned by the creation function.
+	@Param rng	Random number generation to use, or NULL/0 to use the default one.
+	@Param roughness	Map roughness.
+	*/
+	void midPointDisplacement(TCODRandom *rnd = NULL, float roughness=0.45f);
 	void islandify(float seaLevel,TCODRandom *rnd); // lowers the terrain near the heightmap borders
 	// TODO : checks island connectivity with floodfill
 private :

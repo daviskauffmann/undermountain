@@ -1,34 +1,38 @@
-/*
-* libtcod 1.5.1
-* Copyright (c) 2008,2009,2010,2012 Jice & Mingos
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * The name of Jice or Mingos may not be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY JICE AND MINGOS ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL JICE OR MINGOS BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
+/* libtcod
+ * Copyright © 2008-2019 Jice and the libtcod contributors.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * The name of copyright holder nor the names of its contributors may not
+ *       be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef _TCOD_SYS_HPP
 #define _TCOD_SYS_HPP
 
+#include "image.hpp"
+#include "mouse.hpp"
+#include "sys.h"
 /**
+
 	@PageName system
 	@PageCategory Core
 	@PageTitle System layer
@@ -108,30 +112,31 @@ public :
 	*/
 	static float getLastFrameLength();
 
+#ifdef TCOD_OSUTIL_SUPPORT
 	/**
 	@PageName system_time
 	@FuncTitle Pause the program
 	@FuncDesc Use this function to stop the program execution for a specified number of milliseconds.
-	@Cpp static void TCODSystem::sleepMilli(uint32 val)
-	@C void TCOD_sys_sleep_milli(uint32 val)
+	@Cpp static void TCODSystem::sleepMilli(uint32_t val)
+	@C void TCOD_sys_sleep_milli(uint32_t val)
 	@Py sys_sleep_milli(val)
 	@C# static void TCODSystem::sleepMilli(uint val)
 	@Lua tcod.system.sleepMilli(val)
 	@Param val number of milliseconds before the function returns
 	*/
-	static void sleepMilli(uint32 val);
+	static void sleepMilli(uint32_t val);
 
 	/**
 	@PageName system_time
 	@FuncTitle Get global timer in milliseconds
 	@FuncDesc This function returns the number of milliseconds since the program has started.
-	@Cpp static uint32 TCODSystem::getElapsedMilli()
-	@C uint32 TCOD_sys_elapsed_milli()
+	@Cpp static uint32_t TCODSystem::getElapsedMilli()
+	@C uint32_t TCOD_sys_elapsed_milli()
 	@Py sys_elapsed_milli()
 	@C# static uint TCODSystem::getElapsedMilli()
 	@Lua tcod.system.getElapsedMilli()
 	*/
-	static uint32 getElapsedMilli();
+	static uint32_t getElapsedMilli();
 
 	/**
 	@PageName system_time
@@ -144,14 +149,17 @@ public :
 	@Lua tcod.system.getElapsedSeconds()
 	*/
 	static float getElapsedSeconds();
+#endif
 
+#ifdef TCOD_CONSOLE_SUPPORT
 	/**
 	@PageName console_blocking_input
 	@FuncTitle Waiting for any event (mouse or keyboard)
-	@FuncDesc There's a more generic function that waits for an event from the user. The eventMask shows what events we're waiting for.
+	@FuncDesc This function waits for an event from the user. The eventMask shows what events we're waiting for.
 		The return value indicate what event was actually triggered. Values in key and mouse structures are updated accordingly.
 		If flush is false, the function waits only if there are no pending events, else it returns the first event in the buffer.
 	@Cpp typedef enum {
+		TCOD_EVENT_NONE=0,
 		TCOD_EVENT_KEY_PRESS=1,
 		TCOD_EVENT_KEY_RELEASE=2,
 		TCOD_EVENT_KEY=TCOD_EVENT_KEY_PRESS|TCOD_EVENT_KEY_RELEASE,
@@ -159,8 +167,8 @@ public :
 		TCOD_EVENT_MOUSE_PRESS=8,
 		TCOD_EVENT_MOUSE_RELEASE=16,
 		TCOD_EVENT_MOUSE=TCOD_EVENT_MOUSE_MOVE|TCOD_EVENT_MOUSE_PRESS|TCOD_EVENT_MOUSE_RELEASE,
-		TCOD_EVENT_ANY=TCOD_EVENT_KEY|TCOD_EVENT_MOUSE,		
-	} TCOD_event_t; 
+		TCOD_EVENT_ANY=TCOD_EVENT_KEY|TCOD_EVENT_MOUSE,
+	} TCOD_event_t;
 	static TCOD_event_t TCODSystem::waitForEvent(int eventMask, TCOD_key_t *key, TCOD_mouse_t *mouse, bool flush)
 	@C TCOD_event_t TCOD_sys_wait_for_event(int eventMask, TCOD_key_t *key, TCOD_mouse_t *mouse, bool flush)
 	@Py sys_wait_for_event(eventMask,key,mouse,flush)
@@ -177,14 +185,14 @@ public :
 		TCOD_key_t key;
 		TCOD_mouse_t mouse;
 		TCOD_event_t ev = TCOD_sys_wait_for_event(TCOD_EVENT_ANY,&key,&mouse,true);
-		if ( ev == TCOD_EVENT_KEY_PRESS && key.c == 'i' ) { ... open inventory ... }	
+		if ( ev == TCOD_EVENT_KEY_PRESS && key.c == 'i' ) { ... open inventory ... }
 	*/
 	static TCOD_event_t waitForEvent(int eventMask, TCOD_key_t *key, TCOD_mouse_t *mouse, bool flush);
 
 	/**
 	@PageName console_non_blocking_input
 	@FuncTitle Checking for any event (mouse or keyboard)
-	@FuncDesc There's a more generic function that checks if an event from the user is in the buffer. The eventMask shows what events we're waiting for.
+	@FuncDesc This function checks if an event from the user is in the buffer. The eventMask shows what events we're waiting for.
 		The return value indicate what event was actually found. Values in key and mouse structures are updated accordingly.
 	@Cpp typedef enum {
 		TCOD_EVENT_KEY_PRESS=1,
@@ -194,8 +202,8 @@ public :
 		TCOD_EVENT_MOUSE_PRESS=8,
 		TCOD_EVENT_MOUSE_RELEASE=16,
 		TCOD_EVENT_MOUSE=TCOD_EVENT_MOUSE_MOVE|TCOD_EVENT_MOUSE_PRESS|TCOD_EVENT_MOUSE_RELEASE,
-		TCOD_EVENT_ANY=TCOD_EVENT_KEY|TCOD_EVENT_MOUSE,		
-	} TCOD_event_t; 
+		TCOD_EVENT_ANY=TCOD_EVENT_KEY|TCOD_EVENT_MOUSE,
+	} TCOD_event_t;
 	static TCOD_event_t TCODSystem::checkForEvent(int eventMask, TCOD_key_t *key, TCOD_mouse_t *mouse)
 	@C TCOD_event_t TCOD_sys_check_for_event(int eventMask, TCOD_key_t *key, TCOD_mouse_t *mouse)
 	@Py sys_check_for_event(eventMask,key,mouse)
@@ -211,9 +219,12 @@ public :
 		TCOD_key_t key;
 		TCOD_mouse_t mouse;
 		TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY,&key,&mouse);
-		if ( ev == TCOD_EVENT_KEY_PRESS && key.c == 'i' ) { ... open inventory ... }	
+		if ( ev == TCOD_EVENT_KEY_PRESS && key.c == 'i' ) { ... open inventory ... }
 	*/
 	static TCOD_event_t checkForEvent(int eventMask, TCOD_key_t *key, TCOD_mouse_t *mouse);
+#endif
+
+#ifndef TCOD_BARE
 	/**
 	@PageName system_screenshots
 	@PageFather system
@@ -227,12 +238,13 @@ public :
 	@Param filename Name of the file. If NULL, a filename is automatically generated with the form "./screenshotNNN.png", NNN being the first free number (if a file named screenshot000.png already exist, screenshot001.png will be used, and so on...).
 	*/
 	static void saveScreenshot(const char *filename);
+#endif
 
 	/**
 	@PageName system_filesystem
 	@PageFather system
 	@PageTitle Filesystem utilities
-	@PageDesc Those are a few function that cannot be easily implemented in a portable way in C/C++. They have no python wrapper since python provides its own builtin functions. All those functions return false if an error occured.
+	@PageDesc Those are a few function that cannot be easily implemented in a portable way in C/C++. They have no Python wrapper since Python provides its own builtin functions. All those functions return false if an error occurred.
 	@FuncTitle Create a directory
 	@Cpp static bool TCODSystem::createDirectory(const char *path)
 	@C bool TCOD_sys_create_directory(const char *path)
@@ -302,14 +314,14 @@ public :
 	@FuncTitle Read the content of a file into memory
 	@FuncDesc This is a portable function to read the content of a file from disk or from the application apk (android).
 		buf must be freed with free(buf).
-	@Cpp static bool TCODSystem::readFile(const char *filename, unsigned char **buf, uint32 *size)
-	@C bool TCOD_sys_read_file(const char *filename, unsigned char **buf, uint32 *size)
+	@Cpp static bool TCODSystem::readFile(const char *filename, unsigned char **buf, uint32_t *size)
+	@C bool TCOD_sys_read_file(const char *filename, unsigned char **buf, uint32_t *size)
 	@Param filename the file name
 	@Param buf a buffer to be allocated and filled with the file content
 	@Param size the size of the allocated buffer.
 	@CppEx
 		unsigned char *buf;
-		uint32 size;
+		uint32_t size;
 		if (TCODSystem::readFile("myfile.dat",&buf,&size)) {
 		    // do something with buf
 		    free(buf);
@@ -319,14 +331,14 @@ public :
 		    // do something with buf
 		    free(buf);
 		}
-	*/	
-	static bool readFile(const char *filename, unsigned char **buf, uint32 *size);
+	*/
+	static bool readFile(const char *filename, unsigned char **buf, size_t *size);
 	/**
 	@PageName system_filesystem
 	@FuncTitle Write the content of a memory buffer to a file
 	@FuncDesc This is a portable function to write some data to a file.
-	@Cpp static bool TCODSystem::writeFile(const char *filename, unsigned char *buf, uint32 size)
-	@C bool TCOD_sys_write_file(const char *filename, unsigned char *buf, uint32 size)
+	@Cpp static bool TCODSystem::writeFile(const char *filename, unsigned char *buf, uint32_t size)
+	@C bool TCOD_sys_write_file(const char *filename, unsigned char *buf, uint32_t size)
 	@Param filename the file name
 	@Param buf a buffer containing the data to write
 	@Param size the number of bytes to write.
@@ -334,8 +346,8 @@ public :
 		TCODSystem::writeFile("myfile.dat",buf,size));
 	@CEx
 		TCOD_sys_write_file("myfile.dat",buf,size));
-	*/		
-	static bool writeFile(const char *filename, unsigned char *buf, uint32 size);
+	*/
+	static bool writeFile(const char *filename, unsigned char *buf, uint32_t size);
 	/**
 	@PageName system_sdlcbk
 	@PageFather system
@@ -383,13 +395,14 @@ public :
 	/**
 	@PageName system_sdlcbk
 	@FuncTitle Managing screen redraw
-	@FuncDesc libtcod is not aware of the part of the screen your SDL renderer has updated. If no change occured in the console, it won't redraw them except if you tell him to do so with this function
+	@FuncDesc libtcod is not aware of the part of the screen your SDL renderer has updated. If no change occurred in the console, it won't redraw them except if you tell him to do so with this function
 	@Cpp void TCODConsole::setDirty(int x, int y, int w, int h)
 	@C void TCOD_console_set_dirty(int x, int y, int w, int h)
 	@Py TCOD_console_set_dirty(x, y, w, h)
 	@Param x,y,w,h Part of the root console you want to redraw even if nothing has changed in the console back/fore/char.
 	*/
 
+#ifndef TCOD_BARE
 	/**
 	@PageName system_misc
 	@PageFather system
@@ -442,6 +455,7 @@ public :
 	@Param offx,offy contains the position of the console on the screen when using fullscreen mode.
 	*/
 	static void getFullscreenOffsets(int *offx, int *offy);
+
 	/**
 	@PageName system_misc
 	@FuncTitle Get the font size
@@ -467,7 +481,9 @@ public :
 	@Param x,y position in pixels of the top-left corner of the character in the image
 	*/
 	static void updateChar(int asciiCode, int fontx, int fonty,const TCODImage *img,int x,int y);
+#endif
 
+#ifndef TCOD_BARE
 	/**
 	@PageName system_misc
 	@FuncTitle Dynamically change libtcod's internal renderer
@@ -497,22 +513,27 @@ public :
 	/**
 	@PageName system_clipboard
 	@PageTitle Clipboard integration
-	@PageDesc With these functions, you can copy data in your OS' clipboard from the game or retrieve data from the clipboard.
+	@PageDesc With these functions, you can copy data in your operating system's clipboard from the game or retrieve data from the clipboard.
 	@PageFather system
-	@FuncTitle Copy data to the clipboard
-	@Cpp static void TCODSystem::setClipboard(const char *value)
-	@C void TCOD_sys_clipboard_set(const char *value)
-	@Param value Text to copy in the clipboard
+	@FuncTitle Set current clipboard contents
+	@FuncDesc Takes UTF-8 text and copies it into the system clipboard.  On Linux, because an application cannot access the system clipboard unless a window is open, if no window is open the call will do nothing.
+	@Cpp static bool TCODSystem::setClipboard(const char *value)
+	@C bool TCOD_sys_clipboard_set(const char *value)
+	@Py sys_clipboard_set(value)
+	@Param value UTF-8 text to copy into the clipboard
 	*/
-	static void setClipboard(const char *value);
+	static bool setClipboard(const char *value);
 
 	/**
 	@PageName system_clipboard
-	@FuncTitle Paste data from the clipboard
+	@FuncTitle Get current clipboard contents
+	@FuncDesc Returns the UTF-8 text currently in the system clipboard.  On Linux, because an application cannot access the system clipboard unless a window is open, if no window is open an empty string will be returned.  For C and C++, note that the pointer is borrowed, and libtcod will take care of freeing the memory.
 	@Cpp static char *TCODSystem::getClipboard()
 	@C char *TCOD_sys_clipboard_get()
+	@Py sys_clipboard_get() # Returns UTF-8 string
 	*/
 	static char *getClipboard();
+#endif
 
 	// thread stuff
 	static int getNumCores();

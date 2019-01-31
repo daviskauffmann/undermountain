@@ -1,4 +1,4 @@
-#include <platform/platform.h>
+#include <platform.h>
 
 struct input *input;
 
@@ -84,10 +84,10 @@ void input_handle(void)
                 }
             }
             break;
-            case TCODK_CHAR:
+            case TCODK_TEXT:
             {
                 bool handled = false;
-                int alpha = key.c - 'a';
+                int alpha = key.text[0] - 'a';
 
                 switch (ui->menu_state)
                 {
@@ -103,14 +103,15 @@ void input_handle(void)
                         {
                             game_init();
 
-                            if (TCOD_sys_file_exists(SAVE_PATH))
-                            {
-                                game_load();
-                            }
-                            else
-                            {
-                                game_new();
-                            }
+                            // if (TCOD_sys_file_exists(SAVE_PATH))
+                            // {
+                            //     game_load();
+                            // }
+                            // else
+                            // {
+                            //     game_new();
+                            // }
+                            game_new();
 
                             ui->state = UI_STATE_GAME;
                         }
@@ -153,15 +154,16 @@ void input_handle(void)
                 case MAIN_MENU_OPTION_START:
                 {
                     game_init();
-
-                    if (TCOD_sys_file_exists(SAVE_PATH))
-                    {
-                        game_load();
-                    }
-                    else
-                    {
-                        game_new();
-                    }
+                    
+                    // if (TCOD_sys_file_exists(SAVE_PATH))
+                    // {
+                    //     game_load();
+                    // }
+                    // else
+                    // {
+                    //     game_new();
+                    // }
+                    game_new();
 
                     ui->state = UI_STATE_GAME;
                 }
@@ -517,10 +519,10 @@ void input_handle(void)
                 }
             }
             break;
-            case TCODK_CHAR:
+            case TCODK_TEXT:
             {
                 bool handled = false;
-                int alpha = key.c - 'a';
+                int alpha = key.text[0] - 'a';
 
                 if (input->inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(game->player->items))
                 {
@@ -610,7 +612,7 @@ void input_handle(void)
                     break;
                 }
 
-                switch (key.c)
+                switch (key.text[0])
                 {
                 case '<':
                 {

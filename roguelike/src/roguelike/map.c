@@ -1,4 +1,4 @@
-#include <roguelike/roguelike.h>
+#include <roguelike.h>
 
 #define MAP_ALGORITHM_CUSTOM
 

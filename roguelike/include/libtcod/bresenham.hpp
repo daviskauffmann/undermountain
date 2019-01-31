@@ -1,32 +1,35 @@
-/*
-* libtcod 1.5.1
-* Copyright (c) 2008,2009,2010,2012 Jice & Mingos
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * The name of Jice or Mingos may not be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY JICE AND MINGOS ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL JICE OR MINGOS BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
+/* libtcod
+ * Copyright © 2008-2019 Jice and the libtcod contributors.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * The name of copyright holder nor the names of its contributors may not
+ *       be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef _TCOD_BRESENHAM_HPP
 #define _TCOD_BRESENHAM_HPP
+
+#include "bresenham.h"
+
 class TCODLIB_API TCODLineListener {
 public :
 	virtual bool putPoint(int x,int y) = 0;
@@ -51,7 +54,7 @@ public :
 	@Param xTo,yTo Coordinates of the line's ending point.
 	*/
 	static void init(int xFrom, int yFrom, int xTo, int yTo);
-	
+
 	/**
 	@PageName line
 	@FuncTitle Walking the line
@@ -62,20 +65,20 @@ public :
 	@C# static bool TCODLine::step(ref int xCur, ref int yCur)
 	@Lua tcod.line.step(x,y) -- returns lineEnd,x,y
 	@Param xCur,yCur the coordinates of the next cell on the line are stored here when the function returns
-	@CppEx 
+	@CppEx
 		// Going from point 5,8 to point 13,4
 		int x = 5, y = 8;
 		TCODLine::init(x,y,13,4);
 		do {
 		    // update cell x,y
 		} while (!TCODLine::step(&x,&y));
-	@CEx 
+	@CEx
 		int x = 5, y = 8;
 		TCOD_line_init(x,y,13,4);
 		do {
-		    // update cell x,y 
+		    // update cell x,y
 		} while (!TCOD_line_step(&x,&y));
-	@PyEx 
+	@PyEx
 		libtcod.line_init(5,8,13,4)
 		# update cell 5,8
 		x,y=libtcod.line_step()
@@ -89,8 +92,8 @@ public :
 		repeat
 			-- update cell x,y
 			lineEnd,x,y = tcod.line.step(x,y)
-		until lineEnd		
-	*/	
+		until lineEnd
+	*/
 	static bool step(int *xCur, int *yCur);
 
 	/**
@@ -130,7 +133,7 @@ TCOD_line_line(5,8,13,4,my_listener);
 	@PyEx def my_listener(x,y):
     print x,y
     return True
-libtcod.line_line(5,8,13,4,my_listener)	 
+libtcod.line_line(5,8,13,4,my_listener)
 	*/
 	static bool line(int xFrom, int yFrom, int xTo, int yTo, TCODLineListener *listener);
 };

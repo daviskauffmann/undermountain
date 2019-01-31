@@ -1,4 +1,4 @@
-#include <platform/platform.h>
+#include <platform.h>
 
 struct tooltip_option *tooltip_option_create(char *text, struct tooltip_data data, bool(*fn)(struct tooltip_data data))
 {

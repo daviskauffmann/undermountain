@@ -1,35 +1,36 @@
-/*
-* libtcod 1.5.1
-* Copyright (c) 2008,2009,2010,2012 Jice & Mingos
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * The name of Jice or Mingos may not be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY JICE AND MINGOS ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL JICE OR MINGOS BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
+/* libtcod
+ * Copyright © 2008-2019 Jice and the libtcod contributors.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * The name of copyright holder nor the names of its contributors may not
+ *       be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef _TCOD_PERLIN_HPP
 #define _TCOD_PERLIN_HPP
 
+#include "mersenne.hpp"
+#include "noise.h"
 #include "noise_defaults.h"
-
 /**
  @PageName noise
  @PageCategory Base toolkits
@@ -121,12 +122,12 @@ class TCODLIB_API TCODNoise {
 
 		/**
 		@PageName noise_init
-		@FuncDesc To release ressources used by a generator, use those functions :
+		@FuncDesc To release resources used by a generator, use those functions :
 		@Cpp TCODNoise::~TCODNoise()
 		@C void TCOD_noise_delete(TCOD_noise_t noise)
 		@Py noise_delete(noise)
 		@C# void TCODNoise::Dispose()
-		@Param noise	In the C and python versions, the generator handler, returned by the initialization function.
+		@Param noise	In the C and Python versions, the generator handler, returned by the initialization function.
 		@CppEx
 			// create a generator
 			TCODNoise *noise = new TCODNoise(2);
@@ -156,7 +157,7 @@ class TCODLIB_API TCODNoise {
 		@PageFather noise
 		@PageTitle Choosing a noise type
 		@FuncTitle Choosing a noise type
-		@FuncDesc Use this function to define the default algorithm used by the noise functions. 
+		@FuncDesc Use this function to define the default algorithm used by the noise functions.
 			The default algorithm is simplex. It's much faster than Perlin, especially in 4 dimensions. It has a better contrast too.
 		@Cpp void TCODNoise::setType(TCOD_noise_type_t type)
 		@C void TCOD_noise_set_type(TCOD_noise_t noise, TCOD_noise_type_t type)
@@ -187,7 +188,7 @@ float TCOD_noise_get_ex(TCOD_noise_t noise, float *f, TCOD_noise_type_t type)
 		@C# float TCODNoise::get(float[] f, type=NoiseDefault)
 		@Param noise	In the C version, the generator handler, returned by the initialization function.
 		@Param f	An array of coordinates, depending on the generator dimensions (between 1 and 4). The same array of coordinates will always return the same value.
-		@Param type	The algorithm to use. If not defined, use the default one (set with setType or simplex if not set) 
+		@Param type	The algorithm to use. If not defined, use the default one (set with setType or simplex if not set)
 		@CppEx
 			// 1d noise
 			TCODNoise * noise1d = new TCODNoise(1);
@@ -234,7 +235,7 @@ float TCOD_noise_get_fbm(TCOD_noise_t noise, float *f, float octaves, TCOD_noise
 		@Param noise	In the C version, the generator handler, returned by the initialization function.
 		@Param f	An array of coordinates, depending on the generator dimensions (between 1 and 4). The same array of coordinates will always return the same value.
 		@Param octaves	Number of iterations. Must be < TCOD_NOISE_MAX_OCTAVES = 128
-		@Param type	The algorithm to use. If not defined, use the default one (set with setType or simplex if not set) 
+		@Param type	The algorithm to use. If not defined, use the default one (set with setType or simplex if not set)
 		@CppEx
 			// 1d fbm
 			TCODNoise * noise1d = new TCODNoise(1);

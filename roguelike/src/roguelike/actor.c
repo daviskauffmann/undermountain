@@ -1,4 +1,4 @@
-#include <roguelike/roguelike.h>
+#include <roguelike.h>
 
 static int calc_ability_modifier(int ability);
 
@@ -1472,7 +1472,7 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
-        TCOD_sys_delete_file(SAVE_PATH);
+        // TCOD_sys_delete_file(SAVE_PATH);
 
         game_log(
             actor->floor,

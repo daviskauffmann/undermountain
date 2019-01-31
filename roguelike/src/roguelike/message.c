@@ -1,4 +1,4 @@
-#include <roguelike/roguelike.h>
+#include <roguelike.h>
 
 struct message *message_create(char *text, TCOD_color_t color)
 {

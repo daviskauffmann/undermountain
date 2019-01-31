@@ -1,32 +1,35 @@
-/*
-* libtcod 1.5.1
-* Copyright (c) 2008,2009,2010,2012 Jice & Mingos
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * The name of Jice or Mingos may not be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY JICE AND MINGOS ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL JICE OR MINGOS BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
+/* libtcod
+ * Copyright © 2008-2019 Jice and the libtcod contributors.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * The name of copyright holder nor the names of its contributors may not
+ *       be used to endorse or promote products derived from this software
+ *       without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef _TCOD_CONSOLE_TYPES_H
 #define _TCOD_CONSOLE_TYPES_H
+
+#include "portability.h"
+#include "color.h"
 
 typedef enum {
 	TCODK_NONE,
@@ -94,18 +97,24 @@ typedef enum {
 	TCODK_NUMLOCK,
 	TCODK_SCROLLLOCK,
 	TCODK_SPACE,
-	TCODK_CHAR
+	TCODK_CHAR,
+	TCODK_TEXT
 } TCOD_keycode_t;
 
-/* key data : special code or character */
+#define TCOD_KEY_TEXT_SIZE 32
+
+/* key data : special code or character or text */
 typedef struct {
 	TCOD_keycode_t vk; /*  key code */
 	char c; /* character if vk == TCODK_CHAR else 0 */
+	char text[TCOD_KEY_TEXT_SIZE]; /* text if vk == TCODK_TEXT else text[0] == '\0' */
 	bool pressed ; /* does this correspond to a key press or key release event ? */
 	bool lalt ;
 	bool lctrl ;
+	bool lmeta ;
 	bool ralt ;
 	bool rctrl ;
+	bool rmeta ;
 	bool shift ;
 } TCOD_key_t;
 
@@ -236,26 +245,105 @@ typedef enum {
 	TCOD_KEY_RELEASED=2,
 } TCOD_key_status_t;
 
-/* custom font flags */
+/**
+ *  These font flags can be OR'd together into a bit-field and passed to
+ *  TCOD_console_set_custom_font
+ */
 typedef enum {
-	TCOD_FONT_LAYOUT_ASCII_INCOL=1,
-	TCOD_FONT_LAYOUT_ASCII_INROW=2,
-	TCOD_FONT_TYPE_GREYSCALE=4,
-	TCOD_FONT_TYPE_GRAYSCALE=4,
-	TCOD_FONT_LAYOUT_TCOD=8,
+  /** Tiles are arranged in column-major order.
+   *
+   *       0 3 6
+   *       1 4 7
+   *       2 5 8
+   */
+  TCOD_FONT_LAYOUT_ASCII_INCOL=1,
+  /** Tiles are arranged in row-major order.
+   *
+   *       0 1 2
+   *       3 4 5
+   *       6 7 8
+   */
+  TCOD_FONT_LAYOUT_ASCII_INROW=2,
+  /** Converts all tiles into a monochrome gradient. */
+  TCOD_FONT_TYPE_GREYSCALE=4,
+  TCOD_FONT_TYPE_GRAYSCALE=4,
+  /** A unique layout used by some of libtcod's fonts. */
+  TCOD_FONT_LAYOUT_TCOD=8,
+  /**
+   *  Decode a code page 437 tileset into Unicode code-points.
+   *  \rst
+   *  .. versionadded:: 1.10
+   *  \endrst
+   */
+  TCOD_FONT_LAYOUT_CP437=16,
 } TCOD_font_flags_t;
-
+/**
+ *  The available renderers.
+ */
 typedef enum {
-	TCOD_RENDERER_GLSL,
-	TCOD_RENDERER_OPENGL,
-	TCOD_RENDERER_SDL,
-	TCOD_NB_RENDERERS,
+  /** An OpenGL implementation using a shader. */
+  TCOD_RENDERER_GLSL,
+  /**
+   *  An OpenGL implementation without a shader.
+   *
+   *  Performs worse than TCOD_RENDERER_GLSL without many benefits.
+   */
+  TCOD_RENDERER_OPENGL,
+  /**
+   *  A software based renderer.
+   *
+   *  The font file is loaded into RAM instead of VRAM in this implementation.
+   */
+  TCOD_RENDERER_SDL,
+  /**
+   *  A new SDL2 renderer.  Allows the window to be resized.
+   *  \rst
+   *  .. versionadded:: 1.8
+   *  \endrst
+   */
+  TCOD_RENDERER_SDL2,
+  /**
+   *  A new OpenGL 2.0 core renderer.  Allows the window to be resized.
+   *  \rst
+   *  .. versionadded:: 1.9
+   *
+   *  .. versionchanged:: 1.11.0
+   *      This renderer now uses OpenGL 2.0 instead of 2.1.
+   *  \endrst
+   */
+  TCOD_RENDERER_OPENGL2,
+  TCOD_NB_RENDERERS,
 } TCOD_renderer_t;
 
+/**
+ *  \enum TCOD_alignment_t
+ *
+ *  Print justification options.
+ */
 typedef enum {
-	TCOD_LEFT, 
-	TCOD_RIGHT, 
-	TCOD_CENTER 
+	TCOD_LEFT,
+	TCOD_RIGHT,
+	TCOD_CENTER
 } TCOD_alignment_t;
 
+/** Private console struct. */
+typedef struct TCOD_Console {
+  /** Character code array. */
+  int *ch_array;
+  /** Pointers to arrays of TCOD_color_t colors. */
+  TCOD_color_t *fg_array, *bg_array;
+  /** Console width and height (in characters, not pixels.) */
+  int w,h;
+  /** Default background operator for print & print_rect functions. */
+  TCOD_bkgnd_flag_t bkgnd_flag;
+  /** Default alignment for print & print_rect functions. */
+  TCOD_alignment_t alignment;
+  /** Foreground (text) and background colors. */
+  TCOD_color_t fore, back;
+  /** True if a key color is being used. */
+  bool has_key_color;
+  /** The current key color for this console. */
+  TCOD_color_t key_color;
+} TCOD_Console;
+typedef TCOD_Console *TCOD_console_t;
 #endif /* _TCOD_CONSOLE_TYPES_H */

@@ -1,4 +1,4 @@
-#include <roguelike.h>
+#include <roguelike/roguelike.h>
 
 static int calc_ability_modifier(int ability);
 

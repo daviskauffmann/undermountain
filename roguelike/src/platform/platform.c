@@ -1,4 +1,4 @@
-#include <platform.h>
+#include <platform/platform.h>
 
 int platform_run(void)
 {

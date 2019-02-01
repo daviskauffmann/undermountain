@@ -1,4 +1,4 @@
-#include <roguelike.h>
+#include <roguelike/roguelike.h>
 
 struct game *game;
 

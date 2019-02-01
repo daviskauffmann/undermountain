@@ -1,4 +1,4 @@
-#include <roguelike.h>
+#include <roguelike/roguelike.h>
 
 struct item *item_create(enum item_type type, int floor, int x, int y)
 {

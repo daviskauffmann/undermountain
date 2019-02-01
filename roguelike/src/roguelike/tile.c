@@ -1,4 +1,4 @@
-#include <roguelike.h>
+#include <roguelike/roguelike.h>
 
 void tile_init(struct tile *tile, enum tile_type type, bool seen)
 {

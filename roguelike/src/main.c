@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <platform.h>
+#include <platform/platform.h>
 
 int main(int argc, char *args[])
 {

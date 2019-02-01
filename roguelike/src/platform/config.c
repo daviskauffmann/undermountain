@@ -1,4 +1,4 @@
-#include <platform.h>
+#include <platform/platform.h>
 
 const char *font_file;
 TCOD_font_flags_t font_flags;

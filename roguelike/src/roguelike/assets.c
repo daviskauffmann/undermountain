@@ -1,4 +1,4 @@
-#include <roguelike.h>
+#include <roguelike/roguelike.h>
 
 struct tile_common tile_common;
 struct tile_info tile_info[NUM_TILE_TYPES];

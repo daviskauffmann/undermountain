@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <libtcod.h>
+#include <libtcod/libtcod.h>
 
 #include "actor.h"
 #include "assets.h"

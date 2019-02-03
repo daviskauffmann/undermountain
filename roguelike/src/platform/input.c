@@ -1,5 +1,9 @@
 #include <platform/platform.h>
 
+// TODO: better mouse controls
+// design a system where when selecting an action from the right-click menu, other actions are ignored as the actor paths to the location
+// when left-clicking a hostile actor, or selecting Attack from the menu, should track that actor's position and follow it. when reached, attack once and stop automoving
+
 struct input *input;
 
 static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
@@ -1016,19 +1020,25 @@ void input_handle(void)
                             {
                             case INVENTORY_ACTION_EQUIP:
                             {
-                                input->took_turn = actor_equip(game->player, item);
-
-                                input->inventory_action = INVENTORY_ACTION_NONE;
+                                if (game->state == GAME_STATE_PLAY)
+                                {
+                                    input->took_turn = actor_equip(game->player, item);
+                                }
                             }
                             break;
                             case INVENTORY_ACTION_DROP:
                             {
-                                input->took_turn = actor_drop(game->player, item);
-
-                                input->inventory_action = INVENTORY_ACTION_NONE;
+                                if (game->state == GAME_STATE_PLAY)
+                                {
+                                    input->took_turn = actor_drop(game->player, item);
+                                }
                             }
                             break;
                             }
+
+                            input->inventory_action = INVENTORY_ACTION_NONE;
+
+                            ui->panel_status[PANEL_INVENTORY].selection_mode = false;
                         }
                     }
                     else if (input->character_action != CHARACTER_ACTION_NONE)
@@ -1037,12 +1047,15 @@ void input_handle(void)
 
                         if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                         {
-                            input->took_turn = actor_unequip(game->player, equip_slot);
-
-                            input->character_action = CHARACTER_ACTION_NONE;
-
-                            ui->panel_status[PANEL_CHARACTER].selection_mode = false;
+                            if (game->state == GAME_STATE_PLAY)
+                            {
+                                input->took_turn = actor_unequip(game->player, equip_slot);
+                            }
                         }
+
+                        input->character_action = CHARACTER_ACTION_NONE;
+
+                        ui->panel_status[PANEL_CHARACTER].selection_mode = false;
                     }
                 }
             }

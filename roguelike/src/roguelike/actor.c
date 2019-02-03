@@ -213,7 +213,7 @@ void actor_calc_fov(struct actor *actor)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
-            if (TCOD_map_is_in_fov(los_map, x, y))
+            if (!TCOD_map_is_in_fov(actor->fov, x, y) && TCOD_map_is_in_fov(los_map, x, y))
             {
                 for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
                 {

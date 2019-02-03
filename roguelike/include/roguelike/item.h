@@ -57,20 +57,20 @@ struct equip_slot_info
     char *label;
 };
 
-enum damage
+enum damage_type
 {
-    DAMAGE_ACID,
-    DAMAGE_BLUDGEONING,
-    DAMAGE_COLD,
-    DAMAGE_DIVINE,
-    DAMAGE_ELECTRICAL,
-    DAMAGE_FIRE,
-    DAMAGE_MAGICAL,
-    DAMAGE_NEGATIVE,
-    DAMAGE_PIERCING,
-    DAMAGE_POSITIVE,
-    DAMAGE_SLASHING,
-    DAMAGE_SONIC
+    DAMAGE_TYPE_ACID,
+    DAMAGE_TYPE_BLUDGEONING,
+    DAMAGE_TYPE_COLD,
+    DAMAGE_TYPE_DIVINE,
+    DAMAGE_TYPE_ELECTRICAL,
+    DAMAGE_TYPE_FIRE,
+    DAMAGE_TYPE_MAGICAL,
+    DAMAGE_TYPE_NEGATIVE,
+    DAMAGE_TYPE_PIERCING,
+    DAMAGE_TYPE_POSITIVE,
+    DAMAGE_TYPE_SLASHING,
+    DAMAGE_TYPE_SONIC
 };
 
 enum weapon_size
@@ -87,7 +87,7 @@ struct base_item_info
     TCOD_color_t color;
     float weight;
     enum equip_slot equip_slot;
-    enum damage damage;
+    enum damage_type damage_type;
     enum weapon_size weapon_size;
     bool ranged;
     int num_dice;
@@ -151,10 +151,9 @@ enum item_type
     NUM_ITEM_TYPES
 };
 
-// TODO: redo how item properties work?
 enum item_property
 {
-    ITEM_PROPERTY_AC_SHIELD_1,
+    ITEM_PROPERTY_AC_BONUS_SHIELD_1,
     ITEM_PROPERTY_ENHANCEMENT_BONUS_1,
 
     NUM_ITEM_PROPERTIES

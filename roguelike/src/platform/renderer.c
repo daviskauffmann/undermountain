@@ -301,12 +301,10 @@ void renderer_draw(void)
                 TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "LEVEL    : %d", game->player->level);
                 TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "EXP      : %d", game->player->experience);
                 y++;
-                TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "STR: %d", game->player->strength);
-                TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "DEX: %d", game->player->dexterity);
-                TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "CON: %d", game->player->constitution);
-                TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "INT: %d", game->player->intelligence);
-                TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "WIS: %d", game->player->wisdom);
-                TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "CHA: %d", game->player->charisma);
+                for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+                {
+                    TCOD_console_printf(renderer->panel, 1, y++ - panel_status->scroll, "%s: %d", ability_info[ability].abbreviation, game->player->ability_scores[ability]);
+                }
                 y++;
                 for (enum equip_slot equip_slot = EQUIP_SLOT_ARMOR; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                 {

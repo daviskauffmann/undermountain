@@ -5,6 +5,7 @@ struct game *game;
 // NOTE: there is a memory leak when freeing the game
 // something is not being cleaned up properly because less memory is freed when calling game_quit() than was allocated with game_init()
 // not sure what is causing this, so keep looking into it
+// UPDATE: it seems to be coming from namegen
 
 void game_init(void)
 {
@@ -23,6 +24,7 @@ void game_init(void)
     }
 }
 
+// TODO: this should accept an actor which will become the player, presumably passed from a character creation menu
 void game_new(void)
 {
     for (int floor = 0; floor < NUM_MAPS; floor++)

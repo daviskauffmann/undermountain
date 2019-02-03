@@ -8,6 +8,7 @@ struct actor_common actor_common;
 struct race_info race_info[NUM_RACES];
 struct class_info class_info[NUM_CLASSES];
 struct prototype monster_prototype[NUM_MONSTERS];
+struct ability_info ability_info[NUM_ABILITIES];
 struct item_common item_common;
 struct equip_slot_info equip_slot_info[NUM_EQUIP_SLOTS];
 struct base_item_info base_item_info[NUM_BASE_ITEMS];
@@ -64,6 +65,11 @@ struct item_info item_info[NUM_ITEM_TYPES];
     monster_prototype[_monster].race = _race;             \
     monster_prototype[_monster].class = _class;
 
+#define ABILITY_INFO(_ability, _name, _abbreviation, _description) \
+    ability_info[_ability].name = _name;                              \
+    ability_info[_ability].abbreviation = _abbreviation;              \
+    ability_info[_ability].description = _description;
+
 #define ITEM_COMMON(_placeholder)             \
     item_common.__placeholder = _placeholder;
 
@@ -71,12 +77,12 @@ struct item_info item_info[NUM_ITEM_TYPES];
     equip_slot_info[_type].name = _name;      \
     equip_slot_info[_type].label = _label;
 
-#define BASE_ITEM_INFO(_type, _glyph, _color, _weight, _equip_slot, _damage, _weapon_size, _ranged, _num_dice, _die_to_roll, _crit_threat, _crit_mult, _base_cost, _stack, _base_ac, _armor_check_penalty, _arcane_spell_failure) \
+#define BASE_ITEM_INFO(_type, _glyph, _color, _weight, _equip_slot, _damage_type, _weapon_size, _ranged, _num_dice, _die_to_roll, _crit_threat, _crit_mult, _base_cost, _stack, _base_ac, _armor_check_penalty, _arcane_spell_failure) \
     base_item_info[_type].glyph = _glyph;                                                                                                                                                                                                \
     base_item_info[_type].color = _color;                                                                                                                                                                                                \
     base_item_info[_type].weight = _weight;                                                                                                                                                                                              \
     base_item_info[_type].equip_slot = _equip_slot;                                                                                                                                                                                      \
-    base_item_info[_type].damage = _damage;                                                                                                                                                                                              \
+    base_item_info[_type].damage_type = _damage_type;                                                                                                                                                                                              \
     base_item_info[_type].weapon_size = _weapon_size;                                                                                                                                                                                    \
     base_item_info[_type].ranged = _ranged;                                                                                                                                                                                              \
     base_item_info[_type].num_dice = _num_dice;                                                                                                                                                                                          \
@@ -192,6 +198,13 @@ void assets_load(void)
     MONSTER_PROTOTYPE(MONSTER_WYRMLING, "Wyrmling", RACE_DRAGON, CLASS_DRAGON);
     MONSTER_PROTOTYPE(MONSTER_ZOMBIE, "Zombie", RACE_UNDEAD, CLASS_UNDEAD);
 
+    ABILITY_INFO(ABILITY_STRENGTH, "Strength", "STR", "Measures a character's muscle, endurance, and stamina.");
+    ABILITY_INFO(ABILITY_DEXTERITY, "Dexterity", "DEX", "Encompasses several physical attributes including hand-eye coordination, agility, reaction speed, reflexes, and balance.");
+    ABILITY_INFO(ABILITY_CONSTITUTION, "Constitution", "CON", "Encompasses his physique, fitness, health, and physical resistance to hardship, injury, and disease.");
+    ABILITY_INFO(ABILITY_INTELLIGENCE, "Intelligence", "INT", "Represents a character's memory, reasoning, and learning ability, including areas outside those measured by the written word.");
+    ABILITY_INFO(ABILITY_WISDOM, "Wisdom", "WIS", "Describes a composite of the character's enlightenment, judgment, guile, willpower, common sense, and intuition.");
+    ABILITY_INFO(ABILITY_CHARISMA, "Charisma", "CHA", "Measures a character's persuasiveness, personal magnetism, and ability to lead.");
+
     ITEM_COMMON(0);
 
     EQUIP_SLOT_INFO(EQUIP_SLOT_ARMOR, "Armor", "Armor ");
@@ -203,30 +216,30 @@ void assets_load(void)
     EQUIP_SLOT_INFO(EQUIP_SLOT_MAIN_HAND, "Main Hand", "M-Hand");
     EQUIP_SLOT_INFO(EQUIP_SLOT_OFF_HAND, "Off Hand", "O-Hand");
 
-    BASE_ITEM_INFO(BASE_ITEM_BATTLEAXE, 'T', TCOD_white, 7, EQUIP_SLOT_MAIN_HAND, DAMAGE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 10, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_CLUB, '!', TCOD_white, 1, EQUIP_SLOT_MAIN_HAND, DAMAGE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 6, 20, 2, 3, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_DAGGER, '-', TCOD_white, 1, EQUIP_SLOT_MAIN_HAND, DAMAGE_PIERCING, WEAPON_SIZE_TINY, false, 1, 4, 19, 2, 4, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_GREATAXE, 'T', TCOD_white, 20, EQUIP_SLOT_MAIN_HAND, DAMAGE_SLASHING, WEAPON_SIZE_LARGE, false, 1, 12, 20, 3, 20, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_GREATSWORD, '|', TCOD_white, 15, EQUIP_SLOT_MAIN_HAND, DAMAGE_SLASHING, WEAPON_SIZE_LARGE, false, 2, 6, 19, 2, 50, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_HALBERD, 'P', TCOD_white, 15, EQUIP_SLOT_MAIN_HAND, DAMAGE_PIERCING, WEAPON_SIZE_LARGE, false, 1, 10, 20, 3, 10, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_HEAVY_CROSSBOW, 't', TCOD_white, 9, EQUIP_SLOT_MAIN_HAND, DAMAGE_PIERCING, WEAPON_SIZE_MEDIUM, true, 1, 10, 19, 2, 50, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_KATANA, '(', TCOD_white, 10, EQUIP_SLOT_MAIN_HAND, DAMAGE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 10, 19, 2, 40, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_BATTLEAXE, 'T', TCOD_white, 7, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 10, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_CLUB, '!', TCOD_white, 1, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 6, 20, 2, 3, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_DAGGER, '-', TCOD_white, 1, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_TINY, false, 1, 4, 19, 2, 4, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_GREATAXE, 'T', TCOD_white, 20, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_LARGE, false, 1, 12, 20, 3, 20, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_GREATSWORD, '|', TCOD_white, 15, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_LARGE, false, 2, 6, 19, 2, 50, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_HALBERD, 'P', TCOD_white, 15, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, false, 1, 10, 20, 3, 10, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_HEAVY_CROSSBOW, 't', TCOD_white, 9, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_MEDIUM, true, 1, 10, 19, 2, 50, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_KATANA, '(', TCOD_white, 10, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 10, 19, 2, 40, 1, 0, 0, 0);
     BASE_ITEM_INFO(BASE_ITEM_LARGE_SHIELD, ')', TCOD_white, 15, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 50, 1, 2, -2, 15);
-    BASE_ITEM_INFO(BASE_ITEM_LIGHT_CROSSBOW, 't', TCOD_white, 6, EQUIP_SLOT_MAIN_HAND, DAMAGE_PIERCING, WEAPON_SIZE_SMALL, true, 1, 8, 19, 2, 35, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_LONGBOW, '}', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_PIERCING, WEAPON_SIZE_LARGE, true, 1, 8, 20, 3, 75, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_LONGSWORD, '|', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 8, 19, 2, 15, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_MACE, '!', TCOD_white, 6, EQUIP_SLOT_MAIN_HAND, DAMAGE_BLUDGEONING, WEAPON_SIZE_SMALL, false, 1, 6, 19, 2, 5, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_LIGHT_CROSSBOW, 't', TCOD_white, 6, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_SMALL, true, 1, 8, 19, 2, 35, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_LONGBOW, '}', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, true, 1, 8, 20, 3, 75, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_LONGSWORD, '|', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 8, 19, 2, 15, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_MACE, '!', TCOD_white, 6, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_SMALL, false, 1, 6, 19, 2, 5, 1, 0, 0, 0);
     BASE_ITEM_INFO(BASE_ITEM_POTION, '!', TCOD_white, 0.5f, EQUIP_SLOT_NONE, 0, 0, false, 0, 0, 0, 0, 30, 10, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_QUARTERSTAFF, '/', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_BLUDGEONING, WEAPON_SIZE_LARGE, false, 1, 6, 20, 2, 1, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_SCIMITAR, '(', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 6, 18, 2, 15, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_SHORTBOW, '}', TCOD_white, 2, EQUIP_SLOT_MAIN_HAND, DAMAGE_PIERCING, WEAPON_SIZE_MEDIUM, true, 1, 6, 20, 3, 30, 1, 0, 0, 0);
-    BASE_ITEM_INFO(BASE_ITEM_SHORTSWORD, '-', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_PIERCING, WEAPON_SIZE_SMALL, false, 1, 6, 19, 2, 10, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_QUARTERSTAFF, '/', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_LARGE, false, 1, 6, 20, 2, 1, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_SCIMITAR, '(', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 6, 18, 2, 15, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_SHORTBOW, '}', TCOD_white, 2, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_MEDIUM, true, 1, 6, 20, 3, 30, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_SHORTSWORD, '-', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_SMALL, false, 1, 6, 19, 2, 10, 1, 0, 0, 0);
     BASE_ITEM_INFO(BASE_ITEM_SMALL_SHIELD, ')', TCOD_white, 6, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 9, 1, 1, -1, 5);
-    BASE_ITEM_INFO(BASE_ITEM_SPEAR, '/', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_PIERCING, WEAPON_SIZE_LARGE, false, 1, 8, 20, 3, 1, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_SPEAR, '/', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, false, 1, 8, 20, 3, 1, 1, 0, 0, 0);
     BASE_ITEM_INFO(BASE_ITEM_TOWER_SHIELD, ')', TCOD_white, 45, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 100, 1, 3, -10, 50);
-    BASE_ITEM_INFO(BASE_ITEM_WARHAMMER, '!', TCOD_white, 8, EQUIP_SLOT_MAIN_HAND, DAMAGE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 12, 1, 0, 0, 0);
+    BASE_ITEM_INFO(BASE_ITEM_WARHAMMER, '!', TCOD_white, 8, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 12, 1, 0, 0, 0);
 
-    ITEM_PROPERTY_INFO(ITEM_PROPERTY_AC_SHIELD_1, "Armor Bonus: +1 (AC Shield Modifier)", 0, AC_SHIELD, 1);
+    ITEM_PROPERTY_INFO(ITEM_PROPERTY_AC_BONUS_SHIELD_1, "Armor Bonus: +1 (AC Shield Modifier)", 0, AC_SHIELD, 1);
     ITEM_PROPERTY_INFO(ITEM_PROPERTY_ENHANCEMENT_BONUS_1, "Enhancement Bonus: +1", 1, 0, 0);
 
     item_info[ITEM_TYPE_BATTLEAXE].base_item = BASE_ITEM_BATTLEAXE;
@@ -291,7 +304,7 @@ void assets_load(void)
     item_info[ITEM_TYPE_LARGE_SHIELD_1].base_item = BASE_ITEM_LARGE_SHIELD;
     item_info[ITEM_TYPE_LARGE_SHIELD_1].name = "Large Shield + 1";
     item_info[ITEM_TYPE_LARGE_SHIELD_1].description = "A special large shield.";
-    item_info[ITEM_TYPE_LARGE_SHIELD_1].item_properties[ITEM_PROPERTY_AC_SHIELD_1] = true;
+    item_info[ITEM_TYPE_LARGE_SHIELD_1].item_properties[ITEM_PROPERTY_AC_BONUS_SHIELD_1] = true;
     item_info[ITEM_TYPE_LIGHT_CROSSBOW].base_item = BASE_ITEM_LIGHT_CROSSBOW;
     item_info[ITEM_TYPE_LIGHT_CROSSBOW].name = "Light Crossbow";
     item_info[ITEM_TYPE_LIGHT_CROSSBOW].description = "A generic light crossbow.";
@@ -357,7 +370,7 @@ void assets_load(void)
     item_info[ITEM_TYPE_SMALL_SHIELD_1].base_item = BASE_ITEM_SMALL_SHIELD;
     item_info[ITEM_TYPE_SMALL_SHIELD_1].name = "Small Shield + 1";
     item_info[ITEM_TYPE_SMALL_SHIELD_1].description = "A special small shield.";
-    item_info[ITEM_TYPE_SMALL_SHIELD_1].item_properties[ITEM_PROPERTY_AC_SHIELD_1] = true;
+    item_info[ITEM_TYPE_SMALL_SHIELD_1].item_properties[ITEM_PROPERTY_AC_BONUS_SHIELD_1] = true;
     item_info[ITEM_TYPE_SPEAR].base_item = BASE_ITEM_SPEAR;
     item_info[ITEM_TYPE_SPEAR].name = "Spear";
     item_info[ITEM_TYPE_SPEAR].description = "A generic spear.";
@@ -371,7 +384,7 @@ void assets_load(void)
     item_info[ITEM_TYPE_TOWER_SHIELD_1].base_item = BASE_ITEM_TOWER_SHIELD;
     item_info[ITEM_TYPE_TOWER_SHIELD_1].name = "Tower Shield + 1";
     item_info[ITEM_TYPE_TOWER_SHIELD_1].description = "A special tower shield.";
-    item_info[ITEM_TYPE_TOWER_SHIELD_1].item_properties[ITEM_PROPERTY_AC_SHIELD_1] = true;
+    item_info[ITEM_TYPE_TOWER_SHIELD_1].item_properties[ITEM_PROPERTY_AC_BONUS_SHIELD_1] = true;
     item_info[ITEM_TYPE_WARHAMMER].base_item = BASE_ITEM_WARHAMMER;
     item_info[ITEM_TYPE_WARHAMMER].name = "Warhammer";
     item_info[ITEM_TYPE_WARHAMMER].description = "A generic warhammer.";

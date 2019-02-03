@@ -146,6 +146,25 @@ struct prototype
     // TODO: base equipment + inventory
 };
 
+enum ability
+{
+    ABILITY_STRENGTH,
+    ABILITY_DEXTERITY,
+    ABILITY_CONSTITUTION,
+    ABILITY_INTELLIGENCE,
+    ABILITY_WISDOM,
+    ABILITY_CHARISMA,
+
+    NUM_ABILITIES
+};
+
+struct ability_info
+{
+    char *name;
+    char *abbreviation;
+    char *description;
+};
+
 struct actor
 {
     char *name;
@@ -154,12 +173,7 @@ struct actor
     enum faction faction;
     int experience;
     int level;
-    int strength;
-    int dexterity;
-    int constitution;
-    int intelligence;
-    int wisdom;
-    int charisma;
+    int ability_scores[NUM_ABILITIES];
     int base_hp;
     int current_hp;
     struct item *equipment[NUM_EQUIP_SLOTS];

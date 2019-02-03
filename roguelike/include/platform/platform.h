@@ -11,5 +11,6 @@
 #include "ui.h"
 
 int platform_run(void);
+bool file_exists(const char *filename);
 
 #endif

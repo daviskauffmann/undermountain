@@ -103,15 +103,17 @@ void input_handle(void)
                         {
                             game_init();
 
-                            // if (TCOD_sys_file_exists(SAVE_PATH))
-                            // {
-                            //     game_load();
-                            // }
-                            // else
-                            // {
-                            //     game_new();
-                            // }
-                            game_new();
+                            if (file_exists(SAVE_PATH))
+                            {
+                                // TODO: prompt whether the player wants to overwrite the save with a new character
+                                // if so, go to character creation
+                                game_load();
+                            }
+                            else
+                            {
+                                // TODO: go to character creation and pass the result to game_new()
+                                game_new();
+                            }
 
                             ui->state = UI_STATE_GAME;
                         }
@@ -154,16 +156,18 @@ void input_handle(void)
                 case MAIN_MENU_OPTION_START:
                 {
                     game_init();
-                    
-                    // if (TCOD_sys_file_exists(SAVE_PATH))
-                    // {
-                    //     game_load();
-                    // }
-                    // else
-                    // {
-                    //     game_new();
-                    // }
-                    game_new();
+
+                    if (file_exists(SAVE_PATH))
+                    {
+                        // TODO: prompt whether the player wants to overwrite the save with a new character
+                        // if so, go to character creation
+                        game_load();
+                    }
+                    else
+                    {
+                        // TODO: go to character creation and pass the result to game_new()
+                        game_new();
+                    }
 
                     ui->state = UI_STATE_GAME;
                 }
@@ -224,10 +228,14 @@ void input_handle(void)
                 }
                 else
                 {
-                    ui->state = UI_STATE_MENU;
+                    if (game->state != GAME_STATE_LOSE)
+                    {
+                        game_save();
+                    }
 
-                    game_save();
                     game_quit();
+
+                    ui->state = UI_STATE_MENU;
                 }
             }
             break;

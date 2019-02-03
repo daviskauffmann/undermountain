@@ -12,12 +12,7 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->faction = faction;
     actor->level = level;
     actor->experience = (actor->level - 1) * 1000;
-    actor->strength = 10;
-    actor->dexterity = 10;
-    actor->constitution = 10;
-    actor->intelligence = 10;
-    actor->wisdom = 10;
-    actor->charisma = 10;
+    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++) { actor->ability_scores[ability] = 10; }
     actor->base_hp = class_info[actor->class].hit_die * actor->level;
     actor->current_hp = actor_calc_max_hp(actor);
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++) { actor->equipment[equip_slot] = NULL; }
@@ -62,7 +57,7 @@ void actor_level_up(struct actor *actor)
 
 int actor_calc_max_hp(struct actor *actor)
 {
-    return actor->base_hp + calc_ability_modifier(actor->constitution);
+    return actor->base_hp + calc_ability_modifier(actor->ability_scores[ABILITY_CONSTITUTION]);
 }
 
 int actor_calc_enhancement_bonus(struct actor *actor)
@@ -92,7 +87,7 @@ int actor_calc_attack_bonus(struct actor *actor)
 {
     int base_attack_bonus = 0;
 
-    return base_attack_bonus + calc_ability_modifier(actor->strength) + actor_calc_enhancement_bonus(actor);
+    return base_attack_bonus + calc_ability_modifier(actor->ability_scores[ABILITY_STRENGTH]) + actor_calc_enhancement_bonus(actor);
 }
 
 int actor_calc_armor_class(struct actor *actor)
@@ -154,7 +149,7 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
 
 int actor_calc_damage_bonus(struct actor *actor)
 {
-    return calc_ability_modifier(actor->strength) + actor_calc_enhancement_bonus(actor);
+    return calc_ability_modifier(actor->ability_scores[ABILITY_STRENGTH]) + actor_calc_enhancement_bonus(actor);
 }
 
 void actor_update_flash(struct actor *actor)
@@ -430,16 +425,14 @@ bool actor_path_towards(struct actor *actor, int x, int y)
 
     bool success = false;
 
+    int next_x, next_y;
+    if (!TCOD_path_is_empty(path) && TCOD_path_walk(path, &next_x, &next_y, false))
     {
-        int next_x, next_y;
-        if (!TCOD_path_is_empty(path) && TCOD_path_walk(path, &next_x, &next_y, false))
-        {
-            success = actor_move(actor, next_x, next_y);
-        }
-        else
-        {
-            success = actor_move_towards(actor, x, y);
-        }
+        success = actor_move(actor, next_x, next_y);
+    }
+    else
+    {
+        success = actor_move_towards(actor, x, y);
     }
 
     TCOD_path_delete(path);
@@ -1313,7 +1306,7 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
         int crit_mult;
         actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult, ranged);
 
-        int damage_rolls = 1;
+        int DAMAGE_TYPE_rolls = 1;
 
         bool crit = false;
         if (attack_roll >= crit_threat)
@@ -1324,16 +1317,16 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
             if (total_threat >= armor_class)
             {
                 crit = true;
-                damage_rolls *= crit_mult;
+                DAMAGE_TYPE_rolls *= crit_mult;
             }
         }
 
         int total_damage = 0;
         int damage_bonus = actor_calc_damage_bonus(actor);
-        for (int i = 0; i < damage_rolls; i++)
+        for (int i = 0; i < DAMAGE_TYPE_rolls; i++)
         {
-            int damage_roll = roll(num_dice, die_to_roll);
-            int damage = damage_roll + damage_bonus;
+            int DAMAGE_TYPE_roll = roll(num_dice, die_to_roll);
+            int damage = DAMAGE_TYPE_roll + damage_bonus;
 
             total_damage += damage;
         }
@@ -1472,7 +1465,7 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
-        // TCOD_sys_delete_file(SAVE_PATH);
+        remove(SAVE_PATH);
 
         game_log(
             actor->floor,

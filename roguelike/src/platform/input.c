@@ -21,6 +21,7 @@ void input_init(void)
     input->automoving = false;
     input->automove_x = -1;
     input->automove_y = -1;
+    input->automove_actor = NULL;
 
     input->took_turn = true;
     input->request_close = false;
@@ -1005,8 +1006,18 @@ void input_handle(void)
                 else if (ui_view_is_inside(ui->mouse_x, ui->mouse_y))
                 {
                     input->automoving = true;
-                    input->automove_x = ui->mouse_tile_x;
-                    input->automove_y = ui->mouse_tile_y;
+
+                    struct tile *tile = &game->maps[game->player->floor].tiles[ui->mouse_tile_x][ui->mouse_tile_y];
+
+                    if (tile->actor && tile->actor->faction != game->player->faction && !tile->actor->dead)
+                    {
+                        input->automove_actor = tile->actor;
+                    }
+                    else
+                    {
+                        input->automove_x = ui->mouse_tile_x;
+                        input->automove_y = ui->mouse_tile_y;
+                    }
                 }
                 else if (ui_panel_is_inside(ui->mouse_x, ui->mouse_y))
                 {
@@ -1184,6 +1195,12 @@ void input_handle(void)
 
         if (input->automoving && game->state == GAME_STATE_PLAY)
         {
+            if (input->automove_actor)
+            {
+                input->automove_x = input->automove_actor->x;
+                input->automove_y = input->automove_actor->y;
+            }
+
             // probably shouldnt use the path function for this
             // we need to implement custom behavior depending on what the player is doing
             // for example, if the player selects the interact option on a tooltip for an object far away,

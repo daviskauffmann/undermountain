@@ -1,5 +1,7 @@
 #include <roguelike/roguelike.h>
 
+// TODO: actors should ascend/descend with their leader
+
 static int calc_ability_modifier(int ability);
 
 struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
@@ -25,6 +27,7 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
     actor->turns_chased = 0;
+    actor->leader = NULL;
     actor->kills = 0;
     actor->glow = false;
     actor->glow_fov = NULL;
@@ -154,8 +157,6 @@ int actor_calc_damage_bonus(struct actor *actor)
 
 void actor_update_flash(struct actor *actor)
 {
-    // struct game *game = actor->game;
-
     if (actor->flash_fade > 0)
     {
         actor->flash_fade -= 4.0f * TCOD_sys_get_last_frame_length();
@@ -248,13 +249,13 @@ void actor_calc_fov(struct actor *actor)
 
 void actor_ai(struct actor *actor)
 {
-    struct map *map = &game->maps[actor->floor];
-    struct tile *tile = &map->tiles[actor->x][actor->y];
-
-    if (actor == game->player)
+    if (actor == game->player || actor->dead)
     {
         return;
     }
+
+    struct map *map = &game->maps[actor->floor];
+    struct tile *tile = &map->tiles[actor->x][actor->y];
 
     actor->energy += actor->speed;
 
@@ -262,6 +263,7 @@ void actor_ai(struct actor *actor)
     {
         actor->energy -= 1.0f;
 
+        // look for fountains to heal if low health
         if (actor->current_hp < actor_calc_max_hp(actor) / 2)
         {
             struct object *target = NULL;
@@ -303,6 +305,7 @@ void actor_ai(struct actor *actor)
             }
         }
 
+        // look for hostile targets
         {
             struct actor *target = NULL;
             float min_distance = FLT_MAX;
@@ -331,6 +334,7 @@ void actor_ai(struct actor *actor)
                 actor->last_seen_y = target->y;
                 actor->turns_chased = 0;
 
+                // TODO: if carrying a ranged weapon, actor might want to prioritize retreating rather than perfoming a melee attack
                 if (distance(actor->x, actor->y, target->x, target->y) < 2.0f &&
                     actor_attack(actor, target, false))
                 {
@@ -354,6 +358,7 @@ void actor_ai(struct actor *actor)
             }
         }
 
+        // go to where a hostile target was recently seen
         if (actor->last_seen_x != -1 && actor->last_seen_y != -1)
         {
             if ((actor->x == actor->last_seen_x && actor->y == actor->last_seen_y) ||
@@ -367,6 +372,19 @@ void actor_ai(struct actor *actor)
                 actor->turns_chased++;
 
                 continue;
+            }
+        }
+
+        // stay in visiblity/proximity to leader
+        if (actor->leader)
+        {
+            if (!TCOD_map_is_in_fov(actor->fov, actor->leader->x, actor->leader->y) ||
+                distance(actor->x, actor->y, actor->leader->x, actor->leader->y) > 5.0f)
+            {
+                if (actor_path_towards(actor, actor->leader->x, actor->leader->y))
+                {
+                    continue;
+                }
             }
         }
 
@@ -393,6 +411,7 @@ void actor_ai(struct actor *actor)
         //     }
         // }
 
+        // pick up items on ground
         if (TCOD_list_size(tile->items) > 0)
         {
             if (actor_grab(actor, actor->x, actor->y))
@@ -401,6 +420,7 @@ void actor_ai(struct actor *actor)
             }
         }
 
+        // move randomly
         if (TCOD_random_get_int(NULL, 0, 1) == 0)
         {
             int x = actor->x + TCOD_random_get_int(NULL, -1, 1);

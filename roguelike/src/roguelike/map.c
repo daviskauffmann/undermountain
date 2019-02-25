@@ -14,7 +14,7 @@
 
 #define DOOR_CHANCE 0.5f
 #define SPAWN_OBJECTS 10
-#define SPAWN_ADVENTURERS 0
+#define SPAWN_ADVENTURERS 5
 #define SPAWN_MONSTERS 10
 #define SPAWN_ITEMS 20
 
@@ -430,6 +430,7 @@ void map_generate(struct map *map)
         tile->actor = actor;
     }
 
+    // TODO: spawn monster packs with an elite leader
     for (int i = 0; i < SPAWN_MONSTERS; i++)
     {
         struct room *room = map_get_random_room(map);

@@ -37,6 +37,7 @@ struct input
     bool automoving;
     int automove_x;
     int automove_y;
+    struct actor *automove_actor;
     bool took_turn;
     bool request_close;
 };

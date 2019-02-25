@@ -186,6 +186,7 @@ struct actor
     int last_seen_x;
     int last_seen_y;
     int turns_chased;
+    struct actor *leader;
     int kills;
     bool glow;
     TCOD_map_t glow_fov;

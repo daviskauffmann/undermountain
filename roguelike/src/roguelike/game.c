@@ -37,47 +37,62 @@ void game_new(void)
     {
         int floor = 0;
         struct map *map = &game->maps[floor];
-        int x = map->stair_up_x;
-        int y = map->stair_up_y;
-        struct tile *tile = &map->tiles[x][y];
 
-        game->player = actor_create("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, floor, x, y);
+        {
+            int x = map->stair_up_x;
+            int y = map->stair_up_y;
+            struct tile *tile = &map->tiles[x][y];
 
-        TCOD_list_push(map->actors, game->player);
-        tile->actor = game->player;
+            game->player = actor_create("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, floor, x, y);
 
-        struct item *longsword = item_create(ITEM_TYPE_LONGSWORD, floor, x, y);
+            TCOD_list_push(map->actors, game->player);
+            tile->actor = game->player;
 
-        TCOD_list_push(map->items, longsword);
-        TCOD_list_push(game->player->items, longsword);
+            struct item *longsword = item_create(ITEM_TYPE_LONGSWORD, floor, x, y);
 
-        struct item *greatsword = item_create(ITEM_TYPE_GREATSWORD, floor, x, y);
+            TCOD_list_push(map->items, longsword);
+            TCOD_list_push(game->player->items, longsword);
 
-        TCOD_list_push(map->items, greatsword);
-        TCOD_list_push(game->player->items, greatsword);
+            struct item *greatsword = item_create(ITEM_TYPE_GREATSWORD, floor, x, y);
 
-        struct item *longbow = item_create(ITEM_TYPE_LONGBOW, floor, x, y);
+            TCOD_list_push(map->items, greatsword);
+            TCOD_list_push(game->player->items, greatsword);
 
-        TCOD_list_push(map->items, longbow);
-        TCOD_list_push(game->player->items, longbow);
+            struct item *longbow = item_create(ITEM_TYPE_LONGBOW, floor, x, y);
 
-        struct item *tower_shield = item_create(ITEM_TYPE_TOWER_SHIELD, floor, x, y);
+            TCOD_list_push(map->items, longbow);
+            TCOD_list_push(game->player->items, longbow);
 
-        TCOD_list_push(map->items, tower_shield);
-        TCOD_list_push(game->player->items, tower_shield);
+            struct item *tower_shield = item_create(ITEM_TYPE_TOWER_SHIELD, floor, x, y);
 
-        struct item *potion_cure_light_wounds = item_create(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, floor, x, y);
+            TCOD_list_push(map->items, tower_shield);
+            TCOD_list_push(game->player->items, tower_shield);
 
-        TCOD_list_push(map->items, potion_cure_light_wounds);
-        TCOD_list_push(game->player->items, potion_cure_light_wounds);
+            struct item *potion_cure_light_wounds = item_create(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, floor, x, y);
 
-        game_log(
-            floor,
-            x,
-            y,
-            TCOD_white,
-            "Hail, %s!",
-            game->player->name);
+            TCOD_list_push(map->items, potion_cure_light_wounds);
+            TCOD_list_push(game->player->items, potion_cure_light_wounds);
+
+            game_log(
+                floor,
+                x,
+                y,
+                TCOD_white,
+                "Hail, %s!",
+                game->player->name);
+        }
+
+        {
+            int x = map->stair_up_x + 1;
+            int y = map->stair_up_y + 1;
+            struct tile *tile = &map->tiles[x][y];
+
+            struct actor *pet = actor_create("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, 1, floor, x, y);
+            pet->leader = game->player;
+
+            TCOD_list_push(map->actors, pet);
+            tile->actor = pet;
+        }
     }
 }
 
@@ -171,11 +186,7 @@ void game_turn(void)
         struct actor *actor = *iterator;
 
         actor_calc_fov(actor);
-
-        if (!actor->dead)
-        {
-            actor_ai(actor);
-        }
+        actor_ai(actor);
     }
 }
 

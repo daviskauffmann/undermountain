@@ -90,8 +90,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\platform\state_about.c" />
     <ClCompile Include="src\platform\config.c" />
-    <ClCompile Include="src\platform\input.c" />
+    <ClCompile Include="src\platform\state_game.c" />
+    <ClCompile Include="src\platform\state_menu.c" />
     <ClCompile Include="src\platform\platform.c" />
     <ClCompile Include="src\roguelike\actor.c" />
     <ClCompile Include="src\roguelike\assets.c" />
@@ -102,11 +104,9 @@
     <ClCompile Include="src\roguelike\message.c" />
     <ClCompile Include="src\roguelike\object.c" />
     <ClCompile Include="src\roguelike\projectile.c" />
-    <ClCompile Include="src\platform\renderer.c" />
     <ClCompile Include="src\roguelike\room.c" />
     <ClCompile Include="src\roguelike\tile.c" />
     <ClCompile Include="src\platform\tooltip_option.c" />
-    <ClCompile Include="src\platform\ui.c" />
     <ClCompile Include="src\roguelike\util.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,5 +1,7 @@
 #include <platform/platform.h>
 
+static struct state *current_state = &menu_state;
+
 int platform_run(void)
 {
     config_load();
@@ -8,50 +10,85 @@ int platform_run(void)
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
     TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer);
 
-    input_init();
-    ui_init();
-    renderer_init();
-
+    // TODO: move this?
     assets_load();
+
+    current_state->init();
 
     while (!TCOD_console_is_window_closed())
     {
-        input_handle();
+        TCOD_key_t key;
+        TCOD_mouse_t mouse;
+        TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
 
-        if (input->request_close)
+        switch (ev)
+        {
+        case TCOD_EVENT_KEY_PRESS:
+        {
+            switch (key.vk)
+            {
+            case TCODK_ENTER:
+            {
+                if (key.lalt)
+                {
+                    fullscreen = !fullscreen;
+
+                    TCOD_console_set_fullscreen(fullscreen);
+                }
+            }
+            break;
+            }
+        }
+        break;
+        }
+
+        if (current_state->handleEvent(ev, key, mouse))
         {
             break;
         }
 
-        if (ui->state == UI_STATE_GAME)
-        {
-            game_update();
+        current_state->update();
 
-            if (input->took_turn)
-            {
-                input->took_turn = false;
+        TCOD_console_set_default_background(NULL, TCOD_black);
+        TCOD_console_set_default_foreground(NULL, TCOD_white);
+        TCOD_console_clear(NULL);
+        current_state->render();
+        TCOD_console_flush();
 
-                game_turn();
-            }
-        }
+        //input_handle();
 
-        ui_update();
-        renderer_draw();
+        //if (input->request_close)
+        //{
+        //    break;
+        //}
+
+        //if (ui->state == UI_STATE_GAME)
+        //{
+        //    game_update();
+
+        //    if (input->took_turn)
+        //    {
+        //        input->took_turn = false;
+
+        //        game_turn();
+        //    }
+        //}
+
+        //ui_update();
+        //renderer_draw();
     }
 
-    if (ui->state == UI_STATE_GAME)
-    {
-        if (game->state != GAME_STATE_LOSE)
-        {
-            game_save();
-        }
+    //if (ui->state == UI_STATE_GAME)
+    //{
+    //    if (game->state != GAME_STATE_LOSE)
+    //    {
+    //        game_save();
+    //    }
 
-        game_quit();
-    }
+    //    game_quit();
+    //}
 
-    renderer_quit();
-    ui_quit();
-    input_quit();
+    current_state->quit();
 
     TCOD_console_delete(NULL);
     TCOD_quit();
@@ -59,6 +96,13 @@ int platform_run(void)
     config_save();
 
     return 0;
+}
+
+void platform_set_state(struct state *state)
+{
+    current_state->quit();
+    current_state = state;
+    current_state->init();
 }
 
 bool file_exists(const char *filename)

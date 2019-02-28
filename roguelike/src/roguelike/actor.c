@@ -1485,6 +1485,7 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
+        // TODO: maybe the platform layer should do this in response to the game state being set to "lose"
         remove(SAVE_PATH);
 
         game_log(

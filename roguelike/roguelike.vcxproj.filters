@@ -54,19 +54,19 @@
     <ClCompile Include="src\platform\platform.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\input.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\platform\config.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\platform\renderer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\platform\tooltip_option.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\ui.c">
+    <ClCompile Include="src\platform\state_about.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\state_game.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\state_menu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

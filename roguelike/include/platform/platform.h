@@ -5,12 +5,14 @@
 #include <roguelike/roguelike.h>
 
 #include "config.h"
-#include "input.h"
-#include "renderer.h"
+#include "state.h"
+#include "state_about.h"
+#include "state_game.h"
+#include "state_menu.h"
 #include "tooltip_option.h"
-#include "ui.h"
 
 int platform_run(void);
+void platform_set_state(struct state *state);
 bool file_exists(const char *filename);
 
 #endif

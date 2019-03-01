@@ -1,5 +1,19 @@
 #include <platform/platform.h>
 
+static void init(void);
+static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
+static void update(void);
+static void render(void);
+static void quit(void);
+
+struct state about_state = {
+    &init,
+    &handleEvent,
+    &update,
+    &render,
+    &quit
+};
+
 static void init(void)
 {
 }
@@ -14,7 +28,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
         {
         case TCODK_ESCAPE:
         {
-            platform_set_state(&menu_state);
+            state_set(&menu_state);
         }
         break;
         }
@@ -24,7 +38,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
     {
         if (mouse.rbutton)
         {
-            platform_set_state(&menu_state);
+            state_set(&menu_state);
         }
     }
     break;
@@ -52,11 +66,3 @@ static void render(void)
 static void quit(void)
 {
 }
-
-struct state about_state = {
-    &init,
-    &handleEvent,
-    &update,
-    &render,
-    &quit
-};

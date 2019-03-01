@@ -1,5 +1,4 @@
 #include <platform/platform.h>
-#include <roguelike/roguelike.h>
 
 enum option
 {
@@ -19,59 +18,21 @@ static struct option_info option_info[NUM_OPTIONS];
 static int mouse_x;
 static int mouse_y;
 
-static enum option get_selected_option(void)
-{
-    int y = 1;
-    for (enum option option = 0; option < NUM_OPTIONS; option++)
-    {
-        if (mouse_x > 0 && mouse_x < (int)strlen(option_info[option].text) + 3 + 1 && mouse_y == y)
-        {
-            return option;
-        }
+static void init(void);
+static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
+static void update(void);
+static void render(void);
+static void quit(void);
+static enum option get_selected_option(void);
+static bool select_option(enum option option);
 
-        y++;
-    }
-
-    return -1;
-}
-
-static bool select_option(enum option option)
-{
-    switch (option)
-    {
-    case OPTION_START:
-    {
-        game_init();
-
-        if (file_exists(SAVE_PATH))
-        {
-            // TODO: prompt whether the player wants to overwrite the save with a new character
-            // if so, go to character creation
-            game_load();
-        }
-        else
-        {
-            // TODO: go to character creation and pass the result to game_new()
-            game_new();
-        }
-
-        platform_set_state(&game_state);
-    }
-    break;
-    case OPTION_ABOUT:
-    {
-        platform_set_state(&about_state);
-    }
-    break;
-    case OPTION_QUIT:
-    {
-        return true;
-    }
-    break;
-    }
-
-    return false;
-}
+struct state menu_state = {
+    &init,
+    &handleEvent,
+    &update,
+    &render,
+    &quit
+};
 
 static void init(void)
 {
@@ -153,10 +114,56 @@ static void quit(void)
 {
 }
 
-struct state menu_state = {
-    &init,
-    &handleEvent,
-    &update,
-    &render,
-    &quit
-};
+static enum option get_selected_option(void)
+{
+    int y = 1;
+    for (enum option option = 0; option < NUM_OPTIONS; option++)
+    {
+        if (mouse_x > 0 && mouse_x < (int)strlen(option_info[option].text) + 3 + 1 && mouse_y == y)
+        {
+            return option;
+        }
+
+        y++;
+    }
+
+    return -1;
+}
+
+static bool select_option(enum option option)
+{
+    switch (option)
+    {
+    case OPTION_START:
+    {
+        game_init();
+
+        if (file_exists(SAVE_PATH))
+        {
+            // TODO: prompt whether the player wants to overwrite the save with a new character
+            // if so, go to character creation
+            game_load();
+        }
+        else
+        {
+            // TODO: go to character creation and pass the result to game_new()
+            game_new();
+        }
+
+        state_set(&game_state);
+    }
+    break;
+    case OPTION_ABOUT:
+    {
+        state_set(&about_state);
+    }
+    break;
+    case OPTION_QUIT:
+    {
+        return true;
+    }
+    break;
+    }
+
+    return false;
+}

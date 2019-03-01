@@ -10,4 +10,8 @@ struct state
     void(*quit)(void);
 };
 
+extern struct state *state;
+
+void state_set(struct state *new_state);
+
 #endif

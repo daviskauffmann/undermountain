@@ -1,5 +1,7 @@
 #include <roguelike/roguelike.h>
 
+// TODO: load from file?
+
 struct tile_common tile_common;
 struct tile_info tile_info[NUM_TILE_TYPES];
 struct object_common object_common;

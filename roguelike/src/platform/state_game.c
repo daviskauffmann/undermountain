@@ -761,7 +761,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 
                         {
                             struct actor *target = NULL;
-                            float min_distance = 1000.0f;
+                            float min_distance = FLT_MAX;
 
                             for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
                             {
@@ -1370,81 +1370,81 @@ static void render(void)
                 }
             }
         }
+    }
 
-        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    {
+        struct actor *actor = *iterator;
+
+        if (actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
         {
-            struct actor *actor = *iterator;
-
-            if (actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
-            {
-                TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, TCOD_dark_red);
-                TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, '%');
-            }
+            TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, TCOD_dark_red);
+            TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, '%');
         }
+    }
 
-        for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+    for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+    {
+        struct object *object = *iterator;
+
+        if (TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
         {
-            struct object *object = *iterator;
-
-            if (TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
-            {
-                TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
-                TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, object_info[object->type].glyph);
-            }
+            TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
+            TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, object_info[object->type].glyph);
         }
+    }
 
-        for (void **iterator = TCOD_list_begin(map->items); iterator != TCOD_list_end(map->items); iterator++)
+    for (void **iterator = TCOD_list_begin(map->items); iterator != TCOD_list_end(map->items); iterator++)
+    {
+        struct item *item = *iterator;
+
+        if (TCOD_map_is_in_fov(game->player->fov, item->x, item->y))
         {
-            struct item *item = *iterator;
-
-            if (TCOD_map_is_in_fov(game->player->fov, item->x, item->y))
-            {
-                TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, base_item_info[item_info[item->type].base_item].color);
-                TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, base_item_info[item_info[item->type].base_item].glyph);
-            }
+            TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, base_item_info[item_info[item->type].base_item].color);
+            TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, base_item_info[item_info[item->type].base_item].glyph);
         }
+    }
 
-        for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
+    for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
+    {
+        struct projectile *projectile = *iterator;
+
+        int x = (int)projectile->x;
+        int y = (int)projectile->y;
+
+        if (TCOD_map_is_in_fov(game->player->fov, x, y))
         {
-            struct projectile *projectile = *iterator;
-
-            int x = (int)projectile->x;
-            int y = (int)projectile->y;
-
-            if (TCOD_map_is_in_fov(game->player->fov, x, y))
-            {
-                TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, TCOD_white);
-                TCOD_console_set_char(NULL, x - view_x, y - view_y, projectile->glyph);
-            }
+            TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, TCOD_white);
+            TCOD_console_set_char(NULL, x - view_x, y - view_y, projectile->glyph);
         }
+    }
 
-        for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+    for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+    {
+        struct object *object = *iterator;
+
+        if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) && TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
         {
-            struct object *object = *iterator;
-
-            if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) && TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
-            {
-                TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
-                TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, object_info[object->type].glyph);
-            }
+            TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
+            TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, object_info[object->type].glyph);
         }
+    }
 
-        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    {
+        struct actor *actor = *iterator;
+
+        if (!actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
         {
-            struct actor *actor = *iterator;
+            TCOD_color_t color = class_info[actor->class].color;
 
-            if (!actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
+            if (actor->flash_fade > 0)
             {
-                TCOD_color_t color = class_info[actor->class].color;
-
-                if (actor->flash_fade > 0)
-                {
-                    color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade);
-                }
-
-                TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, color);
-                TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, race_info[actor->race].glyph);
+                color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade);
             }
+
+            TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, color);
+            TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, race_info[actor->race].glyph);
         }
     }
 

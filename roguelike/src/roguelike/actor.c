@@ -1432,22 +1432,23 @@ void actor_die(struct actor *actor, struct actor *killer)
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
     actor->dead = true;
-    actor->glow = false;
-    actor->torch = false;
-
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-    {
-        struct item *equipment = actor->equipment[i];
-
-        if (equipment)
-        {
-            TCOD_list_push(actor->items, equipment);
-            actor->equipment[i] = NULL;
-        }
-    }
 
     if (actor != game->player)
     {
+        actor->glow = false;
+        actor->torch = false;
+
+        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+        {
+            struct item *equipment = actor->equipment[i];
+
+            if (equipment)
+            {
+                TCOD_list_push(actor->items, equipment);
+                actor->equipment[i] = NULL;
+            }
+        }
+
         for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
         {
             struct item *item = *iterator;

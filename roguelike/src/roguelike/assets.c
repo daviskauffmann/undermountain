@@ -68,11 +68,11 @@ struct item_info item_info[NUM_ITEM_TYPES];
     monster_prototype[_monster].class = _class;
 
 #define ABILITY_INFO(_ability, _name, _abbreviation, _description) \
-    ability_info[_ability].name = _name;                              \
-    ability_info[_ability].abbreviation = _abbreviation;              \
+    ability_info[_ability].name = _name;                           \
+    ability_info[_ability].abbreviation = _abbreviation;           \
     ability_info[_ability].description = _description;
 
-#define ITEM_COMMON(_placeholder)             \
+#define ITEM_COMMON(_placeholder) \
     item_common.__placeholder = _placeholder;
 
 #define EQUIP_SLOT_INFO(_type, _name, _label) \
@@ -80,28 +80,28 @@ struct item_info item_info[NUM_ITEM_TYPES];
     equip_slot_info[_type].label = _label;
 
 #define BASE_ITEM_INFO(_type, _glyph, _color, _weight, _equip_slot, _damage_type, _weapon_size, _ranged, _num_dice, _die_to_roll, _crit_threat, _crit_mult, _base_cost, _stack, _base_ac, _armor_check_penalty, _arcane_spell_failure) \
-    base_item_info[_type].glyph = _glyph;                                                                                                                                                                                                \
-    base_item_info[_type].color = _color;                                                                                                                                                                                                \
-    base_item_info[_type].weight = _weight;                                                                                                                                                                                              \
-    base_item_info[_type].equip_slot = _equip_slot;                                                                                                                                                                                      \
-    base_item_info[_type].damage_type = _damage_type;                                                                                                                                                                                              \
-    base_item_info[_type].weapon_size = _weapon_size;                                                                                                                                                                                    \
-    base_item_info[_type].ranged = _ranged;                                                                                                                                                                                              \
-    base_item_info[_type].num_dice = _num_dice;                                                                                                                                                                                          \
-    base_item_info[_type].die_to_roll = _die_to_roll;                                                                                                                                                                                    \
-    base_item_info[_type].crit_threat = _crit_threat;                                                                                                                                                                                    \
-    base_item_info[_type].crit_mult = _crit_mult;                                                                                                                                                                                        \
-    base_item_info[_type].base_cost = _base_cost;                                                                                                                                                                                        \
-    base_item_info[_type].stack = _stack;                                                                                                                                                                                                \
-    base_item_info[_type].base_ac = _base_ac;                                                                                                                                                                                            \
-    base_item_info[_type].armor_check_penalty = _armor_check_penalty;                                                                                                                                                                    \
-    base_item_info[_type].arcane_spell_failure = _arcane_spell_failure;                                                                                                                                                                  \
+    base_item_info[_type].glyph = _glyph;                                                                                                                                                                                              \
+    base_item_info[_type].color = _color;                                                                                                                                                                                              \
+    base_item_info[_type].weight = _weight;                                                                                                                                                                                            \
+    base_item_info[_type].equip_slot = _equip_slot;                                                                                                                                                                                    \
+    base_item_info[_type].damage_type = _damage_type;                                                                                                                                                                                  \
+    base_item_info[_type].weapon_size = _weapon_size;                                                                                                                                                                                  \
+    base_item_info[_type].ranged = _ranged;                                                                                                                                                                                            \
+    base_item_info[_type].num_dice = _num_dice;                                                                                                                                                                                        \
+    base_item_info[_type].die_to_roll = _die_to_roll;                                                                                                                                                                                  \
+    base_item_info[_type].crit_threat = _crit_threat;                                                                                                                                                                                  \
+    base_item_info[_type].crit_mult = _crit_mult;                                                                                                                                                                                      \
+    base_item_info[_type].base_cost = _base_cost;                                                                                                                                                                                      \
+    base_item_info[_type].stack = _stack;                                                                                                                                                                                              \
+    base_item_info[_type].base_ac = _base_ac;                                                                                                                                                                                          \
+    base_item_info[_type].armor_check_penalty = _armor_check_penalty;                                                                                                                                                                  \
+    base_item_info[_type].arcane_spell_failure = _arcane_spell_failure;
 
 #define ITEM_PROPERTY_INFO(_type, _text, _enhancement_bonus, _ac, _ac_bonus) \
     item_property_info[_type].text = _text;                                  \
     item_property_info[_type].enhancement_bonus = _enhancement_bonus;        \
     item_property_info[_type].ac = _ac;                                      \
-    item_property_info[_type].ac_bonus = _ac_bonus;                          \
+    item_property_info[_type].ac_bonus = _ac_bonus;
 
 void assets_load(void)
 {

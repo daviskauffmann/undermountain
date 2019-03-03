@@ -14,7 +14,11 @@ struct item *item_create(enum item_type type, int floor, int x, int y)
 
 bool item_can_equip(struct item *item, struct actor *actor)
 {
-    // TODO: small races cannot equip large weapons
+    if (base_item_info[item_info[item->type].base_item].weapon_size == WEAPON_SIZE_LARGE && race_info[actor->race].size == RACE_SIZE_SMALL)
+    {
+        return false;
+    }
+
     return true;
 }
 

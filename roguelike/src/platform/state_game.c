@@ -6,6 +6,12 @@
 // design a system where when selecting an action from the right-click menu, other actions are ignored as the actor paths to the location
 // when left-clicking a hostile actor, or selecting Attack from the menu, should track that actor's position and follow it. when reached, attack once and stop automoving
 
+// TODO: automoving needs to be slower and easy to cancel
+
+// TODO: better sanity checking for tooltip data
+// right now, tooltip data is contained in a module scope struct
+// need to define ways to make sure the struct is valid for the given tooltip options
+
 // TODO: prompts
 
 enum directional_action
@@ -59,19 +65,20 @@ struct panel_status
     bool selection_mode;
 };
 
+struct tooltip_option
+{
+    char *text;
+    bool(*on_click)(void);
+};
+
 struct tooltip_data
 {
     int x;
     int y;
+    struct object *object;
     struct item *item;
+    struct actor *actor;
     enum equip_slot equip_slot;
-};
-
-struct tooltip_option
-{
-    char *text;
-    struct tooltip_data tooltip_data;
-    bool(*fn)(struct tooltip_data tooltip_data);
 };
 
 static enum directional_action directional_action;
@@ -113,6 +120,7 @@ static int tooltip_y;
 static int tooltip_width;
 static int tooltip_height;
 static TCOD_list_t tooltip_options;
+static struct tooltip_data tooltip_data;
 
 static int view_width;
 static int view_height;
@@ -132,9 +140,9 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
 static void update(void);
 static void render(void);
 static void quit(void);
-static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y);
+static bool do_directional_action(struct actor *player, int x, int y);
 static void set_took_turn(void *on_hit_params);
-static bool tooltip_option_move(struct tooltip_data data);
+static bool toolip_on_click_move(void);
 static bool message_log_is_inside(int x, int y);
 static bool panel_is_inside(int x, int y);
 static void panel_toggle(enum panel panel);
@@ -144,9 +152,9 @@ static struct item *panel_inventory_get_selected(void);
 static bool tooltip_is_inside(int x, int y);
 static void tooltip_show(void);
 static void tooltip_hide(void);
-struct tooltip_option *tooltip_option_create(char *text, struct tooltip_data tooltip_data, bool(*fn)(struct tooltip_data tooltip_data));
+struct tooltip_option *tooltip_option_create(char *text, bool(*on_click)(void));
 void tooltip_option_destroy(struct tooltip_option *tooltip_option);
-static void tooltip_options_add(char *text, struct tooltip_data tooltip_data, bool(*fn)(struct tooltip_data tooltip_data));
+static void tooltip_options_add(char *text, bool(*on_click)(void));
 static void tooltip_options_clear(void);
 static struct tooltip_option *tooltip_get_selected(void);
 static bool view_is_inside(int x, int y);
@@ -311,9 +319,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 }
                 else
                 {
-                    took_turn = do_directional_action(game->player, directional_action, x, y);
-
-                    directional_action = DIRECTIONAL_ACTION_NONE;
+                    took_turn = do_directional_action(game->player, x, y);
                 }
             }
         }
@@ -344,9 +350,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 }
                 else
                 {
-                    took_turn = do_directional_action(game->player, directional_action, x, y);
-
-                    directional_action = DIRECTIONAL_ACTION_NONE;
+                    took_turn = do_directional_action(game->player, x, y);
                 }
             }
         }
@@ -376,9 +380,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 }
                 else
                 {
-                    took_turn = do_directional_action(game->player, directional_action, x, y);
-
-                    directional_action = DIRECTIONAL_ACTION_NONE;
+                    took_turn = do_directional_action(game->player, x, y);
                 }
             }
         }
@@ -409,9 +411,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 }
                 else
                 {
-                    took_turn = do_directional_action(game->player, directional_action, x, y);
-
-                    directional_action = DIRECTIONAL_ACTION_NONE;
+                    took_turn = do_directional_action(game->player, x, y);
                 }
             }
         }
@@ -450,9 +450,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 }
                 else
                 {
-                    took_turn = do_directional_action(game->player, directional_action, x, y);
-
-                    directional_action = DIRECTIONAL_ACTION_NONE;
+                    took_turn = do_directional_action(game->player, x, y);
                 }
             }
         }
@@ -482,9 +480,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 }
                 else
                 {
-                    took_turn = do_directional_action(game->player, directional_action, x, y);
-
-                    directional_action = DIRECTIONAL_ACTION_NONE;
+                    took_turn = do_directional_action(game->player, x, y);
                 }
             }
         }
@@ -515,9 +511,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 }
                 else
                 {
-                    took_turn = do_directional_action(game->player, directional_action, x, y);
-
-                    directional_action = DIRECTIONAL_ACTION_NONE;
+                    took_turn = do_directional_action(game->player, x, y);
                 }
             }
         }
@@ -547,9 +541,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 }
                 else
                 {
-                    took_turn = do_directional_action(game->player, directional_action, x, y);
-
-                    directional_action = DIRECTIONAL_ACTION_NONE;
+                    took_turn = do_directional_action(game->player, x, y);
                 }
             }
         }
@@ -1012,9 +1004,9 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 
                     if (tooltip_option)
                     {
-                        if (tooltip_option->fn)
+                        if (tooltip_option->on_click)
                         {
-                            took_turn = tooltip_option->fn(tooltip_option->tooltip_data);
+                            took_turn = tooltip_option->on_click();
                         }
 
                         tooltip_hide();
@@ -1101,39 +1093,45 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 
                 tooltip_show();
 
-                struct tooltip_data tooltip_data;
+                tooltip_options_add("Move", &toolip_on_click_move);
+
                 tooltip_data.x = mouse_tile_x;
                 tooltip_data.y = mouse_tile_y;
 
-                tooltip_options_add("Move", tooltip_data, &tooltip_option_move);
-
                 if (tile->object)
                 {
-                    tooltip_options_add("Examine Object", tooltip_data, NULL);
-                    tooltip_options_add("Interact", tooltip_data, NULL);
-                    tooltip_options_add("Bash", tooltip_data, NULL);
+                    tooltip_options_add("Examine Object", NULL);
+                    tooltip_options_add("Interact", NULL);
+                    tooltip_options_add("Bash", NULL);
+
+                    tooltip_data.object = tile->object;
                 }
 
                 if (tile->actor)
                 {
-                    tooltip_options_add("Examine Actor", tooltip_data, NULL);
-                    tooltip_options_add("Talk", tooltip_data, NULL);
-                    tooltip_options_add("Swap", tooltip_data, NULL);
-                    tooltip_options_add("Attack", tooltip_data, NULL);
+                    tooltip_options_add("Examine Actor", NULL);
+                    tooltip_options_add("Talk", NULL);
+                    tooltip_options_add("Swap", NULL);
+                    tooltip_options_add("Attack", NULL);
+
+                    tooltip_data.actor = tile->actor;
                 }
 
                 if (TCOD_list_peek(tile->items))
                 {
-                    tooltip_options_add("Examine Item", tooltip_data, NULL);
-                    tooltip_options_add("Take Item", tooltip_data, NULL);
+                    tooltip_options_add("Examine Item", NULL);
+                    tooltip_options_add("Take Item", NULL);
+
+                    tooltip_data.item = TCOD_list_peek(tile->items);
                 }
 
                 if (TCOD_list_size(tile->items) > 1)
                 {
-                    tooltip_options_add("Take All", tooltip_data, NULL);
+                    tooltip_options_add("Take All", NULL);
                 }
 
-                tooltip_options_add("Cancel", tooltip_data, NULL);
+                tooltip_options_add("Cancel", NULL);
+
             }
             else if (panel_is_inside(mouse_x, mouse_y))
             {
@@ -1147,22 +1145,21 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                     {
                         tooltip_show();
 
-                        struct tooltip_data tooltip_data;
-                        tooltip_data.item = item;
-
-                        tooltip_options_add("Drop", tooltip_data, NULL);
+                        tooltip_options_add("Drop", NULL);
 
                         if (base_item_info[item_info[item->type].base_item].equip_slot != EQUIP_SLOT_NONE)
                         {
-                            tooltip_options_add("Equip", tooltip_data, NULL);
+                            tooltip_options_add("Equip", NULL);
                         }
 
                         if (item_info[item->type].base_item == BASE_ITEM_POTION)
                         {
-                            tooltip_options_add("Quaff", tooltip_data, NULL);
+                            tooltip_options_add("Quaff", NULL);
                         }
 
-                        tooltip_options_add("Cancel", tooltip_data, NULL);
+                        tooltip_options_add("Cancel", NULL);
+
+                        tooltip_data.item = item;
                     }
 
                     break;
@@ -1180,12 +1177,11 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                         {
                             tooltip_show();
 
-                            struct tooltip_data tooltip_data;
+                            tooltip_options_add("Unequip", NULL);
+
+                            tooltip_options_add("Cancel", NULL);
+
                             tooltip_data.equip_slot = equip_slot;
-
-                            tooltip_options_add("Unequip", tooltip_data, NULL);
-
-                            tooltip_options_add("Cancel", tooltip_data, NULL);
                         }
                     }
                 }
@@ -1223,7 +1219,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
             automove_y = automove_actor->y;
         }
 
-        // probably shouldnt use the path function for this
+        // TODO: probably shouldnt use the path function for this
         // we need to implement custom behavior depending on what the player is doing
         // for example, if the player selects the interact option on a tooltip for an object far away,
         //      the player should navigate there but not interact/attack anything along the way
@@ -1232,6 +1228,9 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
         if (!took_turn)
         {
             automoving = false;
+            automove_x = -1;
+            automove_y = -1;
+            automove_actor = NULL;
         }
     }
 
@@ -1666,6 +1665,20 @@ static void render(void)
         TCOD_console_blit(tooltip, 0, 0, tooltip_width, tooltip_height, NULL, tooltip_x, tooltip_y, 1, 1);
     }
 
+    if (automoving)
+    {
+        int x = automove_x;
+        int y = automove_y;
+
+        if (automove_actor)
+        {
+            x = automove_actor->x;
+            y = automove_actor->y;
+        }
+
+        TCOD_console_set_char_background(NULL, x - view_x, y - view_y, TCOD_red, TCOD_BKGND_SET);
+    }
+
     // DEBUG
     TCOD_console_printf(NULL, 0, 0, "Turn: %d", game->turn);
     TCOD_console_printf(NULL, 0, 1, "Floor: %d", game->player->floor);
@@ -1699,23 +1712,42 @@ static void quit(void)
     TCOD_noise_delete(noise);
 }
 
-static bool do_directional_action(struct actor *player, enum directional_action directional_action, int x, int y)
+static bool do_directional_action(struct actor *player, int x, int y)
 {
+    bool success = false;
+
     switch (directional_action)
     {
     case DIRECTIONAL_ACTION_CLOSE_DOOR:
-        return actor_close_door(player, x, y);
+    {
+        success = actor_close_door(player, x, y);
+    }
+    break;
     case DIRECTIONAL_ACTION_DRINK:
-        return actor_drink(player, x, y);
+    {
+        success = actor_drink(player, x, y);
+    }
+    break;
     case DIRECTIONAL_ACTION_OPEN_DOOR:
-        return actor_open_door(player, x, y);
+    {
+        success = actor_open_door(player, x, y);
+    }
+    break;
     case DIRECTIONAL_ACTION_PRAY:
-        return actor_pray(player, x, y);
+    {
+        success = actor_pray(player, x, y);
+    }
+    break;
     case DIRECTIONAL_ACTION_SIT:
-        return actor_sit(player, x, y);
+    {
+        success = actor_sit(player, x, y);
+    }
+    break;
     }
 
-    return false;
+    directional_action = DIRECTIONAL_ACTION_NONE;
+
+    return success;
 }
 
 static void set_took_turn(void *on_hit_params)
@@ -1723,11 +1755,11 @@ static void set_took_turn(void *on_hit_params)
     took_turn = true;
 }
 
-static bool tooltip_option_move(struct tooltip_data data)
+static bool toolip_on_click_move(void)
 {
     automoving = true;
-    automove_x = data.x;
-    automove_y = data.y;
+    automove_x = tooltip_data.x;
+    automove_y = tooltip_data.y;
 
     return false;
 }
@@ -1831,13 +1863,12 @@ static void tooltip_hide(void)
     tooltip_visible = false;
 }
 
-struct tooltip_option *tooltip_option_create(char *text, struct tooltip_data tooltip_data, bool(*fn)(struct tooltip_data tooltip_data))
+struct tooltip_option *tooltip_option_create(char *text, bool(*on_click)(void))
 {
     struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
 
     tooltip_option->text = _strdup(text);
-    tooltip_option->tooltip_data = tooltip_data;
-    tooltip_option->fn = fn;
+    tooltip_option->on_click = on_click;
 
     return tooltip_option;
 }
@@ -1848,9 +1879,9 @@ void tooltip_option_destroy(struct tooltip_option *tooltip_option)
     free(tooltip_option);
 }
 
-static void tooltip_options_add(char *text, struct tooltip_data tooltip_data, bool(*fn)(struct tooltip_data tooltip_data))
+static void tooltip_options_add(char *text, bool(*on_click)(void))
 {
-    struct tooltip_option *tooltip_option = tooltip_option_create(text, tooltip_data, fn);
+    struct tooltip_option *tooltip_option = tooltip_option_create(text, on_click);
 
     TCOD_list_push(tooltip_options, tooltip_option);
 }

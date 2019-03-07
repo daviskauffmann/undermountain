@@ -7,6 +7,17 @@ struct game *game;
 // not sure what is causing this, so keep looking into it
 // UPDATE: it seems to be coming from namegen
 
+// TODO: optimize
+// should decide on a target ms per turn, maybe 16ms
+// the game_turn() function should never take longer than that to run
+
+// TODO: i'd like to implement processing of maps the player is not on
+// this would require more thought rather than brute-force processing all maps, because that is incredibly slow
+// possible ideas:
+// 1: keep track of how many turns have passed since the map was last visited and process all those turns when the player enters
+// 2: process inactive maps every few turns, maybe processing maps farther from the player less frequently (preferred, but need to test performance)
+// 3: run specialized code to simulate other maps; think A-life in STALKER (more complicated)
+
 void game_init(void)
 {
     game = malloc(sizeof(struct game));

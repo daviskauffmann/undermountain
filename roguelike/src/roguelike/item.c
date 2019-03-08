@@ -14,7 +14,12 @@ struct item *item_create(enum item_type type, int floor, int x, int y)
 
 bool item_can_equip(struct item *item, struct actor *actor)
 {
-    if (base_item_info[item_info[item->type].base_item].weapon_size == WEAPON_SIZE_LARGE && race_info[actor->race].size == RACE_SIZE_SMALL)
+    enum base_item base_item = item_info[item->type].base_item;
+
+    enum weapon_size weapon_size = base_item_info[base_item].weapon_size;
+    enum race_size race_size = race_info[actor->race].size;
+
+    if (weapon_size == WEAPON_SIZE_LARGE && race_size == RACE_SIZE_SMALL)
     {
         return false;
     }
@@ -24,7 +29,9 @@ bool item_can_equip(struct item *item, struct actor *actor)
 
 bool item_is_two_handed(struct item *item, struct actor *actor)
 {
-    enum equip_slot equip_slot = base_item_info[item_info[item->type].base_item].equip_slot;
+    enum base_item base_item = item_info[item->type].base_item;
+
+    enum equip_slot equip_slot = base_item_info[base_item].equip_slot;
 
     if (equip_slot != EQUIP_SLOT_MAIN_HAND)
     {
@@ -32,7 +39,7 @@ bool item_is_two_handed(struct item *item, struct actor *actor)
     }
 
     enum race_size race_size = race_info[actor->race].size;
-    enum weapon_size weapon_size = base_item_info[item_info[item->type].base_item].weapon_size;
+    enum weapon_size weapon_size = base_item_info[base_item].weapon_size;
 
     switch (race_size)
     {

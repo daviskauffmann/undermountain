@@ -218,6 +218,7 @@ bool actor_open_door(struct actor *actor, int x, int y);
 bool actor_close_door(struct actor *actor, int x, int y);
 bool actor_descend(struct actor *actor);
 bool actor_ascend(struct actor *actor);
+bool actor_open_chest(struct actor *actor, int x, int y);
 bool actor_pray(struct actor *actor, int x, int y);
 bool actor_drink(struct actor *actor, int x, int y);
 bool actor_sit(struct actor *actor, int x, int y);

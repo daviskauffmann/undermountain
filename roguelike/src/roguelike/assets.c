@@ -115,6 +115,7 @@ void assets_load(void)
 
     OBJECT_INFO(OBJECT_TYPE_ALTAR, "Altar", '_', true, false);
     OBJECT_INFO(OBJECT_TYPE_BRAZIER, "Brazier", '*', true, false);
+    OBJECT_INFO(OBJECT_TYPE_CHEST, "Chest", '~', true, false);
     OBJECT_INFO(OBJECT_TYPE_DOOR_CLOSED, "Closed Door", '+', false, false);
     OBJECT_INFO(OBJECT_TYPE_DOOR_OPEN, "Open Door", '-', true, true);
     OBJECT_INFO(OBJECT_TYPE_FOUNTAIN, "Fountain", '{', true, false);

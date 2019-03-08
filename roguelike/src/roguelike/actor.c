@@ -140,12 +140,14 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
 
     if (weapon)
     {
-        if (base_item_info[item_info[weapon->type].base_item].ranged == ranged)
+        enum base_item base_item = item_info[weapon->type].base_item;
+
+        if (base_item_info[base_item].ranged == ranged)
         {
-            *num_dice = base_item_info[item_info[weapon->type].base_item].num_dice;
-            *die_to_roll = base_item_info[item_info[weapon->type].base_item].die_to_roll;
-            *crit_threat = base_item_info[item_info[weapon->type].base_item].crit_threat;
-            *crit_mult = base_item_info[item_info[weapon->type].base_item].crit_mult;
+            *num_dice = base_item_info[base_item].num_dice;
+            *die_to_roll = base_item_info[base_item].die_to_roll;
+            *crit_threat = base_item_info[base_item].crit_threat;
+            *crit_mult = base_item_info[base_item].crit_mult;
         }
     }
 }
@@ -503,6 +505,11 @@ bool actor_move(struct actor *actor, int x, int y)
             return actor_pray(actor, x, y);
         }
         break;
+        case OBJECT_TYPE_CHEST:
+        {
+            return actor_open_chest(actor, x, y);
+        }
+        break;
         case OBJECT_TYPE_DOOR_CLOSED:
         {
             return actor_open_door(actor, x, y);
@@ -654,7 +661,7 @@ bool actor_open_door(struct actor *actor, int x, int y)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't open that",
+        "%s can't open the door",
         actor->name);
 
     return false;
@@ -690,7 +697,7 @@ bool actor_close_door(struct actor *actor, int x, int y)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't close that",
+        "%s can't close the door",
         actor->name);
 
     return false;
@@ -855,6 +862,40 @@ bool actor_ascend(struct actor *actor)
         actor->y,
         TCOD_white,
         "%s can't ascend here",
+        actor->name);
+
+    return false;
+}
+
+bool actor_open_chest(struct actor *actor, int x, int y)
+{
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    struct map *map = &game->maps[actor->floor];
+    struct tile *tile = &map->tiles[x][y];
+
+    if (tile->object && tile->object->type == OBJECT_TYPE_CHEST)
+    {
+        game_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s opens the chest",
+            actor->name);
+
+        return true;
+    }
+
+    game_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s can't open the chest",
         actor->name);
 
     return false;
@@ -1043,7 +1084,9 @@ bool actor_drop(struct actor *actor, struct item *item)
 
 bool actor_equip(struct actor *actor, struct item *item)
 {
-    if (base_item_info[item_info[item->type].base_item].equip_slot == EQUIP_SLOT_NONE || !item_can_equip(item, actor))
+    enum base_item base_item = item_info[item->type].base_item;
+
+    if (base_item_info[base_item].equip_slot == EQUIP_SLOT_NONE || !item_can_equip(item, actor))
     {
         game_log(
             actor->floor,
@@ -1057,9 +1100,9 @@ bool actor_equip(struct actor *actor, struct item *item)
         return false;
     }
 
-    if (actor->equipment[base_item_info[item_info[item->type].base_item].equip_slot])
+    if (actor->equipment[base_item_info[base_item].equip_slot])
     {
-        actor_unequip(actor, base_item_info[item_info[item->type].base_item].equip_slot);
+        actor_unequip(actor, base_item_info[base_item].equip_slot);
     }
 
     if (item_is_two_handed(item, actor))
@@ -1072,7 +1115,7 @@ bool actor_equip(struct actor *actor, struct item *item)
         }
     }
 
-    if (base_item_info[item_info[item->type].base_item].equip_slot == EQUIP_SLOT_OFF_HAND)
+    if (base_item_info[base_item].equip_slot == EQUIP_SLOT_OFF_HAND)
     {
         struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
 
@@ -1083,7 +1126,7 @@ bool actor_equip(struct actor *actor, struct item *item)
     }
 
     TCOD_list_remove(actor->items, item);
-    actor->equipment[base_item_info[item_info[item->type].base_item].equip_slot] = item;
+    actor->equipment[base_item_info[base_item].equip_slot] = item;
 
     game_log(
         actor->floor,
@@ -1259,7 +1302,9 @@ bool actor_shoot(struct actor *actor, int x, int y, void(*on_hit)(void *on_hit_p
         return false;
     }
 
-    if (!base_item_info[item_info[weapon->type].base_item].ranged)
+    enum base_item base_item = item_info[weapon->type].base_item;
+
+    if (!base_item_info[base_item].ranged)
     {
         game_log(
             actor->floor,

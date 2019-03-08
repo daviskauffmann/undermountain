@@ -19,6 +19,7 @@ enum directional_action
     DIRECTIONAL_ACTION_NONE,
     DIRECTIONAL_ACTION_CLOSE_DOOR,
     DIRECTIONAL_ACTION_DRINK,
+    DIRECTIONAL_ACTION_OPEN_CHEST,
     DIRECTIONAL_ACTION_OPEN_DOOR,
     DIRECTIONAL_ACTION_PRAY,
     DIRECTIONAL_ACTION_SIT
@@ -822,6 +823,21 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
             case 'm':
             {
                 message_log_visible = !message_log_visible;
+            }
+            break;
+            case 'O':
+            {
+                if (game->state == GAME_STATE_PLAY)
+                {
+                    directional_action = DIRECTIONAL_ACTION_OPEN_CHEST;
+
+                    game_log(
+                        game->player->floor,
+                        game->player->x,
+                        game->player->y,
+                        TCOD_white,
+                        "Choose a direction, ESC to cancel");
+                }
             }
             break;
             case 'o':
@@ -1726,6 +1742,11 @@ static bool do_directional_action(struct actor *player, int x, int y)
     case DIRECTIONAL_ACTION_DRINK:
     {
         success = actor_drink(player, x, y);
+    }
+    break;
+    case DIRECTIONAL_ACTION_OPEN_CHEST:
+    {
+        success = actor_open_chest(player, x, y);
     }
     break;
     case DIRECTIONAL_ACTION_OPEN_DOOR:

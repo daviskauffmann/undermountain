@@ -308,7 +308,7 @@ void map_generate(struct map *map)
         TCOD_color_t light_color = TCOD_white;
         bool light_flicker = false;
 
-        switch (TCOD_random_get_int(NULL, 0, 3))
+        switch (TCOD_random_get_int(NULL, 0, 4))
         {
         case 0:
         {
@@ -333,11 +333,17 @@ void map_generate(struct map *map)
         break;
         case 2:
         {
+            type = OBJECT_TYPE_CHEST;
+            color = TCOD_sepia;
+        }
+        break;
+        case 3:
+        {
             type = OBJECT_TYPE_FOUNTAIN;
             color = TCOD_blue;
         }
         break;
-        case 3:
+        case 4:
         {
             type = OBJECT_TYPE_THRONE;
             color = TCOD_yellow;

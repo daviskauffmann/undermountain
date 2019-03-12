@@ -94,6 +94,7 @@ int actor_calc_enhancement_bonus(struct actor *actor)
 
 int actor_calc_attack_bonus(struct actor *actor)
 {
+    // TODO: base attack bonus based on class
     int base_attack_bonus = 0;
 
     return base_attack_bonus + calc_ability_modifier(actor->ability_scores[ABILITY_STRENGTH]) + actor_calc_enhancement_bonus(actor);
@@ -404,6 +405,7 @@ void actor_ai(struct actor *actor)
             }
         }
 
+        // move between floors
         // if (tile->object)
         // {
         //     switch (tile->object->type)
@@ -1545,9 +1547,6 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == game->player)
     {
-        // TODO: maybe the platform layer should do this in response to the game state being set to "lose"
-        remove(SAVE_PATH);
-
         game_log(
             actor->floor,
             actor->x,

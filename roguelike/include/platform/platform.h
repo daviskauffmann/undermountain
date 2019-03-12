@@ -1,7 +1,6 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#include <libtcod/libtcod.h>
 #include <roguelike/roguelike.h>
 
 #include "config.h"

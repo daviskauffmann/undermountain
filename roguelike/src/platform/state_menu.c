@@ -142,7 +142,7 @@ static bool select_option(enum option option)
         {
             // TODO: prompt whether the player wants to overwrite the save with a new character
             // if so, go to character creation
-            game_load();
+            game_load(SAVE_PATH);
         }
         else
         {

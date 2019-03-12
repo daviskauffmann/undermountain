@@ -8,11 +8,12 @@ struct game *game;
 // UPDATE: it seems to be coming from namegen
 
 // TODO: optimize
-// should decide on a target ms per turn, maybe 16ms
+// decide on a target ms per turn, maybe 16ms
 // the game_turn() function should never take longer than that to run
 
 // TODO: i'd like to implement processing of maps the player is not on
 // this would require more thought rather than brute-force processing all maps, because that is incredibly slow
+// full determinism is not a requirement
 // possible ideas:
 // 1: keep track of how many turns have passed since the map was last visited and process all those turns when the player enters
 // 2: process inactive maps every few turns, maybe processing maps farther from the player less frequently (preferred, but need to test performance)
@@ -109,30 +110,62 @@ void game_new(void)
     }
 }
 
-void game_save(void)
+void game_save(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
 
-    TCOD_zip_save_to_file(zip, SAVE_PATH);
+    TCOD_zip_save_to_file(zip, filename);
 
-    // TODO: save state to zip
+    // TODO: save game to zip
 
     TCOD_zip_delete(zip);
 }
 
-void game_load(void)
+void game_load(const char *filename)
 {
+
     TCOD_zip_t zip = TCOD_zip_new();
 
-    TCOD_zip_load_from_file(zip, SAVE_PATH);
+    TCOD_zip_load_from_file(zip, filename);
 
-    // TODO: load state from zip
+    // TODO: load game from zip
 
     TCOD_zip_delete(zip);
 
     // DEBUG: just start a new game
     game_new();
 }
+
+// TODO: possibly redo input to be more like 67aa306?
+// look at game.c, line 180 in the game_update() function
+// this type of input allows for multiple player characters or playable character switching on the fly
+// a practical gameplay application might be a mind control spell
+// unfortunately, with the implementation i did before, it resulted in each actor taking an entire frame to process
+// not because of computation time, but because the actor would do their ai that frame, and then on the next update, it would hit the next actor to process them, and so on
+// some research and testing needs to be done to see if this is just a necessary consequence or maybe there is a smarter way to accomplish this
+
+// this would also require a rework of the current input system
+// actually no, the input system just needs one minor change
+
+// here is my proposal:
+// give all actors a bool to say whether they are input controlled or not
+// game_update()
+//   if waiting_for_input is true
+//     return
+//   loop through all the maps
+//     loop through all the actors
+//       if the current actor has enough energy
+//         remove some energy
+//         if the current actor is input controlled
+//           set waiting_for_input to true
+//           set the game->player to the current actor (so we need to independently track the main character for win/lose state reasons?)
+//           break out of the loop
+//         otherwise
+//           process ai for this actor
+// state_game->input()
+//   took_turn can be local now, set to false at the beginning
+//   do everything as normal, applying input to the current game->player and storing the result in took_turn
+//   if took_turn is true, instead of calling game_turn(), just set waiting_for_input to false
 
 void game_update(void)
 {

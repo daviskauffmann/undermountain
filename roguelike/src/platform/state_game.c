@@ -1306,6 +1306,11 @@ static void update(void)
 
         game_turn();
     }
+
+    if (game->state == GAME_STATE_LOSE && file_exists(SAVE_PATH))
+    {
+        remove(SAVE_PATH);
+    }
 }
 
 static void render(void)
@@ -1708,7 +1713,7 @@ static void quit(void)
 {
     if (game->state != GAME_STATE_LOSE)
     {
-        game_save();
+        game_save(SAVE_PATH);
     }
 
     game_quit();

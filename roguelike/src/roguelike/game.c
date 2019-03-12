@@ -33,6 +33,8 @@ void game_init(void)
 
         map_init(map, floor);
     }
+
+    assets_load();
 }
 
 // TODO: this should accept an actor which will become the player, presumably passed from a character creation menu
@@ -270,4 +272,6 @@ void game_quit(void)
     TCOD_list_delete(game->messages);
 
     free(game);
+
+    assets_unload();
 }

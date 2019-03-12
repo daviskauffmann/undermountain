@@ -14,7 +14,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{BABDE851-5D4E-415D-8924-78AC77B8F83A}</ProjectGuid>
     <RootNamespace>roguelike</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <ProjectName>roguelike</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -102,6 +102,7 @@
     <ClCompile Include="src\roguelike\game.c" />
     <ClCompile Include="src\roguelike\item.c" />
     <ClCompile Include="src\main.c" />
+    <ClCompile Include="src\roguelike\item_property.c" />
     <ClCompile Include="src\roguelike\map.c" />
     <ClCompile Include="src\roguelike\message.c" />
     <ClCompile Include="src\roguelike\object.c" />

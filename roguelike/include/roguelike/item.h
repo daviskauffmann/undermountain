@@ -153,8 +153,8 @@ enum item_type
 
 enum item_property
 {
-    ITEM_PROPERTY_AC_BONUS_SHIELD_1,
-    ITEM_PROPERTY_ENHANCEMENT_BONUS_1,
+    ITEM_PROPERTY_AC_BONUS,
+    ITEM_PROPERTY_ENHANCEMENT_BONUS,
 
     NUM_ITEM_PROPERTIES
 };
@@ -168,13 +168,11 @@ enum ac
     AC_SHIELD
 };
 
-struct item_property_info
+// TODO: where to store names?
+// are they set when the item property is created, or created on the fly by the systems that use them?
+struct base_item_property
 {
-    const char *text;
-    int enhancement_bonus;
-    enum ac ac;
-    int ac_bonus;
-    // TODO: contained spell (used for scrolls and potions)
+    enum item_property item_property;
 };
 
 struct item_info
@@ -182,7 +180,7 @@ struct item_info
     enum base_item base_item;
     const char *name;
     const char *description;
-    bool item_properties[NUM_ITEM_PROPERTIES];
+    TCOD_list_t item_properties;
 };
 
 struct item

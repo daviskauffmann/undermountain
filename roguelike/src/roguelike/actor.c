@@ -65,7 +65,7 @@ int actor_calc_max_hp(struct actor *actor)
 
 int actor_calc_enhancement_bonus(struct actor *actor)
 {
-    int enhancement_bonus = 0;
+    int bonus = 0;
 
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
@@ -73,17 +73,23 @@ int actor_calc_enhancement_bonus(struct actor *actor)
 
         if (equipment)
         {
-            for (enum item_property item_property = 0; item_property < NUM_ITEM_PROPERTIES; item_property++)
+            TCOD_list_t item_properties = item_info[equipment->type].item_properties;
+
+            for (void **iterator = TCOD_list_begin(item_properties); iterator != TCOD_list_end(item_properties); iterator++)
             {
-                if (item_info[equipment->type].item_properties[item_property])
+                struct base_item_property *base_item_property = *iterator;
+
+                if (base_item_property->item_property == ITEM_PROPERTY_ENHANCEMENT_BONUS)
                 {
-                    enhancement_bonus += item_property_info[item_property].enhancement_bonus;
+                    struct enhancement_bonus *enhancement_bonus = (struct enhancement_bonus *)base_item_property;
+
+                    bonus += enhancement_bonus->bonus;
                 }
             }
         }
     }
 
-    return enhancement_bonus;
+    return bonus;
 }
 
 int actor_calc_attack_bonus(struct actor *actor)
@@ -95,7 +101,7 @@ int actor_calc_attack_bonus(struct actor *actor)
 
 int actor_calc_armor_class(struct actor *actor)
 {
-    int armor_class = 10;
+    int ac = 10;
 
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
@@ -103,20 +109,28 @@ int actor_calc_armor_class(struct actor *actor)
 
         if (equipment)
         {
-            armor_class += base_item_info[item_info[equipment->type].base_item].base_ac;
+            enum base_item base_item = item_info[equipment->type].base_item;
 
-            // TODO: deal with stacking AC types
-            for (enum item_property item_property = 0; item_property < NUM_ITEM_PROPERTIES; item_property++)
+            ac += base_item_info[base_item].base_ac;
+
+            TCOD_list_t item_properties = item_info[equipment->type].item_properties;
+
+            for (void **iterator = TCOD_list_begin(item_properties); iterator != TCOD_list_end(item_properties); iterator++)
             {
-                if (item_info[equipment->type].item_properties[item_property])
+                struct base_item_property *base_item_property = *iterator;
+
+                if (base_item_property->item_property == ITEM_PROPERTY_AC_BONUS)
                 {
-                    armor_class += item_property_info[item_property].ac_bonus;
+                    struct ac_bonus *ac_bonus = (struct ac_bonus *)base_item_property;
+
+                    // TODO: deal with stacking AC types
+                    ac += ac_bonus->bonus;
                 }
             }
         }
     }
 
-    return armor_class;
+    return ac;
 }
 
 void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult, bool ranged)

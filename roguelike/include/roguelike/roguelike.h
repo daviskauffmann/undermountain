@@ -14,6 +14,7 @@
 #include "assets.h"
 #include "game.h"
 #include "item.h"
+#include "item_property.h"
 #include "map.h"
 #include "message.h"
 #include "object.h"

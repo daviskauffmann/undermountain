@@ -72,5 +72,8 @@
     <ClCompile Include="src\platform\sys.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\roguelike\item_property.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

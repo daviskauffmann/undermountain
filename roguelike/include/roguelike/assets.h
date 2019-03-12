@@ -18,9 +18,9 @@ extern struct ability_info ability_info[NUM_ABILITIES];
 extern struct item_common item_common;
 extern struct equip_slot_info equip_slot_info[NUM_EQUIP_SLOTS];
 extern struct base_item_info base_item_info[NUM_BASE_ITEMS];
-extern struct item_property_info item_property_info[NUM_ITEM_PROPERTIES];
 extern struct item_info item_info[NUM_ITEM_TYPES];
 
 void assets_load(void);
+void assets_unload(void);
 
 #endif

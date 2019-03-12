@@ -8,8 +8,6 @@ int platform_run(void)
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
     TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer);
 
-    assets_load();
-
     state_set(&menu_state);
 
     while (!TCOD_console_is_window_closed())

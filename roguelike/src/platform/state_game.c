@@ -142,7 +142,7 @@ static void update(void);
 static void render(void);
 static void quit(void);
 static bool do_directional_action(struct actor *player, int x, int y);
-static void set_took_turn(void *on_hit_params);
+static void on_hit_set_took_turn(void *on_hit_params);
 static bool toolip_on_click_move(void);
 static bool message_log_is_inside(int x, int y);
 static bool panel_is_inside(int x, int y);
@@ -740,7 +740,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                 {
                     if (targeting == TARGETING_SHOOT)
                     {
-                        actor_shoot(game->player, target_x, target_y, &set_took_turn, NULL);
+                        actor_shoot(game->player, target_x, target_y, &on_hit_set_took_turn, NULL);
 
                         targeting = TARGETING_NONE;
                     }
@@ -1771,7 +1771,7 @@ static bool do_directional_action(struct actor *player, int x, int y)
     return success;
 }
 
-static void set_took_turn(void *on_hit_params)
+static void on_hit_set_took_turn(void *on_hit_params)
 {
     took_turn = true;
 }

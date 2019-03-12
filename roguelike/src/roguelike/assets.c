@@ -14,7 +14,6 @@ struct ability_info ability_info[NUM_ABILITIES];
 struct item_common item_common;
 struct equip_slot_info equip_slot_info[NUM_EQUIP_SLOTS];
 struct base_item_info base_item_info[NUM_BASE_ITEMS];
-struct item_property_info item_property_info[NUM_ITEM_PROPERTIES];
 struct item_info item_info[NUM_ITEM_TYPES];
 
 #define TILE_COMMON(_shadow_color) tile_common.shadow_color = _shadow_color;
@@ -97,11 +96,11 @@ struct item_info item_info[NUM_ITEM_TYPES];
     base_item_info[_type].armor_check_penalty = _armor_check_penalty;                                                                                                                                                                  \
     base_item_info[_type].arcane_spell_failure = _arcane_spell_failure;
 
-#define ITEM_PROPERTY_INFO(_type, _text, _enhancement_bonus, _ac, _ac_bonus) \
-    item_property_info[_type].text = _text;                                  \
-    item_property_info[_type].enhancement_bonus = _enhancement_bonus;        \
-    item_property_info[_type].ac = _ac;                                      \
-    item_property_info[_type].ac_bonus = _ac_bonus;
+#define ITEM_INFO(_type, _base_item, _name, _description) \
+    item_info[_type].base_item = _base_item;              \
+    item_info[_type].name = _name;                        \
+    item_info[_type].description = _description;          \
+    item_info[_type].item_properties = TCOD_list_new();
 
 void assets_load(void)
 {
@@ -242,157 +241,212 @@ void assets_load(void)
     BASE_ITEM_INFO(BASE_ITEM_TOWER_SHIELD, ')', TCOD_white, 45, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 100, 1, 3, -10, 50);
     BASE_ITEM_INFO(BASE_ITEM_WARHAMMER, '!', TCOD_white, 8, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 12, 1, 0, 0, 0);
 
-    ITEM_PROPERTY_INFO(ITEM_PROPERTY_AC_BONUS_SHIELD_1, "Armor Bonus: +1 (AC Shield Modifier)", 0, AC_SHIELD, 1);
-    ITEM_PROPERTY_INFO(ITEM_PROPERTY_ENHANCEMENT_BONUS_1, "Enhancement Bonus: +1", 1, 0, 0);
-
-    item_info[ITEM_TYPE_BATTLEAXE].base_item = BASE_ITEM_BATTLEAXE;
-    item_info[ITEM_TYPE_BATTLEAXE].name = "Battleaxe";
-    item_info[ITEM_TYPE_BATTLEAXE].description = "A generic battleaxe.";
-    item_info[ITEM_TYPE_BATTLEAXE_1].base_item = BASE_ITEM_BATTLEAXE;
-    item_info[ITEM_TYPE_BATTLEAXE_1].name = "Battleaxe + 1";
-    item_info[ITEM_TYPE_BATTLEAXE_1].description = "A special battleaxe.";
-    item_info[ITEM_TYPE_BATTLEAXE_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
-    item_info[ITEM_TYPE_CLUB].base_item = BASE_ITEM_CLUB;
-    item_info[ITEM_TYPE_CLUB].name = "Club";
-    item_info[ITEM_TYPE_CLUB].description = "A generic club.";
-    item_info[ITEM_TYPE_CLUB_1].base_item = BASE_ITEM_CLUB;
-    item_info[ITEM_TYPE_CLUB_1].name = "Club + 1";
-    item_info[ITEM_TYPE_CLUB_1].description = "A special club.";
-    item_info[ITEM_TYPE_CLUB_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
-    item_info[ITEM_TYPE_DAGGER].base_item = BASE_ITEM_DAGGER;
-    item_info[ITEM_TYPE_DAGGER].name = "Dagger";
-    item_info[ITEM_TYPE_DAGGER].description = "A generic dagger.";
-    item_info[ITEM_TYPE_DAGGER_1].base_item = BASE_ITEM_DAGGER;
-    item_info[ITEM_TYPE_DAGGER_1].name = "Dagger + 1";
-    item_info[ITEM_TYPE_DAGGER_1].description = "A special dagger.";
-    item_info[ITEM_TYPE_DAGGER_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    ITEM_INFO(ITEM_TYPE_BATTLEAXE, BASE_ITEM_BATTLEAXE, "Battleaxe", "A generic battleaxe");
+    ITEM_INFO(ITEM_TYPE_BATTLEAXE_1, BASE_ITEM_BATTLEAXE, "Battleaxe + 1", "A special battleaxe");
+    TCOD_list_push(item_info[ITEM_TYPE_BATTLEAXE_1].item_properties, enhancement_bonus_create(1));
+    ITEM_INFO(ITEM_TYPE_CLUB, BASE_ITEM_CLUB, "Club", "A generic club");
+    ITEM_INFO(ITEM_TYPE_CLUB_1, BASE_ITEM_CLUB, "Club + 1", "A special club");
+    TCOD_list_push(item_info[ITEM_TYPE_CLUB_1].item_properties, enhancement_bonus_create(1));
+    ITEM_INFO(ITEM_TYPE_DAGGER, BASE_ITEM_DAGGER, "Dagger", "A generic dagger");
+    ITEM_INFO(ITEM_TYPE_DAGGER_1, BASE_ITEM_DAGGER, "Dagger + 1", "A special Dagger");
+    TCOD_list_push(item_info[ITEM_TYPE_DAGGER_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_GREATAXE].base_item = BASE_ITEM_GREATAXE;
     item_info[ITEM_TYPE_GREATAXE].name = "Greataxe";
     item_info[ITEM_TYPE_GREATAXE].description = "A generic greataxe.";
+    item_info[ITEM_TYPE_GREATAXE].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_GREATAXE_1].base_item = BASE_ITEM_GREATAXE;
     item_info[ITEM_TYPE_GREATAXE_1].name = "Greataxe + 1";
     item_info[ITEM_TYPE_GREATAXE_1].description = "A special greataxe.";
-    item_info[ITEM_TYPE_GREATAXE_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_GREATAXE_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_GREATAXE_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_GREATSWORD].base_item = BASE_ITEM_GREATSWORD;
     item_info[ITEM_TYPE_GREATSWORD].name = "Greatsword";
     item_info[ITEM_TYPE_GREATSWORD].description = "A generic greatsword.";
+    item_info[ITEM_TYPE_GREATSWORD].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_GREATSWORD_1].base_item = BASE_ITEM_GREATSWORD;
     item_info[ITEM_TYPE_GREATSWORD_1].name = "Greatsword + 1";
     item_info[ITEM_TYPE_GREATSWORD_1].description = "A special greatsword.";
-    item_info[ITEM_TYPE_GREATSWORD_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_GREATSWORD_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_GREATSWORD_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_HALBERD].base_item = BASE_ITEM_HALBERD;
     item_info[ITEM_TYPE_HALBERD].name = "Halberd";
     item_info[ITEM_TYPE_HALBERD].description = "A generic halberd.";
+    item_info[ITEM_TYPE_HALBERD].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_HALBERD_1].base_item = BASE_ITEM_HALBERD;
     item_info[ITEM_TYPE_HALBERD_1].name = "Halberd + 1";
     item_info[ITEM_TYPE_HALBERD_1].description = "A special halberd.";
-    item_info[ITEM_TYPE_HALBERD_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_HALBERD_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_HALBERD_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_HEAVY_CROSSBOW].base_item = BASE_ITEM_HEAVY_CROSSBOW;
     item_info[ITEM_TYPE_HEAVY_CROSSBOW].name = "Heavy Crossbow";
     item_info[ITEM_TYPE_HEAVY_CROSSBOW].description = "A generic heavy crossbow.";
+    item_info[ITEM_TYPE_HEAVY_CROSSBOW].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_HEAVY_CROSSBOW_1].base_item = BASE_ITEM_HEAVY_CROSSBOW;
     item_info[ITEM_TYPE_HEAVY_CROSSBOW_1].name = "Heavy Crossbow + 1";
     item_info[ITEM_TYPE_HEAVY_CROSSBOW_1].description = "A special heavy crossbow.";
-    item_info[ITEM_TYPE_HEAVY_CROSSBOW_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_HEAVY_CROSSBOW_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_HEAVY_CROSSBOW_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_KATANA].base_item = BASE_ITEM_KATANA;
     item_info[ITEM_TYPE_KATANA].name = "Katana";
     item_info[ITEM_TYPE_KATANA].description = "A generic katana.";
+    item_info[ITEM_TYPE_KATANA].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_KATANA_1].base_item = BASE_ITEM_KATANA;
     item_info[ITEM_TYPE_KATANA_1].name = "Katana + 1";
     item_info[ITEM_TYPE_KATANA_1].description = "A special katana.";
-    item_info[ITEM_TYPE_KATANA_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_KATANA_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_KATANA_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_LARGE_SHIELD].base_item = BASE_ITEM_LARGE_SHIELD;
     item_info[ITEM_TYPE_LARGE_SHIELD].name = "Large Shield";
     item_info[ITEM_TYPE_LARGE_SHIELD].description = "A generic large shield.";
+    item_info[ITEM_TYPE_LARGE_SHIELD].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_LARGE_SHIELD_1].base_item = BASE_ITEM_LARGE_SHIELD;
     item_info[ITEM_TYPE_LARGE_SHIELD_1].name = "Large Shield + 1";
     item_info[ITEM_TYPE_LARGE_SHIELD_1].description = "A special large shield.";
-    item_info[ITEM_TYPE_LARGE_SHIELD_1].item_properties[ITEM_PROPERTY_AC_BONUS_SHIELD_1] = true;
+    item_info[ITEM_TYPE_LARGE_SHIELD_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_LARGE_SHIELD_1].item_properties, ac_bonus_create(AC_SHIELD, 1));
     item_info[ITEM_TYPE_LIGHT_CROSSBOW].base_item = BASE_ITEM_LIGHT_CROSSBOW;
     item_info[ITEM_TYPE_LIGHT_CROSSBOW].name = "Light Crossbow";
     item_info[ITEM_TYPE_LIGHT_CROSSBOW].description = "A generic light crossbow.";
+    item_info[ITEM_TYPE_LIGHT_CROSSBOW].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_LIGHT_CROSSBOW_1].base_item = BASE_ITEM_LIGHT_CROSSBOW;
     item_info[ITEM_TYPE_LIGHT_CROSSBOW_1].name = "Light Crossbow + 1";
     item_info[ITEM_TYPE_LIGHT_CROSSBOW_1].description = "A special light crossbow.";
-    item_info[ITEM_TYPE_LIGHT_CROSSBOW_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_LIGHT_CROSSBOW_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_LIGHT_CROSSBOW_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_LONGBOW].base_item = BASE_ITEM_LONGBOW;
     item_info[ITEM_TYPE_LONGBOW].name = "Longbow";
     item_info[ITEM_TYPE_LONGBOW].description = "A generic longbow.";
+    item_info[ITEM_TYPE_LONGBOW].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_LONGBOW_1].base_item = BASE_ITEM_LONGBOW;
     item_info[ITEM_TYPE_LONGBOW_1].name = "Longbow + 1";
     item_info[ITEM_TYPE_LONGBOW_1].description = "A special longbow.";
-    item_info[ITEM_TYPE_LONGBOW_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_LONGBOW_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_LONGBOW_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_LONGSWORD].base_item = BASE_ITEM_LONGSWORD;
     item_info[ITEM_TYPE_LONGSWORD].name = "Longsword";
     item_info[ITEM_TYPE_LONGSWORD].description = "A generic longsword.";
+    item_info[ITEM_TYPE_LONGSWORD].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_LONGSWORD_1].base_item = BASE_ITEM_LONGSWORD;
     item_info[ITEM_TYPE_LONGSWORD_1].name = "Longsword + 1";
     item_info[ITEM_TYPE_LONGSWORD_1].description = "A special longsword.";
-    item_info[ITEM_TYPE_LONGSWORD_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_LONGSWORD_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_LONGSWORD_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_MACE].base_item = BASE_ITEM_MACE;
     item_info[ITEM_TYPE_MACE].name = "Mace";
     item_info[ITEM_TYPE_MACE].description = "A generic mace.";
+    item_info[ITEM_TYPE_MACE].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_MACE_1].base_item = BASE_ITEM_MACE;
     item_info[ITEM_TYPE_MACE_1].name = "Mace + 1";
     item_info[ITEM_TYPE_MACE_1].description = "A special mace.";
-    item_info[ITEM_TYPE_MACE_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_MACE_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_MACE_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS].base_item = BASE_ITEM_POTION;
     item_info[ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS].name = "Potion of Cure Light Wounds";
     item_info[ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS].description = "A healing potion.";
+    item_info[ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_QUARTERSTAFF].base_item = BASE_ITEM_QUARTERSTAFF;
     item_info[ITEM_TYPE_QUARTERSTAFF].name = "Quarterstaff";
     item_info[ITEM_TYPE_QUARTERSTAFF].description = "A generic quarterstaff.";
+    item_info[ITEM_TYPE_QUARTERSTAFF].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_QUARTERSTAFF_1].base_item = BASE_ITEM_QUARTERSTAFF;
     item_info[ITEM_TYPE_QUARTERSTAFF_1].name = "Quarterstaff + 1";
     item_info[ITEM_TYPE_QUARTERSTAFF_1].description = "A special quarterstaff.";
-    item_info[ITEM_TYPE_QUARTERSTAFF_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_QUARTERSTAFF_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_QUARTERSTAFF_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_SCIMITAR].base_item = BASE_ITEM_SCIMITAR;
     item_info[ITEM_TYPE_SCIMITAR].name = "Scimitar";
     item_info[ITEM_TYPE_SCIMITAR].description = "A generic scimitar.";
+    item_info[ITEM_TYPE_SCIMITAR].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_SCIMITAR_1].base_item = BASE_ITEM_SCIMITAR;
     item_info[ITEM_TYPE_SCIMITAR_1].name = "Scimitar + 1";
     item_info[ITEM_TYPE_SCIMITAR_1].description = "A special scimitar.";
-    item_info[ITEM_TYPE_SCIMITAR_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_SCIMITAR_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_SCIMITAR_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_SHORTBOW].base_item = BASE_ITEM_SHORTBOW;
     item_info[ITEM_TYPE_SHORTBOW].name = "Shortbow";
     item_info[ITEM_TYPE_SHORTBOW].description = "A generic shortbow.";
+    item_info[ITEM_TYPE_SHORTBOW].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_SHORTBOW_1].base_item = BASE_ITEM_SHORTBOW;
     item_info[ITEM_TYPE_SHORTBOW_1].name = "Shortbow + 1";
     item_info[ITEM_TYPE_SHORTBOW_1].description = "A special shortbow.";
-    item_info[ITEM_TYPE_SHORTBOW_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_SHORTBOW_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_SHORTBOW_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_SHORTSWORD].base_item = BASE_ITEM_SHORTSWORD;
     item_info[ITEM_TYPE_SHORTSWORD].name = "Shortsword";
     item_info[ITEM_TYPE_SHORTSWORD].description = "A generic shortsword.";
+    item_info[ITEM_TYPE_SHORTSWORD].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_SHORTSWORD_1].base_item = BASE_ITEM_SHORTSWORD;
     item_info[ITEM_TYPE_SHORTSWORD_1].name = "Shortsword + 1";
     item_info[ITEM_TYPE_SHORTSWORD_1].description = "A special shortsword.";
-    item_info[ITEM_TYPE_SHORTSWORD_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_SHORTSWORD_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_SHORTSWORD_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_SMALL_SHIELD].base_item = BASE_ITEM_SMALL_SHIELD;
     item_info[ITEM_TYPE_SMALL_SHIELD].name = "Small Shield";
     item_info[ITEM_TYPE_SMALL_SHIELD].description = "A generic small shield.";
+    item_info[ITEM_TYPE_SMALL_SHIELD].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_SMALL_SHIELD_1].base_item = BASE_ITEM_SMALL_SHIELD;
     item_info[ITEM_TYPE_SMALL_SHIELD_1].name = "Small Shield + 1";
     item_info[ITEM_TYPE_SMALL_SHIELD_1].description = "A special small shield.";
-    item_info[ITEM_TYPE_SMALL_SHIELD_1].item_properties[ITEM_PROPERTY_AC_BONUS_SHIELD_1] = true;
+    item_info[ITEM_TYPE_SMALL_SHIELD_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_SMALL_SHIELD_1].item_properties, ac_bonus_create(AC_SHIELD, 1));
     item_info[ITEM_TYPE_SPEAR].base_item = BASE_ITEM_SPEAR;
     item_info[ITEM_TYPE_SPEAR].name = "Spear";
     item_info[ITEM_TYPE_SPEAR].description = "A generic spear.";
+    item_info[ITEM_TYPE_SPEAR].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_SPEAR_1].base_item = BASE_ITEM_SPEAR;
     item_info[ITEM_TYPE_SPEAR_1].name = "Spear + 1";
     item_info[ITEM_TYPE_SPEAR_1].description = "A special spear.";
-    item_info[ITEM_TYPE_SPEAR_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_SPEAR_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_SPEAR_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_TOWER_SHIELD].base_item = BASE_ITEM_TOWER_SHIELD;
     item_info[ITEM_TYPE_TOWER_SHIELD].name = "Tower Shield";
     item_info[ITEM_TYPE_TOWER_SHIELD].description = "A generic tower shield.";
+    item_info[ITEM_TYPE_TOWER_SHIELD].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_TOWER_SHIELD_1].base_item = BASE_ITEM_TOWER_SHIELD;
     item_info[ITEM_TYPE_TOWER_SHIELD_1].name = "Tower Shield + 1";
     item_info[ITEM_TYPE_TOWER_SHIELD_1].description = "A special tower shield.";
-    item_info[ITEM_TYPE_TOWER_SHIELD_1].item_properties[ITEM_PROPERTY_AC_BONUS_SHIELD_1] = true;
+    item_info[ITEM_TYPE_TOWER_SHIELD_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_TOWER_SHIELD_1].item_properties, ac_bonus_create(AC_SHIELD, 1));
     item_info[ITEM_TYPE_WARHAMMER].base_item = BASE_ITEM_WARHAMMER;
     item_info[ITEM_TYPE_WARHAMMER].name = "Warhammer";
     item_info[ITEM_TYPE_WARHAMMER].description = "A generic warhammer.";
+    item_info[ITEM_TYPE_WARHAMMER].item_properties = TCOD_list_new();
     item_info[ITEM_TYPE_WARHAMMER_1].base_item = BASE_ITEM_WARHAMMER;
     item_info[ITEM_TYPE_WARHAMMER_1].name = "Warhammer + 1";
     item_info[ITEM_TYPE_WARHAMMER_1].description = "A special warhammer.";
-    item_info[ITEM_TYPE_WARHAMMER_1].item_properties[ITEM_PROPERTY_ENHANCEMENT_BONUS_1] = true;
+    item_info[ITEM_TYPE_WARHAMMER_1].item_properties = TCOD_list_new();
+    TCOD_list_push(item_info[ITEM_TYPE_WARHAMMER_1].item_properties, enhancement_bonus_create(1));
+}
+
+void assets_unload(void)
+{
+    for (enum item_type item_type = 0; item_type < NUM_ITEM_TYPES; item_type++)
+    {
+        TCOD_list_t item_properties = item_info[item_type].item_properties;
+
+        for (void **iterator = TCOD_list_begin(item_properties); iterator != TCOD_list_end(item_properties); iterator++)
+        {
+            struct base_item_property *base_item_property = *iterator;
+
+            switch (base_item_property->item_property)
+            {
+            case ITEM_PROPERTY_AC_BONUS:
+            {
+                struct ac_bonus *ac_bonus = (struct ac_bonus *)base_item_property;
+
+                ac_bonus_destroy(ac_bonus);
+            }
+            break;
+            case ITEM_PROPERTY_ENHANCEMENT_BONUS:
+            {
+                struct enhancement_bonus *enhancement_bonus = (struct enhancement_bonus *)base_item_property;
+
+                enhancement_bonus_destroy(enhancement_bonus);
+            }
+            break;
+            }
+        }
+
+        TCOD_list_delete(item_properties);
+    }
 }

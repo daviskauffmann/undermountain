@@ -135,6 +135,7 @@ struct class_info
     const char *name;
     TCOD_color_t color;
     int hit_die;
+    // TODO: base attack bonus
 };
 
 struct prototype
@@ -172,7 +173,7 @@ struct actor
     enum class class;
     enum faction faction;
     int experience;
-    int level;
+    int level; // TODO: multi-class?
     int ability_scores[NUM_ABILITIES];
     int base_hp;
     int current_hp;

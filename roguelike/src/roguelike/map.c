@@ -472,7 +472,11 @@ void map_generate(struct map *map)
         struct room *room = map_get_random_room(map);
 
         int x, y;
-        room_get_random_pos(room, &x, &y);
+        do
+        {
+            room_get_random_pos(room, &x, &y);
+        }
+        while (map->tiles[x][y].object != NULL);
 
         struct item *item = item_create(
             TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1),

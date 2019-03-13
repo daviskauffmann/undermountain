@@ -12,22 +12,7 @@ struct item *item_create(enum item_type type, int floor, int x, int y)
     return item;
 }
 
-bool item_can_equip(struct item *item, struct actor *actor)
-{
-    enum base_item base_item = item_info[item->type].base_item;
-
-    enum weapon_size weapon_size = base_item_info[base_item].weapon_size;
-    enum race_size race_size = race_info[actor->race].size;
-
-    if (weapon_size == WEAPON_SIZE_LARGE && race_size == RACE_SIZE_SMALL)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-bool item_is_two_handed(struct item *item, struct actor *actor)
+bool item_is_two_handed(struct item *item, enum race_size race_size)
 {
     enum base_item base_item = item_info[item->type].base_item;
 
@@ -38,31 +23,31 @@ bool item_is_two_handed(struct item *item, struct actor *actor)
         return false;
     }
 
-    enum race_size race_size = race_info[actor->race].size;
     enum weapon_size weapon_size = base_item_info[base_item].weapon_size;
 
     switch (race_size)
     {
     case RACE_SIZE_MEDIUM:
     {
-        if (weapon_size == WEAPON_SIZE_TINY || weapon_size == WEAPON_SIZE_SMALL || weapon_size == WEAPON_SIZE_MEDIUM)
+        switch (weapon_size)
         {
+        case WEAPON_SIZE_TINY:
+        case WEAPON_SIZE_SMALL:
+        case WEAPON_SIZE_MEDIUM:
             return false;
-        }
-        else if (weapon_size == WEAPON_SIZE_LARGE)
-        {
+        case WEAPON_SIZE_LARGE:
             return true;
         }
     }
     break;
     case RACE_SIZE_SMALL:
     {
-        if (weapon_size == WEAPON_SIZE_TINY || weapon_size == WEAPON_SIZE_SMALL)
+        switch (weapon_size)
         {
+        case WEAPON_SIZE_TINY:
+        case WEAPON_SIZE_SMALL:
             return false;
-        }
-        else if (weapon_size == WEAPON_SIZE_MEDIUM)
-        {
+        case WEAPON_SIZE_MEDIUM:
             return true;
         }
     }

@@ -151,30 +151,6 @@ enum item_type
     NUM_ITEM_TYPES
 };
 
-enum item_property
-{
-    ITEM_PROPERTY_AC_BONUS,
-    ITEM_PROPERTY_ENHANCEMENT_BONUS,
-
-    NUM_ITEM_PROPERTIES
-};
-
-enum ac
-{
-    AC_ARMOR,
-    AC_DEFLECTION,
-    AC_DODGE,
-    AC_NATURAL,
-    AC_SHIELD
-};
-
-// TODO: where to store names?
-// are they set when the item property is created, or created on the fly by the systems that use them?
-struct base_item_property
-{
-    enum item_property item_property;
-};
-
 struct item_info
 {
     enum base_item base_item;
@@ -192,8 +168,7 @@ struct item
 };
 
 struct item *item_create(enum item_type type, int floor, int x, int y);
-bool item_can_equip(struct item *item, struct actor *actor);
-bool item_is_two_handed(struct item *item, struct actor *actor);
+bool item_is_two_handed(struct item *item, enum race_size race_size);
 void item_destroy(struct item *item);
 
 #endif

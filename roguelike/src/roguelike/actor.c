@@ -362,7 +362,9 @@ void actor_ai(struct actor *actor)
 
                 if (weapon)
                 {
-                    if (base_item_info[item_info[weapon->type].base_item].ranged && actor_shoot(actor, target->x, target->y, NULL, NULL))
+                    enum base_item base_item = item_info[weapon->type].base_item;
+
+                    if (base_item_info[base_item].ranged && actor_shoot(actor, target->x, target->y, NULL, NULL))
                     {
                         continue;
                     }
@@ -405,7 +407,7 @@ void actor_ai(struct actor *actor)
             }
         }
 
-        // move between floors
+        // TODO: move between floors (deferred until processing of inactive maps is figured out)
         // if (tile->object)
         // {
         //     switch (tile->object->type)
@@ -428,6 +430,10 @@ void actor_ai(struct actor *actor)
         //     break;
         //     }
         // }
+
+        // TODO: look for objects to interact with if needed
+
+        // TODO: look for items to pick up
 
         // pick up items on ground
         if (TCOD_list_size(tile->items) > 0)
@@ -1102,7 +1108,9 @@ bool actor_equip(struct actor *actor, struct item *item)
 {
     enum base_item base_item = item_info[item->type].base_item;
 
-    if (base_item_info[base_item].equip_slot == EQUIP_SLOT_NONE || !item_can_equip(item, actor))
+    enum equip_slot equip_slot = base_item_info[base_item].equip_slot;
+
+    if (equip_slot == EQUIP_SLOT_NONE)
     {
         game_log(
             actor->floor,
@@ -1116,12 +1124,29 @@ bool actor_equip(struct actor *actor, struct item *item)
         return false;
     }
 
-    if (actor->equipment[base_item_info[base_item].equip_slot])
+    enum weapon_size weapon_size = base_item_info[base_item].weapon_size;
+    enum race_size race_size = race_info[actor->race].size;
+
+    if (weapon_size == WEAPON_SIZE_LARGE && race_size == RACE_SIZE_SMALL)
     {
-        actor_unequip(actor, base_item_info[base_item].equip_slot);
+        game_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s is too large for %s to wield",
+            item_info[item->type].name,
+            actor->name);
+
+        return false;
     }
 
-    if (item_is_two_handed(item, actor))
+    if (actor->equipment[equip_slot])
+    {
+        actor_unequip(actor, equip_slot);
+    }
+
+    if (item_is_two_handed(item, race_size))
     {
         struct item *off_hand = actor->equipment[EQUIP_SLOT_OFF_HAND];
 
@@ -1131,18 +1156,18 @@ bool actor_equip(struct actor *actor, struct item *item)
         }
     }
 
-    if (base_item_info[base_item].equip_slot == EQUIP_SLOT_OFF_HAND)
+    if (equip_slot == EQUIP_SLOT_OFF_HAND)
     {
         struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
 
-        if (main_hand && item_is_two_handed(main_hand, actor))
+        if (main_hand && item_is_two_handed(main_hand, race_size))
         {
             actor_unequip(actor, EQUIP_SLOT_MAIN_HAND);
         }
     }
 
     TCOD_list_remove(actor->items, item);
-    actor->equipment[base_item_info[base_item].equip_slot] = item;
+    actor->equipment[equip_slot] = item;
 
     game_log(
         actor->floor,

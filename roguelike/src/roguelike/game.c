@@ -19,6 +19,34 @@ struct game *game;
 // 2: process inactive maps every few turns, maybe processing maps farther from the player less frequently (preferred, but need to test performance)
 // 3: run specialized code to simulate other maps; think A-life in STALKER (more complicated)
 
+// TODO: possibly redo input to be more like commit 67aa306?
+// look at game.c, line 180 in the game_update() function
+// this type of input allows for multiple player characters or playable character switching on the fly
+// a practical gameplay application might be a mind control spell
+// unfortunately, with the implementation i did before, it resulted in each actor taking an entire frame to process
+// not because of computation time, but because the actor would do their ai that frame, and then on the next update, it would hit the next actor to process them, and so on
+// some research and testing needs to be done to see if this is just a necessary consequence or maybe there is a smarter way to accomplish this
+// here is my proposal:
+// give all actors a bool to say whether they are input controlled or not
+// game_update()
+//   if waiting_for_input is true
+//     return
+//   loop through all the maps
+//     loop through all the actors
+//       if the current actor has enough energy
+//         remove some energy
+//         if the current actor is input controlled
+//           set waiting_for_input to true
+//           set the game->player to the current actor (so we need to independently track the main character for win/lose state reasons?)
+//           break out of the loop
+//         otherwise
+//           process ai for this actor
+// state_game->input()
+//   took_turn can be local now, set to false at the beginning
+//   do everything as normal, applying input to the current game->player and storing the result in took_turn
+//   if took_turn is true and game->player->energy is over a threshold
+//     instead of calling game_turn(), just set waiting_for_input to false
+
 void game_init(void)
 {
     game = malloc(sizeof(struct game));
@@ -135,37 +163,6 @@ void game_load(const char *filename)
     // DEBUG: just start a new game
     game_new();
 }
-
-// TODO: possibly redo input to be more like 67aa306?
-// look at game.c, line 180 in the game_update() function
-// this type of input allows for multiple player characters or playable character switching on the fly
-// a practical gameplay application might be a mind control spell
-// unfortunately, with the implementation i did before, it resulted in each actor taking an entire frame to process
-// not because of computation time, but because the actor would do their ai that frame, and then on the next update, it would hit the next actor to process them, and so on
-// some research and testing needs to be done to see if this is just a necessary consequence or maybe there is a smarter way to accomplish this
-
-// this would also require a rework of the current input system
-// actually no, the input system just needs one minor change
-
-// here is my proposal:
-// give all actors a bool to say whether they are input controlled or not
-// game_update()
-//   if waiting_for_input is true
-//     return
-//   loop through all the maps
-//     loop through all the actors
-//       if the current actor has enough energy
-//         remove some energy
-//         if the current actor is input controlled
-//           set waiting_for_input to true
-//           set the game->player to the current actor (so we need to independently track the main character for win/lose state reasons?)
-//           break out of the loop
-//         otherwise
-//           process ai for this actor
-// state_game->input()
-//   took_turn can be local now, set to false at the beginning
-//   do everything as normal, applying input to the current game->player and storing the result in took_turn
-//   if took_turn is true, instead of calling game_turn(), just set waiting_for_input to false
 
 void game_update(void)
 {

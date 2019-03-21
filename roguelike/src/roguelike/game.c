@@ -173,14 +173,14 @@ void game_update(void)
 
     struct map *map = &game->maps[game->player->floor];
 
-    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
 
         actor_update_flash(actor);
     }
 
-    for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
+    TCOD_LIST_FOREACH(map->projectiles)
     {
         struct projectile *projectile = *iterator;
 

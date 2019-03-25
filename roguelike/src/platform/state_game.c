@@ -756,7 +756,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                             struct actor *target = NULL;
                             float min_distance = FLT_MAX;
 
-                            for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                            TCOD_LIST_FOREACH(map->actors)
                             {
                                 struct actor *actor = *iterator;
 
@@ -764,12 +764,12 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
                                     actor->faction != game->player->faction &&
                                     !actor->dead)
                                 {
-                                    float dist = distance_sq(game->player->x, game->player->y, actor->x, actor->y);
+                                    float distance = distance_between_sq(game->player->x, game->player->y, actor->x, actor->y);
 
-                                    if (dist < min_distance)
+                                    if (distance < min_distance)
                                     {
                                         target = actor;
-                                        min_distance = dist;
+                                        min_distance = distance;
                                     }
                                 }
                             }
@@ -1271,9 +1271,9 @@ static void update(void)
     panel_height = console_height - (message_log_visible ? message_log_height : 0);
 
     tooltip_width = 0;
-    for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
+    TCOD_LIST_FOREACH(tooltip_options)
     {
-        struct tooltip_option *option = *i;
+        struct tooltip_option *option = *iterator;
 
         int len = (int)strlen(option->text) + 2;
 
@@ -1339,7 +1339,7 @@ static void render(void)
                     {
                         tile->seen = true;
 
-                        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                        TCOD_LIST_FOREACH(map->actors)
                         {
                             struct actor *actor = *iterator;
 
@@ -1353,7 +1353,7 @@ static void render(void)
                             }
                         }
 
-                        for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+                        TCOD_LIST_FOREACH(map->objects)
                         {
                             struct object *object = *iterator;
 
@@ -1367,7 +1367,7 @@ static void render(void)
                             }
                         }
 
-                        for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                        TCOD_LIST_FOREACH(map->actors)
                         {
                             struct actor *actor = *iterator;
 
@@ -1392,7 +1392,7 @@ static void render(void)
         }
     }
 
-    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
 
@@ -1403,7 +1403,7 @@ static void render(void)
         }
     }
 
-    for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+    TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
 
@@ -1414,7 +1414,7 @@ static void render(void)
         }
     }
 
-    for (void **iterator = TCOD_list_begin(map->items); iterator != TCOD_list_end(map->items); iterator++)
+    TCOD_LIST_FOREACH(map->items)
     {
         struct item *item = *iterator;
 
@@ -1425,7 +1425,7 @@ static void render(void)
         }
     }
 
-    for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
+    TCOD_LIST_FOREACH(map->projectiles)
     {
         struct projectile *projectile = *iterator;
 
@@ -1439,7 +1439,7 @@ static void render(void)
         }
     }
 
-    for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+    TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
 
@@ -1450,7 +1450,7 @@ static void render(void)
         }
     }
 
-    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
 
@@ -1526,9 +1526,9 @@ static void render(void)
         TCOD_console_clear(message_log);
 
         int y = 1;
-        for (void **i = TCOD_list_begin(game->messages); i != TCOD_list_end(game->messages); i++)
+        TCOD_LIST_FOREACH(game->messages)
         {
-            struct message *message = *i;
+            struct message *message = *iterator;
 
             TCOD_console_set_default_foreground(message_log, message->color);
             TCOD_console_printf(message_log, 1, y, message->text);
@@ -1625,7 +1625,7 @@ static void render(void)
         case PANEL_INVENTORY:
         {
             int y = 1;
-            for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
+            TCOD_LIST_FOREACH(game->player->items)
             {
                 struct item *item = *iterator;
 
@@ -1670,9 +1670,9 @@ static void render(void)
         TCOD_console_clear(tooltip);
 
         int y = 1;
-        for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
+        TCOD_LIST_FOREACH(tooltip_options)
         {
-            struct tooltip_option *option = *i;
+            struct tooltip_option *option = *iterator;
 
             TCOD_console_set_default_foreground(tooltip, option == tooltip_get_selected() ? TCOD_yellow : TCOD_white);
             TCOD_console_printf(tooltip, 1, y, option->text);
@@ -1718,7 +1718,7 @@ static void quit(void)
 
     game_quit();
 
-    for (void **iterator = TCOD_list_begin(tooltip_options); iterator != TCOD_list_end(tooltip_options); iterator++)
+    TCOD_LIST_FOREACH(tooltip_options)
     {
         struct tooltip_option *tooltip_option = *iterator;
 
@@ -1852,7 +1852,7 @@ static struct item *panel_inventory_get_selected(void)
     if (panel_visible && current_panel == PANEL_INVENTORY)
     {
         int y = 1;
-        for (void **iterator = TCOD_list_begin(game->player->items); iterator != TCOD_list_end(game->player->items); iterator++)
+        TCOD_LIST_FOREACH(game->player->items)
         {
             struct item *item = *iterator;
 
@@ -1914,7 +1914,7 @@ static void tooltip_options_add(char *text, bool(*on_click)(void))
 
 static void tooltip_options_clear(void)
 {
-    for (void **iterator = TCOD_list_begin(tooltip_options); iterator != TCOD_list_end(tooltip_options); iterator++)
+    TCOD_LIST_FOREACH(tooltip_options)
     {
         struct tooltip_option *tooltip_option = *iterator;
 
@@ -1929,9 +1929,9 @@ static struct tooltip_option *tooltip_get_selected(void)
     if (tooltip_visible)
     {
         int y = 1;
-        for (void **i = TCOD_list_begin(tooltip_options); i != TCOD_list_end(tooltip_options); i++)
+        TCOD_LIST_FOREACH(tooltip_options)
         {
-            struct tooltip_option *option = *i;
+            struct tooltip_option *option = *iterator;
 
             if (mouse_x > tooltip_x && mouse_x < tooltip_x + (int)strlen(option->text) + 1 && mouse_y == y + tooltip_y)
             {

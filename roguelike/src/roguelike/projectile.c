@@ -8,8 +8,8 @@ struct projectile *projectile_create(unsigned char glyph, int floor, int x1, int
     projectile->floor = floor;
     projectile->x = (float)x1;
     projectile->y = (float)y1;
-    projectile->dx = ((float)x2 - (float)x1) / distance(x1, y1, x2, y2);
-    projectile->dy = ((float)y2 - (float)y1) / distance(x1, y1, x2, y2);
+    projectile->dx = ((float)x2 - (float)x1) / distance_between(x1, y1, x2, y2);
+    projectile->dy = ((float)y2 - (float)y1) / distance_between(x1, y1, x2, y2);
     projectile->shooter = shooter;
     projectile->on_hit = on_hit;
     projectile->on_hit_params = on_hit_params;

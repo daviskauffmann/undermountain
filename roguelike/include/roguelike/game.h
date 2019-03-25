@@ -18,7 +18,7 @@ struct game
     struct map maps[NUM_MAPS];
     TCOD_list_t messages;
     struct actor *player;
-    int turn;
+    unsigned int turn;
 };
 
 extern struct game *game;

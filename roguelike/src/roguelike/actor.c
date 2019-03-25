@@ -75,7 +75,7 @@ int actor_calc_enhancement_bonus(struct actor *actor)
         {
             TCOD_list_t item_properties = item_info[equipment->type].item_properties;
 
-            for (void **iterator = TCOD_list_begin(item_properties); iterator != TCOD_list_end(item_properties); iterator++)
+            TCOD_LIST_FOREACH(item_properties)
             {
                 struct base_item_property *base_item_property = *iterator;
 
@@ -116,7 +116,7 @@ int actor_calc_armor_class(struct actor *actor)
 
             TCOD_list_t item_properties = item_info[equipment->type].item_properties;
 
-            for (void **iterator = TCOD_list_begin(item_properties); iterator != TCOD_list_end(item_properties); iterator++)
+            TCOD_LIST_FOREACH(item_properties)
             {
                 struct base_item_property *base_item_property = *iterator;
 
@@ -233,7 +233,7 @@ void actor_calc_fov(struct actor *actor)
         {
             if (!TCOD_map_is_in_fov(actor->fov, x, y) && TCOD_map_is_in_fov(los_map, x, y))
             {
-                for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+                TCOD_LIST_FOREACH(map->objects)
                 {
                     struct object *object = *iterator;
 
@@ -243,7 +243,7 @@ void actor_calc_fov(struct actor *actor)
                     }
                 }
 
-                for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+                TCOD_LIST_FOREACH(map->actors)
                 {
                     struct actor *other = *iterator;
 
@@ -286,26 +286,26 @@ void actor_ai(struct actor *actor)
             struct object *target = NULL;
             float min_distance = FLT_MAX;
 
-            for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+            TCOD_LIST_FOREACH(map->objects)
             {
                 struct object *object = *iterator;
 
                 if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
                     object->type == OBJECT_TYPE_FOUNTAIN)
                 {
-                    float dist = distance_sq(actor->x, actor->y, object->x, object->y);
+                    float distance = distance_between_sq(actor->x, actor->y, object->x, object->y);
 
-                    if (dist < min_distance)
+                    if (distance < min_distance)
                     {
                         target = object;
-                        min_distance = dist;
+                        min_distance = distance;
                     }
                 }
             }
 
             if (target)
             {
-                if (distance(actor->x, actor->y, target->x, target->y) < 2.0f)
+                if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
                 {
                     if (actor_drink(actor, target->x, target->y))
                     {
@@ -327,7 +327,7 @@ void actor_ai(struct actor *actor)
             struct actor *target = NULL;
             float min_distance = FLT_MAX;
 
-            for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+            TCOD_LIST_FOREACH(map->actors)
             {
                 struct actor *other = *iterator;
 
@@ -335,12 +335,12 @@ void actor_ai(struct actor *actor)
                     other->faction != actor->faction &&
                     !other->dead)
                 {
-                    float dist = distance_sq(actor->x, actor->y, other->x, other->y);
+                    float distance = distance_between_sq(actor->x, actor->y, other->x, other->y);
 
-                    if (dist < min_distance)
+                    if (distance < min_distance)
                     {
                         target = other;
-                        min_distance = dist;
+                        min_distance = distance;
                     }
                 }
             }
@@ -352,7 +352,7 @@ void actor_ai(struct actor *actor)
                 actor->turns_chased = 0;
 
                 // TODO: if carrying a ranged weapon, actor might want to prioritize retreating rather than perfoming a melee attack
-                if (distance(actor->x, actor->y, target->x, target->y) < 2.0f &&
+                if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f &&
                     actor_attack(actor, target, false))
                 {
                     continue;
@@ -398,7 +398,7 @@ void actor_ai(struct actor *actor)
         if (actor->leader)
         {
             if (!TCOD_map_is_in_fov(actor->fov, actor->leader->x, actor->leader->y) ||
-                distance(actor->x, actor->y, actor->leader->x, actor->leader->y) > 5.0f)
+                distance_between(actor->x, actor->y, actor->leader->x, actor->leader->y) > 5.0f)
             {
                 if (actor_path_towards(actor, actor->leader->x, actor->leader->y))
                 {
@@ -490,7 +490,7 @@ bool actor_move_towards(struct actor *actor, int x, int y)
 {
     int dx = x - actor->x;
     int dy = y - actor->y;
-    float d = distance(actor->x, actor->y, x, y);
+    float d = distance_between(actor->x, actor->y, x, y);
 
     if (d > 0.0f)
     {
@@ -587,7 +587,7 @@ bool actor_move(struct actor *actor, int x, int y)
         }
     }
 
-    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+    TCOD_LIST_FOREACH(actor->items)
     {
         struct item *item = *iterator;
 
@@ -625,7 +625,18 @@ bool actor_swap(struct actor *actor, struct actor *other)
     other_tile->actor = actor;
     tile->actor = other;
 
-    for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+    {
+        struct item *equipment = actor->equipment[i];
+
+        if (equipment)
+        {
+            equipment->x = actor->x;
+            equipment->y = actor->y;
+        }
+    }
+
+    TCOD_LIST_FOREACH(actor->items)
     {
         struct item *item = *iterator;
 
@@ -633,7 +644,18 @@ bool actor_swap(struct actor *actor, struct actor *other)
         item->y = actor->y;
     }
 
-    for (void **iterator = TCOD_list_begin(other->items); iterator != TCOD_list_end(other->items); iterator++)
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+    {
+        struct item *equipment = other->equipment[i];
+
+        if (equipment)
+        {
+            equipment->x = other->x;
+            equipment->y = other->y;
+        }
+    }
+
+    TCOD_LIST_FOREACH(other->items)
     {
         struct item *item = *iterator;
 
@@ -773,7 +795,7 @@ bool actor_descend(struct actor *actor)
             }
         }
 
-        for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+        TCOD_LIST_FOREACH(actor->items)
         {
             struct item *item = *iterator;
 
@@ -855,7 +877,7 @@ bool actor_ascend(struct actor *actor)
             }
         }
 
-        for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+        TCOD_LIST_FOREACH(actor->items)
         {
             struct item *item = *iterator;
 
@@ -1535,7 +1557,7 @@ void actor_die(struct actor *actor, struct actor *killer)
             }
         }
 
-        for (void **iterator = TCOD_list_begin(actor->items); iterator != TCOD_list_end(actor->items); iterator++)
+        TCOD_LIST_FOREACH(actor->items)
         {
             struct item *item = *iterator;
 

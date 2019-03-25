@@ -424,7 +424,7 @@ void assets_unload(void)
     {
         TCOD_list_t item_properties = item_info[item_type].item_properties;
 
-        for (void **iterator = TCOD_list_begin(item_properties); iterator != TCOD_list_end(item_properties); iterator++)
+        TCOD_LIST_FOREACH(item_properties)
         {
             struct base_item_property *base_item_property = *iterator;
 

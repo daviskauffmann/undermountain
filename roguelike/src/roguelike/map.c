@@ -26,7 +26,7 @@ static void vline_up(struct map *map, int x, int y);
 static void vline_down(struct map *map, int x, int y);
 static bool traverse_node(TCOD_bsp_t *node, struct map *map);
 
-void map_init(struct map *map, int floor)
+void map_init(struct map *map, unsigned int floor)
 {
     map->floor = floor;
     map->rooms = TCOD_list_new();
@@ -566,7 +566,7 @@ void map_reset(struct map *map)
         }
     }
 
-    for (void **iterator = TCOD_list_begin(map->rooms); iterator != TCOD_list_end(map->rooms); iterator++)
+    TCOD_LIST_FOREACH(map->rooms)
     {
         struct room *room = *iterator;
 
@@ -575,7 +575,7 @@ void map_reset(struct map *map)
 
     TCOD_list_delete(map->rooms);
 
-    for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+    TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
 
@@ -584,7 +584,7 @@ void map_reset(struct map *map)
 
     TCOD_list_delete(map->objects);
 
-    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
 
@@ -593,7 +593,7 @@ void map_reset(struct map *map)
 
     TCOD_list_delete(map->actors);
 
-    for (void **iterator = TCOD_list_begin(map->items); iterator != TCOD_list_end(map->items); iterator++)
+    TCOD_LIST_FOREACH(map->items)
     {
         struct item *item = *iterator;
 
@@ -602,7 +602,7 @@ void map_reset(struct map *map)
 
     TCOD_list_delete(map->items);
 
-    for (void **iterator = TCOD_list_begin(map->projectiles); iterator != TCOD_list_end(map->projectiles); iterator++)
+    TCOD_LIST_FOREACH(map->projectiles)
     {
         struct projectile *projectile = *iterator;
 

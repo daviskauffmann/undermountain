@@ -131,6 +131,7 @@ void game_new(void)
 
             struct actor *pet = actor_create("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, 1, floor, x, y);
             pet->leader = game->player;
+            pet->speed = 1.0f;
 
             TCOD_list_push(map->actors, pet);
             tile->actor = pet;
@@ -198,7 +199,7 @@ void game_turn(void)
 
     struct map *map = &game->maps[game->player->floor];
 
-    for (void **iterator = TCOD_list_begin(map->objects); iterator != TCOD_list_end(map->objects); iterator++)
+    TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
 
@@ -217,14 +218,14 @@ void game_turn(void)
         object_calc_light(object);
     }
 
-    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
 
         actor_calc_light(actor);
     }
 
-    for (void **iterator = TCOD_list_begin(map->actors); iterator != TCOD_list_end(map->actors); iterator++)
+    TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
 
@@ -292,7 +293,7 @@ void game_quit(void)
         map_reset(map);
     }
 
-    for (void **iterator = TCOD_list_begin(game->messages); iterator != TCOD_list_end(game->messages); iterator++)
+    TCOD_LIST_FOREACH(game->messages)
     {
         struct message *message = *iterator;
 

@@ -148,6 +148,8 @@ void game_save(const char *filename)
     // TODO: save game to zip
 
     TCOD_zip_delete(zip);
+
+    printf("Game saved\n");
 }
 
 void game_load(const char *filename)
@@ -163,6 +165,8 @@ void game_load(const char *filename)
 
     // DEBUG: just start a new game
     game_new();
+
+    printf("Game loaded\n");
 }
 
 void game_update(void)
@@ -303,6 +307,8 @@ void game_quit(void)
     TCOD_list_delete(game->messages);
 
     free(game);
+
+    game = NULL;
 
     assets_unload();
 }

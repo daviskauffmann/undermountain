@@ -66,9 +66,6 @@
     <ClCompile Include="src\platform\state_menu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\state.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\platform\sys.c">
       <Filter>Source Files</Filter>
     </ClCompile>

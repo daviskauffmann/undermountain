@@ -1,9 +1,9 @@
 #include <platform/platform.h>
 
-static void init(void);
-static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
-static void update(void);
-static void render(void);
+static void init(struct state *previous_state);
+static struct state *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
+static struct state *update(float delta);
+static void render(TCOD_console_t console);
 static void quit(void);
 
 struct state about_state = {
@@ -14,11 +14,11 @@ struct state about_state = {
     &quit
 };
 
-static void init(void)
+static void init(struct state *previous_state)
 {
 }
 
-static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static struct state *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
     switch (ev)
     {
@@ -28,7 +28,9 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
         {
         case TCODK_ESCAPE:
         {
-            state_set(&menu_state);
+            about_state.quit();
+            menu_state.init(&about_state);
+            return &menu_state;
         }
         break;
         }
@@ -38,20 +40,23 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
     {
         if (mouse.rbutton)
         {
-            state_set(&menu_state);
+            about_state.quit();
+            menu_state.init(&about_state);
+            return &menu_state;
         }
     }
     break;
     }
 
-    return false;
+    return &about_state;
 }
 
-static void update(void)
+static struct state *update(float delta)
 {
+    return &about_state;
 }
 
-static void render(void)
+static void render(TCOD_console_t console)
 {
     int y = 1;
 

@@ -136,10 +136,10 @@ static int mouse_tile_y;
 static TCOD_noise_t noise;
 static float noise_x;
 
-static void init(void);
-static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
-static void update(void);
-static void render(void);
+static void init(struct state *previous_state);
+static struct state *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
+static struct state *update(float delta);
+static void render(TCOD_console_t console);
 static void quit(void);
 static bool do_directional_action(struct actor *player, int x, int y);
 static void on_hit_set_took_turn(void *on_hit_params);
@@ -168,7 +168,7 @@ struct state game_state = {
     &quit
 };
 
-static void init(void)
+static void init(struct state *previous_state)
 {
     directional_action = DIRECTIONAL_ACTION_NONE;
     inventory_action = INVENTORY_ACTION_NONE;
@@ -232,7 +232,7 @@ static void init(void)
     noise_x = 0.0f;
 }
 
-static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static struct state *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
     switch (ev)
     {
@@ -271,7 +271,9 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
             }
             else
             {
-                state_set(&menu_state);
+                game_state.quit();
+                menu_state.init(&game_state);
+                return &menu_state;
             }
         }
         break;
@@ -1255,10 +1257,10 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
     mouse_tile_x = mouse.cx + view_x;
     mouse_tile_y = mouse.cy + view_y;
 
-    return false;
+    return &game_state;
 }
 
-static void update(void)
+static struct state *update(float delta)
 {
     message_log_x = 0;
     message_log_height = console_height / 4;
@@ -1311,9 +1313,11 @@ static void update(void)
     {
         remove(SAVE_PATH);
     }
+
+    return &game_state;
 }
 
-static void render(void)
+static void render(TCOD_console_t console)
 {
     struct map *map = &game->maps[game->player->floor];
 
@@ -1384,8 +1388,8 @@ static void render(void)
 
                     if (tile->seen)
                     {
-                        TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, color);
-                        TCOD_console_set_char(NULL, x - view_x, y - view_y, tile_info[tile->type].glyph);
+                        TCOD_console_set_char_foreground(console, x - view_x, y - view_y, color);
+                        TCOD_console_set_char(console, x - view_x, y - view_y, tile_info[tile->type].glyph);
                     }
                 }
             }
@@ -1398,8 +1402,8 @@ static void render(void)
 
         if (actor->dead && TCOD_map_is_in_fov(game->player->fov, actor->x, actor->y))
         {
-            TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, TCOD_dark_red);
-            TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, '%');
+            TCOD_console_set_char_foreground(console, actor->x - view_x, actor->y - view_y, TCOD_dark_red);
+            TCOD_console_set_char(console, actor->x - view_x, actor->y - view_y, '%');
         }
     }
 
@@ -1409,8 +1413,8 @@ static void render(void)
 
         if (TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
         {
-            TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
-            TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, object_info[object->type].glyph);
+            TCOD_console_set_char_foreground(console, object->x - view_x, object->y - view_y, object->color);
+            TCOD_console_set_char(console, object->x - view_x, object->y - view_y, object_info[object->type].glyph);
         }
     }
 
@@ -1420,8 +1424,8 @@ static void render(void)
 
         if (TCOD_map_is_in_fov(game->player->fov, item->x, item->y))
         {
-            TCOD_console_set_char_foreground(NULL, item->x - view_x, item->y - view_y, base_item_info[item_info[item->type].base_item].color);
-            TCOD_console_set_char(NULL, item->x - view_x, item->y - view_y, base_item_info[item_info[item->type].base_item].glyph);
+            TCOD_console_set_char_foreground(console, item->x - view_x, item->y - view_y, base_item_info[item_info[item->type].base_item].color);
+            TCOD_console_set_char(console, item->x - view_x, item->y - view_y, base_item_info[item_info[item->type].base_item].glyph);
         }
     }
 
@@ -1434,8 +1438,8 @@ static void render(void)
 
         if (TCOD_map_is_in_fov(game->player->fov, x, y))
         {
-            TCOD_console_set_char_foreground(NULL, x - view_x, y - view_y, TCOD_white);
-            TCOD_console_set_char(NULL, x - view_x, y - view_y, projectile->glyph);
+            TCOD_console_set_char_foreground(console, x - view_x, y - view_y, TCOD_white);
+            TCOD_console_set_char(console, x - view_x, y - view_y, projectile->glyph);
         }
     }
 
@@ -1445,8 +1449,8 @@ static void render(void)
 
         if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) && TCOD_map_is_in_fov(game->player->fov, object->x, object->y))
         {
-            TCOD_console_set_char_foreground(NULL, object->x - view_x, object->y - view_y, object->color);
-            TCOD_console_set_char(NULL, object->x - view_x, object->y - view_y, object_info[object->type].glyph);
+            TCOD_console_set_char_foreground(console, object->x - view_x, object->y - view_y, object->color);
+            TCOD_console_set_char(console, object->x - view_x, object->y - view_y, object_info[object->type].glyph);
         }
     }
 
@@ -1463,15 +1467,15 @@ static void render(void)
                 color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade);
             }
 
-            TCOD_console_set_char_foreground(NULL, actor->x - view_x, actor->y - view_y, color);
-            TCOD_console_set_char(NULL, actor->x - view_x, actor->y - view_y, race_info[actor->race].glyph);
+            TCOD_console_set_char_foreground(console, actor->x - view_x, actor->y - view_y, color);
+            TCOD_console_set_char(console, actor->x - view_x, actor->y - view_y, race_info[actor->race].glyph);
         }
     }
 
     if (targeting != TARGETING_NONE)
     {
-        TCOD_console_set_char_foreground(NULL, target_x - view_x, target_y - view_y, TCOD_red);
-        TCOD_console_set_char(NULL, target_x - view_x, target_y - view_y, 'X');
+        TCOD_console_set_char_foreground(console, target_x - view_x, target_y - view_y, TCOD_red);
+        TCOD_console_set_char(console, target_x - view_x, target_y - view_y, 'X');
 
         struct tile *tile = &map->tiles[target_x][target_y];
 
@@ -1479,7 +1483,7 @@ static void render(void)
         {
             if (tile->actor)
             {
-                TCOD_console_printf_ex(NULL, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile->actor->name);
+                TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile->actor->name);
 
                 goto done;
             }
@@ -1489,7 +1493,7 @@ static void render(void)
 
                 if (item)
                 {
-                    TCOD_console_printf_ex(NULL, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, item_info[item->type].name);
+                    TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, item_info[item->type].name);
 
                     goto done;
                 }
@@ -1497,12 +1501,12 @@ static void render(void)
 
             if (tile->object)
             {
-                TCOD_console_printf_ex(NULL, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, object_info[tile->object->type].name);
+                TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, object_info[tile->object->type].name);
 
                 goto done;
             }
 
-            TCOD_console_printf_ex(NULL, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile_info[tile->type].name);
+            TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile_info[tile->type].name);
 
         done:;
         }
@@ -1510,11 +1514,11 @@ static void render(void)
         {
             if (tile->seen)
             {
-                TCOD_console_printf_ex(NULL, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (known)", tile_info[tile->type].name);
+                TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (known)", tile_info[tile->type].name);
             }
             else
             {
-                TCOD_console_printf_ex(NULL, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
+                TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "Unknown");
             }
         }
     }
@@ -1539,7 +1543,7 @@ static void render(void)
         TCOD_console_set_default_foreground(message_log, TCOD_white);
         TCOD_console_printf_frame(message_log, 0, 0, message_log_width, message_log_height, false, TCOD_BKGND_SET, "Log");
 
-        TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, NULL, message_log_x, message_log_y, 1, 1);
+        TCOD_console_blit(message_log, 0, 0, message_log_width, message_log_height, console, message_log_x, message_log_y, 1, 1);
     }
 
     if (panel_visible)
@@ -1660,7 +1664,7 @@ static void render(void)
         break;
         }
 
-        TCOD_console_blit(panel, 0, 0, panel_width, panel_height, NULL, panel_x, panel_y, 1, 1);
+        TCOD_console_blit(panel, 0, 0, panel_width, panel_height, console, panel_x, panel_y, 1, 1);
     }
 
     if (tooltip_visible)
@@ -1683,7 +1687,7 @@ static void render(void)
         TCOD_console_set_default_foreground(tooltip, TCOD_white);
         TCOD_console_printf_frame(tooltip, 0, 0, tooltip_width, tooltip_height, false, TCOD_BKGND_SET, "");
 
-        TCOD_console_blit(tooltip, 0, 0, tooltip_width, tooltip_height, NULL, tooltip_x, tooltip_y, 1, 1);
+        TCOD_console_blit(tooltip, 0, 0, tooltip_width, tooltip_height, console, tooltip_x, tooltip_y, 1, 1);
     }
 
     if (automoving)
@@ -1697,16 +1701,16 @@ static void render(void)
             y = automove_actor->y;
         }
 
-        TCOD_console_set_char_background(NULL, x - view_x, y - view_y, TCOD_red, TCOD_BKGND_SET);
+        TCOD_console_set_char_background(console, x - view_x, y - view_y, TCOD_red, TCOD_BKGND_SET);
     }
 
     // DEBUG
-    TCOD_console_printf(NULL, 0, 0, "Turn: %d", game->turn);
-    TCOD_console_printf(NULL, 0, 1, "Floor: %d", game->player->floor);
-    TCOD_console_printf(NULL, 0, 2, "X: %d", game->player->x);
-    TCOD_console_printf(NULL, 0, 3, "Y: %d", game->player->y);
-    TCOD_console_printf(NULL, 0, 4, "HP: %d", game->player->current_hp);
-    TCOD_console_printf(NULL, 0, 5, "Kills: %d", game->player->kills);
+    TCOD_console_printf(console, 0, 0, "Turn: %d", game->turn);
+    TCOD_console_printf(console, 0, 1, "Floor: %d", game->player->floor);
+    TCOD_console_printf(console, 0, 2, "X: %d", game->player->x);
+    TCOD_console_printf(console, 0, 3, "Y: %d", game->player->y);
+    TCOD_console_printf(console, 0, 4, "HP: %d", game->player->current_hp);
+    TCOD_console_printf(console, 0, 5, "Kills: %d", game->player->kills);
 }
 
 static void quit(void)

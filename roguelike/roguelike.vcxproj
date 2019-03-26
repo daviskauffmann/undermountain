@@ -90,7 +90,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\platform\state.c" />
     <ClCompile Include="src\platform\state_about.c" />
     <ClCompile Include="src\platform\config.c" />
     <ClCompile Include="src\platform\state_game.c" />

@@ -8,7 +8,8 @@ int platform_run(void)
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
     TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer);
 
-    state_set(&menu_state);
+    struct state *state = &menu_state;
+    state->init(NULL);
 
     while (!TCOD_console_is_window_closed())
     {
@@ -37,21 +38,32 @@ int platform_run(void)
         break;
         }
 
-        if (state->handleEvent(ev, key, mouse))
+        if (!(state = state->handleEvent(ev, key, mouse)))
         {
             break;
         }
 
-        state->update();
+        if (!(state = state->update(TCOD_sys_get_last_frame_length())))
+        {
+            break;
+        }
 
         TCOD_console_set_default_background(NULL, TCOD_black);
         TCOD_console_set_default_foreground(NULL, TCOD_white);
         TCOD_console_clear(NULL);
-        state->render();
+        state->render(NULL);
         TCOD_console_flush();
     }
 
-    state_set(NULL);
+    if (game)
+    {
+        if (game->state != GAME_STATE_LOSE)
+        {
+            game_save(SAVE_PATH);
+        }
+
+        game_quit();
+    }
 
     TCOD_console_delete(NULL);
     TCOD_quit();

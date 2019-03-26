@@ -18,13 +18,13 @@ static struct option_info option_info[NUM_OPTIONS];
 static int mouse_x;
 static int mouse_y;
 
-static void init(void);
-static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
-static void update(void);
-static void render(void);
+static void init(struct state *previous_state);
+static struct state *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
+static struct state *update(float delta);
+static void render(TCOD_console_t console);
 static void quit(void);
 static enum option get_selected_option(void);
-static bool select_option(enum option option);
+static struct state *select_option(enum option option);
 
 struct state menu_state = {
     &init,
@@ -34,7 +34,7 @@ struct state menu_state = {
     &quit
 };
 
-static void init(void)
+static void init(struct state *previous_state)
 {
     option_info[OPTION_START].text = "Start";
     option_info[OPTION_ABOUT].text = "About";
@@ -44,7 +44,7 @@ static void init(void)
     mouse_y = -1;
 }
 
-static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static struct state *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
     switch (ev)
     {
@@ -54,7 +54,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
         {
         case TCODK_ESCAPE:
         {
-            return true;
+            return NULL;
         }
         break;
         case TCODK_TEXT:
@@ -63,10 +63,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 
             enum option option = (enum option)alpha;
 
-            if (select_option(option))
-            {
-                return true;
-            }
+            return select_option(option);
         }
         break;
         }
@@ -78,10 +75,7 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
         {
             enum option option = get_selected_option();
 
-            if (select_option(option))
-            {
-                return true;
-            }
+            return select_option(option);
         }
     }
     break;
@@ -90,24 +84,25 @@ static bool handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
     mouse_x = mouse.cx;
     mouse_y = mouse.cy;
 
-    return false;
+    return &menu_state;
 }
 
-static void update(void)
+static struct state *update(float delta)
 {
+    return &menu_state;
 }
 
-static void render(void)
+static void render(TCOD_console_t console)
 {
     int y = 1;
     for (enum option option = 0; option < NUM_OPTIONS; option++)
     {
-        TCOD_console_set_default_foreground(NULL, option == get_selected_option() ? TCOD_yellow : TCOD_white);
-        TCOD_console_printf(NULL, 1, y++, "%c) %s", option + 'a', option_info[option].text);
+        TCOD_console_set_default_foreground(console, option == get_selected_option() ? TCOD_yellow : TCOD_white);
+        TCOD_console_printf(console, 1, y++, "%c) %s", option + 'a', option_info[option].text);
     }
 
-    TCOD_console_set_default_foreground(NULL, TCOD_white);
-    TCOD_console_printf_frame(NULL, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, TITLE);
+    TCOD_console_set_default_foreground(console, TCOD_white);
+    TCOD_console_printf_frame(console, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, TITLE);
 }
 
 static void quit(void)
@@ -130,7 +125,7 @@ static enum option get_selected_option(void)
     return -1;
 }
 
-static bool select_option(enum option option)
+static struct state *select_option(enum option option)
 {
     switch (option)
     {
@@ -150,20 +145,25 @@ static bool select_option(enum option option)
             game_new();
         }
 
-        state_set(&game_state);
+        menu_state.quit();
+        game_state.init(&menu_state);
+        return &game_state;
     }
     break;
     case OPTION_ABOUT:
     {
-        state_set(&about_state);
+        menu_state.quit();
+        about_state.init(&menu_state);
+        return &about_state;
     }
     break;
     case OPTION_QUIT:
     {
-        return true;
+        menu_state.quit();
+        return NULL;
     }
     break;
     }
 
-    return false;
+    return &menu_state;
 }

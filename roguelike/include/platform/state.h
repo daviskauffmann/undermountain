@@ -3,15 +3,11 @@
 
 struct state
 {
-    void(*init)(void);
-    bool(*handleEvent)(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
-    void(*update)(void);
-    void(*render)(void);
+    void(*init)(struct state *previous_state);
+    struct state *(*handleEvent)(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
+    struct state *(*update)(float delta);
+    void(*render)(TCOD_console_t console);
     void(*quit)(void);
 };
-
-extern struct state *state;
-
-void state_set(struct state *new_state);
 
 #endif

@@ -4,6 +4,13 @@ struct item *item_create(enum item_type type, int floor, int x, int y)
 {
     struct item *item = malloc(sizeof(struct item));
 
+    if (!item)
+    {
+        printf("Couldn't allocate item\n");
+
+        return NULL;
+    }
+
     item->type = type;
     item->floor = floor;
     item->x = x;

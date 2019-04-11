@@ -11,13 +11,31 @@ struct game *game;
 // decide on a target ms per turn, maybe 16ms
 // the game_turn() function should never take longer than that to run
 
-// TODO: i'd like to implement processing of maps the player is not on
-// this would require more thought rather than brute-force processing all maps, because that is incredibly slow
-// full determinism is not a requirement
-// possible ideas:
-// 1: keep track of how many turns have passed since the map was last visited and process all those turns when the player enters
-// 2: process inactive maps every few turns, maybe processing maps farther from the player less frequently (preferred, but need to test performance)
-// 3: run specialized code to simulate other maps; think A-life in STALKER (more complicated)
+// TODO: traps
+
+// TOOD: chests
+
+// TOOD: redo map generation
+// no need for overworld map, game will start on the first dungeon
+// we need to define a win condition for the game, probably just grabbing an amulet or something and returning to the entrance?
+// ascending the first floor stairs will end the game
+// maps should have multiple stairs
+// the stairs should geographically connect to the above/below floors, so that will have to be taken into account during map generation
+// thus, the stair object should be a little more sophisticated. it should hold a stair_id which connects it to another stair with the same id
+// using the stair will just teleport the player to the other stair
+// this simplifies the code a little bit because we no longer need to have ascend() and descend() functions, just one that handles moving from one stair to the other
+// making a system that is aware of the layout of the entire dungeon allows for the possibility of "pit traps", which make the player (or creatures) fall to a lower floor
+// these pit traps will be generated in a similar way to the stairs, in that they can only appear if the same tile coordinate on the map below is a floor
+// in addition to all that, there should be ladders that connect to smaller maps that contain loot and enemies
+// these maps have no way out other than the entrance and are smaller
+
+// TODO: implement processing of maps the player is not on
+
+// TODO: not storing all maps in memory?
+// if we have a small number of maps, this might not be a problem
+// might interfere with the above todo
+
+// TODO: have different TCOD_random_t instances for different things
 
 // TODO: possibly redo input to be more like commit 67aa306?
 // look at game.c, line 180 in the game_update() function
@@ -47,9 +65,21 @@ struct game *game;
 //   if took_turn is true and game->player->energy is over a threshold
 //     instead of calling game_turn(), just set waiting_for_input to false
 
+// TOOD: communication with platform layer?
+// for stuff like logging and file system
+// perhaps game_init() should accept a struct containing some function pointers to platform layer stuff
+// or just a header that the game provides with function declarations and the platform must define them
+
 void game_init(void)
 {
     game = malloc(sizeof(struct game));
+
+    if (!game)
+    {
+        printf("Couldn't allocate game\n");
+
+        return;
+    }
 
     game->state = GAME_STATE_PLAY;
     game->messages = TCOD_list_new();

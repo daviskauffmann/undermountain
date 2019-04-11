@@ -4,6 +4,13 @@ struct projectile *projectile_create(unsigned char glyph, int floor, int x1, int
 {
     struct projectile *projectile = malloc(sizeof(struct projectile));
 
+    if (!projectile)
+    {
+        printf("Couldn't allocate projectile\n");
+
+        return NULL;
+    }
+
     projectile->glyph = glyph;
     projectile->floor = floor;
     projectile->x = (float)x1;

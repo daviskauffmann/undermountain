@@ -8,16 +8,29 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
 {
     struct actor *actor = malloc(sizeof(struct actor));
 
+    if (!actor)
+    {
+        printf("Couldn't allocate actor\n");
+
+        return NULL;
+    }
+
     actor->name = _strdup(name);
     actor->race = race;
     actor->class = class;
     actor->faction = faction;
     actor->level = level;
     actor->experience = (actor->level - 1) * 1000;
-    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++) { actor->ability_scores[ability] = 10; }
+    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+    {
+        actor->ability_scores[ability] = 10;
+    }
     actor->base_hp = class_info[actor->class].hit_die * actor->level;
     actor->current_hp = actor_calc_max_hp(actor);
-    for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++) { actor->equipment[equip_slot] = NULL; }
+    for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+    {
+        actor->equipment[equip_slot] = NULL;
+    }
     actor->items = TCOD_list_new();
     actor->floor = floor;
     actor->x = x;

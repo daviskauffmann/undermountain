@@ -4,6 +4,13 @@ struct object *object_create(enum object_type type, int floor, int x, int y, TCO
 {
     struct object *object = malloc(sizeof(struct object));
 
+    if (!object)
+    {
+        printf("Couldn't allocate object\n");
+
+        return NULL;
+    }
+
     object->type = type;
     object->floor = floor;
     object->x = x;

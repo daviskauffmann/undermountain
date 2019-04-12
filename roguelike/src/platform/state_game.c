@@ -1897,6 +1897,13 @@ struct tooltip_option *tooltip_option_create(char *text, bool(*on_click)(void))
 {
     struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
 
+    if (!tooltip_option)
+    {
+        printf("Couldn't create tooltip_option\n");
+
+        return NULL;
+    }
+
     tooltip_option->text = _strdup(text);
     tooltip_option->on_click = on_click;
 

@@ -184,7 +184,6 @@ void game_save(const char *filename)
 
 void game_load(const char *filename)
 {
-
     TCOD_zip_t zip = TCOD_zip_new();
 
     TCOD_zip_load_from_file(zip, filename);

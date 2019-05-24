@@ -12,7 +12,8 @@ enum tile_type
 
 struct tile_common
 {
-    TCOD_color_t shadow_color;
+    TCOD_color_t ambient_color;
+    float ambient_intensity;
 };
 
 struct tile_info

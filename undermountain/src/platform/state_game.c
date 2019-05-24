@@ -1337,7 +1337,8 @@ static void render(TCOD_console_t console)
                 {
                     struct tile *tile = &map->tiles[x][y];
 
-                    TCOD_color_t color = tile_common.shadow_color;
+                    TCOD_color_t fg_color = TCOD_color_multiply(tile_common.ambient_color, tile_info[tile->type].color);
+                    TCOD_color_t bg_color = TCOD_color_multiply_scalar(fg_color, tile_common.ambient_intensity);
 
                     if (TCOD_map_is_in_fov(game->player->fov, x, y))
                     {
@@ -1353,7 +1354,8 @@ static void render(TCOD_console_t console)
                                 float d = powf((float)(x - actor->x), 2) + powf((float)(y - actor->y), 2);
                                 float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2);
 
-                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, actor_common.glow_color, l), l);
+                                fg_color = TCOD_color_lerp(fg_color, TCOD_color_lerp(tile_info[tile->type].color, actor_common.glow_color, l), l);
+                                bg_color = TCOD_color_lerp(bg_color, TCOD_color_multiply_scalar(fg_color, actor_common.glow_intensity), l);
                             }
                         }
 
@@ -1367,7 +1369,8 @@ static void render(TCOD_console_t console)
                                 float d = powf((float)(x - object->x + (object->light_flicker ? dx : 0)), 2) + powf((float)(y - object->y + (object->light_flicker ? dy : 0)), 2);
                                 float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + (object->light_flicker ? di : 0));
 
-                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, object->light_color, l), l);
+                                fg_color = TCOD_color_lerp(fg_color, TCOD_color_lerp(tile_info[tile->type].color, object->light_color, l), l);
+                                bg_color = TCOD_color_lerp(bg_color, TCOD_color_multiply_scalar(fg_color, object->light_intensity), l);
                             }
                         }
 
@@ -1381,16 +1384,19 @@ static void render(TCOD_console_t console)
                                 float d = powf(x - actor->x + dx, 2) + powf(y - actor->y + dy, 2);
                                 float l = CLAMP(0.0f, 1.0f, (r2 - d) / r2 + di);
 
-                                color = TCOD_color_lerp(color, TCOD_color_lerp(tile_info[tile->type].color, actor_common.torch_color, l), l);
+                                fg_color = TCOD_color_lerp(fg_color, TCOD_color_lerp(tile_info[tile->type].color, actor_common.torch_color, l), l);
+                                bg_color = TCOD_color_lerp(bg_color, TCOD_color_multiply_scalar(fg_color, actor_common.torch_intensity), l);
                             }
                         }
                     }
 
                     if (tile->seen)
                     {
-                        TCOD_console_set_char_foreground(console, x - view_x, y - view_y, color);
+                        TCOD_console_set_char_foreground(console, x - view_x, y - view_y, fg_color);
                         TCOD_console_set_char(console, x - view_x, y - view_y, tile_info[tile->type].glyph);
                     }
+
+                    TCOD_console_set_char_background(console, x - view_x, y - view_y, bg_color, TCOD_BKGND_SET);
                 }
             }
         }
@@ -1483,7 +1489,14 @@ static void render(TCOD_console_t console)
         {
             if (tile->actor)
             {
-                TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile->actor->name);
+				if (tile->actor->dead)
+				{
+					TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (corpse)", tile->actor->name);
+				}
+				else
+				{
+					TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile->actor->name);
+				}
 
                 goto done;
             }

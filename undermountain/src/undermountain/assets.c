@@ -16,7 +16,9 @@ struct equip_slot_info equip_slot_info[NUM_EQUIP_SLOTS];
 struct base_item_info base_item_info[NUM_BASE_ITEMS];
 struct item_info item_info[NUM_ITEM_TYPES];
 
-#define TILE_COMMON(_shadow_color) tile_common.shadow_color = _shadow_color;
+#define TILE_COMMON(_ambient_color, _ambient_intensity) \
+    tile_common.ambient_color = _ambient_color;         \
+    tile_common.ambient_intensity = _ambient_intensity;
 
 #define TILE_INFO(_type, _name, _glyph, _color, _is_transparent, _is_walkable) \
     tile_info[_type].name = _name;                                             \
@@ -34,27 +36,19 @@ struct item_info item_info[NUM_ITEM_TYPES];
     object_info[_type].is_transparent = _is_transparent;                 \
     object_info[_type].is_walkable = _is_walkable;
 
-#define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _torch_radius, _torch_color) \
+#define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _glow_intensity, _torch_radius, _torch_color, _torch_intensity) \
     actor_common.turns_to_chase = _turns_to_chase;                                            \
     actor_common.glow_radius = _glow_radius;                                                  \
     actor_common.glow_color = _glow_color;                                                    \
+    actor_common.glow_intensity = _glow_intensity;                                            \
     actor_common.torch_radius = _torch_radius;                                                \
-    actor_common.torch_color = _torch_color;
+    actor_common.torch_color = _torch_color;                                                  \
+    actor_common.torch_intensity = _torch_intensity;
 
 #define RACE_INFO(_race, _name, _glyph, _size) \
     race_info[_race].name = _name;             \
     race_info[_race].glyph = _glyph;           \
     race_info[_race].size = _size;
-
-#define CLASS_INFO(_class, _name, _color, _hit_die) \
-    class_info[_class].name = _name;                \
-    class_info[_class].color = _color;              \
-    class_info[_class].hit_die = _hit_die;
-
-#define MONSTER_PROTOTYPE(_monster, _name, _race, _class) \
-    monster_prototype[_monster].name = _name;             \
-    monster_prototype[_monster].race = _race;             \
-    monster_prototype[_monster].class = _class;
 
 #define CLASS_INFO(_class, _name, _color, _hit_die) \
     class_info[_class].name = _name;                \
@@ -104,7 +98,7 @@ struct item_info item_info[NUM_ITEM_TYPES];
 
 void assets_load(void)
 {
-    TILE_COMMON(TCOD_color_RGB(16, 16, 32));
+    TILE_COMMON(TCOD_color_RGB(16, 16, 32), 0.05f);
 
     TILE_INFO(TILE_TYPE_EMPTY, "Empty", ' ', TCOD_white, true, true);
     TILE_INFO(TILE_TYPE_FLOOR, "Floor", '.', TCOD_white, true, true);
@@ -122,7 +116,7 @@ void assets_load(void)
     OBJECT_INFO(OBJECT_TYPE_STAIR_UP, "Stair Up", '<', true, true);
     OBJECT_INFO(OBJECT_TYPE_THRONE, "Throne", '\\', true, false);
 
-    ACTOR_COMMON(10, 5, TCOD_white, 10, TCOD_light_amber);
+    ACTOR_COMMON(10, 5, TCOD_white, 0.05f, 10, TCOD_light_amber, 0.1f);
 
     RACE_INFO(RACE_DWARF, "Dwarf", '@', RACE_SIZE_MEDIUM);
     RACE_INFO(RACE_ELF, "Elf", '@', RACE_SIZE_MEDIUM);
@@ -250,14 +244,8 @@ void assets_load(void)
     ITEM_INFO(ITEM_TYPE_DAGGER, BASE_ITEM_DAGGER, "Dagger", "A generic dagger");
     ITEM_INFO(ITEM_TYPE_DAGGER_1, BASE_ITEM_DAGGER, "Dagger + 1", "A special Dagger");
     TCOD_list_push(item_info[ITEM_TYPE_DAGGER_1].item_properties, enhancement_bonus_create(1));
-    item_info[ITEM_TYPE_GREATAXE].base_item = BASE_ITEM_GREATAXE;
-    item_info[ITEM_TYPE_GREATAXE].name = "Greataxe";
-    item_info[ITEM_TYPE_GREATAXE].description = "A generic greataxe.";
-    item_info[ITEM_TYPE_GREATAXE].item_properties = TCOD_list_new();
-    item_info[ITEM_TYPE_GREATAXE_1].base_item = BASE_ITEM_GREATAXE;
-    item_info[ITEM_TYPE_GREATAXE_1].name = "Greataxe + 1";
-    item_info[ITEM_TYPE_GREATAXE_1].description = "A special greataxe.";
-    item_info[ITEM_TYPE_GREATAXE_1].item_properties = TCOD_list_new();
+    ITEM_INFO(ITEM_TYPE_GREATAXE, BASE_ITEM_GREATAXE, "Greataxe", "A generic greataxe.");
+    ITEM_INFO(ITEM_TYPE_GREATAXE_1, BASE_ITEM_GREATAXE, "Greataxe + 1", "A special greataxe.");
     TCOD_list_push(item_info[ITEM_TYPE_GREATAXE_1].item_properties, enhancement_bonus_create(1));
     item_info[ITEM_TYPE_GREATSWORD].base_item = BASE_ITEM_GREATSWORD;
     item_info[ITEM_TYPE_GREATSWORD].name = "Greatsword";

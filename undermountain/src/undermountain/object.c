@@ -1,6 +1,6 @@
 #include <undermountain/undermountain.h>
 
-struct object *object_create(enum object_type type, int floor, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, bool light_flicker)
+struct object *object_create(enum object_type type, int floor, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, float light_intensity, bool light_flicker)
 {
     struct object *object = malloc(sizeof(struct object));
 
@@ -18,6 +18,7 @@ struct object *object_create(enum object_type type, int floor, int x, int y, TCO
     object->color = color;
     object->light_radius = light_radius;
     object->light_color = light_color;
+    object->light_intensity = light_intensity;
     object->light_flicker = light_flicker;
     object->light_fov = NULL;
     object->destroyed = false;

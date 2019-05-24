@@ -1,6 +1,8 @@
 #include <undermountain/undermountain.h>
 
-#define MAP_ALGORITHM_CUSTOM
+#define MAP_ALGORITHM_CUSTOM 0
+#define MAP_ALGORITHM_BSP 1
+#define MAP_ALGORITHM MAP_ALGORITHM_CUSTOM
 
 #define CUSTOM_NUM_ROOM_ATTEMPTS 20
 #define CUSTOM_MIN_ROOM_SIZE 5
@@ -14,9 +16,9 @@
 
 #define DOOR_CHANCE 0.5f
 #define SPAWN_OBJECTS 10
-#define SPAWN_ADVENTURERS 5
-#define SPAWN_MONSTERS 10
-#define SPAWN_ITEMS 20
+#define SPAWN_ADVENTURERS 1
+#define SPAWN_MONSTERS 1
+#define SPAWN_ITEMS 1
 
 static void hline(struct map *map, int x1, int y, int x2);
 static void hline_left(struct map *map, int x, int y);
@@ -58,7 +60,7 @@ void map_generate(struct map *map)
         }
     }
 
-#if defined(MAP_ALGORITHM_CUSTOM)
+#if MAP_ALGORITHM == MAP_ALGORITHM_CUSTOM
     for (int i = 0; i < CUSTOM_NUM_ROOM_ATTEMPTS; i++)
     {
         int room_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH);
@@ -133,9 +135,9 @@ void map_generate(struct map *map)
         }
     }
 
-    for (int x = 0; x < MAP_WIDTH; x++)
+    for (int x = 1; x < MAP_WIDTH - 1; x++)
     {
-        for (int y = 0; y < MAP_HEIGHT; y++)
+        for (int y = 1; y < MAP_HEIGHT - 1; y++)
         {
             struct tile *tile = &map->tiles[x][y];
 
@@ -164,7 +166,7 @@ void map_generate(struct map *map)
             }
         }
     }
-#elif defined(MAP_ALGORITHM_BSP)
+#elif MAP_ALGORITHM == MAP_ALGORITHM_BSP
     TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
     TCOD_bsp_split_recursive(
         bsp,
@@ -235,6 +237,7 @@ void map_generate(struct map *map)
                     TCOD_white,
                     -1,
                     TCOD_white,
+                    0.0f,
                     false);
 
                 TCOD_list_push(map->objects, object);
@@ -259,6 +262,7 @@ void map_generate(struct map *map)
             TCOD_white,
             -1,
             TCOD_white,
+            0.0f,
             false);
 
         struct tile *tile = &map->tiles[map->stair_down_x][map->stair_down_y];
@@ -283,6 +287,7 @@ void map_generate(struct map *map)
             TCOD_white,
             -1,
             TCOD_white,
+            0.0f,
             false);
 
         struct tile *tile = &map->tiles[map->stair_up_x][map->stair_up_y];
@@ -306,6 +311,7 @@ void map_generate(struct map *map)
         TCOD_color_t color = TCOD_white;
         int light_radius = -1;
         TCOD_color_t light_color = TCOD_white;
+        float light_intensity = 0.0f;
         bool light_flicker = false;
 
         switch (TCOD_random_get_int(NULL, 0, 4))
@@ -315,6 +321,7 @@ void map_generate(struct map *map)
             type = OBJECT_TYPE_ALTAR;
             light_radius = 3;
             light_color = TCOD_white;
+            light_intensity = 0.1f;
             light_flicker = false;
         }
         break;
@@ -328,6 +335,7 @@ void map_generate(struct map *map)
             color = random_color;
             light_radius = TCOD_random_get_int(NULL, 10, 20);
             light_color = random_color;
+            light_intensity = TCOD_random_get_float(NULL, 0.1f, 0.2f);
             light_flicker = TCOD_random_get_int(NULL, 0, 1) == 0 ? true : false;
         }
         break;
@@ -359,6 +367,7 @@ void map_generate(struct map *map)
             color,
             light_radius,
             light_color,
+            light_intensity,
             light_flicker);
 
         struct tile *tile = &map->tiles[x][y];
@@ -465,6 +474,15 @@ void map_generate(struct map *map)
 
         TCOD_list_push(map->actors, actor);
         tile->actor = actor;
+
+        // TODO: default inventory/equipment
+        if (monster == MONSTER_ORC_RANGER)
+        {
+            struct item *longbow = item_create(ITEM_TYPE_LONGBOW, map->floor, x, y);
+
+            TCOD_list_push(map->items, longbow);
+            actor_equip(actor, longbow);
+        }
     }
 
     for (int i = 0; i < SPAWN_ITEMS; i++)
@@ -708,7 +726,7 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
         if (miny > 1)
         {
             miny--;
-        }
+    }
 #endif
 
         if (maxx == MAP_WIDTH - 1)
@@ -744,7 +762,7 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
         struct room *room = room_create(node->x, node->y, node->w, node->h);
 
         TCOD_list_push(map->rooms, room);
-    }
+        }
     else
     {
         TCOD_bsp_t *left = TCOD_bsp_left(node);

@@ -113,8 +113,11 @@ struct actor_common
     int turns_to_chase;
     int glow_radius;
     TCOD_color_t glow_color;
+    float glow_intensity;
     int torch_radius;
     TCOD_color_t torch_color;
+    float torch_intensity;
+
 };
 
 enum race_size

@@ -2,6 +2,12 @@
 
 struct game *game;
 
+// TODO: there is a lot of repetition of things with light properties
+// pack them into a light struct?
+
+// TODO: get rid of actor->dead flag and have a dedicated corpse object
+// corpses should mostly be treated like items, additionally containing a field for an actor
+
 // NOTE: there is a memory leak when freeing the game
 // something is not being cleaned up properly because less memory is freed when calling game_quit() than was allocated with game_init()
 // not sure what is causing this, so keep looking into it
@@ -162,6 +168,8 @@ void game_new(void)
             struct actor *pet = actor_create("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, 1, floor, x, y);
             pet->leader = game->player;
             pet->speed = 1.0f;
+            pet->glow = false;
+            pet->torch = false;
 
             TCOD_list_push(map->actors, pet);
             tile->actor = pet;
@@ -273,7 +281,8 @@ void game_turn(void)
 // this allows us to read the entire history of the game and do anything with it
 void game_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
-    if (floor != game->player->floor ||
+    if (!game->player ||
+        floor != game->player->floor ||
         !game->player->fov ||
         !TCOD_map_is_in_fov(game->player->fov, x, y))
     {

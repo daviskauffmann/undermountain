@@ -54,7 +54,7 @@ enum equip_slot
 struct equip_slot_info
 {
     char *name;
-    char *label;
+    char *label; // TODO: not the biggest fan of this solution
 };
 
 enum damage_type

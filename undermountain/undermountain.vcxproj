@@ -110,6 +110,9 @@
     <ClCompile Include="src\undermountain\tile.c" />
     <ClCompile Include="src\undermountain\util.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

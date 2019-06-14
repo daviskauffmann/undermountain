@@ -568,16 +568,23 @@ bool actor_move(struct actor *actor, int x, int y)
         }
     }
 
-    if (tile->actor && tile->actor != actor && !tile->actor->dead)
+    if (tile->actor && tile->actor != actor)
     {
-        if (tile->actor->faction == actor->faction)
-        {
-            return actor_swap(actor, tile->actor);
-        }
-        else
-        {
-            return actor_attack(actor, tile->actor, false);
-        }
+		if (tile->actor->dead)
+		{
+			return false;
+		}
+		else
+		{
+			if (tile->actor->faction == actor->faction)
+			{
+				return actor_swap(actor, tile->actor);
+			}
+			else
+			{
+				return actor_attack(actor, tile->actor, false);
+			}
+		}
     }
 
     struct tile *current_tile = &map->tiles[actor->x][actor->y];

@@ -333,7 +333,7 @@ void map_generate(struct map *map)
                 (unsigned char)TCOD_random_get_int(NULL, 0, 255));
             type = OBJECT_TYPE_BRAZIER;
             color = random_color;
-            light_radius = TCOD_random_get_int(NULL, 10, 20);
+            light_radius = TCOD_random_get_int(NULL, 5, 20);
             light_color = random_color;
             light_intensity = TCOD_random_get_float(NULL, 0.1f, 0.2f);
             light_flicker = TCOD_random_get_int(NULL, 0, 1) == 0 ? true : false;
@@ -540,7 +540,7 @@ bool map_is_walkable(struct map *map, int x, int y)
         return false;
     }
 
-    if (tile->actor && !tile->actor->dead)
+    if (tile->actor)
     {
         return false;
     }

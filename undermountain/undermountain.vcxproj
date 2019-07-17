@@ -90,25 +90,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\platform\state_about.c" />
+    <ClCompile Include="src\platform\scenes\scene_about.c" />
     <ClCompile Include="src\platform\config.c" />
-    <ClCompile Include="src\platform\state_game.c" />
-    <ClCompile Include="src\platform\state_menu.c" />
+    <ClCompile Include="src\platform\scenes\scene_game.c" />
+    <ClCompile Include="src\platform\scenes\scene_menu.c" />
     <ClCompile Include="src\platform\platform.c" />
     <ClCompile Include="src\platform\sys.c" />
-    <ClCompile Include="src\undermountain\actor.c" />
-    <ClCompile Include="src\undermountain\assets.c" />
-    <ClCompile Include="src\undermountain\game.c" />
-    <ClCompile Include="src\undermountain\item.c" />
+    <ClCompile Include="src\game\actor.c" />
+    <ClCompile Include="src\game\assets.c" />
+    <ClCompile Include="src\game\world.c" />
+    <ClCompile Include="src\game\item.c" />
     <ClCompile Include="src\main.c" />
-    <ClCompile Include="src\undermountain\item_property.c" />
-    <ClCompile Include="src\undermountain\map.c" />
-    <ClCompile Include="src\undermountain\message.c" />
-    <ClCompile Include="src\undermountain\object.c" />
-    <ClCompile Include="src\undermountain\projectile.c" />
-    <ClCompile Include="src\undermountain\room.c" />
-    <ClCompile Include="src\undermountain\tile.c" />
-    <ClCompile Include="src\undermountain\util.c" />
+    <ClCompile Include="src\game\item_property.c" />
+    <ClCompile Include="src\game\map.c" />
+    <ClCompile Include="src\game\message.c" />
+    <ClCompile Include="src\game\object.c" />
+    <ClCompile Include="src\game\projectile.c" />
+    <ClCompile Include="src\game\room.c" />
+    <ClCompile Include="src\game\tile.c" />
+    <ClCompile Include="src\game\util.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

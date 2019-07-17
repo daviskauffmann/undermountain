@@ -1,14 +1,16 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#include <undermountain/undermountain.h>
+#include <libtcod/libtcod.h>
+
+#include <game/game.h>
 
 #include "config.h"
-#include "state.h"
-#include "state_about.h"
-#include "state_game.h"
-#include "state_menu.h"
+#include "scene.h"
 #include "sys.h"
+#include "scenes/scene_about.h"
+#include "scenes/scene_game.h"
+#include "scenes/scene_menu.h"
 
 int platform_run(void);
 

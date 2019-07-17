@@ -2,8 +2,9 @@
 
 bool file_exists(const char *filename)
 {
-    FILE *file;
-    if ((file = fopen(filename, "r")))
+    FILE *file = fopen(filename, "r");
+
+    if (file)
     {
         fclose(file);
 

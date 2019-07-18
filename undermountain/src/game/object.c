@@ -30,7 +30,7 @@ void object_calc_light(struct object *object)
 {
     struct map *map = &world->maps[object->floor];
 
-    if (object->light_fov != NULL)
+    if (object->light_fov)
     {
         TCOD_map_delete(object->light_fov);
     }
@@ -43,7 +43,7 @@ void object_calc_light(struct object *object)
 
 void object_destroy(struct object *object)
 {
-    if (object->light_fov != NULL)
+    if (object->light_fov)
     {
         TCOD_map_delete(object->light_fov);
     }

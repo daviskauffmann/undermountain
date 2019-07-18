@@ -648,7 +648,7 @@ static struct scene *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t m
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    took_turn = actor_ascend(world->player);
+                    took_turn = actor_ascend(world->player, false);
                 }
             }
             break;
@@ -656,7 +656,7 @@ static struct scene *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t m
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    took_turn = actor_descend(world->player);
+                    took_turn = actor_descend(world->player, false);
                 }
             }
             break;

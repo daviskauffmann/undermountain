@@ -472,6 +472,8 @@ void actor_ai(struct actor *actor)
 
 bool actor_path_towards(struct actor *actor, int x, int y)
 {
+    bool success = false;
+
     struct map *map = &world->maps[actor->floor];
 
     TCOD_map_t TCOD_map = map_to_TCOD_map(map);
@@ -479,8 +481,6 @@ bool actor_path_towards(struct actor *actor, int x, int y)
 
     TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
     TCOD_path_compute(path, actor->x, actor->y, x, y);
-
-    bool success = false;
 
     int next_x, next_y;
     if (!TCOD_path_is_empty(path) && TCOD_path_walk(path, &next_x, &next_y, false))
@@ -570,21 +570,21 @@ bool actor_move(struct actor *actor, int x, int y)
 
     if (tile->actor && tile->actor != actor)
     {
-		if (tile->actor->dead)
-		{
-			return false;
-		}
-		else
-		{
-			if (tile->actor->faction == actor->faction)
-			{
-				return actor_swap(actor, tile->actor);
-			}
-			else
-			{
-				return actor_attack(actor, tile->actor, false);
-			}
-		}
+        if (tile->actor->dead)
+        {
+            return false;
+        }
+        else
+        {
+            if (tile->actor->faction == actor->faction)
+            {
+                return actor_swap(actor, tile->actor);
+            }
+            else
+            {
+                return actor_attack(actor, tile->actor, false);
+            }
+        }
     }
 
     struct tile *current_tile = &map->tiles[actor->x][actor->y];
@@ -767,11 +767,8 @@ bool actor_close_door(struct actor *actor, int x, int y)
     return false;
 }
 
-bool actor_descend(struct actor *actor)
+bool actor_descend(struct actor *actor, bool with_leader)
 {
-    struct map *map = &world->maps[actor->floor];
-    struct tile *tile = &map->tiles[actor->x][actor->y];
-
     if (actor->floor >= NUM_MAPS)
     {
         world_log(
@@ -785,57 +782,73 @@ bool actor_descend(struct actor *actor)
         return false;
     }
 
-    if (tile->object && tile->object->type == OBJECT_TYPE_STAIR_DOWN)
+    struct map *map = &world->maps[actor->floor];
+    struct tile *tile = &map->tiles[actor->x][actor->y];
+
+    if (!with_leader && (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_DOWN))
     {
-        struct map *next_map = &world->maps[actor->floor + 1];
-        struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
-
-        TCOD_list_remove(map->actors, actor);
-        tile->actor = NULL;
-
-        actor->floor++;
-        actor->x = next_map->stair_up_x;
-        actor->y = next_map->stair_up_y;
-
-        TCOD_list_push(next_map->actors, actor);
-        next_tile->actor = actor;
-
-        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-        {
-            struct item *equipment = actor->equipment[i];
-
-            if (equipment)
-            {
-                equipment->floor = actor->floor;
-                equipment->x = actor->x;
-                equipment->y = actor->y;
-
-                TCOD_list_remove(map->items, equipment);
-                TCOD_list_push(next_map->items, equipment);
-            }
-        }
-
-        TCOD_LIST_FOREACH(actor->items)
-        {
-            struct item *item = *iterator;
-
-            item->floor = actor->floor;
-            item->x = actor->x;
-            item->y = actor->y;
-
-            TCOD_list_remove(map->items, item);
-            TCOD_list_push(next_map->items, item);
-        }
-
         world_log(
             actor->floor,
             actor->x,
             actor->y,
             TCOD_white,
-            "%s descends",
+            "%s can't descend here",
             actor->name);
 
-        return true;
+        return false;
+    }
+
+    struct map *next_map = &world->maps[actor->floor + 1];
+    struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
+
+    TCOD_list_remove(map->actors, actor);
+    tile->actor = NULL;
+
+    actor->floor++;
+    actor->x = next_map->stair_up_x;
+    actor->y = next_map->stair_up_y;
+
+    TCOD_list_push(next_map->actors, actor);
+    next_tile->actor = actor;
+
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+    {
+        struct item *equipment = actor->equipment[i];
+
+        if (equipment)
+        {
+            equipment->floor = actor->floor;
+            equipment->x = actor->x;
+            equipment->y = actor->y;
+
+            TCOD_list_remove(map->items, equipment);
+            TCOD_list_push(next_map->items, equipment);
+        }
+    }
+
+    TCOD_LIST_FOREACH(actor->items)
+    {
+        struct item *item = *iterator;
+
+        item->floor = actor->floor;
+        item->x = actor->x;
+        item->y = actor->y;
+
+        TCOD_list_remove(map->items, item);
+        TCOD_list_push(next_map->items, item);
+    }
+
+    if (!with_leader)
+    {
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *other = *iterator;
+
+            if (other && other->leader == actor)
+            {
+                // actor_descend(other, true);
+            }
+        }
     }
 
     world_log(
@@ -843,13 +856,13 @@ bool actor_descend(struct actor *actor)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't descend here",
+        "%s descends",
         actor->name);
 
-    return false;
+    return true;
 }
 
-bool actor_ascend(struct actor *actor)
+bool actor_ascend(struct actor *actor, bool with_leader)
 {
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[actor->x][actor->y];
@@ -867,57 +880,70 @@ bool actor_ascend(struct actor *actor)
         return false;
     }
 
-    if (tile->object && tile->object->type == OBJECT_TYPE_STAIR_UP)
+    if (!with_leader && (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_UP))
     {
-        struct map *next_map = &world->maps[actor->floor - 1];
-        struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
-
-        TCOD_list_remove(map->actors, actor);
-        tile->actor = NULL;
-
-        actor->floor--;
-        actor->x = next_map->stair_down_x;
-        actor->y = next_map->stair_down_y;
-
-        TCOD_list_push(next_map->actors, actor);
-        next_tile->actor = actor;
-
-        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-        {
-            struct item *equipment = actor->equipment[i];
-
-            if (equipment)
-            {
-                equipment->floor = actor->floor;
-                equipment->x = actor->x;
-                equipment->y = actor->y;
-
-                TCOD_list_remove(map->items, equipment);
-                TCOD_list_push(next_map->items, equipment);
-            }
-        }
-
-        TCOD_LIST_FOREACH(actor->items)
-        {
-            struct item *item = *iterator;
-
-            item->floor = actor->floor;
-            item->x = actor->x;
-            item->y = actor->y;
-
-            TCOD_list_remove(map->items, item);
-            TCOD_list_push(next_map->items, item);
-        }
-
         world_log(
             actor->floor,
             actor->x,
             actor->y,
             TCOD_white,
-            "%s ascends",
+            "%s can't ascend here",
             actor->name);
 
-        return true;
+        return false;
+    }
+
+    struct map *next_map = &world->maps[actor->floor - 1];
+    struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
+
+    TCOD_list_remove(map->actors, actor);
+    tile->actor = NULL;
+
+    actor->floor--;
+    actor->x = next_map->stair_down_x;
+    actor->y = next_map->stair_down_y;
+
+    TCOD_list_push(next_map->actors, actor);
+    next_tile->actor = actor;
+
+    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+    {
+        struct item *equipment = actor->equipment[i];
+
+        if (equipment)
+        {
+            equipment->floor = actor->floor;
+            equipment->x = actor->x;
+            equipment->y = actor->y;
+
+            TCOD_list_remove(map->items, equipment);
+            TCOD_list_push(next_map->items, equipment);
+        }
+    }
+
+    TCOD_LIST_FOREACH(actor->items)
+    {
+        struct item *item = *iterator;
+
+        item->floor = actor->floor;
+        item->x = actor->x;
+        item->y = actor->y;
+
+        TCOD_list_remove(map->items, item);
+        TCOD_list_push(next_map->items, item);
+    }
+
+    if (!with_leader)
+    {
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *other = *iterator;
+
+            if (other && other->leader == actor)
+            {
+                // actor_ascend(other, true);
+            }
+        }
     }
 
     world_log(
@@ -925,10 +951,10 @@ bool actor_ascend(struct actor *actor)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't ascend here",
+        "%s ascends",
         actor->name);
 
-    return false;
+    return true;
 }
 
 bool actor_open_chest(struct actor *actor, int x, int y)

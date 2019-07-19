@@ -20,13 +20,197 @@
 #define SPAWN_MONSTERS 1
 #define SPAWN_ITEMS 1
 
-static void hline(struct map *map, int x1, int y, int x2);
-static void hline_left(struct map *map, int x, int y);
-static void hline_right(struct map *map, int x, int y);
-static void vline(struct map *map, int x, int y1, int y2);
-static void vline_up(struct map *map, int x, int y);
-static void vline_down(struct map *map, int x, int y);
-static bool traverse_node(TCOD_bsp_t *node, struct map *map);
+static void hline(struct map *map, int x1, int y, int x2)
+{
+    int x = x1;
+    int dx = (x1 > x2 ? -1 : 1);
+
+    map->tiles[x][y].type = TILE_TYPE_FLOOR;
+
+    if (x1 != x2)
+    {
+        do
+        {
+            x += dx;
+
+            map->tiles[x][y].type = TILE_TYPE_FLOOR;
+        }
+        while (x != x2);
+    }
+}
+
+static void hline_left(struct map *map, int x, int y)
+{
+    while (x >= 0 && map->tiles[x][y].type != TILE_TYPE_FLOOR)
+    {
+        map->tiles[x][y].type = TILE_TYPE_FLOOR;
+
+        x--;
+    }
+}
+
+static void hline_right(struct map *map, int x, int y)
+{
+    while (x < MAP_WIDTH && map->tiles[x][y].type != TILE_TYPE_FLOOR)
+    {
+        map->tiles[x][y].type = TILE_TYPE_FLOOR;
+
+        x++;
+    }
+}
+
+static void vline(struct map *map, int x, int y1, int y2)
+{
+    int y = y1;
+    int dy = (y1 > y2 ? -1 : 1);
+
+    map->tiles[x][y].type = TILE_TYPE_FLOOR;
+
+    if (y1 != y2)
+    {
+        do
+        {
+            y += dy;
+
+            map->tiles[x][y].type = TILE_TYPE_FLOOR;
+        }
+        while (y != y2);
+    }
+}
+
+static void vline_up(struct map *map, int x, int y)
+{
+    while (y >= 0 && map->tiles[x][y].type != TILE_TYPE_FLOOR)
+    {
+        map->tiles[x][y].type = TILE_TYPE_FLOOR;
+
+        y--;
+    }
+}
+
+static void vline_down(struct map *map, int x, int y)
+{
+    while (y < MAP_HEIGHT && map->tiles[x][y].type != TILE_TYPE_FLOOR)
+    {
+        map->tiles[x][y].type = TILE_TYPE_FLOOR;
+
+        y++;
+    }
+}
+
+static bool traverse_node(TCOD_bsp_t *node, struct map *map)
+{
+    if (TCOD_bsp_is_leaf(node))
+    {
+        int minx = node->x + 1;
+        int maxx = node->x + node->w - 1;
+        int miny = node->y + 1;
+        int maxy = node->y + node->h - 1;
+
+#if !BSP_ROOM_WALLS
+        if (minx > 1)
+        {
+            minx--;
+        }
+
+        if (miny > 1)
+        {
+            miny--;
+        }
+#endif
+
+        if (maxx == MAP_WIDTH - 1)
+        {
+            maxx--;
+        }
+
+        if (maxy == MAP_HEIGHT - 1)
+        {
+            maxy--;
+        }
+
+#if BSP_RANDOM_ROOMS
+        minx = TCOD_random_get_int(NULL, minx, maxx - BSP_MIN_ROOM_SIZE + 1);
+        miny = TCOD_random_get_int(NULL, miny, maxy - BSP_MIN_ROOM_SIZE + 1);
+        maxx = TCOD_random_get_int(NULL, minx + BSP_MIN_ROOM_SIZE - 1, maxx);
+        maxy = TCOD_random_get_int(NULL, miny + BSP_MIN_ROOM_SIZE - 1, maxy);
+#endif
+
+        node->x = minx;
+        node->y = miny;
+        node->w = maxx - minx + 1;
+        node->h = maxy - miny + 1;
+
+        for (int x = minx; x <= maxx; x++)
+        {
+            for (int y = miny; y <= maxy; y++)
+            {
+                map->tiles[x][y].type = TILE_TYPE_FLOOR;
+            }
+        }
+
+        struct room *room = room_create(node->x, node->y, node->w, node->h);
+
+        TCOD_list_push(map->rooms, room);
+    }
+    else
+    {
+        TCOD_bsp_t *left = TCOD_bsp_left(node);
+        TCOD_bsp_t *right = TCOD_bsp_right(node);
+
+        node->x = MIN(left->x, right->x);
+        node->y = MIN(left->y, right->y);
+        node->w = MAX(left->x + left->w, right->x + right->w) - node->x;
+        node->h = MAX(left->y + left->h, right->y + right->h) - node->y;
+
+        if (node->horizontal)
+        {
+            if (left->x + left->w - 1 < right->x || right->x + right->w - 1 < left->x)
+            {
+                int x1 = TCOD_random_get_int(NULL, left->x, left->x + left->w - 1);
+                int x2 = TCOD_random_get_int(NULL, right->x, right->x + right->w - 1);
+                int y = TCOD_random_get_int(NULL, left->y + left->h, right->y);
+
+                vline_up(map, x1, y - 1);
+                hline(map, x1, y, x2);
+                vline_down(map, x2, y + 1);
+            }
+            else
+            {
+                int minx = MAX(left->x, right->x);
+                int maxx = MIN(left->x + left->w - 1, right->x + right->w - 1);
+                int x = TCOD_random_get_int(NULL, minx, maxx);
+
+                vline_down(map, x, right->y);
+                vline_up(map, x, right->y - 1);
+            }
+        }
+        else
+        {
+            if (left->y + left->h - 1 < right->y || right->y + right->h - 1 < left->y)
+            {
+                int y1 = TCOD_random_get_int(NULL, left->y, left->y + left->h - 1);
+                int y2 = TCOD_random_get_int(NULL, right->y, right->y + right->h - 1);
+                int x = TCOD_random_get_int(NULL, left->x + left->w, right->x);
+
+                hline_left(map, x - 1, y1);
+                vline(map, x, y1, y2);
+                hline_right(map, x + 1, y2);
+            }
+            else
+            {
+                int miny = MAX(left->y, right->y);
+                int maxy = MIN(left->y + left->h - 1, right->y + right->h - 1);
+                int y = TCOD_random_get_int(NULL, miny, maxy);
+
+                hline_left(map, right->x - 1, y);
+                hline_right(map, right->x, y);
+            }
+        }
+    }
+
+    return true;
+}
 
 void map_init(struct map *map, unsigned int floor)
 {
@@ -628,196 +812,4 @@ void map_reset(struct map *map)
     }
 
     TCOD_list_delete(map->projectiles);
-}
-
-static void hline(struct map *map, int x1, int y, int x2)
-{
-    int x = x1;
-    int dx = (x1 > x2 ? -1 : 1);
-
-    map->tiles[x][y].type = TILE_TYPE_FLOOR;
-
-    if (x1 != x2)
-    {
-        do
-        {
-            x += dx;
-
-            map->tiles[x][y].type = TILE_TYPE_FLOOR;
-        }
-        while (x != x2);
-    }
-}
-
-static void hline_left(struct map *map, int x, int y)
-{
-    while (x >= 0 && map->tiles[x][y].type != TILE_TYPE_FLOOR)
-    {
-        map->tiles[x][y].type = TILE_TYPE_FLOOR;
-
-        x--;
-    }
-}
-
-static void hline_right(struct map *map, int x, int y)
-{
-    while (x < MAP_WIDTH && map->tiles[x][y].type != TILE_TYPE_FLOOR)
-    {
-        map->tiles[x][y].type = TILE_TYPE_FLOOR;
-
-        x++;
-    }
-}
-
-static void vline(struct map *map, int x, int y1, int y2)
-{
-    int y = y1;
-    int dy = (y1 > y2 ? -1 : 1);
-
-    map->tiles[x][y].type = TILE_TYPE_FLOOR;
-
-    if (y1 != y2)
-    {
-        do
-        {
-            y += dy;
-
-            map->tiles[x][y].type = TILE_TYPE_FLOOR;
-        }
-        while (y != y2);
-    }
-}
-
-static void vline_up(struct map *map, int x, int y)
-{
-    while (y >= 0 && map->tiles[x][y].type != TILE_TYPE_FLOOR)
-    {
-        map->tiles[x][y].type = TILE_TYPE_FLOOR;
-
-        y--;
-    }
-}
-
-static void vline_down(struct map *map, int x, int y)
-{
-    while (y < MAP_HEIGHT && map->tiles[x][y].type != TILE_TYPE_FLOOR)
-    {
-        map->tiles[x][y].type = TILE_TYPE_FLOOR;
-
-        y++;
-    }
-}
-
-static bool traverse_node(TCOD_bsp_t *node, struct map *map)
-{
-    if (TCOD_bsp_is_leaf(node))
-    {
-        int minx = node->x + 1;
-        int maxx = node->x + node->w - 1;
-        int miny = node->y + 1;
-        int maxy = node->y + node->h - 1;
-
-#if !BSP_ROOM_WALLS
-        if (minx > 1)
-        {
-            minx--;
-        }
-
-        if (miny > 1)
-        {
-            miny--;
-    }
-#endif
-
-        if (maxx == MAP_WIDTH - 1)
-        {
-            maxx--;
-        }
-
-        if (maxy == MAP_HEIGHT - 1)
-        {
-            maxy--;
-        }
-
-#if BSP_RANDOM_ROOMS
-        minx = TCOD_random_get_int(NULL, minx, maxx - BSP_MIN_ROOM_SIZE + 1);
-        miny = TCOD_random_get_int(NULL, miny, maxy - BSP_MIN_ROOM_SIZE + 1);
-        maxx = TCOD_random_get_int(NULL, minx + BSP_MIN_ROOM_SIZE - 1, maxx);
-        maxy = TCOD_random_get_int(NULL, miny + BSP_MIN_ROOM_SIZE - 1, maxy);
-#endif
-
-        node->x = minx;
-        node->y = miny;
-        node->w = maxx - minx + 1;
-        node->h = maxy - miny + 1;
-
-        for (int x = minx; x <= maxx; x++)
-        {
-            for (int y = miny; y <= maxy; y++)
-            {
-                map->tiles[x][y].type = TILE_TYPE_FLOOR;
-            }
-        }
-
-        struct room *room = room_create(node->x, node->y, node->w, node->h);
-
-        TCOD_list_push(map->rooms, room);
-        }
-    else
-    {
-        TCOD_bsp_t *left = TCOD_bsp_left(node);
-        TCOD_bsp_t *right = TCOD_bsp_right(node);
-
-        node->x = MIN(left->x, right->x);
-        node->y = MIN(left->y, right->y);
-        node->w = MAX(left->x + left->w, right->x + right->w) - node->x;
-        node->h = MAX(left->y + left->h, right->y + right->h) - node->y;
-
-        if (node->horizontal)
-        {
-            if (left->x + left->w - 1 < right->x || right->x + right->w - 1 < left->x)
-            {
-                int x1 = TCOD_random_get_int(NULL, left->x, left->x + left->w - 1);
-                int x2 = TCOD_random_get_int(NULL, right->x, right->x + right->w - 1);
-                int y = TCOD_random_get_int(NULL, left->y + left->h, right->y);
-
-                vline_up(map, x1, y - 1);
-                hline(map, x1, y, x2);
-                vline_down(map, x2, y + 1);
-            }
-            else
-            {
-                int minx = MAX(left->x, right->x);
-                int maxx = MIN(left->x + left->w - 1, right->x + right->w - 1);
-                int x = TCOD_random_get_int(NULL, minx, maxx);
-
-                vline_down(map, x, right->y);
-                vline_up(map, x, right->y - 1);
-            }
-        }
-        else
-        {
-            if (left->y + left->h - 1 < right->y || right->y + right->h - 1 < left->y)
-            {
-                int y1 = TCOD_random_get_int(NULL, left->y, left->y + left->h - 1);
-                int y2 = TCOD_random_get_int(NULL, right->y, right->y + right->h - 1);
-                int x = TCOD_random_get_int(NULL, left->x + left->w, right->x);
-
-                hline_left(map, x - 1, y1);
-                vline(map, x, y1, y2);
-                hline_right(map, x + 1, y2);
-            }
-            else
-            {
-                int miny = MAX(left->y, right->y);
-                int maxy = MIN(left->y + left->h - 1, right->y + right->h - 1);
-                int y = TCOD_random_get_int(NULL, miny, maxy);
-
-                hline_left(map, right->x - 1, y);
-                hline_right(map, right->x, y);
-            }
-        }
-    }
-
-    return true;
 }

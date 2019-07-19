@@ -2,7 +2,10 @@
 
 // TODO: actors should ascend/descend with their leader
 
-static int calc_ability_modifier(int ability);
+static int calc_ability_modifier(int ability)
+{
+    return (ability - 10) / 2;
+}
 
 struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
 {
@@ -1671,9 +1674,4 @@ void actor_destroy(struct actor *actor)
     free(actor->name);
 
     free(actor);
-}
-
-static int calc_ability_modifier(int ability)
-{
-    return (ability - 10) / 2;
 }

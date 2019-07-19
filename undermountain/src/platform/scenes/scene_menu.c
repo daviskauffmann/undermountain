@@ -18,21 +18,64 @@ static struct option_info option_info[NUM_OPTIONS];
 static int mouse_x;
 static int mouse_y;
 
-static void init(struct scene *previous_scene);
-static struct scene *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
-static struct scene *update(float delta);
-static void render(TCOD_console_t console);
-static void quit(void);
-static enum option get_selected_option(void);
-static struct scene *select_option(enum option option);
+static enum option get_selected_option(void)
+{
+    int y = 1;
+    for (enum option option = 0; option < NUM_OPTIONS; option++)
+    {
+        if (mouse_x > 0 && mouse_x < (int)strlen(option_info[option].text) + 3 + 1 && mouse_y == y)
+        {
+            return option;
+        }
 
-struct scene menu_scene = {
-    &init,
-    &handleEvent,
-    &update,
-    &render,
-    &quit
-};
+        y++;
+    }
+
+    return -1;
+}
+
+static struct scene *select_option(enum option option)
+{
+    switch (option)
+    {
+    case OPTION_START:
+    {
+        world_init();
+
+        if (file_exists(SAVE_PATH))
+        {
+            // TODO: prompt whether the player wants to overwrite the save with a new character
+            // if so, go to character creation
+            world_load(SAVE_PATH);
+        }
+        else
+        {
+            // TODO: go to character creation and pass the result to world_new()
+            world_new();
+        }
+
+        menu_scene.quit();
+        game_scene.init(&menu_scene);
+        return &game_scene;
+    }
+    break;
+    case OPTION_ABOUT:
+    {
+        menu_scene.quit();
+        about_scene.init(&menu_scene);
+        return &about_scene;
+    }
+    break;
+    case OPTION_QUIT:
+    {
+        menu_scene.quit();
+        return NULL;
+    }
+    break;
+    }
+
+    return &menu_scene;
+}
 
 static void init(struct scene *previous_scene)
 {
@@ -44,7 +87,7 @@ static void init(struct scene *previous_scene)
     mouse_y = -1;
 }
 
-static struct scene *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
     switch (ev)
     {
@@ -109,61 +152,11 @@ static void quit(void)
 {
 }
 
-static enum option get_selected_option(void)
-{
-    int y = 1;
-    for (enum option option = 0; option < NUM_OPTIONS; option++)
-    {
-        if (mouse_x > 0 && mouse_x < (int)strlen(option_info[option].text) + 3 + 1 && mouse_y == y)
-        {
-            return option;
-        }
+struct scene menu_scene = {
+    &init,
+    &handle_event,
+    &update,
+    &render,
+    &quit
+};
 
-        y++;
-    }
-
-    return -1;
-}
-
-static struct scene *select_option(enum option option)
-{
-    switch (option)
-    {
-    case OPTION_START:
-    {
-        world_init();
-
-        if (file_exists(SAVE_PATH))
-        {
-            // TODO: prompt whether the player wants to overwrite the save with a new character
-            // if so, go to character creation
-            world_load(SAVE_PATH);
-        }
-        else
-        {
-            // TODO: go to character creation and pass the result to world_new()
-            world_new();
-        }
-
-        menu_scene.quit();
-        game_scene.init(&menu_scene);
-        return &game_scene;
-    }
-    break;
-    case OPTION_ABOUT:
-    {
-        menu_scene.quit();
-        about_scene.init(&menu_scene);
-        return &about_scene;
-    }
-    break;
-    case OPTION_QUIT:
-    {
-        menu_scene.quit();
-        return NULL;
-    }
-    break;
-    }
-
-    return &menu_scene;
-}

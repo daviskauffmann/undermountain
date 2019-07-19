@@ -38,7 +38,7 @@ int platform_run(void)
         break;
         }
 
-        if (!(scene = scene->handleEvent(ev, key, mouse)))
+        if (!(scene = scene->handle_event(ev, key, mouse)))
         {
             break;
         }

@@ -1,24 +1,10 @@
 #include <platform/platform.h>
 
-static void init(struct scene *previous_scene);
-static struct scene *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
-static struct scene *update(float delta);
-static void render(TCOD_console_t console);
-static void quit(void);
-
-struct scene about_scene = {
-    &init,
-    &handleEvent,
-    &update,
-    &render,
-    &quit
-};
-
 static void init(struct scene *previous_scene)
 {
 }
 
-static struct scene *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
     switch (ev)
     {
@@ -71,3 +57,11 @@ static void render(TCOD_console_t console)
 static void quit(void)
 {
 }
+
+struct scene about_scene = {
+    &init,
+    &handle_event,
+    &update,
+    &render,
+    &quit
+};

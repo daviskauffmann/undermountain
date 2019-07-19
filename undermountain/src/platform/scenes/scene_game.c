@@ -136,37 +136,229 @@ static int mouse_tile_y;
 static TCOD_noise_t noise;
 static float noise_x;
 
-static void init(struct scene *previous_scene);
-static struct scene *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse);
-static struct scene *update(float delta);
-static void render(TCOD_console_t console);
-static void quit(void);
-static bool do_directional_action(struct actor *player, int x, int y);
-static void on_hit_set_took_turn(void *on_hit_params);
-static bool toolip_on_click_move(void);
-static bool message_log_is_inside(int x, int y);
-static bool panel_is_inside(int x, int y);
-static void panel_toggle(enum panel panel);
-static void panel_show(enum panel panel);
-static enum equip_slot panel_character_get_selected(void);
-static struct item *panel_inventory_get_selected(void);
-static bool tooltip_is_inside(int x, int y);
-static void tooltip_show(void);
-static void tooltip_hide(void);
-struct tooltip_option *tooltip_option_create(char *text, bool(*on_click)(void));
-void tooltip_option_destroy(struct tooltip_option *tooltip_option);
-static void tooltip_options_add(char *text, bool(*on_click)(void));
-static void tooltip_options_clear(void);
-static struct tooltip_option *tooltip_get_selected(void);
-static bool view_is_inside(int x, int y);
+static bool do_directional_action(struct actor *player, int x, int y)
+{
+    bool success = false;
 
-struct scene game_scene = {
-    &init,
-    &handleEvent,
-    &update,
-    &render,
-    &quit
-};
+    switch (directional_action)
+    {
+    case DIRECTIONAL_ACTION_CLOSE_DOOR:
+    {
+        success = actor_close_door(player, x, y);
+    }
+    break;
+    case DIRECTIONAL_ACTION_DRINK:
+    {
+        success = actor_drink(player, x, y);
+    }
+    break;
+    case DIRECTIONAL_ACTION_OPEN_CHEST:
+    {
+        success = actor_open_chest(player, x, y);
+    }
+    break;
+    case DIRECTIONAL_ACTION_OPEN_DOOR:
+    {
+        success = actor_open_door(player, x, y);
+    }
+    break;
+    case DIRECTIONAL_ACTION_PRAY:
+    {
+        success = actor_pray(player, x, y);
+    }
+    break;
+    case DIRECTIONAL_ACTION_SIT:
+    {
+        success = actor_sit(player, x, y);
+    }
+    break;
+    }
+
+    directional_action = DIRECTIONAL_ACTION_NONE;
+
+    return success;
+}
+
+static void on_hit_set_took_turn(void *on_hit_params)
+{
+    took_turn = true;
+}
+
+static bool toolip_on_click_move(void)
+{
+    automoving = true;
+    automove_x = tooltip_data.x;
+    automove_y = tooltip_data.y;
+
+    return false;
+}
+
+static bool message_log_is_inside(int x, int y)
+{
+    return message_log_visible && x >= message_log_x && x < message_log_x + message_log_width && y >= message_log_y && y < message_log_y + message_log_height;
+}
+
+static bool panel_is_inside(int x, int y)
+{
+    return panel_visible && x >= panel_x && x < panel_x + panel_width && y >= panel_y && y < panel_y + panel_height;
+}
+
+static void panel_toggle(enum panel panel)
+{
+    if (panel_visible)
+    {
+        if (current_panel == panel)
+        {
+            panel_visible = false;
+        }
+        else
+        {
+            current_panel = panel;
+        }
+    }
+    else
+    {
+        current_panel = panel;
+        panel_visible = true;
+    }
+}
+
+static void panel_show(enum panel panel)
+{
+    if (!panel_visible || current_panel != panel)
+    {
+        panel_toggle(panel);
+    }
+}
+
+static enum equip_slot panel_character_get_selected(void)
+{
+    if (panel_visible && current_panel == PANEL_CHARACTER)
+    {
+        int y = 15;
+        for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+        {
+            if (mouse_x > panel_x && mouse_x < panel_x + (int)strlen(equip_slot_info[equip_slot].label) + 1 + 3 && mouse_y == y + panel_y - panel_status[current_panel].scroll)
+            {
+                return equip_slot;
+            }
+
+            y++;
+        }
+    }
+
+    return -1;
+}
+
+static struct item *panel_inventory_get_selected(void)
+{
+    if (panel_visible && current_panel == PANEL_INVENTORY)
+    {
+        int y = 1;
+        TCOD_LIST_FOREACH(world->player->items)
+        {
+            struct item *item = *iterator;
+
+            if (mouse_x > panel_x && mouse_x < panel_x + (int)strlen(item_info[item->type].name) + 1 + 3 && mouse_y == y + panel_y - panel_status[current_panel].scroll)
+            {
+                return item;
+            }
+
+            y++;
+        }
+    }
+
+    return NULL;
+}
+
+static bool tooltip_is_inside(int x, int y)
+{
+    return tooltip_visible && x >= tooltip_x && x < tooltip_x + tooltip_width && y >= tooltip_y && y < tooltip_y + tooltip_height;
+}
+
+struct tooltip_option *tooltip_option_create(char *text, bool(*on_click)(void))
+{
+    struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
+
+    if (!tooltip_option)
+    {
+        printf("Couldn't create tooltip_option\n");
+
+        return NULL;
+    }
+
+    tooltip_option->text = _strdup(text);
+    tooltip_option->on_click = on_click;
+
+    return tooltip_option;
+}
+
+void tooltip_option_destroy(struct tooltip_option *tooltip_option)
+{
+    free(tooltip_option->text);
+    free(tooltip_option);
+}
+
+static void tooltip_options_add(char *text, bool(*on_click)(void))
+{
+    struct tooltip_option *tooltip_option = tooltip_option_create(text, on_click);
+
+    TCOD_list_push(tooltip_options, tooltip_option);
+}
+
+static void tooltip_options_clear(void)
+{
+    TCOD_LIST_FOREACH(tooltip_options)
+    {
+        struct tooltip_option *tooltip_option = *iterator;
+
+        iterator = TCOD_list_remove_iterator(tooltip_options, iterator);
+
+        tooltip_option_destroy(tooltip_option);
+    }
+}
+
+static void tooltip_show(void)
+{
+    tooltip_options_clear();
+
+    tooltip_visible = true;
+    tooltip_x = mouse_x;
+    tooltip_y = mouse_y;
+}
+
+static void tooltip_hide(void)
+{
+    tooltip_options_clear();
+
+    tooltip_visible = false;
+}
+
+static struct tooltip_option *tooltip_get_selected(void)
+{
+    if (tooltip_visible)
+    {
+        int y = 1;
+        TCOD_LIST_FOREACH(tooltip_options)
+        {
+            struct tooltip_option *option = *iterator;
+
+            if (mouse_x > tooltip_x && mouse_x < tooltip_x + (int)strlen(option->text) + 1 && mouse_y == y + tooltip_y)
+            {
+                return option;
+            }
+
+            y++;
+        }
+    }
+
+    return NULL;
+}
+
+static bool view_is_inside(int x, int y)
+{
+    return x >= 0 && x < view_width && y >= 0 && y < view_height;
+}
 
 static void init(struct scene *previous_scene)
 {
@@ -232,7 +424,7 @@ static void init(struct scene *previous_scene)
     noise_x = 0.0f;
 }
 
-static struct scene *handleEvent(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
     switch (ev)
     {
@@ -1750,226 +1942,10 @@ static void quit(void)
     TCOD_noise_delete(noise);
 }
 
-static bool do_directional_action(struct actor *player, int x, int y)
-{
-    bool success = false;
-
-    switch (directional_action)
-    {
-    case DIRECTIONAL_ACTION_CLOSE_DOOR:
-    {
-        success = actor_close_door(player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_DRINK:
-    {
-        success = actor_drink(player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_OPEN_CHEST:
-    {
-        success = actor_open_chest(player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_OPEN_DOOR:
-    {
-        success = actor_open_door(player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_PRAY:
-    {
-        success = actor_pray(player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_SIT:
-    {
-        success = actor_sit(player, x, y);
-    }
-    break;
-    }
-
-    directional_action = DIRECTIONAL_ACTION_NONE;
-
-    return success;
-}
-
-static void on_hit_set_took_turn(void *on_hit_params)
-{
-    took_turn = true;
-}
-
-static bool toolip_on_click_move(void)
-{
-    automoving = true;
-    automove_x = tooltip_data.x;
-    automove_y = tooltip_data.y;
-
-    return false;
-}
-
-static bool message_log_is_inside(int x, int y)
-{
-    return message_log_visible && x >= message_log_x && x < message_log_x + message_log_width && y >= message_log_y && y < message_log_y + message_log_height;
-}
-
-static bool panel_is_inside(int x, int y)
-{
-    return panel_visible && x >= panel_x && x < panel_x + panel_width && y >= panel_y && y < panel_y + panel_height;
-}
-
-static void panel_toggle(enum panel panel)
-{
-    if (panel_visible)
-    {
-        if (current_panel == panel)
-        {
-            panel_visible = false;
-        }
-        else
-        {
-            current_panel = panel;
-        }
-    }
-    else
-    {
-        current_panel = panel;
-        panel_visible = true;
-    }
-}
-
-static void panel_show(enum panel panel)
-{
-    if (!panel_visible || current_panel != panel)
-    {
-        panel_toggle(panel);
-    }
-}
-
-static enum equip_slot panel_character_get_selected(void)
-{
-    if (panel_visible && current_panel == PANEL_CHARACTER)
-    {
-        int y = 15;
-        for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
-        {
-            if (mouse_x > panel_x && mouse_x < panel_x + (int)strlen(equip_slot_info[equip_slot].label) + 1 + 3 && mouse_y == y + panel_y - panel_status[current_panel].scroll)
-            {
-                return equip_slot;
-            }
-
-            y++;
-        }
-    }
-
-    return -1;
-}
-
-static struct item *panel_inventory_get_selected(void)
-{
-    if (panel_visible && current_panel == PANEL_INVENTORY)
-    {
-        int y = 1;
-        TCOD_LIST_FOREACH(world->player->items)
-        {
-            struct item *item = *iterator;
-
-            if (mouse_x > panel_x && mouse_x < panel_x + (int)strlen(item_info[item->type].name) + 1 + 3 && mouse_y == y + panel_y - panel_status[current_panel].scroll)
-            {
-                return item;
-            }
-
-            y++;
-        }
-    }
-
-    return NULL;
-}
-
-static bool tooltip_is_inside(int x, int y)
-{
-    return tooltip_visible && x >= tooltip_x && x < tooltip_x + tooltip_width && y >= tooltip_y && y < tooltip_y + tooltip_height;
-}
-
-static void tooltip_show(void)
-{
-    tooltip_options_clear();
-
-    tooltip_visible = true;
-    tooltip_x = mouse_x;
-    tooltip_y = mouse_y;
-}
-
-static void tooltip_hide(void)
-{
-    tooltip_options_clear();
-
-    tooltip_visible = false;
-}
-
-struct tooltip_option *tooltip_option_create(char *text, bool(*on_click)(void))
-{
-    struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
-
-    if (!tooltip_option)
-    {
-        printf("Couldn't create tooltip_option\n");
-
-        return NULL;
-    }
-
-    tooltip_option->text = _strdup(text);
-    tooltip_option->on_click = on_click;
-
-    return tooltip_option;
-}
-
-void tooltip_option_destroy(struct tooltip_option *tooltip_option)
-{
-    free(tooltip_option->text);
-    free(tooltip_option);
-}
-
-static void tooltip_options_add(char *text, bool(*on_click)(void))
-{
-    struct tooltip_option *tooltip_option = tooltip_option_create(text, on_click);
-
-    TCOD_list_push(tooltip_options, tooltip_option);
-}
-
-static void tooltip_options_clear(void)
-{
-    TCOD_LIST_FOREACH(tooltip_options)
-    {
-        struct tooltip_option *tooltip_option = *iterator;
-
-        iterator = TCOD_list_remove_iterator(tooltip_options, iterator);
-
-        tooltip_option_destroy(tooltip_option);
-    }
-}
-
-static struct tooltip_option *tooltip_get_selected(void)
-{
-    if (tooltip_visible)
-    {
-        int y = 1;
-        TCOD_LIST_FOREACH(tooltip_options)
-        {
-            struct tooltip_option *option = *iterator;
-
-            if (mouse_x > tooltip_x && mouse_x < tooltip_x + (int)strlen(option->text) + 1 && mouse_y == y + tooltip_y)
-            {
-                return option;
-            }
-
-            y++;
-        }
-    }
-
-    return NULL;
-}
-
-static bool view_is_inside(int x, int y)
-{
-    return x >= 0 && x < view_width && y >= 0 && y < view_height;
-}
+struct scene game_scene = {
+    &init,
+    &handle_event,
+    &update,
+    &render,
+    &quit
+};

@@ -1182,6 +1182,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                     if (targeting == TARGETING_SPELL)
                     {
+                        actor_cast_spell(world->player, target_x, target_y);
+
                         targeting = TARGETING_NONE;
                     }
                     else

@@ -1434,8 +1434,13 @@ bool actor_shoot(struct actor *actor, int x, int y, void(*on_hit)(void *on_hit_p
         return false;
     }
 
+    unsigned char glyph = '`';
+    float angle = angle_between(actor->x, actor->y, x, y);
+
+    // TODO: select glyph based on angle
+
     struct projectile *projectile = projectile_create(
-        '`',
+        glyph,
         actor->floor,
         actor->x,
         actor->y,
@@ -1581,9 +1586,22 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
     return true;
 }
 
-bool actor_cast_spell(struct actor *actor)
+bool actor_cast_spell(struct actor *actor, int x, int y)
 {
-    (void)actor;
+    struct map *map = &world->maps[actor->floor];
+
+    struct projectile *projectile = projectile_create(
+        '*',
+        actor->floor,
+        actor->x,
+        actor->y,
+        x,
+        y,
+        actor,
+        NULL,
+        NULL);
+
+    TCOD_list_push(map->projectiles, projectile);
 
     return false;
 }

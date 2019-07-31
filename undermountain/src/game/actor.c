@@ -61,6 +61,11 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
 
 void actor_level_up(struct actor *actor)
 {
+    // TODO: the player should not generally use this to level up
+    // this is an automatic level up that all non-player actors will use when their experience is high enough
+    // however, in the level up screen (to be implemented), the player can elect to auto-level their character
+    // in that case, use this function
+
     actor->level++;
     actor->base_hp += roll(1, class_info[actor->class].hit_die);
     actor->current_hp = actor_calc_max_hp(actor);

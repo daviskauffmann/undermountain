@@ -65,7 +65,7 @@ struct world *world;
 //           break out of the loop
 //         otherwise
 //           process ai for this actor
-// scene_world->input()
+// scene_game->input()
 //   took_turn can be local now, set to false at the beginning
 //   do everything as normal, applying input to the current world->player and storing the result in took_turn
 //   if took_turn is true and world->player->energy is over a threshold

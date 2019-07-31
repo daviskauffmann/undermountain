@@ -16,9 +16,9 @@
 
 #define DOOR_CHANCE 0.5f
 #define SPAWN_OBJECTS 10
-#define SPAWN_ADVENTURERS 1
-#define SPAWN_MONSTERS 1
-#define SPAWN_ITEMS 1
+#define SPAWN_ADVENTURERS 5
+#define SPAWN_MONSTERS 10
+#define SPAWN_ITEMS 5
 
 static void hline(struct map *map, int x1, int y, int x2)
 {

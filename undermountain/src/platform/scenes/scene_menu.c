@@ -159,4 +159,3 @@ struct scene menu_scene = {
     &render,
     &quit
 };
-

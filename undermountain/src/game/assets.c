@@ -96,6 +96,9 @@ struct item_info item_info[NUM_ITEM_TYPES];
     item_info[_type].description = _description;          \
     item_info[_type].item_properties = TCOD_list_new();
 
+#define ITEM_PROPERTY(_type, _item_property)                          \
+    TCOD_list_push(item_info[_type].item_properties, _item_property);
+
 void assets_load(void)
 {
     TILE_COMMON(TCOD_color_RGB(16, 16, 32), 0.05f);
@@ -237,68 +240,68 @@ void assets_load(void)
 
     ITEM_INFO(ITEM_TYPE_BATTLEAXE, BASE_ITEM_BATTLEAXE, "Battleaxe", "A generic battleaxe");
     ITEM_INFO(ITEM_TYPE_BATTLEAXE_1, BASE_ITEM_BATTLEAXE, "Battleaxe + 1", "A special battleaxe");
-    TCOD_list_push(item_info[ITEM_TYPE_BATTLEAXE_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_BATTLEAXE_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_CLUB, BASE_ITEM_CLUB, "Club", "A generic club");
     ITEM_INFO(ITEM_TYPE_CLUB_1, BASE_ITEM_CLUB, "Club + 1", "A special club");
-    TCOD_list_push(item_info[ITEM_TYPE_CLUB_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_CLUB_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_DAGGER, BASE_ITEM_DAGGER, "Dagger", "A generic dagger");
     ITEM_INFO(ITEM_TYPE_DAGGER_1, BASE_ITEM_DAGGER, "Dagger + 1", "A special Dagger");
-    TCOD_list_push(item_info[ITEM_TYPE_DAGGER_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_DAGGER_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_GREATAXE, BASE_ITEM_GREATAXE, "Greataxe", "A generic greataxe.");
     ITEM_INFO(ITEM_TYPE_GREATAXE_1, BASE_ITEM_GREATAXE, "Greataxe + 1", "A special greataxe.");
-    TCOD_list_push(item_info[ITEM_TYPE_GREATAXE_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_GREATAXE_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_GREATSWORD, BASE_ITEM_GREATSWORD, "Greatsword", "A generic greatsword.");
     ITEM_INFO(ITEM_TYPE_GREATSWORD_1, BASE_ITEM_GREATSWORD, "Greatsword + 1", "A special greatsword.");
-    TCOD_list_push(item_info[ITEM_TYPE_GREATSWORD_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_GREATSWORD_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_HALBERD, BASE_ITEM_HALBERD, "Halberd", "A generic halberd.");
     ITEM_INFO(ITEM_TYPE_HALBERD_1, BASE_ITEM_HALBERD, "Halberd + 1", "A special halberd.");
-    TCOD_list_push(item_info[ITEM_TYPE_HALBERD_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_HALBERD_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_HEAVY_CROSSBOW, BASE_ITEM_HEAVY_CROSSBOW, "Heavy Crossbow", "A generic heavy crossbow.");
     ITEM_INFO(ITEM_TYPE_HEAVY_CROSSBOW_1, BASE_ITEM_HEAVY_CROSSBOW, "Heavy Crossbow + 1", "A special heavy crossbow.");
-    TCOD_list_push(item_info[ITEM_TYPE_HEAVY_CROSSBOW_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_HEAVY_CROSSBOW_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_KATANA, BASE_ITEM_KATANA, "Katana", "A generic katana.");
     ITEM_INFO(ITEM_TYPE_KATANA_1, BASE_ITEM_KATANA, "Katana + 1", "A special katana.");
-    TCOD_list_push(item_info[ITEM_TYPE_KATANA_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_KATANA_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_LARGE_SHIELD, BASE_ITEM_LARGE_SHIELD, "Large Shield", "A generic large shield.");
     ITEM_INFO(ITEM_TYPE_LARGE_SHIELD_1, BASE_ITEM_LARGE_SHIELD, "Large Shield + 1", "A special large shield.");
-    TCOD_list_push(item_info[ITEM_TYPE_LARGE_SHIELD_1].item_properties, ac_bonus_create(AC_SHIELD, 1));
+    ITEM_PROPERTY(ITEM_TYPE_LARGE_SHIELD_1, ac_bonus_create(AC_SHIELD, 1));
     ITEM_INFO(ITEM_TYPE_LIGHT_CROSSBOW, BASE_ITEM_LIGHT_CROSSBOW, "Light Crossbow", "A generic light crossbow.");
     ITEM_INFO(ITEM_TYPE_LIGHT_CROSSBOW_1, BASE_ITEM_LIGHT_CROSSBOW, "Light Crossbow + 1", "A special light crossbow.");
-    TCOD_list_push(item_info[ITEM_TYPE_LIGHT_CROSSBOW_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_LIGHT_CROSSBOW_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_LONGBOW, BASE_ITEM_LONGBOW, "Longbow", "A generic longbow.");
     ITEM_INFO(ITEM_TYPE_LONGBOW_1, BASE_ITEM_LONGBOW, "Longbow + 1", "A special longbow.");
-    TCOD_list_push(item_info[ITEM_TYPE_LONGBOW_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_LONGBOW_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_LONGSWORD, BASE_ITEM_LONGSWORD, "Longsword", "A generic longsword.");
     ITEM_INFO(ITEM_TYPE_LONGSWORD_1, BASE_ITEM_LONGSWORD, "Longsword + 1", "A special longsword.");
-    TCOD_list_push(item_info[ITEM_TYPE_LONGSWORD_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_LONGSWORD_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_MACE, BASE_ITEM_MACE, "Mace", "A generic mace.");
     ITEM_INFO(ITEM_TYPE_MACE_1, BASE_ITEM_MACE, "Mace + 1", "A special mace.");
-    TCOD_list_push(item_info[ITEM_TYPE_MACE_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_MACE_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, BASE_ITEM_POTION, "Potion of Cure Light Wounds", "A healing potion.");
     ITEM_INFO(ITEM_TYPE_QUARTERSTAFF, BASE_ITEM_QUARTERSTAFF, "Quarterstaff", "A generic quarterstaff.");
     ITEM_INFO(ITEM_TYPE_QUARTERSTAFF_1, BASE_ITEM_QUARTERSTAFF, "Quarterstaff + 1", "A special quarterstaff.");
-    TCOD_list_push(item_info[ITEM_TYPE_QUARTERSTAFF_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_QUARTERSTAFF_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_SCIMITAR, BASE_ITEM_SCIMITAR, "Scimitar", "A generic scimitar.");
     ITEM_INFO(ITEM_TYPE_SCIMITAR_1, BASE_ITEM_SCIMITAR, "Scimitar + 1", "A special scimitar.");
-    TCOD_list_push(item_info[ITEM_TYPE_SCIMITAR_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_SCIMITAR_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_SHORTBOW, BASE_ITEM_SHORTBOW, "Shortbow", "A generic shortbow.");
     ITEM_INFO(ITEM_TYPE_SHORTBOW_1, BASE_ITEM_SHORTBOW, "Shortbow + 1", "A special shortbow.");
-    TCOD_list_push(item_info[ITEM_TYPE_SHORTBOW_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_SHORTBOW_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_SHORTSWORD, BASE_ITEM_SHORTSWORD, "Shortsword", "A generic shortsword.");
     ITEM_INFO(ITEM_TYPE_SHORTSWORD_1, BASE_ITEM_SHORTSWORD, "Shortsword + 1", "A special shortsword.");
-    TCOD_list_push(item_info[ITEM_TYPE_SHORTSWORD_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_SHORTSWORD_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_SMALL_SHIELD, BASE_ITEM_SMALL_SHIELD, "Small Shield", "A generic small shield.");
     ITEM_INFO(ITEM_TYPE_SMALL_SHIELD_1, BASE_ITEM_SMALL_SHIELD, "Small Shield + 1", "A special small shield.");
-    TCOD_list_push(item_info[ITEM_TYPE_SMALL_SHIELD_1].item_properties, ac_bonus_create(AC_SHIELD, 1));
+    ITEM_PROPERTY(ITEM_TYPE_SMALL_SHIELD_1, ac_bonus_create(AC_SHIELD, 1));
     ITEM_INFO(ITEM_TYPE_SPEAR, ITEM_TYPE_SPEAR, "Spear", "A generic spear.");
     ITEM_INFO(ITEM_TYPE_SPEAR_1, ITEM_TYPE_SPEAR, "Spear + 1", "A special spear.");
-    TCOD_list_push(item_info[ITEM_TYPE_SPEAR_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_SPEAR_1, enhancement_bonus_create(1));
     ITEM_INFO(ITEM_TYPE_TOWER_SHIELD, BASE_ITEM_TOWER_SHIELD, "Tower Shield", "A generic tower shield.");
     ITEM_INFO(ITEM_TYPE_TOWER_SHIELD_1, BASE_ITEM_TOWER_SHIELD, "Tower Shield + 1", "A special tower shield.");
-    TCOD_list_push(item_info[ITEM_TYPE_TOWER_SHIELD_1].item_properties, ac_bonus_create(AC_SHIELD, 1));
+    ITEM_PROPERTY(ITEM_TYPE_TOWER_SHIELD_1, ac_bonus_create(AC_SHIELD, 1));
     ITEM_INFO(ITEM_TYPE_WARHAMMER, BASE_ITEM_WARHAMMER, "Warhammer", "A generic warhammer.");
     ITEM_INFO(ITEM_TYPE_WARHAMMER_1, BASE_ITEM_WARHAMMER, "Warhammer + 1", "A special warhammer.");
-    TCOD_list_push(item_info[ITEM_TYPE_WARHAMMER_1].item_properties, enhancement_bonus_create(1));
+    ITEM_PROPERTY(ITEM_TYPE_WARHAMMER_1, enhancement_bonus_create(1));
 }
 
 void assets_unload(void)

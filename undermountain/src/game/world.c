@@ -21,6 +21,10 @@ struct world *world;
 
 // TOOD: chests
 
+// TODO: sound and sound propogation
+// play "sounds" in the game such as footsteps and monster noises
+// calculate whether the player can hear and identify the sound and put it in the log if so
+
 // TOOD: redo map generation
 // no need for overworld map, world will start on the first dungeon
 // we need to define a win condition for the world, probably just grabbing an amulet or something and returning to the entrance?

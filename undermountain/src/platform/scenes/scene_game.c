@@ -1,4 +1,26 @@
-#include <platform/platform.h>
+#include "scene_about.h"
+
+#include <float.h>
+#include <malloc.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <libtcod.h>
+
+#include "scene_menu.h"
+#include "scene_game.h"
+#include "../config.h"
+#include "../scene.h"
+#include "../sys.h"
+
+#include "../../game/actor.h"
+#include "../../game/assets.h"
+#include "../../game/item.h"
+#include "../../game/message.h"
+#include "../../game/projectile.h"
+#include "../../game/util.h"
+#include "../../game/world.h"
 
 // TODO: maybe split this up into multiple files? might not be necessary
 

@@ -1,4 +1,9 @@
-#include <game/game.h>
+#include "object.h"
+
+#include <malloc.h>
+#include <stdio.h>
+
+#include "world.h"
 
 struct object *object_create(enum object_type type, int floor, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, float light_intensity, bool light_flicker)
 {

@@ -1,4 +1,17 @@
-#include <game/game.h>
+#include "actor.h"
+
+#include <float.h>
+#include <malloc.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "assets.h"
+#include "item.h"
+#include "item_property.h"
+#include "projectile.h"
+#include "world.h"
+#include "util.h"
 
 // TODO: actors should ascend/descend with their leader
 

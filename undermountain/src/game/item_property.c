@@ -1,4 +1,8 @@
-#include <game/game.h>
+#include "item_property.h"
+
+#include <malloc.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 struct ac_bonus *ac_bonus_create(enum ac ac, int bonus)
 {

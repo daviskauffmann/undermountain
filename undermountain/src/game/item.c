@@ -1,4 +1,9 @@
-#include <game/game.h>
+#include "item.h"
+
+#include <malloc.h>
+#include <stdio.h>
+
+#include "assets.h"
 
 struct item *item_create(enum item_type type, int floor, int x, int y)
 {

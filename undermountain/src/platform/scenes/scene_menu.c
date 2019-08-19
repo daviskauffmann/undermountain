@@ -1,4 +1,16 @@
-#include <platform/platform.h>
+#include "scene_menu.h"
+
+#include <string.h>
+
+#include <libtcod.h>
+
+#include "scene_about.h"
+#include "scene_game.h"
+#include "../config.h"
+#include "../scene.h"
+#include "../sys.h"
+
+#include "../../game/world.h"
 
 enum option
 {

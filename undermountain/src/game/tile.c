@@ -1,4 +1,4 @@
-#include <game/game.h>
+#include "tile.h"
 
 void tile_init(struct tile *tile, enum tile_type type, bool seen)
 {

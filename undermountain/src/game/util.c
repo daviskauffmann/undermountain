@@ -1,4 +1,6 @@
-#include <game/game.h>
+#include "util.h"
+
+#include <math.h>
 
 float distance_between_sq(int x1, int y1, int x2, int y2)
 {

@@ -1,4 +1,10 @@
-#include <game/game.h>
+#include "room.h"
+
+#include <malloc.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <libtcod.h>
 
 struct room *room_create(int x, int y, int w, int h)
 {

@@ -1,4 +1,14 @@
-#include <game/game.h>
+#include "projectile.h"
+
+#include <malloc.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "actor.h"
+#include "assets.h"
+#include "world.h"
+#include "util.h"
 
 struct projectile *projectile_create(unsigned char glyph, int floor, int x1, int y1, int x2, int y2, struct actor *shooter, void(*on_hit)(void *on_hit_params), void *on_hit_params)
 {

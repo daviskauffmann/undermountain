@@ -1,4 +1,6 @@
-#include <platform/platform.h>
+#include "sys.h"
+
+#include <stdio.h>
 
 bool file_exists(const char *filename)
 {

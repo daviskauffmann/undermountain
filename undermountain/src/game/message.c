@@ -1,4 +1,8 @@
-#include <game/game.h>
+#include "message.h"
+
+#include <malloc.h>
+#include <stdio.h>
+#include <string.h>
 
 struct message *message_create(char *text, TCOD_color_t color)
 {

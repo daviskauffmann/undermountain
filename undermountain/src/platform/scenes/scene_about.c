@@ -1,4 +1,11 @@
-#include <platform/platform.h>
+#include "scene_about.h"
+
+#include <libtcod.h>
+
+#include "scene_menu.h"
+#include "scene_game.h"
+#include "../config.h"
+#include "../scene.h"
 
 static void init(struct scene *previous_scene)
 {

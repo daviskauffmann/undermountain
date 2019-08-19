@@ -113,6 +113,29 @@
   <ItemGroup>
     <None Include="cpp.hint" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\game\actor.h" />
+    <ClInclude Include="src\game\assets.h" />
+    <ClInclude Include="src\game\item.h" />
+    <ClInclude Include="src\game\item_property.h" />
+    <ClInclude Include="src\game\map.h" />
+    <ClInclude Include="src\game\message.h" />
+    <ClInclude Include="src\game\object.h" />
+    <ClInclude Include="src\game\projectile.h" />
+    <ClInclude Include="src\game\quest.h" />
+    <ClInclude Include="src\game\room.h" />
+    <ClInclude Include="src\game\spell.h" />
+    <ClInclude Include="src\game\tile.h" />
+    <ClInclude Include="src\game\util.h" />
+    <ClInclude Include="src\game\world.h" />
+    <ClInclude Include="src\platform\config.h" />
+    <ClInclude Include="src\platform\platform.h" />
+    <ClInclude Include="src\platform\scene.h" />
+    <ClInclude Include="src\platform\scenes\scene_about.h" />
+    <ClInclude Include="src\platform\scenes\scene_game.h" />
+    <ClInclude Include="src\platform\scenes\scene_menu.h" />
+    <ClInclude Include="src\platform\sys.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

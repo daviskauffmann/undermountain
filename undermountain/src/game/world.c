@@ -1,4 +1,15 @@
-#include <game/game.h>
+#include "world.h"
+
+#include <malloc.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "actor.h"
+#include "assets.h"
+#include "message.h"
+#include "object.h"
+#include "projectile.h"
+#include "util.h"
 
 struct world *world;
 

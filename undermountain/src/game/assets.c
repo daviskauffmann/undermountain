@@ -1,6 +1,11 @@
-#include <game/game.h>
+#include "assets.h"
 
-// TODO: load from file?
+#include <libtcod.h>
+
+#include "item_property.h"
+#include "util.h"
+
+// TODO: load from file
 
 struct tile_common tile_common;
 struct tile_info tile_info[NUM_TILE_TYPES];

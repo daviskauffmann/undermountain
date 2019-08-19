@@ -1,4 +1,11 @@
-#include <game/game.h>
+#include "map.h"
+
+#include "actor.h"
+#include "assets.h"
+#include "object.h"
+#include "projectile.h"
+#include "room.h"
+#include "util.h"
 
 #define MAP_ALGORITHM_CUSTOM 0
 #define MAP_ALGORITHM_BSP 1
@@ -572,7 +579,6 @@ void map_generate(struct map *map)
         while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
 
         enum race race = TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN);
-        enum class class = TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD);
 
         const char *filename;
         char *sex;
@@ -610,13 +616,13 @@ void map_generate(struct map *map)
         }
 
         TCOD_namegen_parse(filename, NULL);
-        char *name = TCOD_namegen_generate(sex, true);
+        char *name = TCOD_namegen_generate(sex, false);
         TCOD_namegen_destroy();
 
         struct actor *actor = actor_create(
             name,
             race,
-            class,
+            TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD),
             FACTION_GOOD,
             map->floor + 1,
             map->floor,

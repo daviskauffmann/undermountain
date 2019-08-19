@@ -1,4 +1,12 @@
-#include <platform/platform.h>
+#include "platform.h"
+
+#include <libtcod.h>
+
+#include "config.h"
+#include "scene.h"
+#include "scenes/scene_menu.h"
+
+#include "../game/world.h"
 
 int platform_run(void)
 {

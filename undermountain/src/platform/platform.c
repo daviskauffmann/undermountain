@@ -1,5 +1,7 @@
 #include "platform.h"
 
+#include <stdio.h>
+
 #include <libtcod.h>
 
 #include "config.h"
@@ -14,7 +16,13 @@ int platform_run(void)
 
     TCOD_sys_set_fps(FPS);
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
-    TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer);
+
+    if (TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer) != 0)
+    {
+        printf(TCOD_get_error());
+
+        return 1;
+    }
 
     struct scene *scene = &menu_scene;
     scene->init(NULL);

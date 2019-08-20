@@ -42,12 +42,12 @@ struct item_info item_info[NUM_ITEM_TYPES];
     object_info[_type].is_walkable = _is_walkable;
 
 #define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _glow_intensity, _torch_radius, _torch_color, _torch_intensity) \
-    actor_common.turns_to_chase = _turns_to_chase;                                            \
-    actor_common.glow_radius = _glow_radius;                                                  \
-    actor_common.glow_color = _glow_color;                                                    \
-    actor_common.glow_intensity = _glow_intensity;                                            \
-    actor_common.torch_radius = _torch_radius;                                                \
-    actor_common.torch_color = _torch_color;                                                  \
+    actor_common.turns_to_chase = _turns_to_chase;                                                                               \
+    actor_common.glow_radius = _glow_radius;                                                                                     \
+    actor_common.glow_color = _glow_color;                                                                                       \
+    actor_common.glow_intensity = _glow_intensity;                                                                               \
+    actor_common.torch_radius = _torch_radius;                                                                                   \
+    actor_common.torch_color = _torch_color;                                                                                     \
     actor_common.torch_intensity = _torch_intensity;
 
 #define RACE_INFO(_race, _name, _glyph, _size) \
@@ -101,7 +101,7 @@ struct item_info item_info[NUM_ITEM_TYPES];
     item_info[_type].description = _description;          \
     item_info[_type].item_properties = TCOD_list_new();
 
-#define ITEM_PROPERTY(_type, _item_property)                          \
+#define ITEM_PROPERTY(_type, _item_property) \
     TCOD_list_push(item_info[_type].item_properties, _item_property);
 
 void assets_load(void)

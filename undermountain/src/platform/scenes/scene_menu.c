@@ -169,5 +169,4 @@ struct scene menu_scene = {
     &handle_event,
     &update,
     &render,
-    &quit
-};
+    &quit};

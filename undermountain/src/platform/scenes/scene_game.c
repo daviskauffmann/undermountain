@@ -91,7 +91,7 @@ struct panel_status
 struct tooltip_option
 {
     char *text;
-    bool(*on_click)(void);
+    bool (*on_click)(void);
 };
 
 struct tooltip_data
@@ -298,7 +298,7 @@ static bool tooltip_is_inside(int x, int y)
     return tooltip_visible && x >= tooltip_x && x < tooltip_x + tooltip_width && y >= tooltip_y && y < tooltip_y + tooltip_height;
 }
 
-struct tooltip_option *tooltip_option_create(char *text, bool(*on_click)(void))
+struct tooltip_option *tooltip_option_create(char *text, bool (*on_click)(void))
 {
     struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
 
@@ -321,7 +321,7 @@ void tooltip_option_destroy(struct tooltip_option *tooltip_option)
     free(tooltip_option);
 }
 
-static void tooltip_options_add(char *text, bool(*on_click)(void))
+static void tooltip_options_add(char *text, bool (*on_click)(void))
 {
     struct tooltip_option *tooltip_option = tooltip_option_create(text, on_click);
 
@@ -463,8 +463,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 tooltip_hide();
             }
             else if (directional_action != DIRECTIONAL_ACTION_NONE ||
-                inventory_action != INVENTORY_ACTION_NONE ||
-                character_action != CHARACTER_ACTION_NONE)
+                     inventory_action != INVENTORY_ACTION_NONE ||
+                     character_action != CHARACTER_ACTION_NONE)
             {
                 directional_action = DIRECTIONAL_ACTION_NONE;
                 inventory_action = INVENTORY_ACTION_NONE;
@@ -1365,7 +1365,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
 
                 tooltip_options_add("Cancel", NULL);
-
             }
             else if (panel_is_inside(mouse_x, mouse_y))
             {
@@ -1705,14 +1704,14 @@ static void render(TCOD_console_t console)
         {
             if (tile->actor)
             {
-				if (tile->actor->dead)
-				{
-					TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (corpse)", tile->actor->name);
-				}
-				else
-				{
-					TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile->actor->name);
-				}
+                if (tile->actor->dead)
+                {
+                    TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s (corpse)", tile->actor->name);
+                }
+                else
+                {
+                    TCOD_console_printf_ex(console, view_width / 2, view_height - 2, TCOD_BKGND_NONE, TCOD_CENTER, tile->actor->name);
+                }
 
                 goto done;
             }
@@ -1971,5 +1970,4 @@ struct scene game_scene = {
     &handle_event,
     &update,
     &render,
-    &quit
-};
+    &quit};

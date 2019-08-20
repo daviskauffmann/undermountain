@@ -70,5 +70,4 @@ struct scene about_scene = {
     &handle_event,
     &update,
     &render,
-    &quit
-};
+    &quit};

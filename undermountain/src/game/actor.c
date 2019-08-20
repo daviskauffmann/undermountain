@@ -1409,7 +1409,7 @@ bool actor_swing(struct actor *actor, int x, int y)
     return true;
 }
 
-bool actor_shoot(struct actor *actor, int x, int y, void(*on_hit)(void *on_hit_params), void *on_hit_params)
+bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     if (x == actor->x && y == actor->y)
     {
@@ -1493,10 +1493,10 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
     int total_attack = attack_roll + attack_bonus;
     int armor_class = actor_calc_armor_class(other);
     bool hit = attack_roll == 1
-        ? false
-        : attack_roll == 20
-        ? true
-        : total_attack >= armor_class;
+                   ? false
+                   : attack_roll == 20
+                         ? true
+                         : total_attack >= armor_class;
 
     if (hit)
     {

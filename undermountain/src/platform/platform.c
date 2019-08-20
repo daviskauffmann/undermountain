@@ -19,7 +19,7 @@ int platform_run(void)
 
     if (TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer) != 0)
     {
-        printf(TCOD_get_error());
+        printf("Error: Couldn't initialize root console\n%s\n", TCOD_get_error());
 
         return 1;
     }

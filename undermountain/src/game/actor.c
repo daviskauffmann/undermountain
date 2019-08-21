@@ -1,5 +1,6 @@
 #include "actor.h"
 
+#include <assert.h>
 #include <float.h>
 #include <malloc.h>
 #include <math.h>
@@ -15,22 +16,10 @@
 
 // TODO: actors should ascend/descend with their leader
 
-static int calc_ability_modifier(int ability)
-{
-    return (ability - 10) / 2;
-}
-
 struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
 {
     struct actor *actor = malloc(sizeof(struct actor));
-
-    if (!actor)
-    {
-        printf("Couldn't allocate actor\n");
-
-        return NULL;
-    }
-
+    assert(actor);
     actor->name = _strdup(name);
     actor->race = race;
     actor->class = class;
@@ -65,10 +54,6 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->fov = NULL;
     actor->flash_fade = 0;
     actor->dead = false;
-
-    actor_calc_light(actor);
-    actor_calc_fov(actor);
-
     return actor;
 }
 
@@ -92,6 +77,11 @@ void actor_level_up(struct actor *actor)
         actor->name);
 }
 
+static int calc_ability_modifier(int ability)
+{
+    return (ability - 10) / 2;
+}
+
 int actor_calc_max_hp(struct actor *actor)
 {
     return actor->base_hp + calc_ability_modifier(actor->ability_scores[ABILITY_CONSTITUTION]);
@@ -100,29 +90,23 @@ int actor_calc_max_hp(struct actor *actor)
 int actor_calc_enhancement_bonus(struct actor *actor)
 {
     int bonus = 0;
-
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
         struct item *equipment = actor->equipment[equip_slot];
-
         if (equipment)
         {
             TCOD_list_t item_properties = item_info[equipment->type].item_properties;
-
             TCOD_LIST_FOREACH(item_properties)
             {
                 struct base_item_property *base_item_property = *iterator;
-
                 if (base_item_property->item_property == ITEM_PROPERTY_ENHANCEMENT_BONUS)
                 {
                     struct enhancement_bonus *enhancement_bonus = (struct enhancement_bonus *)base_item_property;
-
                     bonus += enhancement_bonus->bonus;
                 }
             }
         }
     }
-
     return bonus;
 }
 
@@ -130,48 +114,38 @@ int actor_calc_attack_bonus(struct actor *actor)
 {
     // TODO: base attack bonus based on class
     int base_attack_bonus = 0;
-
     return base_attack_bonus + calc_ability_modifier(actor->ability_scores[ABILITY_STRENGTH]) + actor_calc_enhancement_bonus(actor);
 }
 
 int actor_calc_armor_class(struct actor *actor)
 {
     int ac = 10;
-
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
         struct item *equipment = actor->equipment[i];
-
         if (equipment)
         {
             enum base_item base_item = item_info[equipment->type].base_item;
-
             ac += base_item_info[base_item].base_ac;
 
             TCOD_list_t item_properties = item_info[equipment->type].item_properties;
-
             TCOD_LIST_FOREACH(item_properties)
             {
                 struct base_item_property *base_item_property = *iterator;
-
                 if (base_item_property->item_property == ITEM_PROPERTY_AC_BONUS)
                 {
                     struct ac_bonus *ac_bonus = (struct ac_bonus *)base_item_property;
-
-                    // TODO: deal with stacking AC types
-                    ac += ac_bonus->bonus;
+                    ac += ac_bonus->bonus; // TODO: deal with stacking AC types
                 }
             }
         }
     }
-
     return ac;
 }
 
 void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult, bool ranged)
 {
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-
     if (ranged)
     {
         *num_dice = 0;
@@ -186,11 +160,9 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
         *crit_threat = 20;
         *crit_mult = 2;
     }
-
     if (weapon)
     {
         enum base_item base_item = item_info[weapon->type].base_item;
-
         if (base_item_info[base_item].ranged == ranged)
         {
             *num_dice = base_item_info[base_item].num_dice;
@@ -222,22 +194,18 @@ void actor_update_flash(struct actor *actor)
 
 void actor_calc_light(struct actor *actor)
 {
-    struct map *map = &world->maps[actor->floor];
-
     if (actor->glow_fov)
     {
         TCOD_map_delete(actor->glow_fov);
-
         actor->glow_fov = NULL;
     }
-
     if (actor->torch_fov)
     {
         TCOD_map_delete(actor->torch_fov);
-
         actor->torch_fov = NULL;
     }
 
+    struct map *map = &world->maps[actor->floor];
     if (actor->torch)
     {
         actor->torch_fov = map_to_fov_map(map, actor->x, actor->y, actor_common.torch_radius);
@@ -250,42 +218,36 @@ void actor_calc_light(struct actor *actor)
 
 void actor_calc_fov(struct actor *actor)
 {
-    struct map *map = &world->maps[actor->floor];
-
     if (actor->fov)
     {
         TCOD_map_delete(actor->fov);
     }
 
+    struct map *map = &world->maps[actor->floor];
     actor->fov = map_to_fov_map(map, actor->x, actor->y, 1);
-
     TCOD_map_t los_map = map_to_fov_map(map, actor->x, actor->y, 0);
-
     for (int x = 0; x < MAP_WIDTH; x++)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
-            if (!TCOD_map_is_in_fov(actor->fov, x, y) && TCOD_map_is_in_fov(los_map, x, y))
+            if (!TCOD_map_is_in_fov(actor->fov, x, y) &&
+                TCOD_map_is_in_fov(los_map, x, y))
             {
                 TCOD_LIST_FOREACH(map->objects)
                 {
                     struct object *object = *iterator;
-
                     if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
                     }
                 }
-
                 TCOD_LIST_FOREACH(map->actors)
                 {
                     struct actor *other = *iterator;
-
                     if (other->glow_fov && TCOD_map_is_in_fov(other->glow_fov, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
                     }
-
                     if (other->torch_fov && TCOD_map_is_in_fov(other->torch_fov, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
@@ -294,7 +256,6 @@ void actor_calc_fov(struct actor *actor)
             }
         }
     }
-
     TCOD_map_delete(los_map);
 }
 

@@ -26,9 +26,10 @@ struct option_info
     char *text;
 };
 
-static struct option_info option_info[NUM_OPTIONS];
 static int mouse_x;
 static int mouse_y;
+
+static struct option_info option_info[NUM_OPTIONS];
 
 static enum option get_selected_option(void)
 {
@@ -42,7 +43,6 @@ static enum option get_selected_option(void)
 
         y++;
     }
-
     return -1;
 }
 
@@ -53,7 +53,6 @@ static struct scene *select_option(enum option option)
     case OPTION_START:
     {
         world_init();
-
         if (file_exists(SAVE_PATH))
         {
             // TODO: prompt whether the player wants to overwrite the save with a new character
@@ -101,6 +100,9 @@ static void init(struct scene *previous_scene)
 
 static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
+    mouse_x = mouse.cx;
+    mouse_y = mouse.cy;
+
     switch (ev)
     {
     case TCOD_EVENT_KEY_PRESS:
@@ -115,9 +117,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         case TCODK_TEXT:
         {
             int alpha = key.text[0] - 'a';
-
             enum option option = (enum option)alpha;
-
             return select_option(option);
         }
         break;
@@ -129,15 +129,11 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         if (mouse.lbutton)
         {
             enum option option = get_selected_option();
-
             return select_option(option);
         }
     }
     break;
     }
-
-    mouse_x = mouse.cx;
-    mouse_y = mouse.cy;
 
     return &menu_scene;
 }
@@ -153,11 +149,25 @@ static void render(TCOD_console_t console)
     for (enum option option = 0; option < NUM_OPTIONS; option++)
     {
         TCOD_console_set_default_foreground(console, option == get_selected_option() ? TCOD_yellow : TCOD_white);
-        TCOD_console_printf(console, 1, y++, "%c) %s", option + 'a', option_info[option].text);
+        TCOD_console_printf(
+            console,
+            1,
+            y++,
+            "%c) %s",
+            option + 'a',
+            option_info[option].text);
     }
 
     TCOD_console_set_default_foreground(console, TCOD_white);
-    TCOD_console_printf_frame(console, 0, 0, console_width, console_height, false, TCOD_BKGND_SET, TITLE);
+    TCOD_console_printf_frame(
+        console,
+        0,
+        0,
+        console_width,
+        console_height,
+        false,
+        TCOD_BKGND_SET,
+        TITLE);
 }
 
 static void quit(void)

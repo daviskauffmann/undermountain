@@ -16,7 +16,6 @@ int platform_run(void)
 
     TCOD_sys_set_fps(FPS);
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
-
     if (TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer) != 0)
     {
         printf("Error: Couldn't initialize root console\n%s\n", TCOD_get_error());
@@ -32,7 +31,6 @@ int platform_run(void)
         TCOD_key_t key;
         TCOD_mouse_t mouse;
         TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
-
         switch (ev)
         {
         case TCOD_EVENT_KEY_PRESS:
@@ -77,7 +75,6 @@ int platform_run(void)
         {
             world_save(SAVE_PATH);
         }
-
         world_quit();
     }
 

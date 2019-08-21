@@ -22,11 +22,6 @@ struct world *world;
 // TODO: get rid of actor->dead flag and have a dedicated corpse object
 // corpses should mostly be treated like items, additionally containing a field for an actor
 
-// NOTE: there is a memory leak when freeing the world
-// something is not being cleaned up properly because less memory is freed when calling world_quit() than was allocated with world_init()
-// not sure what is causing this, so keep looking into it
-// UPDATE: it seems to be coming from namegen
-
 // TODO: optimize
 // decide on a target ms per turn, maybe 16ms
 // the world_turn() function should never take longer than that to run

@@ -3,8 +3,6 @@
 
 #include <libtcod.h>
 
-struct actor;
-
 struct item_common
 {
     char __placeholder;

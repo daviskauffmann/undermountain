@@ -262,12 +262,6 @@ static struct item *panel_inventory_get_selected(void)
     return NULL;
 }
 
-struct tooltip_option
-{
-    char *text;
-    bool (*on_click)(void);
-};
-
 struct tooltip_data
 {
     int x;
@@ -276,6 +270,12 @@ struct tooltip_data
     struct item *item;
     struct actor *actor;
     enum equip_slot equip_slot;
+};
+
+struct tooltip_option
+{
+    char *text;
+    bool (*on_click)(void);
 };
 
 static struct rect tooltip_rect;
@@ -383,7 +383,7 @@ static void projectile_on_hit_set_took_turn(void *on_hit_params)
     took_turn = true;
 }
 
-static bool toolip_on_click_move(void)
+static bool toolip_option_on_click_move(void)
 {
     automoving = true;
 
@@ -1234,7 +1234,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 struct map *map = &world->maps[world->player->floor];
                 struct tile *tile = &map->tiles[mouse_tile_x][mouse_tile_y];
                 tooltip_show();
-                tooltip_options_add("Move", &toolip_on_click_move);
+                tooltip_options_add("Move", &toolip_option_on_click_move);
                 tooltip_data.x = mouse_tile_x;
                 tooltip_data.y = mouse_tile_y;
                 if (tile->object)

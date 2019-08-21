@@ -8,11 +8,13 @@
 #include "scene.h"
 #include "scenes/scene_menu.h"
 
+#include "../game/assets.h"
 #include "../game/world.h"
 
 int platform_run(void)
 {
     config_load();
+    assets_load();
 
     TCOD_sys_set_fps(FPS);
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
@@ -81,6 +83,7 @@ int platform_run(void)
     TCOD_console_delete(NULL);
     TCOD_quit();
 
+    assets_unload();
     config_save();
 
     return 0;

@@ -1,5 +1,6 @@
 #include "room.h"
 
+#include <assert.h>
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,19 +10,11 @@
 struct room *room_create(int x, int y, int w, int h)
 {
     struct room *room = malloc(sizeof(struct room));
-
-    if (!room)
-    {
-        printf("Couldn't allocate room\n");
-
-        return NULL;
-    }
-
+    assert(room);
     room->x = x;
     room->y = y;
     room->w = w;
     room->h = h;
-
     return room;
 }
 

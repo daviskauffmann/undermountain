@@ -5,8 +5,6 @@
 #include "item_property.h"
 #include "util.h"
 
-// TODO: load from file
-
 struct tile_common tile_common;
 struct tile_info tile_info[NUM_TILE_TYPES];
 struct object_common object_common;
@@ -106,6 +104,11 @@ struct item_info item_info[NUM_ITEM_TYPES];
 
 void assets_load(void)
 {
+    TCOD_namegen_parse("assets/namegen.cfg", NULL);
+
+    // TODO: load from file
+    // see content.json
+
     TILE_COMMON(TCOD_color_RGB(16, 16, 32), 0.05f);
 
     TILE_INFO(TILE_TYPE_EMPTY, "Empty", ' ', TCOD_white, true, true);
@@ -311,33 +314,30 @@ void assets_load(void)
 
 void assets_unload(void)
 {
+    TCOD_namegen_destroy();
+
     for (enum item_type item_type = 0; item_type < NUM_ITEM_TYPES; item_type++)
     {
         TCOD_list_t item_properties = item_info[item_type].item_properties;
-
         TCOD_LIST_FOREACH(item_properties)
         {
             struct base_item_property *base_item_property = *iterator;
-
             switch (base_item_property->item_property)
             {
             case ITEM_PROPERTY_AC_BONUS:
             {
                 struct ac_bonus *ac_bonus = (struct ac_bonus *)base_item_property;
-
                 ac_bonus_destroy(ac_bonus);
             }
             break;
             case ITEM_PROPERTY_ENHANCEMENT_BONUS:
             {
                 struct enhancement_bonus *enhancement_bonus = (struct enhancement_bonus *)base_item_property;
-
                 enhancement_bonus_destroy(enhancement_bonus);
             }
             break;
             }
         }
-
         TCOD_list_delete(item_properties);
     }
 }

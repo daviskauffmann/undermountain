@@ -188,6 +188,7 @@ struct actor
     int y;
     float speed;
     float energy;
+    TCOD_map_t fov;
     int last_seen_x;
     int last_seen_y;
     int turns_chased;
@@ -197,7 +198,6 @@ struct actor
     TCOD_map_t glow_fov;
     bool torch;
     TCOD_map_t torch_fov;
-    TCOD_map_t fov;
     TCOD_color_t flash_color;
     float flash_fade;
     bool dead;

@@ -11,8 +11,6 @@
 #include "projectile.h"
 #include "util.h"
 
-struct world *world;
-
 // TODO: items and equipment that are inside inventories have their positions painstakingly updated when their carrier moves
 // is this necessary?
 
@@ -88,6 +86,8 @@ struct world *world;
 // for stuff like logging and file system
 // perhaps world_init() should accept a struct containing some function pointers to platform layer stuff
 // or just a header that the world provides with function declarations and the platform must define them
+
+struct world *world;
 
 void world_init(void)
 {

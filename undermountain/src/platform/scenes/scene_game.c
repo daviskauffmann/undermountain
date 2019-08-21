@@ -1420,8 +1420,12 @@ static void render(TCOD_console_t console)
                 if (map_is_inside(x, y))
                 {
                     struct tile *tile = &map->tiles[x][y];
-                    TCOD_color_t fg_color = TCOD_color_multiply(tile_common.ambient_color, tile_info[tile->type].color);
-                    TCOD_color_t bg_color = TCOD_color_multiply_scalar(fg_color, tile_common.ambient_intensity);
+                    TCOD_color_t fg_color = TCOD_color_multiply(
+                        tile_common.ambient_color,
+                        tile_info[tile->type].color);
+                    TCOD_color_t bg_color = TCOD_color_multiply_scalar(
+                        fg_color,
+                        tile_common.ambient_intensity);
                     if (TCOD_map_is_in_fov(world->player->fov, x, y))
                     {
                         tile->seen = true;
@@ -2170,9 +2174,9 @@ static void quit(void)
     TCOD_noise_delete(noise);
 }
 
-struct scene game_scene = {
-    &init,
-    &handle_event,
-    &update,
-    &render,
-    &quit};
+struct scene game_scene =
+    {&init,
+     &handle_event,
+     &update,
+     &render,
+     &quit};

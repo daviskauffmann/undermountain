@@ -83,9 +83,9 @@ static void quit(void)
 {
 }
 
-struct scene about_scene = {
-    &init,
-    &handle_event,
-    &update,
-    &render,
-    &quit};
+struct scene about_scene =
+    {&init,
+     &handle_event,
+     &update,
+     &render,
+     &quit};

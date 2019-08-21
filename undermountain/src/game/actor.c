@@ -280,7 +280,6 @@ void actor_ai(struct actor *actor)
         {
             struct object *target = NULL;
             float min_distance = FLT_MAX;
-
             TCOD_LIST_FOREACH(map->objects)
             {
                 struct object *object = *iterator;
@@ -297,7 +296,6 @@ void actor_ai(struct actor *actor)
                     }
                 }
             }
-
             if (target)
             {
                 if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
@@ -321,7 +319,6 @@ void actor_ai(struct actor *actor)
         {
             struct actor *target = NULL;
             float min_distance = FLT_MAX;
-
             TCOD_LIST_FOREACH(map->actors)
             {
                 struct actor *other = *iterator;
@@ -339,7 +336,6 @@ void actor_ai(struct actor *actor)
                     }
                 }
             }
-
             if (target)
             {
                 actor->last_seen_x = target->x;
@@ -354,11 +350,9 @@ void actor_ai(struct actor *actor)
                 }
 
                 struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-
                 if (weapon)
                 {
                     enum base_item base_item = item_info[weapon->type].base_item;
-
                     if (base_item_info[base_item].ranged && actor_shoot(actor, target->x, target->y, NULL, NULL))
                     {
                         continue;
@@ -444,7 +438,6 @@ void actor_ai(struct actor *actor)
         {
             int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
             int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
-
             actor_move(actor, x, y);
 
             continue;
@@ -455,15 +448,11 @@ void actor_ai(struct actor *actor)
 bool actor_path_towards(struct actor *actor, int x, int y)
 {
     bool success = false;
-
     struct map *map = &world->maps[actor->floor];
-
     TCOD_map_t TCOD_map = map_to_TCOD_map(map);
     TCOD_map_set_properties(TCOD_map, x, y, TCOD_map_is_transparent(TCOD_map, x, y), true);
-
     TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
     TCOD_path_compute(path, actor->x, actor->y, x, y);
-
     int next_x, next_y;
     if (!TCOD_path_is_empty(path) && TCOD_path_walk(path, &next_x, &next_y, false))
     {
@@ -473,11 +462,8 @@ bool actor_path_towards(struct actor *actor, int x, int y)
     {
         success = actor_move_towards(actor, x, y);
     }
-
     TCOD_path_delete(path);
-
     TCOD_map_delete(TCOD_map);
-
     return success;
 }
 
@@ -486,28 +472,24 @@ bool actor_move_towards(struct actor *actor, int x, int y)
     int dx = x - actor->x;
     int dy = y - actor->y;
     float d = distance_between(actor->x, actor->y, x, y);
-
     if (d > 0.0f)
     {
         dx = (int)round(dx / d);
         dy = (int)round(dy / d);
-
         return actor_move(actor, actor->x + dx, actor->y + dy);
     }
-
     return false;
 }
 
 bool actor_move(struct actor *actor, int x, int y)
 {
+    struct map *map = &world->maps[actor->floor];
     if (!map_is_inside(x, y))
     {
         return false;
     }
 
-    struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[x][y];
-
     if (!tile_info[tile->type].is_walkable)
     {
         return false;
@@ -570,33 +552,25 @@ bool actor_move(struct actor *actor, int x, int y)
     }
 
     struct tile *current_tile = &map->tiles[actor->x][actor->y];
-
     current_tile->actor = NULL;
-
     actor->x = x;
     actor->y = y;
-
     tile->actor = actor;
-
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
         struct item *equipment = actor->equipment[i];
-
         if (equipment)
         {
             equipment->x = actor->x;
             equipment->y = actor->y;
         }
     }
-
     TCOD_LIST_FOREACH(actor->items)
     {
         struct item *item = *iterator;
-
         item->x = actor->x;
         item->y = actor->y;
     }
-
     return true;
 }
 

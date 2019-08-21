@@ -174,9 +174,9 @@ static void quit(void)
 {
 }
 
-struct scene menu_scene = {
-    &init,
-    &handle_event,
-    &update,
-    &render,
-    &quit};
+struct scene menu_scene =
+    {&init,
+     &handle_event,
+     &update,
+     &render,
+     &quit};

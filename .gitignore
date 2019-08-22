@@ -254,5 +254,8 @@ paket-files/
 __pycache__/
 *.pyc
 
+# Visual Studio Code settings
+.vscode/
+
 # Save games
 save.gz

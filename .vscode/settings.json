@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "system_error": "c",
-        "xlocale": "c",
-        "util.h": "c"
-    }
-}

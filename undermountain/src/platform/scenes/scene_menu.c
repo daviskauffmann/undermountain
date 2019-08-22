@@ -36,7 +36,7 @@ static enum option get_selected_option(void)
     int y = 1;
     for (enum option option = 0; option < NUM_OPTIONS; option++)
     {
-        if (mouse_x > 0 && mouse_x < (int)strlen(option_info[option].text) + 3 + 1 && mouse_y == y)
+        if (mouse_y == y)
         {
             return option;
         }

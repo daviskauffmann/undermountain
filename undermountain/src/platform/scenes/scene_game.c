@@ -1,5 +1,6 @@
-#include "scene_about.h"
+#include "scene_game.h"
 
+#include <assert.h>
 #include <float.h>
 #include <malloc.h>
 #include <math.h>
@@ -9,7 +10,6 @@
 #include <libtcod.h>
 
 #include "scene_menu.h"
-#include "scene_game.h"
 #include "../config.h"
 #include "../scene.h"
 #include "../sys.h"
@@ -228,12 +228,11 @@ static enum equip_slot panel_character_get_selected(void)
         for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
         {
             if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + (int)strlen(equip_slot_info[equip_slot].label) + 1 + 3 &&
+                mouse_x < panel_rect.x + panel_rect.width &&
                 mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
             {
                 return equip_slot;
             }
-
             y++;
         }
     }
@@ -248,14 +247,12 @@ static struct item *panel_inventory_get_selected(void)
         TCOD_LIST_FOREACH(world->player->items)
         {
             struct item *item = *iterator;
-
             if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + (int)strlen(item_info[item->type].name) + 1 + 3 &&
+                mouse_x < panel_rect.x + panel_rect.width &&
                 mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
             {
                 return item;
             }
-
             y++;
         }
     }
@@ -285,17 +282,9 @@ static struct tooltip_data tooltip_data;
 struct tooltip_option *tooltip_option_create(char *text, bool (*on_click)(void))
 {
     struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
-
-    if (!tooltip_option)
-    {
-        printf("Couldn't create tooltip_option\n");
-
-        return NULL;
-    }
-
+    assert(tooltip_option);
     tooltip_option->text = _strdup(text);
     tooltip_option->on_click = on_click;
-
     return tooltip_option;
 }
 
@@ -308,7 +297,6 @@ void tooltip_option_destroy(struct tooltip_option *tooltip_option)
 static void tooltip_options_add(char *text, bool (*on_click)(void))
 {
     struct tooltip_option *tooltip_option = tooltip_option_create(text, on_click);
-
     TCOD_list_push(tooltip_options, tooltip_option);
 }
 
@@ -317,9 +305,7 @@ static void tooltip_options_clear(void)
     TCOD_LIST_FOREACH(tooltip_options)
     {
         struct tooltip_option *tooltip_option = *iterator;
-
         iterator = TCOD_list_remove_iterator(tooltip_options, iterator);
-
         tooltip_option_destroy(tooltip_option);
     }
 }
@@ -327,7 +313,6 @@ static void tooltip_options_clear(void)
 static void tooltip_show(void)
 {
     tooltip_options_clear();
-
     tooltip_rect.visible = true;
     tooltip_rect.x = mouse_x;
     tooltip_rect.y = mouse_y;
@@ -336,7 +321,6 @@ static void tooltip_show(void)
 static void tooltip_hide(void)
 {
     tooltip_options_clear();
-
     tooltip_rect.visible = false;
 }
 
@@ -348,14 +332,12 @@ static struct tooltip_option *tooltip_get_selected(void)
         TCOD_LIST_FOREACH(tooltip_options)
         {
             struct tooltip_option *option = *iterator;
-
             if (mouse_x > tooltip_rect.x &&
-                mouse_x < tooltip_rect.x + (int)strlen(option->text) + 1 &&
+                mouse_x < tooltip_rect.x + tooltip_rect.width &&
                 mouse_y == y + tooltip_rect.y)
             {
                 return option;
             }
-
             y++;
         }
     }
@@ -718,7 +700,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             if (inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(world->player->items))
             {
                 struct item *item = TCOD_list_get(world->player->items, alpha);
-
                 switch (inventory_action)
                 {
                 case INVENTORY_ACTION_EQUIP:
@@ -761,7 +742,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             else if (character_action != CHARACTER_ACTION_NONE && alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
             {
                 enum equip_slot equip_slot = (enum equip_slot)(alpha + 1);
-
                 switch (character_action)
                 {
                 case CHARACTER_ACTION_EXAMINE:
@@ -782,7 +762,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
 
                 character_action = CHARACTER_ACTION_NONE;
-
                 panel_state[PANEL_CHARACTER].selection_mode = false;
 
                 handled = true;
@@ -1168,7 +1147,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             else if (view_is_inside(mouse_x, mouse_y))
             {
                 automoving = true;
-
                 struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
                 if (tile->actor && tile->actor->faction != world->player->faction && !tile->actor->dead)
                 {
@@ -1342,6 +1320,10 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         took_turn = actor_path_towards(world->player, automove_x, automove_y);
         automoving = took_turn;
     }
+    else
+    {
+        automove_actor = NULL;
+    }
 
     return &game_scene;
 }
@@ -1374,23 +1356,30 @@ static struct scene *update(float delta)
     view_height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);
     view_x = world->player->x - view_width / 2;
     view_y = world->player->y - view_height / 2;
-
     if (view_x + view_width > MAP_WIDTH)
+    {
         view_x = MAP_WIDTH - view_width;
+    }
     if (view_x < 0)
+    {
         view_x = 0;
+    }
     if (view_y + view_height > MAP_HEIGHT)
+    {
         view_y = MAP_HEIGHT - view_height;
+    }
     if (view_y < 0)
+    {
         view_y = 0;
+    }
 
     world_update();
 
     if (took_turn)
     {
-        took_turn = false;
-
         world_turn();
+
+        took_turn = false;
     }
 
     if (world->state == WORLD_STATE_LOSE && file_exists(SAVE_PATH))

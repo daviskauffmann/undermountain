@@ -19,8 +19,7 @@
 // TODO: there is a lot of repetition of things with light properties
 // pack them into a light struct?
 
-// TODO: get rid of actor->dead flag and have a dedicated corpse object
-// corpses should mostly be treated like items, additionally containing a field for an actor
+// TODO: resuurect corpses
 
 // TODO: optimize
 // decide on a target ms per turn, maybe 16ms
@@ -216,6 +215,40 @@ void world_update(void)
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
+        if (actor->dead)
+        {
+            actor->current_hp = 0;
+            struct tile *tile = &map->tiles[actor->x][actor->y];
+            tile->actor = NULL;
+            iterator = TCOD_list_remove_iterator(map->actors, iterator);
+            TCOD_list_push(map->corpses, actor);
+            if (actor != world->player)
+            {
+                for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+                {
+                    struct item *equipment = actor->equipment[i];
+                    if (equipment)
+                    {
+                        TCOD_list_push(actor->items, equipment);
+                        actor->equipment[i] = NULL;
+                    }
+                }
+                TCOD_LIST_FOREACH(actor->items)
+                {
+                    struct item *item = *iterator;
+                    struct map *map = &world->maps[item->floor];
+                    struct tile *tile = &map->tiles[item->x][item->y];
+                    TCOD_list_push(tile->items, item);
+                    iterator = TCOD_list_remove_iterator(actor->items, iterator);
+                }
+            }
+            if (actor == world->player)
+            {
+                // let the player see whats going on while they're dead
+                actor_calc_fov(actor);
+            }
+            continue;
+        }
         actor_update_flash(actor);
     }
     TCOD_LIST_FOREACH(map->projectiles)
@@ -226,6 +259,7 @@ void world_update(void)
         {
             iterator = TCOD_list_remove_iterator(map->projectiles, iterator);
             projectile_delete(projectile);
+            continue;
         }
     }
 }
@@ -256,12 +290,13 @@ void world_turn(void)
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
-        if (actor->dead)
-        {
-            continue;
-        }
         actor_calc_fov(actor);
         actor_ai(actor);
+    }
+    if (world->player->dead)
+    {
+        // let the player see whats going on while they're dead
+        actor_calc_fov(world->player);
     }
 }
 

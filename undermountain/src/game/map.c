@@ -28,7 +28,7 @@
 #define DOOR_CHANCE 0.5f
 #define SPAWN_OBJECTS 5
 #define SPAWN_ADVENTURERS 5
-#define SPAWN_MONSTERS 5
+#define SPAWN_MONSTERS 10
 #define SPAWN_ITEMS 5
 
 void map_init(struct map *map, unsigned int floor)
@@ -45,6 +45,7 @@ void map_init(struct map *map, unsigned int floor)
     map->rooms = TCOD_list_new();
     map->objects = TCOD_list_new();
     map->actors = TCOD_list_new();
+    map->corpses = TCOD_list_new();
     map->items = TCOD_list_new();
     map->projectiles = TCOD_list_new();
 }
@@ -63,6 +64,12 @@ void map_reset(struct map *map)
         item_delete(item);
     }
     TCOD_list_delete(map->items);
+    TCOD_LIST_FOREACH(map->corpses)
+    {
+        struct actor *actor = *iterator;
+        actor_delete(actor);
+    }
+    TCOD_list_delete(map->corpses);
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
@@ -606,11 +613,11 @@ void map_generate(struct map *map)
             room_get_random_pos(room, &x, &y);
         } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
         enum monster monster = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
-        struct prototype *prototype = &monster_prototype[monster];
+        struct actor_prototype *monster_prototype = &monster_prototypes[monster];
         struct actor *actor = actor_new(
-            prototype->name,
-            prototype->race,
-            prototype->class,
+            monster_prototype->name,
+            monster_prototype->race,
+            monster_prototype->class,
             FACTION_EVIL,
             map->floor + 1,
             map->floor,
@@ -660,18 +667,18 @@ struct room *map_get_random_room(struct map *map)
 bool map_is_transparent(struct map *map, int x, int y)
 {
     struct tile *tile = &map->tiles[x][y];
-    if (tile->object && !object_info[tile->object->type].is_transparent)
+    if (tile->object && !object_datum[tile->object->type].is_transparent)
     {
         return false;
     }
-    return tile_info[tile->type].is_transparent;
+    return tile_datum[tile->type].is_transparent;
 }
 
 bool map_is_walkable(struct map *map, int x, int y)
 {
     struct tile *tile = &map->tiles[x][y];
     if (tile->object &&
-        !object_info[tile->object->type].is_walkable &&
+        !object_datum[tile->object->type].is_walkable &&
         tile->object->type != OBJECT_TYPE_DOOR_CLOSED)
     {
         return false;
@@ -680,7 +687,7 @@ bool map_is_walkable(struct map *map, int x, int y)
     {
         return false;
     }
-    return tile_info[tile->type].is_walkable;
+    return tile_datum[tile->type].is_walkable;
 }
 
 TCOD_map_t map_to_TCOD_map(struct map *map)

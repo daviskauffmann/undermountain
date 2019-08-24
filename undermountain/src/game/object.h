@@ -23,7 +23,7 @@ enum object_type
     NUM_OBJECT_TYPES
 };
 
-struct object_info
+struct object_data
 {
     const char *name;
     unsigned char glyph;

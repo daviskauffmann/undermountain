@@ -18,7 +18,7 @@ struct tile_common
     float ambient_intensity;
 };
 
-struct tile_info
+struct tile_data
 {
     const char *name;
     unsigned char glyph;

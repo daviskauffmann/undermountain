@@ -127,28 +127,19 @@ enum race_size
     RACE_SIZE_SMALL
 };
 
-struct race_info
+struct race_data
 {
     const char *name;
     unsigned char glyph;
     enum race_size size;
 };
 
-struct class_info
+struct class_data
 {
     const char *name;
     TCOD_color_t color;
     int hit_die;
     // TODO: base attack bonus
-};
-
-struct prototype
-{
-    const char *name;
-    enum race race;
-    enum class class;
-    // TODO: level + stats
-    // TODO: base equipment + inventory
 };
 
 enum ability
@@ -163,11 +154,20 @@ enum ability
     NUM_ABILITIES
 };
 
-struct ability_info
+struct ability_data
 {
     char *name;
     char *abbreviation;
     char *description;
+};
+
+struct actor_prototype
+{
+    const char *name;
+    enum race race;
+    enum class class;
+    // TODO: level + stats
+    // TODO: base equipment + inventory
 };
 
 struct actor
@@ -199,7 +199,7 @@ struct actor
     bool torch;
     TCOD_map_t torch_fov;
     TCOD_color_t flash_color;
-    float flash_fade;
+    float flash_fade_coef;
     bool dead;
 };
 

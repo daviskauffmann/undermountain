@@ -29,7 +29,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     {
         actor->ability_scores[ability] = 10;
     }
-    actor->base_hp = class_info[actor->class].hit_die * actor->level;
+    actor->base_hp = class_datum[actor->class].hit_die * actor->level;
     actor->current_hp = actor_calc_max_hp(actor);
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
@@ -51,7 +51,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->glow_fov = NULL;
     actor->torch = TCOD_random_get_int(NULL, 0, 20) == 0;
     actor->torch_fov = NULL;
-    actor->flash_fade = 0;
+    actor->flash_fade_coef = 0.0f;
     actor->dead = false;
     return actor;
 }
@@ -83,7 +83,7 @@ void actor_level_up(struct actor *actor)
     // in that case, use this function
 
     actor->level++;
-    actor->base_hp += roll(1, class_info[actor->class].hit_die);
+    actor->base_hp += roll(1, class_datum[actor->class].hit_die);
     actor->current_hp = actor_calc_max_hp(actor);
 
     world_log(
@@ -113,7 +113,7 @@ int actor_calc_enhancement_bonus(struct actor *actor)
         struct item *equipment = actor->equipment[equip_slot];
         if (equipment)
         {
-            TCOD_list_t item_properties = item_info[equipment->type].item_properties;
+            TCOD_list_t item_properties = item_datum[equipment->type].item_properties;
             TCOD_LIST_FOREACH(item_properties)
             {
                 struct base_item_property *base_item_property = *iterator;
@@ -143,11 +143,9 @@ int actor_calc_armor_class(struct actor *actor)
         struct item *equipment = actor->equipment[i];
         if (equipment)
         {
-            enum base_item base_item = item_info[equipment->type].base_item;
-            ac += base_item_info[base_item].base_ac;
-
-            TCOD_list_t item_properties = item_info[equipment->type].item_properties;
-            TCOD_LIST_FOREACH(item_properties)
+            struct item_data item_data = item_datum[equipment->type];
+            ac += base_item_datum[item_data.base_item].base_ac;
+            TCOD_LIST_FOREACH(item_data.item_properties)
             {
                 struct base_item_property *base_item_property = *iterator;
                 if (base_item_property->item_property == ITEM_PROPERTY_AC_BONUS)
@@ -180,13 +178,14 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
     }
     if (weapon)
     {
-        enum base_item base_item = item_info[weapon->type].base_item;
-        if (base_item_info[base_item].ranged == ranged)
+        enum base_item base_item = item_datum[weapon->type].base_item;
+        struct base_item_data base_item_data = base_item_datum[base_item];
+        if (base_item_data.ranged == ranged)
         {
-            *num_dice = base_item_info[base_item].num_dice;
-            *die_to_roll = base_item_info[base_item].die_to_roll;
-            *crit_threat = base_item_info[base_item].crit_threat;
-            *crit_mult = base_item_info[base_item].crit_mult;
+            *num_dice = base_item_data.num_dice;
+            *die_to_roll = base_item_data.die_to_roll;
+            *crit_threat = base_item_data.crit_threat;
+            *crit_mult = base_item_data.crit_mult;
         }
     }
 }
@@ -198,15 +197,17 @@ int actor_calc_damage_bonus(struct actor *actor)
 
 void actor_update_flash(struct actor *actor)
 {
-    if (actor->flash_fade > 0)
+    if (actor->flash_fade_coef > 0)
     {
-        actor->flash_fade -= 4.0f * TCOD_sys_get_last_frame_length();
+        // TODO: slower/faster fade depending on circumstances
+        // TODO: different fade functions such as sin
+        actor->flash_fade_coef -= 4.0f * TCOD_sys_get_last_frame_length();
 
         // world->state == WORLD_STATE_WAIT;
     }
     else
     {
-        actor->flash_fade = 0.0f;
+        actor->flash_fade_coef = 0.0f;
     }
 }
 
@@ -369,8 +370,8 @@ void actor_ai(struct actor *actor)
                 struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
                 if (weapon)
                 {
-                    enum base_item base_item = item_info[weapon->type].base_item;
-                    if (base_item_info[base_item].ranged &&
+                    enum base_item base_item = item_datum[weapon->type].base_item;
+                    if (base_item_datum[base_item].ranged &&
                         actor_shoot(actor, target->x, target->y, NULL, NULL))
                     {
                         continue;
@@ -509,7 +510,7 @@ bool actor_move(struct actor *actor, int x, int y)
 
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[x][y];
-    if (!tile_info[tile->type].is_walkable)
+    if (!tile_datum[tile->type].is_walkable)
     {
         return false;
     }
@@ -544,7 +545,7 @@ bool actor_move(struct actor *actor, int x, int y)
         break;
         }
 
-        if (!object_info[tile->object->type].is_walkable)
+        if (!object_datum[tile->object->type].is_walkable)
         {
             return false;
         }
@@ -1071,7 +1072,7 @@ bool actor_grab(struct actor *actor, int x, int y)
         TCOD_white,
         "%s picks up %s",
         actor->name,
-        item_info[item->type].name);
+        item_datum[item->type].name);
 
     return true;
 }
@@ -1093,15 +1094,16 @@ bool actor_drop(struct actor *actor, struct item *item)
         TCOD_white,
         "%s drops %s",
         actor->name,
-        item_info[item->type].name);
+        item_datum[item->type].name);
 
     return true;
 }
 
 bool actor_equip(struct actor *actor, struct item *item)
 {
-    enum base_item base_item = item_info[item->type].base_item;
-    enum equip_slot equip_slot = base_item_info[base_item].equip_slot;
+    struct item_data item_data = item_datum[item->type];
+    struct base_item_data base_item_data = base_item_datum[item_data.base_item];
+    enum equip_slot equip_slot = base_item_data.equip_slot;
     if (equip_slot == EQUIP_SLOT_NONE)
     {
         world_log(
@@ -1111,13 +1113,13 @@ bool actor_equip(struct actor *actor, struct item *item)
             TCOD_white,
             "%s cannot equip %s",
             actor->name,
-            item_info[item->type].name);
+            item_data.name);
 
         return false;
     }
 
-    enum weapon_size weapon_size = base_item_info[base_item].weapon_size;
-    enum race_size race_size = race_info[actor->race].size;
+    enum weapon_size weapon_size = base_item_data.weapon_size;
+    enum race_size race_size = race_datum[actor->race].size;
     if (weapon_size == WEAPON_SIZE_LARGE && race_size == RACE_SIZE_SMALL)
     {
         world_log(
@@ -1126,7 +1128,7 @@ bool actor_equip(struct actor *actor, struct item *item)
             actor->y,
             TCOD_white,
             "%s is too large for %s to wield",
-            item_info[item->type].name,
+            item_data.name,
             actor->name);
 
         return false;
@@ -1138,8 +1140,7 @@ bool actor_equip(struct actor *actor, struct item *item)
     }
     if (item_is_two_handed(item, race_size))
     {
-        struct item *off_hand = actor->equipment[EQUIP_SLOT_OFF_HAND];
-        if (off_hand)
+        if (actor->equipment[EQUIP_SLOT_OFF_HAND])
         {
             actor_unequip(actor, EQUIP_SLOT_OFF_HAND);
         }
@@ -1162,7 +1163,7 @@ bool actor_equip(struct actor *actor, struct item *item)
         TCOD_white,
         "%s equips %s",
         actor->name,
-        item_info[item->type].name);
+        item_data.name);
 
     return true;
 }
@@ -1179,7 +1180,7 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
             TCOD_white,
             "%s is not equipping anything their %s slot",
             actor->name,
-            equip_slot_info[equip_slot].name);
+            equip_slot_datum[equip_slot].name);
 
         return false;
     }
@@ -1194,14 +1195,15 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
         TCOD_white,
         "%s unequips %s",
         actor->name,
-        item_info[equipment->type].name);
+        item_datum[equipment->type].name);
 
     return true;
 }
 
 bool actor_quaff(struct actor *actor, struct item *item)
 {
-    enum base_item base_item = item_info[item->type].base_item;
+    struct item_data item_data = item_datum[item->type];
+    enum base_item base_item = item_data.base_item;
     if (base_item != BASE_ITEM_POTION)
     {
         world_log(
@@ -1211,7 +1213,7 @@ bool actor_quaff(struct actor *actor, struct item *item)
             TCOD_white,
             "%s cannot quaff %s",
             actor->name,
-            item_info[item->type].name);
+            item_data.name);
 
         return false;
     }
@@ -1225,13 +1227,14 @@ bool actor_quaff(struct actor *actor, struct item *item)
         TCOD_white,
         "%s quaffs %s",
         actor->name,
-        item_info[item->type].name);
+        item_data.name);
 
     return true;
 }
 
 bool actor_bash(struct actor *actor, struct object *object)
 {
+    struct object_data object_data = object_datum[object->type];
     if (object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP)
     {
         world_log(
@@ -1241,7 +1244,7 @@ bool actor_bash(struct actor *actor, struct object *object)
             TCOD_white,
             "%s cannot destroy the %s",
             actor->name,
-            object_info[object->type].name);
+            object_data.name);
 
         return false;
     }
@@ -1255,7 +1258,7 @@ bool actor_bash(struct actor *actor, struct object *object)
         TCOD_white,
         "%s destroys the %s",
         actor->name,
-        object_info[object->type].name);
+        object_data.name);
 
     return true;
 }
@@ -1322,8 +1325,8 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
-    enum base_item base_item = item_info[weapon->type].base_item;
-    if (!base_item_info[base_item].ranged)
+    enum base_item base_item = item_datum[weapon->type].base_item;
+    if (!base_item_datum[base_item].ranged)
     {
         world_log(
             actor->floor,
@@ -1412,10 +1415,9 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
         }
         other->current_hp -= total_damage;
         other->flash_color = TCOD_red;
-        other->flash_fade = 1.0f;
+        other->flash_fade_coef = 1.0f;
         if (other->current_hp <= 0)
         {
-            other->current_hp = 0;
             actor_die(other, actor);
         }
 
@@ -1498,28 +1500,6 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
 void actor_die(struct actor *actor, struct actor *killer)
 {
     actor->dead = true;
-    if (actor != world->player)
-    {
-        actor->glow = false;
-        actor->torch = false;
-        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-        {
-            struct item *equipment = actor->equipment[i];
-            if (equipment)
-            {
-                TCOD_list_push(actor->items, equipment);
-                actor->equipment[i] = NULL;
-            }
-        }
-        TCOD_LIST_FOREACH(actor->items)
-        {
-            struct item *item = *iterator;
-            struct map *map = &world->maps[item->floor];
-            struct tile *tile = &map->tiles[item->x][item->y];
-            TCOD_list_push(tile->items, item);
-            iterator = TCOD_list_remove_iterator(actor->items, iterator);
-        }
-    }
 
     world_log(
         actor->floor,

@@ -46,7 +46,7 @@ void projectile_update(struct projectile *projectile)
     }
     struct map *map = &world->maps[projectile->floor];
     struct tile *tile = &map->tiles[x][y];
-    if (!tile_info[tile->type].is_walkable)
+    if (!tile_datum[tile->type].is_walkable)
     {
         should_move = false;
     }
@@ -55,7 +55,7 @@ void projectile_update(struct projectile *projectile)
         actor_attack(projectile->shooter, tile->actor, true);
         should_move = false;
     }
-    if (tile->object && !object_info[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
+    if (tile->object && !object_datum[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
     {
         actor_bash(projectile->shooter, tile->object);
         should_move = false;

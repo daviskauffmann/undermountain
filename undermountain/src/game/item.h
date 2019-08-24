@@ -53,7 +53,7 @@ enum equip_slot
     NUM_EQUIP_SLOTS
 };
 
-struct equip_slot_info
+struct equip_slot_data
 {
     char *name;
     char *label; // TODO: not the biggest fan of this solution
@@ -83,7 +83,7 @@ enum weapon_size
     WEAPON_SIZE_TINY
 };
 
-struct base_item_info
+struct base_item_data
 {
     unsigned char glyph;
     TCOD_color_t color;
@@ -153,7 +153,7 @@ enum item_type
     NUM_ITEM_TYPES
 };
 
-struct item_info
+struct item_data
 {
     enum base_item base_item;
     const char *name;

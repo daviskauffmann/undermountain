@@ -21,7 +21,7 @@ enum option
     NUM_OPTIONS
 };
 
-struct option_info
+struct option_data
 {
     char *text;
 };
@@ -29,7 +29,7 @@ struct option_info
 static int mouse_x;
 static int mouse_y;
 
-static struct option_info option_info[NUM_OPTIONS];
+static struct option_data option_datum[NUM_OPTIONS];
 
 static enum option get_selected_option(void)
 {
@@ -90,9 +90,9 @@ static struct scene *select_option(enum option option)
 
 static void init(struct scene *previous_scene)
 {
-    option_info[OPTION_START].text = "Start";
-    option_info[OPTION_ABOUT].text = "About";
-    option_info[OPTION_QUIT].text = "Quit";
+    option_datum[OPTION_START].text = "Start";
+    option_datum[OPTION_ABOUT].text = "About";
+    option_datum[OPTION_QUIT].text = "Quit";
 
     mouse_x = -1;
     mouse_y = -1;
@@ -155,7 +155,7 @@ static void render(TCOD_console_t console)
             y++,
             "%c) %s",
             option + 'a',
-            option_info[option].text);
+            option_datum[option].text);
     }
 
     TCOD_console_set_default_foreground(console, TCOD_white);

@@ -19,6 +19,7 @@ struct map
     TCOD_list_t rooms;
     TCOD_list_t objects;
     TCOD_list_t actors;
+    TCOD_list_t corpses;
     TCOD_list_t items;
     TCOD_list_t projectiles;
 };

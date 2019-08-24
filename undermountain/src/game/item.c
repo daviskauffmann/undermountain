@@ -24,15 +24,15 @@ void item_delete(struct item *item)
 
 bool item_is_two_handed(struct item *item, enum race_size race_size)
 {
-    enum base_item base_item = item_info[item->type].base_item;
-
-    enum equip_slot equip_slot = base_item_info[base_item].equip_slot;
+    enum base_item base_item = item_datum[item->type].base_item;
+    struct base_item_data base_item_data = base_item_datum[base_item];
+    enum equip_slot equip_slot = base_item_data.equip_slot;
     if (equip_slot != EQUIP_SLOT_MAIN_HAND)
     {
         return false;
     }
 
-    enum weapon_size weapon_size = base_item_info[base_item].weapon_size;
+    enum weapon_size weapon_size = base_item_data.weapon_size;
     switch (race_size)
     {
     case RACE_SIZE_MEDIUM:

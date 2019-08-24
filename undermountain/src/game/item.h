@@ -3,6 +3,8 @@
 
 #include <libtcod.h>
 
+enum race_size;
+
 struct item_common
 {
     char __placeholder;
@@ -167,8 +169,8 @@ struct item
     int y;
 };
 
-struct item *item_create(enum item_type type, int floor, int x, int y);
+struct item *item_new(enum item_type type, int floor, int x, int y);
+void item_delete(struct item *item);
 bool item_is_two_handed(struct item *item, enum race_size race_size);
-void item_destroy(struct item *item);
 
 #endif

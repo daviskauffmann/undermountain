@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-struct message *message_create(char *text, TCOD_color_t color)
+struct message *message_new(char *text, TCOD_color_t color)
 {
     struct message *message = malloc(sizeof(struct message));
     assert(message);
@@ -14,7 +14,7 @@ struct message *message_create(char *text, TCOD_color_t color)
     return message;
 }
 
-void message_destroy(struct message *message)
+void message_delete(struct message *message)
 {
     free(message->text);
     free(message);

@@ -203,7 +203,8 @@ struct actor
     bool dead;
 };
 
-struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
+struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
+void actor_delete(struct actor *actor);
 void actor_level_up(struct actor *actor);
 int actor_calc_max_hp(struct actor *actor);
 int actor_calc_enhancement_bonus(struct actor *actor);
@@ -238,6 +239,5 @@ bool actor_swing(struct actor *actor, int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other, bool ranged);
 bool actor_cast_spell(struct actor *actor, int x, int y);
 void actor_die(struct actor *actor, struct actor *killer);
-void actor_destroy(struct actor *actor);
 
 #endif

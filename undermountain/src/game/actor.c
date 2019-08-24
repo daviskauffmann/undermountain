@@ -15,7 +15,7 @@
 
 // TODO: actors should ascend/descend with their leader
 
-struct actor *actor_create(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
+struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
 {
     struct actor *actor = malloc(sizeof(struct actor));
     assert(actor);
@@ -54,6 +54,25 @@ struct actor *actor_create(const char *name, enum race race, enum class class, e
     actor->flash_fade = 0;
     actor->dead = false;
     return actor;
+}
+
+void actor_delete(struct actor *actor)
+{
+    if (actor->torch_fov != NULL)
+    {
+        TCOD_map_delete(actor->torch_fov);
+    }
+    if (actor->glow_fov != NULL)
+    {
+        TCOD_map_delete(actor->glow_fov);
+    }
+    if (actor->fov != NULL)
+    {
+        TCOD_map_delete(actor->fov);
+    }
+    TCOD_list_delete(actor->items);
+    free(actor->name);
+    free(actor);
 }
 
 void actor_level_up(struct actor *actor)
@@ -1319,7 +1338,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
 
     float angle = angle_between(actor->x, actor->y, x, y);
     unsigned char glyph = '`'; // TODO: select glyph based on angle
-    struct projectile *projectile = projectile_create(
+    struct projectile *projectile = projectile_new(
         glyph,
         actor->floor,
         actor->x,
@@ -1461,7 +1480,7 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
 bool actor_cast_spell(struct actor *actor, int x, int y)
 {
     struct map *map = &world->maps[actor->floor];
-    struct projectile *projectile = projectile_create(
+    struct projectile *projectile = projectile_new(
         '*',
         actor->floor,
         actor->x,
@@ -1535,23 +1554,4 @@ void actor_die(struct actor *actor, struct actor *killer)
             TCOD_green,
             "Game over! Press 'ESC' to return to the menu");
     }
-}
-
-void actor_destroy(struct actor *actor)
-{
-    if (actor->torch_fov != NULL)
-    {
-        TCOD_map_delete(actor->torch_fov);
-    }
-    if (actor->glow_fov != NULL)
-    {
-        TCOD_map_delete(actor->glow_fov);
-    }
-    if (actor->fov != NULL)
-    {
-        TCOD_map_delete(actor->fov);
-    }
-    TCOD_list_delete(actor->items);
-    free(actor->name);
-    free(actor);
 }

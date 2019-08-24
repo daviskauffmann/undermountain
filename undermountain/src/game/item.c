@@ -6,7 +6,7 @@
 
 #include "assets.h"
 
-struct item *item_create(enum item_type type, int floor, int x, int y)
+struct item *item_new(enum item_type type, int floor, int x, int y)
 {
     struct item *item = malloc(sizeof(struct item));
     assert(item);
@@ -15,6 +15,11 @@ struct item *item_create(enum item_type type, int floor, int x, int y)
     item->x = x;
     item->y = y;
     return item;
+}
+
+void item_delete(struct item *item)
+{
+    free(item);
 }
 
 bool item_is_two_handed(struct item *item, enum race_size race_size)
@@ -58,9 +63,4 @@ bool item_is_two_handed(struct item *item, enum race_size race_size)
     }
 
     return false;
-}
-
-void item_destroy(struct item *item)
-{
-    free(item);
 }

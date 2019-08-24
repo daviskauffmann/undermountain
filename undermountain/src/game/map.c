@@ -26,9 +26,9 @@
 #endif
 
 #define DOOR_CHANCE 0.5f
-#define SPAWN_OBJECTS 10
+#define SPAWN_OBJECTS 5
 #define SPAWN_ADVENTURERS 5
-#define SPAWN_MONSTERS 10
+#define SPAWN_MONSTERS 5
 #define SPAWN_ITEMS 5
 
 void map_init(struct map *map, unsigned int floor)
@@ -47,6 +47,48 @@ void map_init(struct map *map, unsigned int floor)
     map->actors = TCOD_list_new();
     map->items = TCOD_list_new();
     map->projectiles = TCOD_list_new();
+}
+
+void map_reset(struct map *map)
+{
+    TCOD_LIST_FOREACH(map->projectiles)
+    {
+        struct projectile *projectile = *iterator;
+        projectile_delete(projectile);
+    }
+    TCOD_list_delete(map->projectiles);
+    TCOD_LIST_FOREACH(map->items)
+    {
+        struct item *item = *iterator;
+        item_delete(item);
+    }
+    TCOD_list_delete(map->items);
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_delete(actor);
+    }
+    TCOD_list_delete(map->actors);
+    TCOD_LIST_FOREACH(map->objects)
+    {
+        struct object *object = *iterator;
+        object_delete(object);
+    }
+    TCOD_list_delete(map->objects);
+    TCOD_LIST_FOREACH(map->rooms)
+    {
+        struct room *room = *iterator;
+        room_delete(room);
+    }
+    TCOD_list_delete(map->rooms);
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            struct tile *tile = &map->tiles[x][y];
+            tile_reset(tile);
+        }
+    }
 }
 
 static void hline(struct map *map, int x1, int y, int x2)
@@ -159,7 +201,7 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
                 map->tiles[x][y].type = TILE_TYPE_FLOOR;
             }
         }
-        struct room *room = room_create(node->x, node->y, node->w, node->h);
+        struct room *room = room_new(node->x, node->y, node->w, node->h);
         TCOD_list_push(map->rooms, room);
     }
     else
@@ -269,7 +311,7 @@ void map_generate(struct map *map)
                 tile->type = TILE_TYPE_FLOOR;
             }
         }
-        struct room *room = room_create(room_x, room_y, room_w, room_h);
+        struct room *room = room_new(room_x, room_y, room_w, room_h);
         TCOD_list_push(map->rooms, room);
     }
 
@@ -376,7 +418,7 @@ void map_generate(struct map *map)
             }
             if (put_door)
             {
-                struct object *object = object_create(
+                struct object *object = object_new(
                     OBJECT_TYPE_DOOR_CLOSED,
                     map->floor,
                     x,
@@ -397,7 +439,7 @@ void map_generate(struct map *map)
         struct room *stair_down_room = map_get_random_room(map);
         room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
     } while (map->tiles[map->stair_down_x][map->stair_down_y].object != NULL);
-    struct object *stair_down = object_create(
+    struct object *stair_down = object_new(
         OBJECT_TYPE_STAIR_DOWN,
         map->floor,
         map->stair_down_x,
@@ -416,7 +458,7 @@ void map_generate(struct map *map)
         struct room *stair_up_room = map_get_random_room(map);
         room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
     } while (map->tiles[map->stair_up_x][map->stair_up_y].object != NULL);
-    struct object *stair_up = object_create(
+    struct object *stair_up = object_new(
         OBJECT_TYPE_STAIR_UP,
         map->floor,
         map->stair_up_x,
@@ -488,7 +530,7 @@ void map_generate(struct map *map)
         }
         break;
         }
-        struct object *object = object_create(
+        struct object *object = object_new(
             type,
             map->floor,
             x,
@@ -540,7 +582,7 @@ void map_generate(struct map *map)
         }
         break;
         }
-        struct actor *actor = actor_create(
+        struct actor *actor = actor_new(
             TCOD_namegen_generate(name, false),
             race,
             TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD),
@@ -565,7 +607,7 @@ void map_generate(struct map *map)
         } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
         enum monster monster = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
         struct prototype *prototype = &monster_prototype[monster];
-        struct actor *actor = actor_create(
+        struct actor *actor = actor_new(
             prototype->name,
             prototype->race,
             prototype->class,
@@ -580,7 +622,7 @@ void map_generate(struct map *map)
         // TODO: default inventory/equipment
         if (monster == MONSTER_ORC_RANGER)
         {
-            struct item *longbow = item_create(ITEM_TYPE_LONGBOW, map->floor, x, y);
+            struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y);
             TCOD_list_push(map->items, longbow);
             actor_equip(actor, longbow);
         }
@@ -594,7 +636,7 @@ void map_generate(struct map *map)
         {
             room_get_random_pos(room, &x, &y);
         } while (map->tiles[x][y].object != NULL);
-        struct item *item = item_create(
+        struct item *item = item_new(
             TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1),
             map->floor,
             x,
@@ -664,46 +706,4 @@ TCOD_map_t map_to_fov_map(struct map *map, int x, int y, int radius)
     TCOD_map_t fov_map = map_to_TCOD_map(map);
     TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_RESTRICTIVE);
     return fov_map;
-}
-
-void map_reset(struct map *map)
-{
-    TCOD_LIST_FOREACH(map->projectiles)
-    {
-        struct projectile *projectile = *iterator;
-        projectile_destroy(projectile);
-    }
-    TCOD_list_delete(map->projectiles);
-    TCOD_LIST_FOREACH(map->items)
-    {
-        struct item *item = *iterator;
-        item_destroy(item);
-    }
-    TCOD_list_delete(map->items);
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_destroy(actor);
-    }
-    TCOD_list_delete(map->actors);
-    TCOD_LIST_FOREACH(map->objects)
-    {
-        struct object *object = *iterator;
-        object_destroy(object);
-    }
-    TCOD_list_delete(map->objects);
-    TCOD_LIST_FOREACH(map->rooms)
-    {
-        struct room *room = *iterator;
-        room_destroy(room);
-    }
-    TCOD_list_delete(map->rooms);
-    for (int x = 0; x < MAP_WIDTH; x++)
-    {
-        for (int y = 0; y < MAP_HEIGHT; y++)
-        {
-            struct tile *tile = &map->tiles[x][y];
-            tile_reset(tile);
-        }
-    }
 }

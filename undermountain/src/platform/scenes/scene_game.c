@@ -279,7 +279,7 @@ static struct rect tooltip_rect;
 static TCOD_list_t tooltip_options;
 static struct tooltip_data tooltip_data;
 
-struct tooltip_option *tooltip_option_create(char *text, bool (*on_click)(void))
+struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
 {
     struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
     assert(tooltip_option);
@@ -288,7 +288,7 @@ struct tooltip_option *tooltip_option_create(char *text, bool (*on_click)(void))
     return tooltip_option;
 }
 
-void tooltip_option_destroy(struct tooltip_option *tooltip_option)
+void tooltip_option_delete(struct tooltip_option *tooltip_option)
 {
     free(tooltip_option->text);
     free(tooltip_option);
@@ -296,7 +296,7 @@ void tooltip_option_destroy(struct tooltip_option *tooltip_option)
 
 static void tooltip_options_add(char *text, bool (*on_click)(void))
 {
-    struct tooltip_option *tooltip_option = tooltip_option_create(text, on_click);
+    struct tooltip_option *tooltip_option = tooltip_option_new(text, on_click);
     TCOD_list_push(tooltip_options, tooltip_option);
 }
 
@@ -306,7 +306,7 @@ static void tooltip_options_clear(void)
     {
         struct tooltip_option *tooltip_option = *iterator;
         iterator = TCOD_list_remove_iterator(tooltip_options, iterator);
-        tooltip_option_destroy(tooltip_option);
+        tooltip_option_delete(tooltip_option);
     }
 }
 
@@ -412,9 +412,9 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 directional_action = DIRECTIONAL_ACTION_NONE;
                 inventory_action = INVENTORY_ACTION_NONE;
                 character_action = CHARACTER_ACTION_NONE;
-                for (enum panel_rect panel_rect = 0; panel_rect < NUM_PANELS; panel_rect++)
+                for (enum panel panel = 0; panel < NUM_PANELS; panel++)
                 {
-                    panel_state[panel_rect].selection_mode = false;
+                    panel_state[panel].selection_mode = false;
                 }
             }
             else if (panel_rect.visible)
@@ -767,9 +767,9 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 handled = true;
             }
 
-            for (enum panel_rect panel_rect = 0; panel_rect < NUM_PANELS; panel_rect++)
+            for (enum panel panel = 0; panel < NUM_PANELS; panel++)
             {
-                if (panel_state[panel_rect].selection_mode)
+                if (panel_state[panel].selection_mode)
                 {
                     handled = true;
                 }
@@ -2154,7 +2154,7 @@ static void quit(void)
     TCOD_LIST_FOREACH(tooltip_options)
     {
         struct tooltip_option *tooltip_option = *iterator;
-        tooltip_option_destroy(tooltip_option);
+        tooltip_option_delete(tooltip_option);
     }
     TCOD_console_delete(message_log_rect.console);
     TCOD_console_delete(panel_rect.console);

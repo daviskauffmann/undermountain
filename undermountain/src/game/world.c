@@ -4,6 +4,8 @@
 #include <malloc.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "actor.h"
 #include "message.h"
@@ -104,6 +106,24 @@ void world_init(void)
     world->turn = 0;
 }
 
+void world_quit(void)
+{
+    TCOD_LIST_FOREACH(world->messages)
+    {
+        struct message *message = *iterator;
+
+        message_delete(message);
+    }
+    TCOD_list_delete(world->messages);
+    for (int i = 0; i < NUM_MAPS; i++)
+    {
+        struct map *map = &world->maps[i];
+        map_reset(map);
+    }
+    free(world);
+    world = NULL;
+}
+
 // TODO: this should accept an actor which will become the player, presumably passed from a character creation menu
 void world_new(void)
 {
@@ -122,25 +142,25 @@ void world_new(void)
         {
             int x = map->stair_up_x;
             int y = map->stair_up_y;
-            struct actor *player = actor_create("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, floor, x, y);
+            struct actor *player = actor_new("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, floor, x, y);
             player->torch = false;
             world->player = player;
             TCOD_list_push(map->actors, player);
             struct tile *tile = &map->tiles[x][y];
             tile->actor = player;
-            struct item *longsword = item_create(ITEM_TYPE_LONGSWORD, floor, x, y);
+            struct item *longsword = item_new(ITEM_TYPE_LONGSWORD, floor, x, y);
             TCOD_list_push(map->items, longsword);
             TCOD_list_push(player->items, longsword);
-            struct item *greatsword = item_create(ITEM_TYPE_GREATSWORD, floor, x, y);
+            struct item *greatsword = item_new(ITEM_TYPE_GREATSWORD, floor, x, y);
             TCOD_list_push(map->items, greatsword);
             TCOD_list_push(player->items, greatsword);
-            struct item *longbow = item_create(ITEM_TYPE_LONGBOW, floor, x, y);
+            struct item *longbow = item_new(ITEM_TYPE_LONGBOW, floor, x, y);
             TCOD_list_push(map->items, longbow);
             TCOD_list_push(player->items, longbow);
-            struct item *tower_shield = item_create(ITEM_TYPE_TOWER_SHIELD, floor, x, y);
+            struct item *tower_shield = item_new(ITEM_TYPE_TOWER_SHIELD, floor, x, y);
             TCOD_list_push(map->items, tower_shield);
             TCOD_list_push(player->items, tower_shield);
-            struct item *potion_cure_light_wounds = item_create(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, floor, x, y);
+            struct item *potion_cure_light_wounds = item_new(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, floor, x, y);
             TCOD_list_push(map->items, potion_cure_light_wounds);
             TCOD_list_push(player->items, potion_cure_light_wounds);
 
@@ -157,7 +177,7 @@ void world_new(void)
         {
             int x = map->stair_up_x + 1;
             int y = map->stair_up_y + 1;
-            struct actor *pet = actor_create("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, 1, floor, x, y);
+            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, 1, floor, x, y);
             pet->leader = world->player;
             pet->speed = 1.0f;
             pet->glow = false;
@@ -205,7 +225,7 @@ void world_update(void)
         if (projectile->destroyed)
         {
             iterator = TCOD_list_remove_iterator(map->projectiles, iterator);
-            projectile_destroy(projectile);
+            projectile_delete(projectile);
         }
     }
 }
@@ -223,7 +243,7 @@ void world_turn(void)
             struct tile *tile = &map->tiles[object->x][object->y];
             tile->object = NULL;
             iterator = TCOD_list_remove_iterator(map->objects, iterator);
-            object_destroy(object);
+            object_delete(object);
             continue;
         }
         object_calc_light(object);
@@ -236,6 +256,10 @@ void world_turn(void)
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
+        if (actor->dead)
+        {
+            continue;
+        }
         actor_calc_fov(actor);
         actor_ai(actor);
     }
@@ -245,20 +269,23 @@ void world_turn(void)
 // instead of logging messages directly, the world should store all the events that have happened
 // the renderer can read the last few events to generate a message (using assets as template strings)
 // this allows us to read the entire history of the world and do anything with it
+// also, we'd need to store whether the event was initially seen by the player
 void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
-    if (!world->player ||
-        floor != world->player->floor ||
-        !world->player->fov ||
-        !TCOD_map_is_in_fov(world->player->fov, x, y))
-    {
-        return;
-    }
+    // if (!world->player ||
+    //     floor != world->player->floor ||
+    //     !world->player->fov ||
+    //     !TCOD_map_is_in_fov(world->player->fov, x, y))
+    // {
+    //     return;
+    // }
 
     va_list args;
     va_start(args, fmt);
-    char buffer[256];
-    vsprintf_s(buffer, sizeof(buffer), fmt, args);
+    int size = vsnprintf(NULL, 0, fmt, args);
+    char *buffer = malloc(size + 1);
+    assert(buffer);
+    vsprintf(buffer, fmt, args);
     va_end(args);
     char *line_begin = buffer;
     char *line_end;
@@ -268,7 +295,7 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
         {
             struct message *message = TCOD_list_get(world->messages, 0);
             TCOD_list_remove(world->messages, message);
-            message_destroy(message);
+            message_delete(message);
         }
 
         line_end = strchr(line_begin, '\n');
@@ -276,26 +303,9 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
         {
             *line_end = '\0';
         }
-        struct message *message = message_create(line_begin, color);
+        struct message *message = message_new(line_begin, color);
         TCOD_list_push(world->messages, message);
         line_begin = line_end + 1;
     } while (line_end);
-}
-
-void world_quit(void)
-{
-    TCOD_LIST_FOREACH(world->messages)
-    {
-        struct message *message = *iterator;
-
-        message_destroy(message);
-    }
-    TCOD_list_delete(world->messages);
-    for (int i = 0; i < NUM_MAPS; i++)
-    {
-        struct map *map = &world->maps[i];
-        map_reset(map);
-    }
-    free(world);
-    world = NULL;
+    free(buffer);
 }

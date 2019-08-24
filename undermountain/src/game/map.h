@@ -24,6 +24,7 @@ struct map
 };
 
 void map_init(struct map *map, unsigned int floor);
+void map_reset(struct map *map);
 void map_generate(struct map *map);
 bool map_is_inside(int x, int y);
 struct room *map_get_random_room(struct map *map);
@@ -31,6 +32,5 @@ bool map_is_transparent(struct map *map, int x, int y);
 bool map_is_walkable(struct map *map, int x, int y);
 TCOD_map_t map_to_TCOD_map(struct map *map);
 TCOD_map_t map_to_fov_map(struct map *map, int x, int y, int radius);
-void map_reset(struct map *map);
 
 #endif

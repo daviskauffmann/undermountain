@@ -32,8 +32,8 @@ struct ac_bonus
     int bonus;
 };
 
-struct ac_bonus *ac_bonus_create(enum ac ac, int bonus);
-void ac_bonus_destroy(struct ac_bonus *ac_bonus);
+struct ac_bonus *ac_bonus_new(enum ac ac, int bonus);
+void ac_bonus_delete(struct ac_bonus *ac_bonus);
 
 struct enhancement_bonus
 {
@@ -41,7 +41,7 @@ struct enhancement_bonus
     int bonus;
 };
 
-struct enhancement_bonus *enhancement_bonus_create(int bonus);
-void enhancement_bonus_destroy(struct enhancement_bonus *enhancement_bonus);
+struct enhancement_bonus *enhancement_bonus_new(int bonus);
+void enhancement_bonus_delete(struct enhancement_bonus *enhancement_bonus);
 
 #endif

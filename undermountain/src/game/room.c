@@ -7,7 +7,7 @@
 
 #include <libtcod.h>
 
-struct room *room_create(int x, int y, int w, int h)
+struct room *room_new(int x, int y, int w, int h)
 {
     struct room *room = malloc(sizeof(struct room));
     assert(room);
@@ -16,6 +16,11 @@ struct room *room_create(int x, int y, int w, int h)
     room->w = w;
     room->h = h;
     return room;
+}
+
+void room_delete(struct room *room)
+{
+    free(room);
 }
 
 void room_get_random_pos(struct room *room, int *x, int *y)
@@ -28,9 +33,4 @@ void room_get_random_pos(struct room *room, int *x, int *y)
         NULL,
         room->y,
         room->y + room->h - 1);
-}
-
-void room_destroy(struct room *room)
-{
-    free(room);
 }

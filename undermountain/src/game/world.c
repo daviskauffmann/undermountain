@@ -137,7 +137,7 @@ void world_new(void)
         {
             int x = map->stair_up_x;
             int y = map->stair_up_y;
-            struct actor *player = actor_new("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, 1, floor, x, y);
+            struct actor *player = actor_new("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, floor + 1, floor, x, y);
             player->torch = false;
             world->player = player;
             TCOD_list_push(map->actors, player);
@@ -172,7 +172,7 @@ void world_new(void)
         {
             int x = map->stair_up_x + 1;
             int y = map->stair_up_y + 1;
-            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, 1, floor, x, y);
+            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, x, y);
             pet->leader = world->player;
             pet->speed = 1.0f;
             pet->glow = false;

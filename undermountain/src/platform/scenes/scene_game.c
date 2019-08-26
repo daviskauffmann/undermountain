@@ -1642,100 +1642,113 @@ static void render(TCOD_console_t console)
     {
         TCOD_console_set_char_foreground(
             console,
-            target_x - view_x,
+            target_x - 1 - view_x,
             target_y - view_y,
             TCOD_red);
         TCOD_console_set_char(
             console,
-            target_x - view_x,
+            target_x - 1 - view_x,
             target_y - view_y,
-            'X');
+            '[');
+        TCOD_console_set_char_foreground(
+            console,
+            target_x + 1 - view_x,
+            target_y - view_y,
+            TCOD_red);
+        TCOD_console_set_char(
+            console,
+            target_x + 1 - view_x,
+            target_y - view_y,
+            ']');
 
-        struct tile *tile = &map->tiles[target_x][target_y];
-        if (TCOD_map_is_in_fov(world->player->fov, target_x, target_y))
+        if (map_is_inside(target_x, target_y))
         {
-            if (tile->actor)
+            struct tile *tile = &map->tiles[target_x][target_y];
+            if (TCOD_map_is_in_fov(world->player->fov, target_x, target_y))
             {
-                TCOD_console_printf_ex(
-                    console,
-                    view_width / 2,
-                    view_height - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    tile->actor->name);
+                if (tile->actor)
+                {
+                    TCOD_console_printf_ex(
+                        console,
+                        view_width / 2,
+                        view_height - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        tile->actor->name);
 
-                goto done;
-            }
-            struct actor *corpse = TCOD_list_peek(tile->corpses);
-            if (corpse)
-            {
-                TCOD_console_printf_ex(
-                    console,
-                    view_width / 2,
-                    view_height - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    "%s (dead)",
-                    corpse->name);
+                    goto done;
+                }
+                struct actor *corpse = TCOD_list_peek(tile->corpses);
+                if (corpse)
+                {
+                    TCOD_console_printf_ex(
+                        console,
+                        view_width / 2,
+                        view_height - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        "%s (dead)",
+                        corpse->name);
 
-                goto done;
-            }
-            struct item *item = TCOD_list_peek(tile->items);
-            if (item)
-            {
-                TCOD_console_printf_ex(
-                    console,
-                    view_width / 2,
-                    view_height - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    item_datum[item->type].name);
+                    goto done;
+                }
+                struct item *item = TCOD_list_peek(tile->items);
+                if (item)
+                {
+                    TCOD_console_printf_ex(
+                        console,
+                        view_width / 2,
+                        view_height - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        item_datum[item->type].name);
 
-                goto done;
-            }
-            if (tile->object)
-            {
-                TCOD_console_printf_ex(
-                    console,
-                    view_width / 2,
-                    view_height - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    object_datum[tile->object->type].name);
+                    goto done;
+                }
+                if (tile->object)
+                {
+                    TCOD_console_printf_ex(
+                        console,
+                        view_width / 2,
+                        view_height - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        object_datum[tile->object->type].name);
 
-                goto done;
-            }
-            TCOD_console_printf_ex(
-                console,
-                view_width / 2,
-                view_height - 2,
-                TCOD_BKGND_NONE,
-                TCOD_CENTER,
-                tile_datum[tile->type].name);
-        done:;
-        }
-        else
-        {
-            if (tile->seen)
-            {
+                    goto done;
+                }
                 TCOD_console_printf_ex(
                     console,
                     view_width / 2,
                     view_height - 2,
                     TCOD_BKGND_NONE,
                     TCOD_CENTER,
-                    "%s (known)",
                     tile_datum[tile->type].name);
+            done:;
             }
             else
             {
-                TCOD_console_printf_ex(
-                    console,
-                    view_width / 2,
-                    view_height - 2,
-                    TCOD_BKGND_NONE,
-                    TCOD_CENTER,
-                    "Unknown");
+                if (tile->seen)
+                {
+                    TCOD_console_printf_ex(
+                        console,
+                        view_width / 2,
+                        view_height - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        "%s (known)",
+                        tile_datum[tile->type].name);
+                }
+                else
+                {
+                    TCOD_console_printf_ex(
+                        console,
+                        view_width / 2,
+                        view_height - 2,
+                        TCOD_BKGND_NONE,
+                        TCOD_CENTER,
+                        "Unknown");
+                }
             }
         }
     }
@@ -1837,9 +1850,10 @@ static void render(TCOD_console_t console)
                     panel_rect.console,
                     1,
                     y++ - current_panel_status->scroll,
-                    "%s: %d",
+                    "%s: %d | %d",
                     ability_datum[ability].abbreviation,
-                    world->player->ability_scores[ability]);
+                    world->player->ability_scores[ability],
+                    actor_calc_ability_modifier(world->player, ability));
             }
             y++;
             for (enum equip_slot equip_slot = EQUIP_SLOT_ARMOR; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
@@ -1920,34 +1934,16 @@ static void render(TCOD_console_t console)
                 &num_dice,
                 &die_to_roll,
                 &crit_threat,
-                &crit_mult,
-                false);
+                &crit_mult);
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "MELEE: %dd%d (%d-20x%d)",
+                "WEAPON: %dd%d (%d-20x%d)",
                 num_dice,
                 die_to_roll,
                 crit_threat,
                 crit_mult);
-            actor_calc_weapon(
-                world->player,
-                &num_dice,
-                &die_to_roll,
-                &crit_threat,
-                &crit_mult,
-                true);
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y++ - current_panel_status->scroll,
-                "RANGED: %dd%d (%d-20x%d)",
-                num_dice,
-                die_to_roll,
-                crit_threat,
-                crit_mult);
-            y++;
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -1960,6 +1956,7 @@ static void render(TCOD_console_t console)
                 y++ - current_panel_status->scroll,
                 "DAMAGE: +%d",
                 actor_calc_damage_bonus(world->player));
+            y++;
 
             TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
             TCOD_console_printf_frame(

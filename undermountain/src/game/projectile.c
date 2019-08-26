@@ -52,7 +52,7 @@ void projectile_update(struct projectile *projectile)
     }
     if (tile->actor && tile->actor != projectile->shooter && !tile->actor->dead)
     {
-        actor_attack(projectile->shooter, tile->actor, true);
+        actor_attack(projectile->shooter, tile->actor);
         should_move = false;
     }
     if (tile->object && !object_datum[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)

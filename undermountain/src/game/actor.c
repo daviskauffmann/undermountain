@@ -13,6 +13,9 @@
 #include "world.h"
 #include "util.h"
 
+// TODO: attacks per round and attacks of opportunity
+// these will require rethinking how actor energy works and the scheduling overall
+
 // TODO: actors should ascend/descend with their leader
 
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
@@ -27,7 +30,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->experience = (actor->level - 1) * 1000;
     for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
     {
-        actor->ability_scores[ability] = 10;
+        actor->ability_scores[ability] = 10 + (actor->level - 1); // TODO: this isnt accurate or balanced, just testing
     }
     actor->base_hp = class_datum[actor->class].hit_die * actor->level;
     actor->current_hp = actor_calc_max_hp(actor);
@@ -95,14 +98,14 @@ void actor_level_up(struct actor *actor)
         actor->name);
 }
 
-static int calc_ability_modifier(int ability)
+int actor_calc_ability_modifier(struct actor *actor, enum ability ability)
 {
-    return (ability - 10) / 2;
+    return (actor->ability_scores[ability] - 10) / 2;
 }
 
 int actor_calc_max_hp(struct actor *actor)
 {
-    return actor->base_hp + calc_ability_modifier(actor->ability_scores[ABILITY_CONSTITUTION]);
+    return actor->base_hp + actor_calc_ability_modifier(actor, ABILITY_CONSTITUTION);
 }
 
 int actor_calc_enhancement_bonus(struct actor *actor)
@@ -130,14 +133,27 @@ int actor_calc_enhancement_bonus(struct actor *actor)
 
 int actor_calc_attack_bonus(struct actor *actor)
 {
-    // TODO: base attack bonus based on class
-    int base_attack_bonus = 0;
-    return base_attack_bonus + calc_ability_modifier(actor->ability_scores[ABILITY_STRENGTH]) + actor_calc_enhancement_bonus(actor);
+    // TODO: base attack bonus based on class (use BAB chart)
+    int base_attack_bonus = actor->level;
+    // TODO: if weapon finesse feat, use dex for melee attacks too if higher than str
+    enum ability ability = ABILITY_STRENGTH;
+    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    if (weapon)
+    {
+        enum base_item base_item = item_datum[weapon->type].base_item;
+        struct base_item_data base_item_data = base_item_datum[base_item];
+        if (base_item_data.ranged)
+        {
+            ability = ABILITY_DEXTERITY;
+        }
+    }
+    return base_attack_bonus + actor_calc_ability_modifier(actor, ability) + actor_calc_enhancement_bonus(actor);
 }
 
 int actor_calc_armor_class(struct actor *actor)
 {
     int ac = 10;
+    ac += actor_calc_ability_modifier(actor, ABILITY_DEXTERITY); // TODO: limit by armor max dex bonus
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
         struct item *equipment = actor->equipment[i];
@@ -159,15 +175,17 @@ int actor_calc_armor_class(struct actor *actor)
     return ac;
 }
 
-void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult, bool ranged)
+void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult)
 {
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-    if (ranged)
+    if (weapon)
     {
-        *num_dice = 0;
-        *die_to_roll = 0;
-        *crit_threat = 0;
-        *crit_mult = 0;
+        enum base_item base_item = item_datum[weapon->type].base_item;
+        struct base_item_data base_item_data = base_item_datum[base_item];
+        *num_dice = base_item_data.num_dice;
+        *die_to_roll = base_item_data.die_to_roll;
+        *crit_threat = base_item_data.crit_threat;
+        *crit_mult = base_item_data.crit_mult;
     }
     else
     {
@@ -176,23 +194,11 @@ void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int
         *crit_threat = 20;
         *crit_mult = 2;
     }
-    if (weapon)
-    {
-        enum base_item base_item = item_datum[weapon->type].base_item;
-        struct base_item_data base_item_data = base_item_datum[base_item];
-        if (base_item_data.ranged == ranged)
-        {
-            *num_dice = base_item_data.num_dice;
-            *die_to_roll = base_item_data.die_to_roll;
-            *crit_threat = base_item_data.crit_threat;
-            *crit_mult = base_item_data.crit_mult;
-        }
-    }
 }
 
 int actor_calc_damage_bonus(struct actor *actor)
 {
-    return calc_ability_modifier(actor->ability_scores[ABILITY_STRENGTH]) + actor_calc_enhancement_bonus(actor);
+    return actor_calc_ability_modifier(actor, ABILITY_STRENGTH) + actor_calc_enhancement_bonus(actor);
 }
 
 void actor_update_flash(struct actor *actor)
@@ -362,7 +368,7 @@ void actor_ai(struct actor *actor)
 
                 // TODO: if carrying a ranged weapon, actor might want to prioritize retreating rather than perfoming a melee attack
                 if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f &&
-                    actor_attack(actor, target, false))
+                    actor_attack(actor, target))
                 {
                     continue;
                 }
@@ -564,7 +570,7 @@ bool actor_move(struct actor *actor, int x, int y)
             }
             else
             {
-                return actor_attack(actor, tile->actor, false);
+                return actor_attack(actor, tile->actor);
             }
         }
     }
@@ -1249,6 +1255,10 @@ bool actor_bash(struct actor *actor, struct object *object)
         return false;
     }
 
+    // TODO: calculate damage properly
+    // this means objects should have health and armor class
+    // move damage calculation in actor_attack to a function and call it here as well
+
     object->destroyed = true;
 
     world_log(
@@ -1276,7 +1286,7 @@ bool actor_swing(struct actor *actor, int x, int y)
     if (tile->actor && tile->actor != actor)
     {
         hit = true;
-        if (actor_attack(actor, tile->actor, false))
+        if (actor_attack(actor, tile->actor))
         {
             return true;
         }
@@ -1356,7 +1366,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     return true;
 }
 
-bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
+bool actor_attack(struct actor *actor, struct actor *other)
 {
     if (other->dead)
     {
@@ -1376,9 +1386,22 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
 
     // TODO: is attack and damage affected by two-handedness?
 
+    // TODO: possible bug where the player can switch weapons while a projectile is in midair and affect the calulations?
+
     int attack_roll = roll(1, 20);
     int attack_bonus = actor_calc_attack_bonus(actor);
-    int total_attack = attack_roll + attack_bonus;
+    int attack_penalty = 0;
+    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    if (weapon)
+    {
+        enum base_item base_item = item_datum[weapon->type].base_item;
+        struct base_item_data base_item_data = base_item_datum[base_item];
+        if (base_item_data.ranged && distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
+        {
+            attack_penalty = 4;
+        }
+    }
+    int total_attack = attack_roll + attack_bonus - attack_penalty;
     int armor_class = actor_calc_armor_class(other);
     bool hit = attack_roll == 1
                    ? false
@@ -1391,7 +1414,7 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
         int die_to_roll;
         int crit_threat;
         int crit_mult;
-        actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult, ranged);
+        actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult);
         int damage_rolls = 1;
         bool crit = false;
         if (attack_roll >= crit_threat)

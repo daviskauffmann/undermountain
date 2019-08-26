@@ -206,11 +206,12 @@ struct actor
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
 void actor_delete(struct actor *actor);
 void actor_level_up(struct actor *actor);
+int actor_calc_ability_modifier(struct actor *actor, enum ability ability);
 int actor_calc_max_hp(struct actor *actor);
 int actor_calc_enhancement_bonus(struct actor *actor);
 int actor_calc_attack_bonus(struct actor *actor);
 int actor_calc_armor_class(struct actor *actor);
-void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult, bool ranged);
+void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult);
 int actor_calc_damage_bonus(struct actor *actor);
 void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);
@@ -236,7 +237,7 @@ bool actor_quaff(struct actor *actor, struct item *item);
 bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params);
 bool actor_swing(struct actor *actor, int x, int y);
-bool actor_attack(struct actor *actor, struct actor *other, bool ranged);
+bool actor_attack(struct actor *actor, struct actor *other);
 bool actor_cast_spell(struct actor *actor, int x, int y);
 void actor_die(struct actor *actor, struct actor *killer);
 

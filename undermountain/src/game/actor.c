@@ -673,7 +673,7 @@ bool actor_open_door(struct actor *actor, int x, int y)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            TCOD_orange,
             "%s opens the door",
             actor->name);
 
@@ -708,7 +708,7 @@ bool actor_close_door(struct actor *actor, int x, int y)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            TCOD_orange,
             "%s closes the door",
             actor->name);
 
@@ -911,7 +911,7 @@ bool actor_open_chest(struct actor *actor, int x, int y)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            TCOD_orange,
             "%s opens the chest",
             actor->name);
 
@@ -944,7 +944,7 @@ bool actor_pray(struct actor *actor, int x, int y)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            TCOD_orange,
             "%s prays at the altar",
             actor->name);
 
@@ -985,7 +985,7 @@ bool actor_drink(struct actor *actor, int x, int y)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            TCOD_orange,
             "%s drinks from the fountain, restoring %d health",
             actor->name,
             hp);
@@ -1019,7 +1019,7 @@ bool actor_sit(struct actor *actor, int x, int y)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            TCOD_orange,
             "%s sits on the throne",
             actor->name);
 
@@ -1413,13 +1413,6 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
             int damage = damage_roll + damage_bonus;
             total_damage += damage;
         }
-        other->current_hp -= total_damage;
-        other->flash_color = TCOD_red;
-        other->flash_fade_coef = 1.0f;
-        if (other->current_hp <= 0)
-        {
-            actor_die(other, actor);
-        }
 
         world_log(
             actor->floor,
@@ -1431,6 +1424,14 @@ bool actor_attack(struct actor *actor, struct actor *other, bool ranged)
             crit ? "crits" : "hits",
             other->name,
             total_damage);
+
+        other->current_hp -= total_damage;
+        other->flash_color = TCOD_red;
+        other->flash_fade_coef = 1.0f;
+        if (other->current_hp <= 0)
+        {
+            actor_die(other, actor);
+        }
     }
     else
     {

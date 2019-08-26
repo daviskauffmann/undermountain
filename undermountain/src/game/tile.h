@@ -33,6 +33,7 @@ struct tile
     bool seen;
     struct object *object;
     struct actor *actor;
+    TCOD_list_t corpses;
     TCOD_list_t items;
 };
 

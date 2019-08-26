@@ -218,10 +218,11 @@ void world_update(void)
         if (actor->dead)
         {
             actor->current_hp = 0;
-            struct tile *tile = &map->tiles[actor->x][actor->y];
-            tile->actor = NULL;
             iterator = TCOD_list_remove_iterator(map->actors, iterator);
             TCOD_list_push(map->corpses, actor);
+            struct tile *tile = &map->tiles[actor->x][actor->y];
+            TCOD_list_push(tile->corpses, actor);
+            tile->actor = NULL;
             if (actor != world->player)
             {
                 for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
@@ -338,6 +339,7 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
         {
             *line_end = '\0';
         }
+        printf("%s\n", line_begin);
         struct message *message = message_new(line_begin, color);
         TCOD_list_push(world->messages, message);
         line_begin = line_end + 1;

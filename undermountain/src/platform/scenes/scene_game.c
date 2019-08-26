@@ -1527,18 +1527,18 @@ static void render(TCOD_console_t console)
     }
     TCOD_LIST_FOREACH(map->corpses)
     {
-        struct actor *actor = *iterator;
-        if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y))
+        struct actor *corpse = *iterator;
+        if (TCOD_map_is_in_fov(world->player->fov, corpse->x, corpse->y))
         {
             TCOD_console_set_char_foreground(
                 console,
-                actor->x - view_x,
-                actor->y - view_y,
+                corpse->x - view_x,
+                corpse->y - view_y,
                 TCOD_dark_red);
             TCOD_console_set_char(
                 console,
-                actor->x - view_x,
-                actor->y - view_y,
+                corpse->x - view_x,
+                corpse->y - view_y,
                 '%');
         }
     }
@@ -1656,27 +1656,27 @@ static void render(TCOD_console_t console)
         {
             if (tile->actor)
             {
-                if (tile->actor->dead)
-                {
-                    TCOD_console_printf_ex(
-                        console,
-                        view_width / 2,
-                        view_height - 2,
-                        TCOD_BKGND_NONE,
-                        TCOD_CENTER,
-                        "%s (corpse)",
-                        tile->actor->name);
-                }
-                else
-                {
-                    TCOD_console_printf_ex(
-                        console,
-                        view_width / 2,
-                        view_height - 2,
-                        TCOD_BKGND_NONE,
-                        TCOD_CENTER,
-                        tile->actor->name);
-                }
+                TCOD_console_printf_ex(
+                    console,
+                    view_width / 2,
+                    view_height - 2,
+                    TCOD_BKGND_NONE,
+                    TCOD_CENTER,
+                    tile->actor->name);
+
+                goto done;
+            }
+            struct actor *corpse = TCOD_list_peek(tile->corpses);
+            if (corpse)
+            {
+                TCOD_console_printf_ex(
+                    console,
+                    view_width / 2,
+                    view_height - 2,
+                    TCOD_BKGND_NONE,
+                    TCOD_CENTER,
+                    "%s (dead)",
+                    corpse->name);
 
                 goto done;
             }

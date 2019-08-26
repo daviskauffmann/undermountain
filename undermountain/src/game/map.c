@@ -27,8 +27,8 @@
 
 #define DOOR_CHANCE 0.5f
 #define SPAWN_OBJECTS 5
-#define SPAWN_ADVENTURERS 5
-#define SPAWN_MONSTERS 10
+#define SPAWN_ADVENTURERS 1
+#define SPAWN_MONSTERS 5
 #define SPAWN_ITEMS 5
 
 void map_init(struct map *map, unsigned int floor)
@@ -66,8 +66,8 @@ void map_reset(struct map *map)
     TCOD_list_delete(map->items);
     TCOD_LIST_FOREACH(map->corpses)
     {
-        struct actor *actor = *iterator;
-        actor_delete(actor);
+        struct actor *corpse = *iterator;
+        actor_delete(corpse);
     }
     TCOD_list_delete(map->corpses);
     TCOD_LIST_FOREACH(map->actors)

@@ -32,6 +32,7 @@
 // TODO: sound and sound propogation
 // play "sounds" in the game such as footsteps and monster noises
 // calculate whether the player can hear and identify the sound and put it in the log if so
+// sound "reflection"?
 
 // TOOD: redo map generation
 // no need for overworld map, world will start on the first dungeon
@@ -82,11 +83,6 @@
 //   do everything as normal, applying input to the current world->player and storing the result in took_turn
 //   if took_turn is true and world->player->energy is over a threshold
 //     instead of calling world_turn(), just set waiting_for_input to false
-
-// TOOD: communication with platform layer?
-// for stuff like logging and file system
-// perhaps world_init() should accept a struct containing some function pointers to platform layer stuff
-// or just a header that the world provides with function declarations and the platform must define them
 
 struct world *world;
 

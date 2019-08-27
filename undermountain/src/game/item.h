@@ -99,6 +99,7 @@ struct base_item_data
     int base_cost;
     int stack;
     int base_ac;
+    int maximum_dexterity_bonus;
     int armor_check_penalty;
     int arcane_spell_failure;
     int starting_charges;

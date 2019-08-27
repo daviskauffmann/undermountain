@@ -75,22 +75,23 @@ struct item_data item_datum[NUM_ITEM_TYPES];
     equip_slot_datum[_type].name = _name;     \
     equip_slot_datum[_type].label = _label;
 
-#define BASE_ITEM_DATA(_type, _glyph, _color, _weight, _equip_slot, _damage_type, _weapon_size, _ranged, _num_dice, _die_to_roll, _crit_threat, _crit_mult, _base_cost, _stack, _base_ac, _armor_check_penalty, _arcane_spell_failure) \
-    base_item_datum[_type].glyph = _glyph;                                                                                                                                                                                             \
-    base_item_datum[_type].color = _color;                                                                                                                                                                                             \
-    base_item_datum[_type].weight = _weight;                                                                                                                                                                                           \
-    base_item_datum[_type].equip_slot = _equip_slot;                                                                                                                                                                                   \
-    base_item_datum[_type].damage_type = _damage_type;                                                                                                                                                                                 \
-    base_item_datum[_type].weapon_size = _weapon_size;                                                                                                                                                                                 \
-    base_item_datum[_type].ranged = _ranged;                                                                                                                                                                                           \
-    base_item_datum[_type].num_dice = _num_dice;                                                                                                                                                                                       \
-    base_item_datum[_type].die_to_roll = _die_to_roll;                                                                                                                                                                                 \
-    base_item_datum[_type].crit_threat = _crit_threat;                                                                                                                                                                                 \
-    base_item_datum[_type].crit_mult = _crit_mult;                                                                                                                                                                                     \
-    base_item_datum[_type].base_cost = _base_cost;                                                                                                                                                                                     \
-    base_item_datum[_type].stack = _stack;                                                                                                                                                                                             \
-    base_item_datum[_type].base_ac = _base_ac;                                                                                                                                                                                         \
-    base_item_datum[_type].armor_check_penalty = _armor_check_penalty;                                                                                                                                                                 \
+#define BASE_ITEM_DATA(_type, _glyph, _color, _weight, _equip_slot, _damage_type, _weapon_size, _ranged, _num_dice, _die_to_roll, _crit_threat, _crit_mult, _base_cost, _stack, _base_ac, _maximum_dexterity_bonus, _armor_check_penalty, _arcane_spell_failure) \
+    base_item_datum[_type].glyph = _glyph;                                                                                                                                                                                                                       \
+    base_item_datum[_type].color = _color;                                                                                                                                                                                                                       \
+    base_item_datum[_type].weight = _weight;                                                                                                                                                                                                                     \
+    base_item_datum[_type].equip_slot = _equip_slot;                                                                                                                                                                                                             \
+    base_item_datum[_type].damage_type = _damage_type;                                                                                                                                                                                                           \
+    base_item_datum[_type].weapon_size = _weapon_size;                                                                                                                                                                                                           \
+    base_item_datum[_type].ranged = _ranged;                                                                                                                                                                                                                     \
+    base_item_datum[_type].num_dice = _num_dice;                                                                                                                                                                                                                 \
+    base_item_datum[_type].die_to_roll = _die_to_roll;                                                                                                                                                                                                           \
+    base_item_datum[_type].crit_threat = _crit_threat;                                                                                                                                                                                                           \
+    base_item_datum[_type].crit_mult = _crit_mult;                                                                                                                                                                                                               \
+    base_item_datum[_type].base_cost = _base_cost;                                                                                                                                                                                                               \
+    base_item_datum[_type].stack = _stack;                                                                                                                                                                                                                       \
+    base_item_datum[_type].base_ac = _base_ac;                                                                                                                                                                                                                   \
+    base_item_datum[_type].maximum_dexterity_bonus = _maximum_dexterity_bonus;                                                                                                                                                                                   \
+    base_item_datum[_type].armor_check_penalty = _armor_check_penalty;                                                                                                                                                                                           \
     base_item_datum[_type].arcane_spell_failure = _arcane_spell_failure;
 
 #define ITEM_DATA(_type, _base_item, _name, _description) \
@@ -223,28 +224,28 @@ void assets_load(void)
     EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand", "M-Hand");
     EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand", "O-Hand");
 
-    BASE_ITEM_DATA(BASE_ITEM_BATTLEAXE, 'T', TCOD_white, 7, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 10, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_CLUB, '!', TCOD_white, 1, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 6, 20, 2, 3, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_DAGGER, '-', TCOD_white, 1, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_TINY, false, 1, 4, 19, 2, 4, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_GREATAXE, 'T', TCOD_white, 20, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_LARGE, false, 1, 12, 20, 3, 20, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_GREATSWORD, '|', TCOD_white, 15, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_LARGE, false, 2, 6, 19, 2, 50, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_HALBERD, 'P', TCOD_white, 15, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, false, 1, 10, 20, 3, 10, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_HEAVY_CROSSBOW, 't', TCOD_white, 9, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_MEDIUM, true, 1, 10, 19, 2, 50, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_KATANA, '(', TCOD_white, 10, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 10, 19, 2, 40, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_LARGE_SHIELD, ')', TCOD_white, 15, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 50, 1, 2, -2, 15);
-    BASE_ITEM_DATA(BASE_ITEM_LIGHT_CROSSBOW, 't', TCOD_white, 6, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_SMALL, true, 1, 8, 19, 2, 35, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_LONGBOW, '}', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, true, 1, 8, 20, 3, 75, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_LONGSWORD, '|', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 8, 19, 2, 15, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_MACE, '!', TCOD_white, 6, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_SMALL, false, 1, 6, 19, 2, 5, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_POTION, '!', TCOD_white, 0.5f, EQUIP_SLOT_NONE, 0, 0, false, 0, 0, 0, 0, 30, 10, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_QUARTERSTAFF, '/', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_LARGE, false, 1, 6, 20, 2, 1, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_SCIMITAR, '(', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 6, 18, 2, 15, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_SHORTBOW, '}', TCOD_white, 2, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_MEDIUM, true, 1, 6, 20, 3, 30, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_SHORTSWORD, '-', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_SMALL, false, 1, 6, 19, 2, 10, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_SMALL_SHIELD, ')', TCOD_white, 6, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 9, 1, 1, -1, 5);
-    BASE_ITEM_DATA(BASE_ITEM_SPEAR, '/', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, false, 1, 8, 20, 3, 1, 1, 0, 0, 0);
-    BASE_ITEM_DATA(BASE_ITEM_TOWER_SHIELD, ')', TCOD_white, 45, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 100, 1, 3, -10, 50);
-    BASE_ITEM_DATA(BASE_ITEM_WARHAMMER, '!', TCOD_white, 8, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 12, 1, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_BATTLEAXE, 'T', TCOD_white, 7, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 10, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_CLUB, '!', TCOD_white, 1, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 6, 20, 2, 3, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_DAGGER, '-', TCOD_white, 1, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_TINY, false, 1, 4, 19, 2, 4, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_GREATAXE, 'T', TCOD_white, 20, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_LARGE, false, 1, 12, 20, 3, 20, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_GREATSWORD, '|', TCOD_white, 15, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_LARGE, false, 2, 6, 19, 2, 50, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_HALBERD, 'P', TCOD_white, 15, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, false, 1, 10, 20, 3, 10, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_HEAVY_CROSSBOW, 't', TCOD_white, 9, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_MEDIUM, true, 1, 10, 19, 2, 50, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_KATANA, '(', TCOD_white, 10, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 10, 19, 2, 40, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_LARGE_SHIELD, ')', TCOD_white, 15, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 50, 1, 2, 0, -2, 15);
+    BASE_ITEM_DATA(BASE_ITEM_LIGHT_CROSSBOW, 't', TCOD_white, 6, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_SMALL, true, 1, 8, 19, 2, 35, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_LONGBOW, '}', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, true, 1, 8, 20, 3, 75, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_LONGSWORD, '|', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 8, 19, 2, 15, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_MACE, '!', TCOD_white, 6, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_SMALL, false, 1, 6, 19, 2, 5, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_POTION, '!', TCOD_white, 0.5f, EQUIP_SLOT_NONE, 0, 0, false, 0, 0, 0, 0, 30, 10, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_QUARTERSTAFF, '/', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_LARGE, false, 1, 6, 20, 2, 1, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_SCIMITAR, '(', TCOD_white, 4, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_SLASHING, WEAPON_SIZE_MEDIUM, false, 1, 6, 18, 2, 15, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_SHORTBOW, '}', TCOD_white, 2, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_MEDIUM, true, 1, 6, 20, 3, 30, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_SHORTSWORD, '-', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_SMALL, false, 1, 6, 19, 2, 10, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_SMALL_SHIELD, ')', TCOD_white, 6, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 9, 1, 1, 0, -1, 5);
+    BASE_ITEM_DATA(BASE_ITEM_SPEAR, '/', TCOD_white, 3, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_PIERCING, WEAPON_SIZE_LARGE, false, 1, 8, 20, 3, 1, 1, 0, 0, 0, 0);
+    BASE_ITEM_DATA(BASE_ITEM_TOWER_SHIELD, ')', TCOD_white, 45, EQUIP_SLOT_OFF_HAND, 0, 0, false, 0, 0, 0, 0, 100, 1, 3, 0, -10, 50);
+    BASE_ITEM_DATA(BASE_ITEM_WARHAMMER, '!', TCOD_white, 8, EQUIP_SLOT_MAIN_HAND, DAMAGE_TYPE_BLUDGEONING, WEAPON_SIZE_MEDIUM, false, 1, 8, 20, 3, 12, 1, 0, 0, 0, 0);
 
     ITEM_DATA(ITEM_TYPE_BATTLEAXE, BASE_ITEM_BATTLEAXE, "Battleaxe", "A generic battleaxe");
     ITEM_DATA(ITEM_TYPE_BATTLEAXE_1, BASE_ITEM_BATTLEAXE, "Battleaxe + 1", "A special battleaxe");

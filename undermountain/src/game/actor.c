@@ -143,7 +143,18 @@ int actor_calc_attack_bonus(struct actor *actor)
 int actor_calc_armor_class(struct actor *actor)
 {
     int ac = 10;
-    ac += actor_calc_ability_modifier(actor, ABILITY_DEXTERITY); // TODO: limit by armor max dex bonus
+    int dexterity_modifer = actor_calc_ability_modifier(actor, ABILITY_DEXTERITY);
+    struct item *armor = actor->equipment[EQUIP_SLOT_ARMOR];
+    if (armor)
+    {
+        enum base_item base_item = item_datum[armor->type].base_item;
+        struct base_item_data base_item_data = base_item_datum[base_item];
+        if (base_item_data.maximum_dexterity_bonus < dexterity_modifer)
+        {
+            dexterity_modifer = base_item_data.maximum_dexterity_bonus;
+        }
+    }
+    ac += dexterity_modifer;
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
         struct item *equipment = actor->equipment[i];

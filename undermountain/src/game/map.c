@@ -631,7 +631,7 @@ void map_generate(struct map *map)
         {
             struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y);
             TCOD_list_push(map->items, longbow);
-            actor_equip(actor, longbow);
+            actor->equipment[EQUIP_SLOT_MAIN_HAND] = longbow;
         }
     }
 

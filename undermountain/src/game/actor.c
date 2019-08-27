@@ -4,6 +4,7 @@
 #include <float.h>
 #include <malloc.h>
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "assets.h"
@@ -27,12 +28,17 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->class = class;
     actor->faction = faction;
     actor->level = level;
-    actor->experience = (actor->level - 1) * 1000;
+    actor->experience = actor_get_experience_to_level(actor->level);
     for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
     {
-        actor->ability_scores[ability] = 10 + (actor->level - 1); // TODO: this isnt accurate or balanced, just testing
+        // TODO: replace
+        actor->ability_scores[ability] = 10 + (actor->level - 1);
     }
-    actor->base_hp = class_datum[actor->class].hit_die * actor->level;
+    actor->base_hp = class_datum[actor->class].hit_die;
+    for (int i = 0; i < actor->level - 1; i++)
+    {
+        actor->base_hp += roll(1, class_datum[actor->class].hit_die);
+    }
     actor->current_hp = actor_calc_max_hp(actor);
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
@@ -49,7 +55,6 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->last_seen_y = -1;
     actor->turns_chased = 0;
     actor->leader = NULL;
-    actor->kills = 0;
     actor->glow = false;
     actor->glow_fov = NULL;
     actor->torch = TCOD_random_get_int(NULL, 0, 20) == 0;
@@ -78,24 +83,9 @@ void actor_delete(struct actor *actor)
     free(actor);
 }
 
-void actor_level_up(struct actor *actor)
+int actor_get_experience_to_level(int level)
 {
-    // TODO: the player should not generally use this to level up
-    // this is an automatic level up that all non-player actors will use when their experience is high enough
-    // however, in the level up screen (to be implemented), the player can elect to auto-level their character
-    // in that case, use this function
-
-    actor->level++;
-    actor->base_hp += roll(1, class_datum[actor->class].hit_die);
-    actor->current_hp = actor_calc_max_hp(actor);
-
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        TCOD_yellow,
-        "%s has gained a level!",
-        actor->name);
+    return level * (level - 1) / 2 * 1000;
 }
 
 int actor_calc_ability_modifier(struct actor *actor, enum ability ability)
@@ -468,6 +458,55 @@ void actor_ai(struct actor *actor)
             continue;
         }
     }
+}
+
+void actor_give_experience(struct actor *actor, int experience)
+{
+    actor->experience += experience;
+
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        TCOD_azure,
+        "%s gains %d experience",
+        actor->name,
+        experience);
+
+    while (actor->experience >= actor_get_experience_to_level(actor->level + 1))
+    {
+        // TODO: do not automatically level up if it's the player character
+        // notify the player instead and they can level up in a level up screen
+        actor_level_up(actor);
+    }
+}
+
+void actor_level_up(struct actor *actor)
+{
+    // TODO: the player should not generally use this to level up
+    // this is an automatic level up that all non-player actors will use when their experience is high enough
+    // however, in the level up screen (to be implemented), the player can elect to auto-level their character
+    // in that case, use this function
+
+    // TODO: level history so level drain spells can be implemented
+    // when the drain is removed, the actor should return to their current level with health and decisions restored
+
+    actor->level++;
+    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+    {
+        // TODO: replace
+        actor->ability_scores[ability] += 1;
+    }
+    actor->base_hp += roll(1, class_datum[actor->class].hit_die);
+    actor->current_hp = actor_calc_max_hp(actor);
+
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        TCOD_yellow,
+        "%s has gained a level!",
+        actor->name);
 }
 
 bool actor_path_towards(struct actor *actor, int x, int y)
@@ -1390,7 +1429,6 @@ bool actor_attack(struct actor *actor, struct actor *other)
 
     int attack_roll = roll(1, 20);
     int attack_bonus = actor_calc_attack_bonus(actor);
-    int attack_penalty = 0;
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
     if (weapon)
     {
@@ -1398,36 +1436,72 @@ bool actor_attack(struct actor *actor, struct actor *other)
         struct base_item_data base_item_data = base_item_datum[base_item];
         if (base_item_data.ranged && distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
         {
-            attack_penalty = 4;
+            attack_bonus -= 4;
         }
     }
-    int total_attack = attack_roll + attack_bonus - attack_penalty;
-    int armor_class = actor_calc_armor_class(other);
+    int total_attack = attack_roll + attack_bonus;
+    int other_armor_class = actor_calc_armor_class(other);
     bool hit = attack_roll == 1
                    ? false
                    : attack_roll == 20
                          ? true
-                         : total_attack >= armor_class;
+                         : total_attack >= other_armor_class;
     if (hit)
     {
+        bool crit = false;
         int num_dice;
         int die_to_roll;
         int crit_threat;
         int crit_mult;
         actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult);
-        int damage_rolls = 1;
-        bool crit = false;
         if (attack_roll >= crit_threat)
         {
             int threat_roll = roll(1, 20);
             int total_threat = threat_roll + attack_bonus;
 
-            if (total_threat >= armor_class)
+            if (total_threat >= other_armor_class)
             {
                 crit = true;
-                damage_rolls *= crit_mult;
+
+                printf(
+                    "%s attacks %s: *crit*: (%d + %d = %d: Threat Roll: %d + %d = %d) vs %d\n",
+                    actor->name,
+                    other->name,
+                    attack_roll,
+                    attack_bonus,
+                    total_attack,
+                    threat_roll,
+                    attack_bonus,
+                    total_threat,
+                    other_armor_class);
+            }
+            else
+            {
+                printf(
+                    "%s attacks %s: *hit*: (%d + %d = %d: Threat Roll: %d + %d = %d) vs %d\n",
+                    actor->name,
+                    other->name,
+                    attack_roll,
+                    attack_bonus,
+                    total_attack,
+                    threat_roll,
+                    attack_bonus,
+                    total_threat,
+                    other_armor_class);
             }
         }
+        else
+        {
+            printf(
+                "%s attacks %s: *hit*: (%d + %d = %d) vs %d\n",
+                actor->name,
+                other->name,
+                attack_roll,
+                attack_bonus,
+                total_attack,
+                other_armor_class);
+        }
+        int damage_rolls = crit ? crit_mult : 1;
         int total_damage = 0;
         int damage_bonus = actor_calc_damage_bonus(actor);
         for (int i = 0; i < damage_rolls; i++)
@@ -1437,6 +1511,16 @@ bool actor_attack(struct actor *actor, struct actor *other)
             total_damage += damage;
         }
 
+        printf(
+            "%s damages %s: %d (%dd%dx%d + %d = %d)\n",
+            actor->name,
+            other->name,
+            total_damage,
+            num_dice,
+            die_to_roll,
+            damage_rolls,
+            damage_bonus,
+            total_damage);
         world_log(
             actor->floor,
             actor->x,
@@ -1458,45 +1542,22 @@ bool actor_attack(struct actor *actor, struct actor *other)
     }
     else
     {
-        switch (TCOD_random_get_int(NULL, 0, 2))
-        {
-        case 0:
-        {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                TCOD_grey,
-                "%s is parried by %s",
-                actor->name,
-                other->name);
-        }
-        break;
-        case 1:
-        {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                TCOD_grey,
-                "%s is blocked by %s",
-                actor->name,
-                other->name);
-        }
-        break;
-        case 2:
-        {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                TCOD_grey,
-                "%s misses %s",
-                actor->name,
-                other->name);
-        }
-        break;
-        }
+        printf(
+            "%s attacks %s: *miss*: (%d + %d = %d) vs %d\n",
+            actor->name,
+            other->name,
+            attack_roll,
+            attack_bonus,
+            total_attack,
+            other_armor_class);
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_grey,
+            "%s misses %s",
+            actor->name,
+            other->name);
     }
 
     return true;
@@ -1536,17 +1597,7 @@ void actor_die(struct actor *actor, struct actor *killer)
     if (killer)
     {
         int experience = TCOD_random_get_int(NULL, 50, 100) * actor->level;
-        killer->experience += experience;
-        killer->kills++;
-
-        world_log(
-            killer->floor,
-            killer->x,
-            killer->y,
-            TCOD_azure,
-            "%s gains %d experience",
-            killer->name,
-            experience);
+        actor_give_experience(killer, experience);
     }
 
     if (actor == world->player)

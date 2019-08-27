@@ -1674,6 +1674,8 @@ static void render(TCOD_console_t console)
                         view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
+                        "Lv.%d %s",
+                        tile->actor->level,
                         tile->actor->name);
 
                     goto done;
@@ -1841,8 +1843,9 @@ static void render(TCOD_console_t console)
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "EXP      : %d",
-                world->player->experience);
+                "EXP      : %d / %d",
+                world->player->experience,
+                actor_get_experience_to_level(world->player->level + 1));
             y++;
             for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
             {

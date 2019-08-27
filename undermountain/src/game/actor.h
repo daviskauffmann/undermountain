@@ -176,8 +176,8 @@ struct actor
     enum race race;
     enum class class;
     enum faction faction;
-    int experience;
     int level; // TODO: multi-class?
+    int experience;
     int ability_scores[NUM_ABILITIES];
     int base_hp;
     int current_hp;
@@ -193,7 +193,6 @@ struct actor
     int last_seen_y;
     int turns_chased;
     struct actor *leader;
-    int kills;
     bool glow;
     TCOD_map_t glow_fov;
     bool torch;
@@ -205,7 +204,7 @@ struct actor
 
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
 void actor_delete(struct actor *actor);
-void actor_level_up(struct actor *actor);
+int actor_get_experience_to_level(int level);
 int actor_calc_ability_modifier(struct actor *actor, enum ability ability);
 int actor_calc_max_hp(struct actor *actor);
 int actor_calc_enhancement_bonus(struct actor *actor);
@@ -217,6 +216,8 @@ void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);
+void actor_give_experience(struct actor *actor, int experience);
+void actor_level_up(struct actor *actor);
 bool actor_path_towards(struct actor *actor, int x, int y);
 bool actor_move_towards(struct actor *actor, int x, int y);
 bool actor_move(struct actor *actor, int x, int y);

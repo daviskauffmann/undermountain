@@ -186,8 +186,6 @@ struct actor
     int floor;
     int x;
     int y;
-    float speed;
-    float energy;
     TCOD_map_t fov;
     int last_seen_x;
     int last_seen_y;
@@ -204,10 +202,12 @@ struct actor
 
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
 void actor_delete(struct actor *actor);
-int actor_get_experience_to_level(int level);
+int actor_calc_experience_to_level(int level);
+int actor_calc_attacks_per_round(struct actor *actor);
 int actor_calc_ability_modifier(struct actor *actor, enum ability ability);
 int actor_calc_max_hp(struct actor *actor);
 int actor_calc_enhancement_bonus(struct actor *actor);
+int actor_calc_base_attack_bonus(struct actor *actor);
 int actor_calc_attack_bonus(struct actor *actor);
 int actor_calc_armor_class(struct actor *actor);
 void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult);

@@ -174,7 +174,6 @@ void world_new(void)
             int y = map->stair_up_y + 1;
             struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, x, y);
             pet->leader = world->player;
-            pet->speed = 1.0f;
             pet->glow = false;
             pet->torch = false;
             TCOD_list_push(map->actors, pet);
@@ -288,6 +287,10 @@ void world_turn(void)
     {
         struct actor *actor = *iterator;
         actor_calc_fov(actor);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
         actor_ai(actor);
     }
     if (world->player->dead)

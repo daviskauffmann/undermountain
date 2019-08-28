@@ -1845,7 +1845,7 @@ static void render(TCOD_console_t console)
                 y++ - current_panel_status->scroll,
                 "EXP      : %d / %d",
                 world->player->experience,
-                actor_get_experience_to_level(world->player->level + 1));
+                actor_calc_experience_to_level(world->player->level + 1));
             y++;
             for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
             {

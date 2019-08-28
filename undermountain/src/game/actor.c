@@ -14,8 +14,8 @@
 #include "world.h"
 #include "util.h"
 
-// TODO: attacks per round and attacks of opportunity
-// these will require rethinking how actor energy works and the scheduling overall
+// TODO: attacks per round
+// this will require rethinking how actor energy works and the scheduling overall
 
 // TODO: actors should ascend/descend with their leader
 
@@ -28,7 +28,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->class = class;
     actor->faction = faction;
     actor->level = level;
-    actor->experience = actor_get_experience_to_level(actor->level);
+    actor->experience = actor_calc_experience_to_level(actor->level);
     for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
     {
         // TODO: replace
@@ -48,8 +48,6 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->floor = floor;
     actor->x = x;
     actor->y = y;
-    actor->speed = TCOD_random_get_float(NULL, 0.2f, 0.8f);
-    actor->energy = 1.0f;
     actor->fov = NULL;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -83,9 +81,15 @@ void actor_delete(struct actor *actor)
     free(actor);
 }
 
-int actor_get_experience_to_level(int level)
+int actor_calc_experience_to_level(int level)
 {
     return level * (level - 1) / 2 * 1000;
+}
+
+int actor_calc_attacks_per_round(struct actor *actor)
+{
+    int base_attack_bonus = actor_calc_base_attack_bonus(actor);
+    return (base_attack_bonus / 5) + 1;
 }
 
 int actor_calc_ability_modifier(struct actor *actor, enum ability ability)
@@ -121,10 +125,14 @@ int actor_calc_enhancement_bonus(struct actor *actor)
     return bonus;
 }
 
-int actor_calc_attack_bonus(struct actor *actor)
+int actor_calc_base_attack_bonus(struct actor *actor)
 {
     // TODO: base attack bonus based on class (use BAB chart)
-    int base_attack_bonus = actor->level;
+    return actor->level;
+}
+
+int actor_calc_attack_bonus(struct actor *actor)
+{
     // TODO: if weapon finesse feat, use dex for melee attacks too if higher than str
     enum ability ability = ABILITY_STRENGTH;
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
@@ -137,7 +145,9 @@ int actor_calc_attack_bonus(struct actor *actor)
             ability = ABILITY_DEXTERITY;
         }
     }
-    return base_attack_bonus + actor_calc_ability_modifier(actor, ability) + actor_calc_enhancement_bonus(actor);
+    return actor_calc_base_attack_bonus(actor) +
+           actor_calc_ability_modifier(actor, ability) +
+           actor_calc_enhancement_bonus(actor);
 }
 
 int actor_calc_armor_class(struct actor *actor)
@@ -295,180 +305,175 @@ void actor_ai(struct actor *actor)
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
-    actor->energy += actor->speed;
-    while (actor->energy >= 1.0f)
+    // look for fountains to heal if low health
+    if (actor->current_hp < actor_calc_max_hp(actor) / 2)
     {
-        actor->energy -= 1.0f;
-
-        // look for fountains to heal if low health
-        if (actor->current_hp < actor_calc_max_hp(actor) / 2)
+        struct object *target = NULL;
+        float min_distance = FLT_MAX;
+        TCOD_LIST_FOREACH(map->objects)
         {
-            struct object *target = NULL;
-            float min_distance = FLT_MAX;
-            TCOD_LIST_FOREACH(map->objects)
-            {
-                struct object *object = *iterator;
+            struct object *object = *iterator;
 
-                if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
-                    object->type == OBJECT_TYPE_FOUNTAIN)
-                {
-                    float distance = distance_between_sq(actor->x, actor->y, object->x, object->y);
-
-                    if (distance < min_distance)
-                    {
-                        target = object;
-                        min_distance = distance;
-                    }
-                }
-            }
-            if (target)
+            if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
+                object->type == OBJECT_TYPE_FOUNTAIN)
             {
-                if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
+                float distance = distance_between_sq(actor->x, actor->y, object->x, object->y);
+
+                if (distance < min_distance)
                 {
-                    if (actor_drink(actor, target->x, target->y))
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    if (actor_path_towards(actor, target->x, target->y))
-                    {
-                        continue;
-                    }
+                    target = object;
+                    min_distance = distance;
                 }
             }
         }
-
-        // look for hostile targets
+        if (target)
         {
-            struct actor *target = NULL;
-            float min_distance = FLT_MAX;
-            TCOD_LIST_FOREACH(map->actors)
+            if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
             {
-                struct actor *other = *iterator;
-
-                if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
-                    other->faction != actor->faction &&
-                    !other->dead)
+                if (actor_drink(actor, target->x, target->y))
                 {
-                    float distance = distance_between_sq(actor->x, actor->y, other->x, other->y);
-
-                    if (distance < min_distance)
-                    {
-                        target = other;
-                        min_distance = distance;
-                    }
+                    goto done;
                 }
             }
-            if (target)
+            else
             {
-                actor->last_seen_x = target->x;
-                actor->last_seen_y = target->y;
-                actor->turns_chased = 0;
-
-                // TODO: if carrying a ranged weapon, actor might want to prioritize retreating rather than perfoming a melee attack
-                if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f &&
-                    actor_attack(actor, target))
-                {
-                    continue;
-                }
-
-                struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-                if (weapon)
-                {
-                    enum base_item base_item = item_datum[weapon->type].base_item;
-                    if (base_item_datum[base_item].ranged &&
-                        actor_shoot(actor, target->x, target->y, NULL, NULL))
-                    {
-                        continue;
-                    }
-                }
-
                 if (actor_path_towards(actor, target->x, target->y))
                 {
-                    continue;
+                    goto done;
                 }
             }
-        }
-
-        // go to where a hostile target was recently seen
-        if (actor->last_seen_x != -1 && actor->last_seen_y != -1)
-        {
-            if ((actor->x == actor->last_seen_x && actor->y == actor->last_seen_y) ||
-                actor->turns_chased > actor_common.turns_to_chase)
-            {
-                actor->last_seen_x = -1;
-                actor->last_seen_y = -1;
-            }
-            else if (actor_path_towards(actor, actor->last_seen_x, actor->last_seen_y))
-            {
-                actor->turns_chased++;
-
-                continue;
-            }
-        }
-
-        // stay in visiblity/proximity to leader
-        if (actor->leader)
-        {
-            if (!TCOD_map_is_in_fov(actor->fov, actor->leader->x, actor->leader->y) ||
-                distance_between(actor->x, actor->y, actor->leader->x, actor->leader->y) > 5.0f)
-            {
-                if (actor_path_towards(actor, actor->leader->x, actor->leader->y))
-                {
-                    continue;
-                }
-            }
-        }
-
-        // TODO: move between floors (deferred until processing of inactive maps is figured out)
-        // if (tile->object)
-        // {
-        //     switch (tile->object->type)
-        //     {
-        //     case OBJECT_TYPE_STAIR_DOWN:
-        //     {
-        //         if (actor_descend(actor))
-        //         {
-        //             continue;
-        //         }
-        //     }
-        //     break;
-        //     case OBJECT_TYPE_STAIR_UP:
-        //     {
-        //         if (actor_ascend(actor))
-        //         {
-        //             continue;
-        //         }
-        //     }
-        //     break;
-        //     }
-        // }
-
-        // TODO: look for objects to interact with if needed
-
-        // TODO: look for items to pick up
-
-        // pick up items on ground
-        if (TCOD_list_size(tile->items) > 0)
-        {
-            if (actor_grab(actor, actor->x, actor->y))
-            {
-                continue;
-            }
-        }
-
-        // move randomly
-        if (TCOD_random_get_int(NULL, 0, 1) == 0)
-        {
-            int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
-            int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
-            actor_move(actor, x, y);
-
-            continue;
         }
     }
+
+    // look for hostile targets
+    {
+        struct actor *target = NULL;
+        float min_distance = FLT_MAX;
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *other = *iterator;
+
+            if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
+                other->faction != actor->faction &&
+                !other->dead)
+            {
+                float distance = distance_between_sq(actor->x, actor->y, other->x, other->y);
+
+                if (distance < min_distance)
+                {
+                    target = other;
+                    min_distance = distance;
+                }
+            }
+        }
+        if (target)
+        {
+            actor->last_seen_x = target->x;
+            actor->last_seen_y = target->y;
+            actor->turns_chased = 0;
+
+            // TODO: if carrying a ranged weapon, actor might want to prioritize retreating rather than perfoming a melee attack
+            if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f &&
+                actor_attack(actor, target))
+            {
+                goto done;
+            }
+
+            struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+            if (weapon)
+            {
+                enum base_item base_item = item_datum[weapon->type].base_item;
+                if (base_item_datum[base_item].ranged &&
+                    actor_shoot(actor, target->x, target->y, NULL, NULL))
+                {
+                    goto done;
+                }
+            }
+
+            if (actor_path_towards(actor, target->x, target->y))
+            {
+                goto done;
+            }
+        }
+    }
+
+    // go to where a hostile target was recently seen
+    if (actor->last_seen_x != -1 && actor->last_seen_y != -1)
+    {
+        if ((actor->x == actor->last_seen_x && actor->y == actor->last_seen_y) ||
+            actor->turns_chased > actor_common.turns_to_chase)
+        {
+            actor->last_seen_x = -1;
+            actor->last_seen_y = -1;
+        }
+        else if (actor_path_towards(actor, actor->last_seen_x, actor->last_seen_y))
+        {
+            actor->turns_chased++;
+
+            goto done;
+        }
+    }
+
+    // stay in visiblity/proximity to leader
+    if (actor->leader)
+    {
+        if (!TCOD_map_is_in_fov(actor->fov, actor->leader->x, actor->leader->y) ||
+            distance_between(actor->x, actor->y, actor->leader->x, actor->leader->y) > 5.0f)
+        {
+            if (actor_path_towards(actor, actor->leader->x, actor->leader->y))
+            {
+                goto done;
+            }
+        }
+    }
+
+    // TODO: move between floors (deferred until processing of inactive maps is figured out)
+    // if (tile->object)
+    // {
+    //     switch (tile->object->type)
+    //     {
+    //     case OBJECT_TYPE_STAIR_DOWN:
+    //     {
+    //         if (actor_descend(actor))
+    //         {
+    //             goto done;
+    //         }
+    //     }
+    //     break;
+    //     case OBJECT_TYPE_STAIR_UP:
+    //     {
+    //         if (actor_ascend(actor))
+    //         {
+    //             goto done;
+    //         }
+    //     }
+    //     break;
+    //     }
+    // }
+
+    // TODO: look for objects to interact with if needed
+
+    // TODO: look for items to pick up
+
+    // pick up items on ground
+    if (TCOD_list_size(tile->items) > 0)
+    {
+        if (actor_grab(actor, actor->x, actor->y))
+        {
+            goto done;
+        }
+    }
+
+    // move randomly
+    if (TCOD_random_get_int(NULL, 0, 1) == 0)
+    {
+        int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
+        int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
+        actor_move(actor, x, y);
+
+        goto done;
+    }
+done:;
 }
 
 void actor_give_experience(struct actor *actor, int experience)
@@ -484,7 +489,7 @@ void actor_give_experience(struct actor *actor, int experience)
         actor->name,
         experience);
 
-    while (actor->experience >= actor_get_experience_to_level(actor->level + 1))
+    while (actor->experience >= actor_calc_experience_to_level(actor->level + 1))
     {
         // TODO: do not automatically level up if it's the player character
         // notify the player instead and they can level up in a level up screen
@@ -624,6 +629,9 @@ bool actor_move(struct actor *actor, int x, int y)
             }
         }
     }
+
+    // TODO: attacks of opportunity
+    // on a successful move, hostile actors in adjacent tiles automatically get a free attack on this actor
 
     struct tile *current_tile = &map->tiles[actor->x][actor->y];
     struct tile *next_tile = &map->tiles[x][y];

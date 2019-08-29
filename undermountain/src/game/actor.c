@@ -297,7 +297,7 @@ void actor_calc_fov(struct actor *actor)
 
 void actor_ai(struct actor *actor)
 {
-    if (actor == world->player || actor->dead)
+    if (actor == world->player)
     {
         return;
     }
@@ -354,8 +354,7 @@ void actor_ai(struct actor *actor)
             struct actor *other = *iterator;
 
             if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
-                other->faction != actor->faction &&
-                !other->dead)
+                other->faction != actor->faction)
             {
                 float distance = distance_between_sq(actor->x, actor->y, other->x, other->y);
 
@@ -525,6 +524,39 @@ void actor_level_up(struct actor *actor)
         actor->name);
 }
 
+void actor_make_vulnerable(struct actor *actor)
+{
+    struct map *map = &world->maps[actor->floor];
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *other = *iterator;
+        struct item *weapon = other->equipment[EQUIP_SLOT_MAIN_HAND];
+        if (weapon)
+        {
+            enum base_item base_item = item_datum[weapon->type].base_item;
+            struct base_item_data base_item_data = base_item_datum[base_item];
+            if (base_item_data.ranged)
+            {
+                return;
+            }
+        }
+        if (distance_between(other->x, other->y, actor->x, actor->y) < 2.0f &&
+            other->faction != actor->faction)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s gets an attack of opportunity on %s",
+                other->name,
+                actor->name);
+
+            actor_attack(other, actor);
+        }
+    }
+}
+
 bool actor_path_towards(struct actor *actor, int x, int y)
 {
     // TODO: cache paths someehow if the map hasn't changed?
@@ -613,25 +645,15 @@ bool actor_move(struct actor *actor, int x, int y)
     }
     if (tile->actor && tile->actor != actor)
     {
-        if (tile->actor->dead)
+        if (tile->actor->faction == actor->faction)
         {
-            return false;
+            return actor_swap(actor, tile->actor);
         }
         else
         {
-            if (tile->actor->faction == actor->faction)
-            {
-                return actor_swap(actor, tile->actor);
-            }
-            else
-            {
-                return actor_attack(actor, tile->actor);
-            }
+            return actor_attack(actor, tile->actor);
         }
     }
-
-    // TODO: attacks of opportunity
-    // on a successful move, hostile actors in adjacent tiles automatically get a free attack on this actor
 
     struct tile *current_tile = &map->tiles[actor->x][actor->y];
     struct tile *next_tile = &map->tiles[x][y];
@@ -653,6 +675,17 @@ bool actor_move(struct actor *actor, int x, int y)
         struct item *item = *iterator;
         item->x = actor->x;
         item->y = actor->y;
+    }
+    // TODO: attacks of opportunity
+    // no attack of opportunity for moving *into* a hostile actor's zone
+    // but an attack of opportunity should happen if moving *from* a threatened tile
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *other = *iterator;
+        // TODO:
+        // is other actor hostile
+        // is current_tile equal to any of the other actor's 8 neighbors
+        // if so, then other actor gets a free attack
     }
     return true;
 }
@@ -1426,19 +1459,6 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
 
 bool actor_attack(struct actor *actor, struct actor *other)
 {
-    if (other->dead)
-    {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "%s cannot attack that!",
-            actor->name);
-
-        return false;
-    }
-
     // TODO: support dual-wield weapons
     // should just attack with both weapons in one move, applying relevant penalties
 
@@ -1456,6 +1476,7 @@ bool actor_attack(struct actor *actor, struct actor *other)
         if (base_item_data.ranged && distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
         {
             attack_bonus -= 4;
+            actor_make_vulnerable(actor);
         }
     }
     int total_attack = attack_roll + attack_bonus;

@@ -218,6 +218,7 @@ void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
+void actor_make_vulnerable(struct actor *actor);
 bool actor_path_towards(struct actor *actor, int x, int y);
 bool actor_move_towards(struct actor *actor, int x, int y);
 bool actor_move(struct actor *actor, int x, int y);

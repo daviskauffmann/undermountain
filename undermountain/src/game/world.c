@@ -293,6 +293,11 @@ void world_turn(void)
         struct actor *actor = *iterator;
         actor_ai(actor);
     }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_running(actor);
+    }
     if (world->player->dead)
     {
         // let the player see whats going on while they're dead

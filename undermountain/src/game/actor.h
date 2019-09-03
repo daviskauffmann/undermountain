@@ -186,6 +186,9 @@ struct actor
     int floor;
     int x;
     int y;
+    int previous_x;
+    int previous_y;
+    bool running;
     TCOD_map_t fov;
     int last_seen_x;
     int last_seen_y;
@@ -216,6 +219,7 @@ void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);
+void actor_calc_running(struct actor *actor);
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
 void actor_make_vulnerable(struct actor *actor);

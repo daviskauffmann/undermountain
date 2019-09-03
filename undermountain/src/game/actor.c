@@ -48,6 +48,9 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->floor = floor;
     actor->x = x;
     actor->y = y;
+    actor->previous_x = x;
+    actor->previous_y = y;
+    actor->running = false;
     actor->fov = NULL;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -475,6 +478,20 @@ void actor_ai(struct actor *actor)
 done:;
 }
 
+void actor_calc_running(struct actor *actor)
+{
+    if (actor->x == actor->previous_x && actor->y == actor->previous_y)
+    {
+        actor->running = false;
+    }
+    else
+    {
+        actor->running = true;
+    }
+    actor->previous_x = actor->x;
+    actor->previous_y = actor->y;
+}
+
 void actor_give_experience(struct actor *actor, int experience)
 {
     actor->experience += experience;
@@ -655,13 +672,13 @@ bool actor_move(struct actor *actor, int x, int y)
         }
     }
 
-    struct tile *current_tile = &map->tiles[actor->x][actor->y];
-    struct tile *next_tile = &map->tiles[x][y];
-    current_tile->actor = NULL;
-    int previous_x = actor->x;
-    int previous_y = actor->y;
+    actor->previous_x = actor->x;
+    actor->previous_y = actor->y;
     actor->x = x;
     actor->y = y;
+    struct tile *previous_tile = &map->tiles[actor->previous_x][actor->previous_y];
+    previous_tile->actor = NULL;
+    struct tile *next_tile = &map->tiles[actor->x][actor->y];
     next_tile->actor = actor;
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
@@ -692,7 +709,7 @@ bool actor_move(struct actor *actor, int x, int y)
             }
         }
         if (other->faction != actor->faction &&
-            distance_between(other->x, other->y, previous_x, previous_y) < 2.0f)
+            distance_between(other->x, other->y, actor->previous_x, actor->previous_y) < 2.0f)
         {
             world_log(
                 actor->floor,
@@ -1492,10 +1509,21 @@ bool actor_attack(struct actor *actor, struct actor *other)
     {
         enum base_item base_item = item_datum[weapon->type].base_item;
         struct base_item_data base_item_data = base_item_datum[base_item];
-        if (base_item_data.ranged && distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
+        if (base_item_data.ranged)
         {
-            attack_bonus -= 4;
-            actor_make_vulnerable(actor);
+            // TODO: bug if there is an actor in the way of "other"
+            // projectiles should probably just ignore any actors in the way and only affect their target
+            // they should still be blocked bu walls and other terrain features
+            // but not objects, unless the target is an object
+            if (distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
+            {
+                attack_bonus -= 4;
+                actor_make_vulnerable(actor);
+            }
+            if (other->running)
+            {
+                attack_bonus -= 2;
+            }
         }
     }
     int total_attack = attack_roll + attack_bonus;

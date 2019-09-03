@@ -537,7 +537,7 @@ void actor_make_vulnerable(struct actor *actor)
             struct base_item_data base_item_data = base_item_datum[base_item];
             if (base_item_data.ranged)
             {
-                return;
+                continue;
             }
         }
         if (distance_between(other->x, other->y, actor->x, actor->y) < 2.0f &&
@@ -658,6 +658,8 @@ bool actor_move(struct actor *actor, int x, int y)
     struct tile *current_tile = &map->tiles[actor->x][actor->y];
     struct tile *next_tile = &map->tiles[x][y];
     current_tile->actor = NULL;
+    int previous_x = actor->x;
+    int previous_y = actor->y;
     actor->x = x;
     actor->y = y;
     next_tile->actor = actor;
@@ -676,16 +678,33 @@ bool actor_move(struct actor *actor, int x, int y)
         item->x = actor->x;
         item->y = actor->y;
     }
-    // TODO: attacks of opportunity
-    // no attack of opportunity for moving *into* a hostile actor's zone
-    // but an attack of opportunity should happen if moving *from* a threatened tile
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *other = *iterator;
-        // TODO:
-        // is other actor hostile
-        // is current_tile equal to any of the other actor's 8 neighbors
-        // if so, then other actor gets a free attack
+        struct item *weapon = other->equipment[EQUIP_SLOT_MAIN_HAND];
+        if (weapon)
+        {
+            enum base_item base_item = item_datum[weapon->type].base_item;
+            struct base_item_data base_item_data = base_item_datum[base_item];
+            if (base_item_data.ranged)
+            {
+                continue;
+            }
+        }
+        if (other->faction != actor->faction &&
+            distance_between(other->x, other->y, previous_x, previous_y) < 2.0f)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s gets an attack of opportunity on %s",
+                other->name,
+                actor->name);
+
+            actor_attack(other, actor);
+        }
     }
     return true;
 }

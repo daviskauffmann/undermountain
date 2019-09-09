@@ -15,7 +15,29 @@
 #include "util.h"
 
 // TODO: attacks per round
-// this will require rethinking how actor energy works and the scheduling overall
+// movement per turn and attacks per turn should probably exist on separate counters
+// by default, all actors have 1 movement per turn
+//      a "haste" effect can bring it up to 2
+//      this actor will be able to make two movements on their turn
+// they also have as many attacks per turn as their BAB dictates
+//      a "haste" effect will increase it by 1 (extra attack is always made by main hand weapon)
+//      attacks per round should also be split up into main hand and off hand attacks
+//      if there is no off hand equipped, an Fighter might have 2 MH attacks and 0 OH attacks at level 6
+//      if they equip an off hand weapon, then it goes to 2 MH attacks and 1 OH attack
+//      if they have an off hand weapon and the "improved two weapon fighting feat", then now its 2 MH attacks and 2 OH attacks
+//      if they have an off hand weapon and the "improved two weapon fighting feat" and are hasted, then its 3 MH attacks and 2 OH attacks
+// two options when calling actor_attack():
+//      option 1 (currently active):
+//          perform all attacks at once
+//          this has the downside that if the target dies in the first attack, the attacker doesnt get to use their subsequent attacks that turn (other than cleave)
+//          this also has a weird effect where an actor that has multiple attacks with a ranged weapon essentially hit twice with a single arrow
+//              they should instead have the opportunity to fire multiple arrows in their turn
+//          given these downsides, option 2 seems better even if its more complex
+//      option 2:
+//          if MH attacks > 0 -> perform MH attack and decrement MH attacks by 1
+//          else if OH attacks > 0 -> perform OH attack and decrement OH attacks by 1
+//          an actor's turn should end when they have either exhausted all their attacks or movements, whichever happens first...
+// dont worry about implementing dual wielding immediately, so just get this working for only main hand
 
 // TODO: actors should ascend/descend with their leader
 
@@ -92,7 +114,7 @@ int actor_calc_experience_to_level(int level)
 int actor_calc_attacks_per_round(struct actor *actor)
 {
     int base_attack_bonus = actor_calc_base_attack_bonus(actor);
-    return (base_attack_bonus / 5) + 1;
+    return (int)ceilf((float)base_attack_bonus / 5.0f);
 }
 
 int actor_calc_ability_modifier(struct actor *actor, enum ability ability)
@@ -131,6 +153,7 @@ int actor_calc_enhancement_bonus(struct actor *actor)
 int actor_calc_base_attack_bonus(struct actor *actor)
 {
     // TODO: base attack bonus based on class (use BAB chart)
+    // so far, this is correct for the Fighter class (and other classes with similar BAB progression)
     return actor->level;
 }
 
@@ -1502,8 +1525,7 @@ bool actor_attack(struct actor *actor, struct actor *other)
 
     // TODO: possible bug where the player can switch weapons while a projectile is in midair and affect the calulations?
 
-    int attack_roll = roll(1, 20);
-    int attack_bonus = actor_calc_attack_bonus(actor);
+    bool ranged = false;
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
     if (weapon)
     {
@@ -1511,140 +1533,155 @@ bool actor_attack(struct actor *actor, struct actor *other)
         struct base_item_data base_item_data = base_item_datum[base_item];
         if (base_item_data.ranged)
         {
-            // TODO: bug if there is an actor in the way of "other"
-            // projectiles should probably just ignore any actors in the way and only affect their target
-            // they should still be blocked bu walls and other terrain features
-            // but not objects, unless the target is an object
+            ranged = true;
+        }
+    }
+    if (ranged)
+    {
+        // TODO: this has a slightly strange behavior where the attacks of opportunity for shooting a bow happen after the projectile has landed
+        // the attacks of opportunity should happen as soon as the actor fires their bow
+        // this has gameplay consequences, since being killed by an attack of opportunity should prevent the actor from firing the projectile
+        actor_make_vulnerable(actor);
+    }
+    for (int attack = 0; attack < actor_calc_attacks_per_round(actor); attack++)
+    {
+        printf("%s vs %s: attack #%d\n", actor->name, other->name, attack);
+        int attack_roll = roll(1, 20);
+        int attack_bonus = actor_calc_attack_bonus(actor);
+        attack_bonus -= attack * 5;
+        if (ranged)
+        {
             if (distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
             {
                 attack_bonus -= 4;
-                actor_make_vulnerable(actor);
             }
             if (other->running)
             {
                 attack_bonus -= 2;
             }
         }
-    }
-    int total_attack = attack_roll + attack_bonus;
-    int other_armor_class = actor_calc_armor_class(other);
-    bool hit = attack_roll == 1
-                   ? false
-                   : attack_roll == 20
-                         ? true
-                         : total_attack >= other_armor_class;
-    if (hit)
-    {
-        bool crit = false;
-        int num_dice;
-        int die_to_roll;
-        int crit_threat;
-        int crit_mult;
-        actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult);
-        if (attack_roll >= crit_threat)
+        int total_attack = attack_roll + attack_bonus;
+        int other_armor_class = actor_calc_armor_class(other);
+        bool hit = attack_roll == 1
+                       ? false
+                       : attack_roll == 20
+                             ? true
+                             : total_attack >= other_armor_class;
+        if (hit)
         {
-            int threat_roll = roll(1, 20);
-            int total_threat = threat_roll + attack_bonus;
-
-            if (total_threat >= other_armor_class)
+            bool crit = false;
+            int num_dice;
+            int die_to_roll;
+            int crit_threat;
+            int crit_mult;
+            actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult);
+            if (attack_roll >= crit_threat)
             {
-                crit = true;
+                int threat_roll = roll(1, 20);
+                int total_threat = threat_roll + attack_bonus;
 
-                printf(
-                    "%s attacks %s: *crit*: (%d + %d = %d: Threat Roll: %d + %d = %d) vs %d\n",
-                    actor->name,
-                    other->name,
-                    attack_roll,
-                    attack_bonus,
-                    total_attack,
-                    threat_roll,
-                    attack_bonus,
-                    total_threat,
-                    other_armor_class);
+                if (total_threat >= other_armor_class)
+                {
+                    crit = true;
+
+                    printf(
+                        "%s attacks %s: *crit*: (%d + %d = %d: Threat Roll: %d + %d = %d) vs %d\n",
+                        actor->name,
+                        other->name,
+                        attack_roll,
+                        attack_bonus,
+                        total_attack,
+                        threat_roll,
+                        attack_bonus,
+                        total_threat,
+                        other_armor_class);
+                }
+                else
+                {
+                    printf(
+                        "%s attacks %s: *hit*: (%d + %d = %d: Threat Roll: %d + %d = %d) vs %d\n",
+                        actor->name,
+                        other->name,
+                        attack_roll,
+                        attack_bonus,
+                        total_attack,
+                        threat_roll,
+                        attack_bonus,
+                        total_threat,
+                        other_armor_class);
+                }
             }
             else
             {
                 printf(
-                    "%s attacks %s: *hit*: (%d + %d = %d: Threat Roll: %d + %d = %d) vs %d\n",
+                    "%s attacks %s: *hit*: (%d + %d = %d) vs %d\n",
                     actor->name,
                     other->name,
                     attack_roll,
                     attack_bonus,
                     total_attack,
-                    threat_roll,
-                    attack_bonus,
-                    total_threat,
                     other_armor_class);
+            }
+            int damage_rolls = crit ? crit_mult : 1;
+            int total_damage = 0;
+            int damage_bonus = actor_calc_damage_bonus(actor);
+            for (int i = 0; i < damage_rolls; i++)
+            {
+                int damage_roll = roll(num_dice, die_to_roll);
+                int damage = damage_roll + damage_bonus;
+                total_damage += damage;
+            }
+
+            printf(
+                "%s damages %s: %d (%dd%dx%d + %d = %d)\n",
+                actor->name,
+                other->name,
+                total_damage,
+                num_dice,
+                die_to_roll,
+                damage_rolls,
+                damage_bonus,
+                total_damage);
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                crit ? TCOD_yellow : TCOD_white,
+                "%s %s %s for %d",
+                actor->name,
+                crit ? "crits" : "hits",
+                other->name,
+                total_damage);
+
+            other->current_hp -= total_damage;
+            other->flash_color = TCOD_red;
+            other->flash_fade_coef = 1.0f;
+            if (other->current_hp <= 0)
+            {
+                // TODO: cleave
+                actor_die(other, actor);
+                break;
             }
         }
         else
         {
             printf(
-                "%s attacks %s: *hit*: (%d + %d = %d) vs %d\n",
+                "%s attacks %s: *miss*: (%d + %d = %d) vs %d\n",
                 actor->name,
                 other->name,
                 attack_roll,
                 attack_bonus,
                 total_attack,
                 other_armor_class);
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_grey,
+                "%s misses %s",
+                actor->name,
+                other->name);
         }
-        int damage_rolls = crit ? crit_mult : 1;
-        int total_damage = 0;
-        int damage_bonus = actor_calc_damage_bonus(actor);
-        for (int i = 0; i < damage_rolls; i++)
-        {
-            int damage_roll = roll(num_dice, die_to_roll);
-            int damage = damage_roll + damage_bonus;
-            total_damage += damage;
-        }
-
-        printf(
-            "%s damages %s: %d (%dd%dx%d + %d = %d)\n",
-            actor->name,
-            other->name,
-            total_damage,
-            num_dice,
-            die_to_roll,
-            damage_rolls,
-            damage_bonus,
-            total_damage);
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            crit ? TCOD_yellow : TCOD_white,
-            "%s %s %s for %d",
-            actor->name,
-            crit ? "crits" : "hits",
-            other->name,
-            total_damage);
-
-        other->current_hp -= total_damage;
-        other->flash_color = TCOD_red;
-        other->flash_fade_coef = 1.0f;
-        if (other->current_hp <= 0)
-        {
-            actor_die(other, actor);
-        }
-    }
-    else
-    {
-        printf(
-            "%s attacks %s: *miss*: (%d + %d = %d) vs %d\n",
-            actor->name,
-            other->name,
-            attack_roll,
-            attack_bonus,
-            total_attack,
-            other_armor_class);
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            TCOD_grey,
-            "%s misses %s",
-            actor->name,
-            other->name);
     }
 
     return true;

@@ -1951,8 +1951,9 @@ static void render(TCOD_console_t console)
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "ATTACK: +%d",
-                actor_calc_attack_bonus(world->player));
+                "ATTACK: +%d * %d",
+                actor_calc_attack_bonus(world->player),
+                actor_calc_attacks_per_round(world->player)); // TODO: make this represent the individual attack bonuses for each attack
             TCOD_console_printf(
                 panel_rect.console,
                 1,

@@ -185,10 +185,7 @@ int actor_calc_armor_class(struct actor *actor)
     {
         enum base_item base_item = item_datum[armor->type].base_item;
         struct base_item_data base_item_data = base_item_datum[base_item];
-        if (base_item_data.maximum_dexterity_bonus < dexterity_modifer)
-        {
-            dexterity_modifer = base_item_data.maximum_dexterity_bonus;
-        }
+        dexterity_modifer = MIN(base_item_data.maximum_dexterity_bonus, dexterity_modifer);
     }
     ac += dexterity_modifer;
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
@@ -397,27 +394,56 @@ void actor_ai(struct actor *actor)
             actor->last_seen_y = target->y;
             actor->turns_chased = 0;
 
-            // TODO: if carrying a ranged weapon, actor might want to prioritize retreating rather than perfoming a melee attack
-            if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f &&
-                actor_attack(actor, target))
-            {
-                goto done;
-            }
-
+            bool ranged = false;
             struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
             if (weapon)
             {
                 enum base_item base_item = item_datum[weapon->type].base_item;
-                if (base_item_datum[base_item].ranged &&
-                    actor_shoot(actor, target->x, target->y, NULL, NULL))
+                struct base_item_data base_item_data = base_item_datum[base_item];
+                if (base_item_data.ranged)
                 {
-                    goto done;
+                    ranged = true;
                 }
             }
-
-            if (actor_path_towards(actor, target->x, target->y))
+            if (ranged)
             {
-                goto done;
+                if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
+                {
+                    // TODO: imight want to prioritize retreating rather than perfoming a melee attack
+                    actor_make_vulnerable(actor);
+                    if (actor->dead)
+                    {
+                        goto done;
+                    }
+                    if (actor_attack(actor, target))
+                    {
+                        goto done;
+                    }
+                }
+                else
+                {
+                    if (actor_shoot(actor, target->x, target->y, NULL, NULL))
+                    {
+                        goto done;
+                    }
+                }
+            }
+            else
+            {
+                if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
+                {
+                    if (actor_attack(actor, target))
+                    {
+                        goto done;
+                    }
+                }
+                else
+                {
+                    if (actor_path_towards(actor, target->x, target->y))
+                    {
+                        goto done;
+                    }
+                }
             }
         }
     }
@@ -691,6 +717,20 @@ bool actor_move(struct actor *actor, int x, int y)
         }
         else
         {
+            struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+            if (weapon)
+            {
+                enum base_item base_item = item_datum[weapon->type].base_item;
+                struct base_item_data base_item_data = base_item_datum[base_item];
+                if (base_item_data.ranged)
+                {
+                    actor_make_vulnerable(actor);
+                    if (actor->dead)
+                    {
+                        return false;
+                    }
+                }
+            }
             return actor_attack(actor, tile->actor);
         }
     }
@@ -799,6 +839,8 @@ bool actor_swap(struct actor *actor, struct actor *other)
         item->x = other->x;
         item->y = other->y;
     }
+
+    // TODO: incur attacks of opportunity for both actors?
 
     world_log(
         actor->floor,
@@ -1430,6 +1472,21 @@ bool actor_swing(struct actor *actor, int x, int y)
         return false;
     }
 
+    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    if (weapon)
+    {
+        enum base_item base_item = item_datum[weapon->type].base_item;
+        struct base_item_data base_item_data = base_item_datum[base_item];
+        if (base_item_data.ranged)
+        {
+            actor_make_vulnerable(actor);
+            if (actor->dead)
+            {
+                return false;
+            }
+        }
+    }
+
     bool hit = false;
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[x][y];
@@ -1499,6 +1556,12 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
+    actor_make_vulnerable(actor);
+    if (actor->dead)
+    {
+        return false;
+    }
+
     float angle = angle_between(actor->x, actor->y, x, y);
     unsigned char glyph = '`'; // TODO: select glyph based on angle
     struct projectile *projectile = projectile_new(
@@ -1525,39 +1588,27 @@ bool actor_attack(struct actor *actor, struct actor *other)
 
     // TODO: possible bug where the player can switch weapons while a projectile is in midair and affect the calulations?
 
-    bool ranged = false;
-    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-    if (weapon)
-    {
-        enum base_item base_item = item_datum[weapon->type].base_item;
-        struct base_item_data base_item_data = base_item_datum[base_item];
-        if (base_item_data.ranged)
-        {
-            ranged = true;
-        }
-    }
-    if (ranged)
-    {
-        // TODO: this has a slightly strange behavior where the attacks of opportunity for shooting a bow happen after the projectile has landed
-        // the attacks of opportunity should happen as soon as the actor fires their bow
-        // this has gameplay consequences, since being killed by an attack of opportunity should prevent the actor from firing the projectile
-        actor_make_vulnerable(actor);
-    }
     for (int attack = 0; attack < actor_calc_attacks_per_round(actor); attack++)
     {
         printf("%s vs %s: attack #%d\n", actor->name, other->name, attack);
         int attack_roll = roll(1, 20);
         int attack_bonus = actor_calc_attack_bonus(actor);
         attack_bonus -= attack * 5;
-        if (ranged)
+        struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+        if (weapon)
         {
-            if (distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
+            enum base_item base_item = item_datum[weapon->type].base_item;
+            struct base_item_data base_item_data = base_item_datum[base_item];
+            if (base_item_data.ranged)
             {
-                attack_bonus -= 4;
-            }
-            if (other->running)
-            {
-                attack_bonus -= 2;
+                if (distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
+                {
+                    attack_bonus -= 4;
+                }
+                if (other->running)
+                {
+                    attack_bonus -= 2;
+                }
             }
         }
         int total_attack = attack_roll + attack_bonus;

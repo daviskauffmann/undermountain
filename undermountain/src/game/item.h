@@ -10,18 +10,10 @@ struct item_common
     char __placeholder;
 };
 
-enum base_item
-{
-    BASE_ITEM_SWORD,
-    BASE_ITEM_BOW,
-    BASE_ITEM_POTION,
-
-    NUM_BASE_ITEMS
-};
-
 enum equip_slot
 {
     EQUIP_SLOT_NONE,
+    EQUIP_SLOT_ARMOR,
     EQUIP_SLOT_MAIN_HAND,
     EQUIP_SLOT_OFF_HAND,
 
@@ -34,19 +26,13 @@ struct equip_slot_data
     char *label; // TODO: not the biggest fan of this solution
 };
 
-struct base_item_data
-{
-    unsigned char glyph;
-    TCOD_color_t color;
-    enum equip_slot equip_slot;
-    bool two_handed;
-    bool ranged;
-};
-
 enum item_type
 {
+    ITEM_TYPE_IRON_ARMOR,
+    ITEM_TYPE_GREATSWORD,
     ITEM_TYPE_LONGSWORD,
     ITEM_TYPE_LONGBOW,
+    ITEM_TYPE_KITE_SHIELD,
     ITEM_TYPE_HEALING_POTION,
 
     NUM_ITEM_TYPES
@@ -54,11 +40,19 @@ enum item_type
 
 struct item_data
 {
-    enum base_item base_item;
     const char *name;
     const char *description;
+    unsigned char glyph;
+    TCOD_color_t color;
+    enum equip_slot equip_slot;
+    bool two_handed;
+    int armor;
+    float block_chance;
     int min_damage;
     int max_damage;
+    bool ranged;
+    int max_durability;
+    bool quaffable;
 };
 
 struct item
@@ -67,6 +61,7 @@ struct item
     int floor;
     int x;
     int y;
+    int current_durability;
 };
 
 struct item *item_new(enum item_type type, int floor, int x, int y);

@@ -17,8 +17,8 @@ enum race
     // monster races
     RACE_ANIMAL,
     RACE_BUGBEAR,
-    RACE_ELEMENTAL,
     RACE_ORC,
+    RACE_SLIME,
 
     NUM_RACES
 };
@@ -26,13 +26,13 @@ enum race
 enum class
 {
     // player classes
-	CLASS_MAGE,
-	CLASS_ROGUE,
+    CLASS_MAGE,
+    CLASS_ROGUE,
     CLASS_WARRIOR,
 
     // monster classes
     CLASS_ANIMAL,
-    CLASS_ELEMENTAL,
+    CLASS_SLIME,
 
     NUM_CLASSES
 };

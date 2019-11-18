@@ -14,7 +14,6 @@ struct class_data class_datum[NUM_CLASSES];
 struct actor_prototype monster_prototypes[NUM_MONSTERS];
 struct item_common item_common;
 struct equip_slot_data equip_slot_datum[NUM_EQUIP_SLOTS];
-struct base_item_data base_item_datum[NUM_BASE_ITEMS];
 struct item_data item_datum[NUM_ITEM_TYPES];
 
 #define TILE_COMMON(_ambient_color, _ambient_intensity) \
@@ -78,12 +77,20 @@ struct item_data item_datum[NUM_ITEM_TYPES];
     base_item_datum[_type].ranged = _ranged;                                     \
     base_item_datum[_type].two_handed = _two_handed;
 
-#define ITEM_DATA(_type, _base_item, _name, _description, _min_damage, _max_damage) \
-    item_datum[_type].base_item = _base_item;                                       \
-    item_datum[_type].name = _name;                                                 \
-    item_datum[_type].description = _description;                                   \
-    item_datum[_type].min_damage = _min_damage;                                     \
-    item_datum[_type].max_damage = _max_damage;
+#define ITEM_DATA(_type, _name, _description, _glyph, _color, _equip_slot, _two_handed, _armor, _block_chance, _min_damage, _max_damage, _ranged, _max_durability, _quaffable) \
+    item_datum[_type].name = _name;                                                                                                                                            \
+    item_datum[_type].description = _description;                                                                                                                              \
+    item_datum[_type].glyph = _glyph;                                                                                                                                          \
+    item_datum[_type].color = _color;                                                                                                                                          \
+    item_datum[_type].equip_slot = _equip_slot;                                                                                                                                \
+    item_datum[_type].two_handed = _two_handed;                                                                                                                                \
+    item_datum[_type].armor = _armor;                                                                                                                                          \
+    item_datum[_type].block_chance = _block_chance;                                                                                                                            \
+    item_datum[_type].min_damage = _min_damage;                                                                                                                                \
+    item_datum[_type].max_damage = _max_damage;                                                                                                                                \
+    item_datum[_type].ranged = _ranged;                                                                                                                                        \
+    item_datum[_type].max_durability = _max_durability;                                                                                                                        \
+    item_datum[_type].quaffable = _quaffable;
 
 void assets_load(void)
 {
@@ -118,33 +125,33 @@ void assets_load(void)
 
     RACE_DATA(RACE_ANIMAL, "Animal", 'a');
     RACE_DATA(RACE_BUGBEAR, "Bugbear", 'b');
-    RACE_DATA(RACE_ELEMENTAL, "Elemental", 'e');
     RACE_DATA(RACE_ORC, "Orc", 'o');
+    RACE_DATA(RACE_SLIME, "Slime", 's');
 
     CLASS_DATA(CLASS_WARRIOR, "Warrior", TCOD_brass);
     CLASS_DATA(CLASS_MAGE, "Wizard", TCOD_azure);
     CLASS_DATA(CLASS_ROGUE, "Rogue", TCOD_yellow);
 
     CLASS_DATA(CLASS_ANIMAL, "Animal", TCOD_lightest_grey);
-    CLASS_DATA(CLASS_ELEMENTAL, "Elemental", TCOD_lightest_grey);
+    CLASS_DATA(CLASS_SLIME, "Slime", TCOD_lightest_grey);
 
     MONSTER_PROTOTYPE(MONSTER_BUGBEAR, "Bugbear", RACE_BUGBEAR, CLASS_WARRIOR);
     MONSTER_PROTOTYPE(MONSTER_ORC, "Orc", RACE_ORC, CLASS_WARRIOR);
     MONSTER_PROTOTYPE(MONSTER_RAT, "Rat", RACE_ANIMAL, CLASS_ANIMAL);
-    MONSTER_PROTOTYPE(MONSTER_SLIME, "Slime", RACE_ELEMENTAL, CLASS_ELEMENTAL);
+    MONSTER_PROTOTYPE(MONSTER_SLIME, "Slime", RACE_SLIME, CLASS_SLIME);
 
     ITEM_COMMON(0);
 
+    EQUIP_SLOT_DATA(EQUIP_SLOT_ARMOR, "Armor", "Armor ");
     EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand", "M-Hand");
     EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand", "O-Hand");
 
-    BASE_ITEM_DATA(BASE_ITEM_SWORD, '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, false);
-    BASE_ITEM_DATA(BASE_ITEM_BOW, '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, true);
-    BASE_ITEM_DATA(BASE_ITEM_POTION, '!', TCOD_white, EQUIP_SLOT_NONE, false, false);
-
-    ITEM_DATA(ITEM_TYPE_LONGSWORD, BASE_ITEM_SWORD, "Longsword", "A longsword.", 1, 8);
-    ITEM_DATA(ITEM_TYPE_LONGBOW, BASE_ITEM_BOW, "Longbow", "A longbow.", 1, 8);
-    ITEM_DATA(ITEM_TYPE_HEALING_POTION, BASE_ITEM_POTION, "Healing Potion", "Restores full health.", 0, 0);
+    ITEM_DATA(ITEM_TYPE_IRON_ARMOR, "Iron Armor", "A set of iron armor.", '[', TCOD_white, EQUIP_SLOT_ARMOR, false, 3, 0, 0, 0, false, 100, false);
+    ITEM_DATA(ITEM_TYPE_GREATSWORD, "Greatsword", "A two-handed straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, false, 100, false);
+    ITEM_DATA(ITEM_TYPE_LONGSWORD, "Longsword", "A straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false);
+    ITEM_DATA(ITEM_TYPE_LONGBOW, "Longbow", "A tall war bow.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 1, 8, true, 100, false);
+    ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", '|', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 8, false, 100, false);
+    ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true);
 }
 
 void assets_unload(void)

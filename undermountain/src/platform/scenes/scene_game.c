@@ -1248,12 +1248,12 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     {
                         tooltip_show();
                         tooltip_options_add("Drop", NULL);
-                        enum base_item base_item = item_datum[item->type].base_item;
-                        if (base_item_datum[base_item].equip_slot != EQUIP_SLOT_NONE)
+                        struct item_data item_data = item_datum[item->type];
+                        if (item_data.equip_slot != EQUIP_SLOT_NONE)
                         {
                             tooltip_options_add("Equip", NULL);
                         }
-                        if (base_item == BASE_ITEM_POTION)
+                        if (item_data.quaffable)
                         {
                             tooltip_options_add("Quaff", NULL);
                         }
@@ -1564,18 +1564,17 @@ static void render(TCOD_console_t console)
         struct item *item = *iterator;
         if (TCOD_map_is_in_fov(world->player->fov, item->x, item->y))
         {
-            enum base_item base_item = item_datum[item->type].base_item;
-            struct base_item_data base_item_data = base_item_datum[base_item];
+            struct item_data item_data = item_datum[item->type];
             TCOD_console_set_char_foreground(
                 console,
                 item->x - view_x,
                 item->y - view_y,
-                base_item_data.color);
+                item_data.color);
             TCOD_console_set_char(
                 console,
                 item->x - view_x,
                 item->y - view_y,
-                base_item_data.glyph);
+                item_data.glyph);
         }
     }
     TCOD_LIST_FOREACH(map->projectiles)
@@ -1942,7 +1941,7 @@ static void render(TCOD_console_t console)
                 TCOD_color_t color =
                     item == panel_inventory_get_selected()
                         ? TCOD_yellow
-                        : base_item_datum[item_data.base_item].color;
+                        : item_data.color;
                 TCOD_console_set_default_foreground(panel_rect.console, color);
                 if (current_panel_status->selection_mode)
                 {

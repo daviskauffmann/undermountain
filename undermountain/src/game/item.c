@@ -14,6 +14,7 @@ struct item *item_new(enum item_type type, int floor, int x, int y)
     item->floor = floor;
     item->x = x;
     item->y = y;
+    item->current_durability = item_datum[type].max_durability;
     return item;
 }
 

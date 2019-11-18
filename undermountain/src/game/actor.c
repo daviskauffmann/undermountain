@@ -236,9 +236,8 @@ void actor_ai(struct actor *actor)
             struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
             if (weapon)
             {
-                enum base_item base_item = item_datum[weapon->type].base_item;
-                struct base_item_data base_item_data = base_item_datum[base_item];
-                if (base_item_data.ranged)
+                struct item_data item_data = item_datum[weapon->type];
+                if (item_data.ranged)
                 {
                     ranged = true;
                 }
@@ -1035,8 +1034,7 @@ bool actor_drop(struct actor *actor, struct item *item)
 bool actor_equip(struct actor *actor, struct item *item)
 {
     struct item_data item_data = item_datum[item->type];
-    struct base_item_data base_item_data = base_item_datum[item_data.base_item];
-    enum equip_slot equip_slot = base_item_data.equip_slot;
+    enum equip_slot equip_slot = item_data.equip_slot;
     if (equip_slot == EQUIP_SLOT_NONE)
     {
         world_log(
@@ -1055,7 +1053,7 @@ bool actor_equip(struct actor *actor, struct item *item)
     {
         actor_unequip(actor, equip_slot);
     }
-    if (base_item_data.two_handed)
+    if (item_data.two_handed)
     {
         if (actor->equipment[EQUIP_SLOT_OFF_HAND])
         {
@@ -1065,7 +1063,7 @@ bool actor_equip(struct actor *actor, struct item *item)
     if (equip_slot == EQUIP_SLOT_OFF_HAND)
     {
         struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-        if (main_hand && base_item_data.two_handed)
+        if (main_hand && item_datum[main_hand->type].two_handed)
         {
             actor_unequip(actor, EQUIP_SLOT_MAIN_HAND);
         }
@@ -1120,8 +1118,7 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
 bool actor_quaff(struct actor *actor, struct item *item)
 {
     struct item_data item_data = item_datum[item->type];
-    enum base_item base_item = item_data.base_item;
-    if (base_item != BASE_ITEM_POTION)
+    if (!item_data.quaffable)
     {
         world_log(
             actor->floor,
@@ -1258,8 +1255,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
-    enum base_item base_item = item_datum[weapon->type].base_item;
-    if (!base_item_datum[base_item].ranged)
+    if (!item_datum[weapon->type].ranged)
     {
         world_log(
             actor->floor,
@@ -1292,10 +1288,6 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
 
 bool actor_attack(struct actor *actor, struct actor *other)
 {
-    // TODO: chance to hit and damage calculations
-
-    // TODO: support dual-wield weapons
-
     int min_damage = 1;
     int max_damage = 3;
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
@@ -1306,6 +1298,25 @@ bool actor_attack(struct actor *actor, struct actor *other)
         max_damage = item_data.max_damage;
     }
     int damage = TCOD_random_get_int(NULL, min_damage, max_damage);
+    struct item *armor = other->equipment[EQUIP_SLOT_ARMOR];
+    if (armor)
+    {
+        struct item_data item_data = item_datum[armor->type];
+        damage -= item_data.armor;
+        if (damage < 0)
+        {
+            damage = 0;
+        }
+    }
+    struct item *shield = other->equipment[EQUIP_SLOT_OFF_HAND];
+    if (shield)
+    {
+        struct item_data item_data = item_datum[shield->type];
+        if (TCOD_random_get_float(NULL, 0.0f, 1.0f) <= item_data.block_chance)
+        {
+            damage = 0;
+        }
+    }
 
     world_log(
         actor->floor,

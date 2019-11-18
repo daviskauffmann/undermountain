@@ -9,35 +9,9 @@
 
 #include "assets.h"
 #include "item.h"
-#include "item_property.h"
 #include "projectile.h"
 #include "world.h"
 #include "util.h"
-
-// TODO: attacks per round
-// movement per turn and attacks per turn should probably exist on separate counters
-// by default, all actors have 1 movement per turn
-//      a "haste" effect can bring it up to 2
-//      this actor will be able to make two movements on their turn
-// they also have as many attacks per turn as their BAB dictates
-//      a "haste" effect will increase it by 1 (extra attack is always made by main hand weapon)
-//      attacks per round should also be split up into main hand and off hand attacks
-//      if there is no off hand equipped, an Fighter might have 2 MH attacks and 0 OH attacks at level 6
-//      if they equip an off hand weapon, then it goes to 2 MH attacks and 1 OH attack
-//      if they have an off hand weapon and the "improved two weapon fighting feat", then now its 2 MH attacks and 2 OH attacks
-//      if they have an off hand weapon and the "improved two weapon fighting feat" and are hasted, then its 3 MH attacks and 2 OH attacks
-// two options when calling actor_attack():
-//      option 1 (currently active):
-//          perform all attacks at once
-//          this has the downside that if the target dies in the first attack, the attacker doesnt get to use their subsequent attacks that turn (other than cleave)
-//          this also has a weird effect where an actor that has multiple attacks with a ranged weapon essentially hit twice with a single arrow
-//              they should instead have the opportunity to fire multiple arrows in their turn
-//          given these downsides, option 2 seems better even if its more complex
-//      option 2:
-//          if MH attacks > 0 -> perform MH attack and decrement MH attacks by 1
-//          else if OH attacks > 0 -> perform OH attack and decrement OH attacks by 1
-//          an actor's turn should end when they have either exhausted all their attacks or movements, whichever happens first...
-// dont worry about implementing dual wielding immediately, so just get this working for only main hand
 
 // TODO: actors should ascend/descend with their leader
 
@@ -51,17 +25,8 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->faction = faction;
     actor->level = level;
     actor->experience = actor_calc_experience_to_level(actor->level);
-    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-    {
-        // TODO: replace
-        actor->ability_scores[ability] = 10 + (actor->level - 1);
-    }
-    actor->base_hp = class_datum[actor->class].hit_die;
-    for (int i = 0; i < actor->level - 1; i++)
-    {
-        actor->base_hp += roll(1, class_datum[actor->class].hit_die);
-    }
-    actor->current_hp = actor_calc_max_hp(actor);
+    actor->max_hp = 10 * level;
+    actor->current_hp = actor->max_hp;
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
         actor->equipment[equip_slot] = NULL;
@@ -70,9 +35,6 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->floor = floor;
     actor->x = x;
     actor->y = y;
-    actor->previous_x = x;
-    actor->previous_y = y;
-    actor->running = false;
     actor->fov = NULL;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -109,130 +71,6 @@ void actor_delete(struct actor *actor)
 int actor_calc_experience_to_level(int level)
 {
     return level * (level - 1) / 2 * 1000;
-}
-
-int actor_calc_attacks_per_round(struct actor *actor)
-{
-    int base_attack_bonus = actor_calc_base_attack_bonus(actor);
-    return (int)ceilf((float)base_attack_bonus / 5.0f);
-}
-
-int actor_calc_ability_modifier(struct actor *actor, enum ability ability)
-{
-    return (actor->ability_scores[ability] - 10) / 2;
-}
-
-int actor_calc_max_hp(struct actor *actor)
-{
-    return actor->base_hp + actor_calc_ability_modifier(actor, ABILITY_CONSTITUTION);
-}
-
-int actor_calc_enhancement_bonus(struct actor *actor)
-{
-    int bonus = 0;
-    for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
-    {
-        struct item *equipment = actor->equipment[equip_slot];
-        if (equipment)
-        {
-            TCOD_list_t item_properties = item_datum[equipment->type].item_properties;
-            TCOD_LIST_FOREACH(item_properties)
-            {
-                struct base_item_property *base_item_property = *iterator;
-                if (base_item_property->item_property == ITEM_PROPERTY_ENHANCEMENT_BONUS)
-                {
-                    struct enhancement_bonus *enhancement_bonus = (struct enhancement_bonus *)base_item_property;
-                    bonus += enhancement_bonus->bonus;
-                }
-            }
-        }
-    }
-    return bonus;
-}
-
-int actor_calc_base_attack_bonus(struct actor *actor)
-{
-    // TODO: base attack bonus based on class (use BAB chart)
-    // so far, this is correct for the Fighter class (and other classes with similar BAB progression)
-    return actor->level;
-}
-
-int actor_calc_attack_bonus(struct actor *actor)
-{
-    // TODO: if weapon finesse feat, use dex for melee attacks too if higher than str
-    enum ability ability = ABILITY_STRENGTH;
-    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-    if (weapon)
-    {
-        enum base_item base_item = item_datum[weapon->type].base_item;
-        struct base_item_data base_item_data = base_item_datum[base_item];
-        if (base_item_data.ranged)
-        {
-            ability = ABILITY_DEXTERITY;
-        }
-    }
-    return actor_calc_base_attack_bonus(actor) +
-           actor_calc_ability_modifier(actor, ability) +
-           actor_calc_enhancement_bonus(actor);
-}
-
-int actor_calc_armor_class(struct actor *actor)
-{
-    int ac = 10;
-    int dexterity_modifer = actor_calc_ability_modifier(actor, ABILITY_DEXTERITY);
-    struct item *armor = actor->equipment[EQUIP_SLOT_ARMOR];
-    if (armor)
-    {
-        enum base_item base_item = item_datum[armor->type].base_item;
-        struct base_item_data base_item_data = base_item_datum[base_item];
-        dexterity_modifer = MIN(base_item_data.maximum_dexterity_bonus, dexterity_modifer);
-    }
-    ac += dexterity_modifer;
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-    {
-        struct item *equipment = actor->equipment[i];
-        if (equipment)
-        {
-            struct item_data item_data = item_datum[equipment->type];
-            ac += base_item_datum[item_data.base_item].base_ac;
-            TCOD_LIST_FOREACH(item_data.item_properties)
-            {
-                struct base_item_property *base_item_property = *iterator;
-                if (base_item_property->item_property == ITEM_PROPERTY_AC_BONUS)
-                {
-                    struct ac_bonus *ac_bonus = (struct ac_bonus *)base_item_property;
-                    ac += ac_bonus->bonus; // TODO: deal with stacking AC types
-                }
-            }
-        }
-    }
-    return ac;
-}
-
-void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult)
-{
-    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-    if (weapon)
-    {
-        enum base_item base_item = item_datum[weapon->type].base_item;
-        struct base_item_data base_item_data = base_item_datum[base_item];
-        *num_dice = base_item_data.num_dice;
-        *die_to_roll = base_item_data.die_to_roll;
-        *crit_threat = base_item_data.crit_threat;
-        *crit_mult = base_item_data.crit_mult;
-    }
-    else
-    {
-        *num_dice = 1;
-        *die_to_roll = 3;
-        *crit_threat = 20;
-        *crit_mult = 2;
-    }
-}
-
-int actor_calc_damage_bonus(struct actor *actor)
-{
-    return actor_calc_ability_modifier(actor, ABILITY_STRENGTH) + actor_calc_enhancement_bonus(actor);
 }
 
 void actor_update_flash(struct actor *actor)
@@ -329,7 +167,7 @@ void actor_ai(struct actor *actor)
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
     // look for fountains to heal if low health
-    if (actor->current_hp < actor_calc_max_hp(actor) / 2)
+    if (actor->current_hp < actor->max_hp / 2)
     {
         struct object *target = NULL;
         float min_distance = FLT_MAX;
@@ -410,7 +248,6 @@ void actor_ai(struct actor *actor)
                 if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
                 {
                     // TODO: imight want to prioritize retreating rather than perfoming a melee attack
-                    actor_make_vulnerable(actor);
                     if (actor->dead)
                     {
                         goto done;
@@ -527,20 +364,6 @@ void actor_ai(struct actor *actor)
 done:;
 }
 
-void actor_calc_running(struct actor *actor)
-{
-    if (actor->x == actor->previous_x && actor->y == actor->previous_y)
-    {
-        actor->running = false;
-    }
-    else
-    {
-        actor->running = true;
-    }
-    actor->previous_x = actor->x;
-    actor->previous_y = actor->y;
-}
-
 void actor_give_experience(struct actor *actor, int experience)
 {
     actor->experience += experience;
@@ -569,17 +392,9 @@ void actor_level_up(struct actor *actor)
     // however, in the level up screen (to be implemented), the player can elect to auto-level their character
     // in that case, use this function
 
-    // TODO: level history so level drain spells can be implemented
-    // when the drain is removed, the actor should return to their current level with health and decisions restored
-
     actor->level++;
-    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-    {
-        // TODO: replace
-        actor->ability_scores[ability] += 1;
-    }
-    actor->base_hp += roll(1, class_datum[actor->class].hit_die);
-    actor->current_hp = actor_calc_max_hp(actor);
+    actor->max_hp += 10;
+    actor->current_hp = actor->max_hp;
 
     world_log(
         actor->floor,
@@ -588,39 +403,6 @@ void actor_level_up(struct actor *actor)
         TCOD_yellow,
         "%s has gained a level!",
         actor->name);
-}
-
-void actor_make_vulnerable(struct actor *actor)
-{
-    struct map *map = &world->maps[actor->floor];
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *other = *iterator;
-        struct item *weapon = other->equipment[EQUIP_SLOT_MAIN_HAND];
-        if (weapon)
-        {
-            enum base_item base_item = item_datum[weapon->type].base_item;
-            struct base_item_data base_item_data = base_item_datum[base_item];
-            if (base_item_data.ranged)
-            {
-                continue;
-            }
-        }
-        if (distance_between(other->x, other->y, actor->x, actor->y) < 2.0f &&
-            other->faction != actor->faction)
-        {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s gets an attack of opportunity on %s",
-                other->name,
-                actor->name);
-
-            actor_attack(other, actor);
-        }
-    }
 }
 
 bool actor_path_towards(struct actor *actor, int x, int y)
@@ -717,32 +499,16 @@ bool actor_move(struct actor *actor, int x, int y)
         }
         else
         {
-            struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-            if (weapon)
-            {
-                enum base_item base_item = item_datum[weapon->type].base_item;
-                struct base_item_data base_item_data = base_item_datum[base_item];
-                if (base_item_data.ranged)
-                {
-                    actor_make_vulnerable(actor);
-                    if (actor->dead)
-                    {
-                        return false;
-                    }
-                }
-            }
             return actor_attack(actor, tile->actor);
         }
     }
 
-    actor->previous_x = actor->x;
-    actor->previous_y = actor->y;
+    struct tile *previous_tile = &map->tiles[actor->x][actor->y];
+    previous_tile->actor = NULL;
+    struct tile *next_tile = &map->tiles[x][y];
+    next_tile->actor = actor;
     actor->x = x;
     actor->y = y;
-    struct tile *previous_tile = &map->tiles[actor->previous_x][actor->previous_y];
-    previous_tile->actor = NULL;
-    struct tile *next_tile = &map->tiles[actor->x][actor->y];
-    next_tile->actor = actor;
     for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
     {
         struct item *equipment = actor->equipment[i];
@@ -757,34 +523,6 @@ bool actor_move(struct actor *actor, int x, int y)
         struct item *item = *iterator;
         item->x = actor->x;
         item->y = actor->y;
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *other = *iterator;
-        struct item *weapon = other->equipment[EQUIP_SLOT_MAIN_HAND];
-        if (weapon)
-        {
-            enum base_item base_item = item_datum[weapon->type].base_item;
-            struct base_item_data base_item_data = base_item_datum[base_item];
-            if (base_item_data.ranged)
-            {
-                continue;
-            }
-        }
-        if (other->faction != actor->faction &&
-            distance_between(other->x, other->y, actor->previous_x, actor->previous_y) < 2.0f)
-        {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s gets an attack of opportunity on %s",
-                other->name,
-                actor->name);
-
-            actor_attack(other, actor);
-        }
     }
     return true;
 }
@@ -839,8 +577,6 @@ bool actor_swap(struct actor *actor, struct actor *other)
         item->x = other->x;
         item->y = other->y;
     }
-
-    // TODO: incur attacks of opportunity for both actors?
 
     world_log(
         actor->floor,
@@ -1171,12 +907,11 @@ bool actor_drink(struct actor *actor, int x, int y)
     struct tile *tile = &map->tiles[x][y];
     if (tile->object && tile->object->type == OBJECT_TYPE_FOUNTAIN)
     {
-        int hp = roll(1, 4);
-        int max_hp = actor_calc_max_hp(actor);
+        int hp = actor->max_hp - actor->current_hp;
         actor->current_hp += hp;
-        if (actor->current_hp > max_hp)
+        if (actor->current_hp > actor->max_hp)
         {
-            actor->current_hp = max_hp;
+            actor->current_hp = actor->max_hp;
         }
 
         world_log(
@@ -1316,27 +1051,11 @@ bool actor_equip(struct actor *actor, struct item *item)
         return false;
     }
 
-    enum weapon_size weapon_size = base_item_data.weapon_size;
-    enum race_size race_size = race_datum[actor->race].size;
-    if (weapon_size == WEAPON_SIZE_LARGE && race_size == RACE_SIZE_SMALL)
-    {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "%s is too large for %s to wield",
-            item_data.name,
-            actor->name);
-
-        return false;
-    }
-
     if (actor->equipment[equip_slot])
     {
         actor_unequip(actor, equip_slot);
     }
-    if (item_is_two_handed(item, race_size))
+    if (base_item_data.two_handed)
     {
         if (actor->equipment[EQUIP_SLOT_OFF_HAND])
         {
@@ -1346,7 +1065,7 @@ bool actor_equip(struct actor *actor, struct item *item)
     if (equip_slot == EQUIP_SLOT_OFF_HAND)
     {
         struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-        if (main_hand && item_is_two_handed(main_hand, race_size))
+        if (main_hand && base_item_data.two_handed)
         {
             actor_unequip(actor, EQUIP_SLOT_MAIN_HAND);
         }
@@ -1416,7 +1135,15 @@ bool actor_quaff(struct actor *actor, struct item *item)
         return false;
     }
 
-    // TODO: cast the spell stored in the potion
+    if (item->type == ITEM_TYPE_HEALING_POTION)
+    {
+        int hp = actor->max_hp - actor->current_hp;
+        actor->current_hp += hp;
+        if (actor->current_hp > actor->max_hp)
+        {
+            actor->current_hp = actor->max_hp;
+        }
+    }
 
     world_log(
         actor->floor,
@@ -1426,6 +1153,11 @@ bool actor_quaff(struct actor *actor, struct item *item)
         "%s quaffs %s",
         actor->name,
         item_data.name);
+
+    struct map *map = &world->maps[actor->floor];
+    TCOD_list_remove(map->items, item);
+    TCOD_list_remove(actor->items, item);
+    item_delete(item);
 
     return true;
 }
@@ -1448,7 +1180,7 @@ bool actor_bash(struct actor *actor, struct object *object)
     }
 
     // TODO: calculate damage properly
-    // this means objects should have health and armor class
+    // this means objects should have health
     // move damage calculation in actor_attack to a function and call it here as well
 
     object->destroyed = true;
@@ -1470,21 +1202,6 @@ bool actor_swing(struct actor *actor, int x, int y)
     if (!map_is_inside(x, y))
     {
         return false;
-    }
-
-    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-    if (weapon)
-    {
-        enum base_item base_item = item_datum[weapon->type].base_item;
-        struct base_item_data base_item_data = base_item_datum[base_item];
-        if (base_item_data.ranged)
-        {
-            actor_make_vulnerable(actor);
-            if (actor->dead)
-            {
-                return false;
-            }
-        }
     }
 
     bool hit = false;
@@ -1527,7 +1244,6 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
-    struct map *map = &world->maps[actor->floor];
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
     if (!weapon)
     {
@@ -1556,12 +1272,6 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
-    actor_make_vulnerable(actor);
-    if (actor->dead)
-    {
-        return false;
-    }
-
     float angle = angle_between(actor->x, actor->y, x, y);
     unsigned char glyph = '`'; // TODO: select glyph based on angle
     struct projectile *projectile = projectile_new(
@@ -1574,6 +1284,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         actor,
         on_hit,
         on_hit_params);
+    struct map *map = &world->maps[actor->floor];
     TCOD_list_push(map->projectiles, projectile);
 
     return true;
@@ -1581,158 +1292,37 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
 
 bool actor_attack(struct actor *actor, struct actor *other)
 {
+    // TODO: chance to hit and damage calculations
+
     // TODO: support dual-wield weapons
-    // should just attack with both weapons in one move, applying relevant penalties
 
-    // TODO: is attack and damage affected by two-handedness?
-
-    // TODO: possible bug where the player can switch weapons while a projectile is in midair and affect the calulations?
-
-    for (int attack = 0; attack < actor_calc_attacks_per_round(actor); attack++)
+    int min_damage = 1;
+    int max_damage = 3;
+    struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    if (weapon)
     {
-        printf("%s vs %s: attack #%d\n", actor->name, other->name, attack);
-        int attack_roll = roll(1, 20);
-        int attack_bonus = actor_calc_attack_bonus(actor);
-        attack_bonus -= attack * 5;
-        struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-        if (weapon)
-        {
-            enum base_item base_item = item_datum[weapon->type].base_item;
-            struct base_item_data base_item_data = base_item_datum[base_item];
-            if (base_item_data.ranged)
-            {
-                if (distance_between(actor->x, actor->y, other->x, other->y) < 2.0f)
-                {
-                    attack_bonus -= 4;
-                }
-                if (other->running)
-                {
-                    attack_bonus -= 2;
-                }
-            }
-        }
-        int total_attack = attack_roll + attack_bonus;
-        int other_armor_class = actor_calc_armor_class(other);
-        bool hit = attack_roll == 1
-                       ? false
-                       : attack_roll == 20
-                             ? true
-                             : total_attack >= other_armor_class;
-        if (hit)
-        {
-            bool crit = false;
-            int num_dice;
-            int die_to_roll;
-            int crit_threat;
-            int crit_mult;
-            actor_calc_weapon(actor, &num_dice, &die_to_roll, &crit_threat, &crit_mult);
-            if (attack_roll >= crit_threat)
-            {
-                int threat_roll = roll(1, 20);
-                int total_threat = threat_roll + attack_bonus;
+        struct item_data item_data = item_datum[weapon->type];
+        min_damage = item_data.min_damage;
+        max_damage = item_data.max_damage;
+    }
+    int damage = TCOD_random_get_int(NULL, min_damage, max_damage);
 
-                if (total_threat >= other_armor_class)
-                {
-                    crit = true;
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s hits %s for %d",
+        actor->name,
+        other->name,
+        damage);
 
-                    printf(
-                        "%s attacks %s: *crit*: (%d + %d = %d: Threat Roll: %d + %d = %d) vs %d\n",
-                        actor->name,
-                        other->name,
-                        attack_roll,
-                        attack_bonus,
-                        total_attack,
-                        threat_roll,
-                        attack_bonus,
-                        total_threat,
-                        other_armor_class);
-                }
-                else
-                {
-                    printf(
-                        "%s attacks %s: *hit*: (%d + %d = %d: Threat Roll: %d + %d = %d) vs %d\n",
-                        actor->name,
-                        other->name,
-                        attack_roll,
-                        attack_bonus,
-                        total_attack,
-                        threat_roll,
-                        attack_bonus,
-                        total_threat,
-                        other_armor_class);
-                }
-            }
-            else
-            {
-                printf(
-                    "%s attacks %s: *hit*: (%d + %d = %d) vs %d\n",
-                    actor->name,
-                    other->name,
-                    attack_roll,
-                    attack_bonus,
-                    total_attack,
-                    other_armor_class);
-            }
-            int damage_rolls = crit ? crit_mult : 1;
-            int total_damage = 0;
-            int damage_bonus = actor_calc_damage_bonus(actor);
-            for (int i = 0; i < damage_rolls; i++)
-            {
-                int damage_roll = roll(num_dice, die_to_roll);
-                int damage = damage_roll + damage_bonus;
-                total_damage += damage;
-            }
-
-            printf(
-                "%s damages %s: %d (%dd%dx%d + %d = %d)\n",
-                actor->name,
-                other->name,
-                total_damage,
-                num_dice,
-                die_to_roll,
-                damage_rolls,
-                damage_bonus,
-                total_damage);
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                crit ? TCOD_yellow : TCOD_white,
-                "%s %s %s for %d",
-                actor->name,
-                crit ? "crits" : "hits",
-                other->name,
-                total_damage);
-
-            other->current_hp -= total_damage;
-            other->flash_color = TCOD_red;
-            other->flash_fade_coef = 1.0f;
-            if (other->current_hp <= 0)
-            {
-                // TODO: cleave
-                actor_die(other, actor);
-                break;
-            }
-        }
-        else
-        {
-            printf(
-                "%s attacks %s: *miss*: (%d + %d = %d) vs %d\n",
-                actor->name,
-                other->name,
-                attack_roll,
-                attack_bonus,
-                total_attack,
-                other_armor_class);
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                TCOD_grey,
-                "%s misses %s",
-                actor->name,
-                other->name);
-        }
+    other->current_hp -= damage;
+    other->flash_color = TCOD_red;
+    other->flash_fade_coef = 1.0f;
+    if (other->current_hp <= 0)
+    {
+        actor_die(other, actor);
     }
 
     return true;

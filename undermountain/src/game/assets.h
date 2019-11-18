@@ -13,7 +13,6 @@ extern struct object_data object_datum[NUM_OBJECT_TYPES];
 extern struct actor_common actor_common;
 extern struct race_data race_datum[NUM_RACES];
 extern struct class_data class_datum[NUM_CLASSES];
-extern struct ability_data ability_datum[NUM_ABILITIES];
 extern struct actor_prototype monster_prototypes[NUM_MONSTERS];
 extern struct item_common item_common;
 extern struct equip_slot_data equip_slot_datum[NUM_EQUIP_SLOTS];

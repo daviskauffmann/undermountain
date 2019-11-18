@@ -45,9 +45,6 @@
     <ClCompile Include="src\game\item.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\game\item_property.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\game\map.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -105,9 +102,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game\item.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\game\item_property.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game\map.h">

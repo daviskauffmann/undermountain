@@ -19,7 +19,7 @@
 // TODO: there is a lot of repetition of things with light properties
 // pack them into a light struct?
 
-// TODO: resuurect corpses
+// TODO: resurrect corpses
 
 // TODO: optimize
 // decide on a target ms per turn, maybe 16ms
@@ -48,7 +48,7 @@
 // in addition to all that, there should be ladders that connect to smaller maps that contain loot and enemies
 // these maps have no way out other than the entrance and are smaller
 
-// TODO: implement processing of maps the player is not on
+// TODO: implement processing of maps the player is not on?
 
 // TODO: not storing all maps in memory?
 // if we have a small number of maps, this might not be a problem
@@ -137,7 +137,7 @@ void world_new(void)
         {
             int x = map->stair_up_x;
             int y = map->stair_up_y;
-            struct actor *player = actor_new("Blinky", RACE_HUMAN, CLASS_FIGHTER, FACTION_GOOD, floor + 6, floor, x, y);
+            struct actor *player = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
             player->torch = false;
             world->player = player;
             TCOD_list_push(map->actors, player);
@@ -146,18 +146,12 @@ void world_new(void)
             struct item *longsword = item_new(ITEM_TYPE_LONGSWORD, floor, x, y);
             TCOD_list_push(map->items, longsword);
             TCOD_list_push(player->items, longsword);
-            struct item *greatsword = item_new(ITEM_TYPE_GREATSWORD, floor, x, y);
-            TCOD_list_push(map->items, greatsword);
-            TCOD_list_push(player->items, greatsword);
             struct item *longbow = item_new(ITEM_TYPE_LONGBOW, floor, x, y);
             TCOD_list_push(map->items, longbow);
             TCOD_list_push(player->items, longbow);
-            struct item *tower_shield = item_new(ITEM_TYPE_TOWER_SHIELD, floor, x, y);
-            TCOD_list_push(map->items, tower_shield);
-            TCOD_list_push(player->items, tower_shield);
-            struct item *potion_cure_light_wounds = item_new(ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS, floor, x, y);
-            TCOD_list_push(map->items, potion_cure_light_wounds);
-            TCOD_list_push(player->items, potion_cure_light_wounds);
+            struct item *healing_potion = item_new(ITEM_TYPE_HEALING_POTION, floor, x, y);
+            TCOD_list_push(map->items, healing_potion);
+            TCOD_list_push(player->items, healing_potion);
 
             world_log(
                 floor,
@@ -293,11 +287,6 @@ void world_turn(void)
         struct actor *actor = *iterator;
         actor_ai(actor);
     }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_running(actor);
-    }
     if (world->player->dead)
     {
         // let the player see whats going on while they're dead
@@ -322,7 +311,7 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-    int size = vsnprintf(NULL, 0, fmt, args);
+    size_t size = vsnprintf(NULL, 0, fmt, args);
     char *buffer = malloc(size + 1);
     assert(buffer);
     vsprintf(buffer, fmt, args);

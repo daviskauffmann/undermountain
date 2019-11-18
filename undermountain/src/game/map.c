@@ -592,7 +592,7 @@ void map_generate(struct map *map)
         struct actor *actor = actor_new(
             TCOD_namegen_generate(name, false),
             race,
-            TCOD_random_get_int(NULL, CLASS_BARBARIAN, CLASS_WIZARD),
+            TCOD_random_get_int(NULL, CLASS_MAGE, CLASS_WARRIOR),
             FACTION_GOOD,
             map->floor + 1,
             map->floor,
@@ -627,7 +627,7 @@ void map_generate(struct map *map)
         TCOD_list_push(map->actors, actor);
         tile->actor = actor;
         // TODO: default inventory/equipment
-        if (monster == MONSTER_ORC_RANGER)
+        if (monster == MONSTER_BUGBEAR)
         {
             struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y);
             TCOD_list_push(map->items, longbow);

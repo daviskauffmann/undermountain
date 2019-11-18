@@ -12,31 +12,13 @@ enum race
     // player races
     RACE_DWARF,
     RACE_ELF,
-    RACE_GNOME,
-    RACE_HALF_ELF,
-    RACE_HALF_ORC,
-    RACE_HALFLING,
     RACE_HUMAN,
 
     // monster races
-    RACE_ABBERATION,
     RACE_ANIMAL,
-    RACE_BEAST,
-    RACE_CONSTRUCT,
-    RACE_DRAGON,
+    RACE_BUGBEAR,
     RACE_ELEMENTAL,
-    RACE_FEY,
-    RACE_GIANT,
-    RACE_GOBLINOID,
-    RACE_MAGICAL_BEAST,
-    RACE_MONSTROUS_HUMANOID,
-    RACE_OOZE,
     RACE_ORC,
-    RACE_OUTSIDER,
-    RACE_REPTILLIAN,
-    RACE_SHAPECHANGER,
-    RACE_UNDEAD,
-    RACE_VERMIN,
 
     NUM_RACES
 };
@@ -44,60 +26,23 @@ enum race
 enum class
 {
     // player classes
-    CLASS_BARBARIAN,
-    CLASS_BARD,
-    CLASS_COMMONER,
-    CLASS_CLERIC,
-    CLASS_DRUID,
-    CLASS_FIGHTER,
-    CLASS_MONK,
-    CLASS_PALADIN,
-    CLASS_RANGER,
-    CLASS_ROGUE,
-    CLASS_SORCERER,
-    CLASS_WIZARD,
+	CLASS_MAGE,
+	CLASS_ROGUE,
+    CLASS_WARRIOR,
 
     // monster classes
-    CLASS_ABBERATION,
     CLASS_ANIMAL,
-    CLASS_BEAST,
-    CLASS_CONSTRUCT,
-    CLASS_DRAGON,
     CLASS_ELEMENTAL,
-    CLASS_FEY,
-    CLASS_GIANT,
-    CLASS_HUMANOID,
-    CLASS_MAGICAL_BEAST,
-    CLASS_MONSTROUS,
-    CLASS_OOZE,
-    CLASS_OUTSIDER,
-    CLASS_SHAPESHIFTER,
-    CLASS_UNDEAD,
-    CLASS_VERMIN,
 
     NUM_CLASSES
 };
 
 enum monster
 {
-    MONSTER_BASILISK,
-    MONSTER_BEHOLDER,
     MONSTER_BUGBEAR,
-    MONSTER_FIRE_ELEMENTAL,
-    MONSTER_GELATINOUS_CUBE,
-    MONSTER_GOBLIN,
-    MONSTER_IRON_GOLEM,
-    MONSTER_OGRE,
-    MONSTER_ORC_CLERIC,
-    MONSTER_ORC_FIGHTER,
-    MONSTER_ORC_RANGER,
-    MONSTER_PIXIE,
-    MONSTER_RAKSHASA,
+    MONSTER_ORC,
     MONSTER_RAT,
-    MONSTER_RED_SLAAD,
-    MONSTER_WOLF,
-    MONSTER_WYRMLING,
-    MONSTER_ZOMBIE,
+    MONSTER_SLIME,
 
     NUM_MONSTERS
 };
@@ -121,44 +66,16 @@ struct actor_common
     float torch_intensity;
 };
 
-enum race_size
-{
-    RACE_SIZE_MEDIUM,
-    RACE_SIZE_SMALL
-};
-
 struct race_data
 {
     const char *name;
     unsigned char glyph;
-    enum race_size size;
 };
 
 struct class_data
 {
     const char *name;
     TCOD_color_t color;
-    int hit_die;
-    // TODO: base attack bonus
-};
-
-enum ability
-{
-    ABILITY_STRENGTH,
-    ABILITY_DEXTERITY,
-    ABILITY_CONSTITUTION,
-    ABILITY_INTELLIGENCE,
-    ABILITY_WISDOM,
-    ABILITY_CHARISMA,
-
-    NUM_ABILITIES
-};
-
-struct ability_data
-{
-    char *name;
-    char *abbreviation;
-    char *description;
 };
 
 struct actor_prototype
@@ -176,19 +93,15 @@ struct actor
     enum race race;
     enum class class;
     enum faction faction;
-    int level; // TODO: multi-class?
+    int level;
     int experience;
-    int ability_scores[NUM_ABILITIES];
-    int base_hp;
+    int max_hp;
     int current_hp;
     struct item *equipment[NUM_EQUIP_SLOTS];
     TCOD_list_t items;
     int floor;
     int x;
     int y;
-    int previous_x;
-    int previous_y;
-    bool running;
     TCOD_map_t fov;
     int last_seen_x;
     int last_seen_y;
@@ -206,23 +119,12 @@ struct actor
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
 void actor_delete(struct actor *actor);
 int actor_calc_experience_to_level(int level);
-int actor_calc_attacks_per_round(struct actor *actor);
-int actor_calc_ability_modifier(struct actor *actor, enum ability ability);
-int actor_calc_max_hp(struct actor *actor);
-int actor_calc_enhancement_bonus(struct actor *actor);
-int actor_calc_base_attack_bonus(struct actor *actor);
-int actor_calc_attack_bonus(struct actor *actor);
-int actor_calc_armor_class(struct actor *actor);
-void actor_calc_weapon(struct actor *actor, int *num_dice, int *die_to_roll, int *crit_threat, int *crit_mult);
-int actor_calc_damage_bonus(struct actor *actor);
 void actor_update_flash(struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);
-void actor_calc_running(struct actor *actor);
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
-void actor_make_vulnerable(struct actor *actor);
 bool actor_path_towards(struct actor *actor, int x, int y);
 bool actor_move_towards(struct actor *actor, int x, int y);
 bool actor_move(struct actor *actor, int x, int y);

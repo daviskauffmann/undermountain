@@ -1814,52 +1814,35 @@ static void render(TCOD_console_t console)
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "NAME     : %s",
+                "NAME : %s",
                 world->player->name);
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "ALIGNMENT: Neutral Good");
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y++ - current_panel_status->scroll,
-                "RACE     : %s",
+                "RACE : %s",
                 race_datum[world->player->race].name);
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "CLASS    : %s",
+                "CLASS: %s",
                 class_datum[world->player->class].name);
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "LEVEL    : %d",
+                "LEVEL: %d",
                 world->player->level);
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "EXP      : %d / %d",
+                "EXP  : %d / %d",
                 world->player->experience,
                 actor_calc_experience_to_level(world->player->level + 1));
             y++;
-            for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-            {
-                TCOD_console_printf(
-                    panel_rect.console,
-                    1,
-                    y++ - current_panel_status->scroll,
-                    "%s: %d | %d",
-                    ability_datum[ability].abbreviation,
-                    world->player->ability_scores[ability],
-                    actor_calc_ability_modifier(world->player, ability));
-            }
-            y++;
-            for (enum equip_slot equip_slot = EQUIP_SLOT_ARMOR; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
                 TCOD_color_t color =
                     equip_slot == panel_character_get_selected()
@@ -1918,48 +1901,9 @@ static void render(TCOD_console_t console)
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
-                "AC: %d",
-                actor_calc_armor_class(world->player));
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y++ - current_panel_status->scroll,
                 "HP: %d / %d",
                 world->player->current_hp,
-                actor_calc_max_hp(world->player));
-            y++;
-            int num_dice;
-            int die_to_roll;
-            int crit_threat;
-            int crit_mult;
-            actor_calc_weapon(
-                world->player,
-                &num_dice,
-                &die_to_roll,
-                &crit_threat,
-                &crit_mult);
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y++ - current_panel_status->scroll,
-                "WEAPON: %dd%d (%d-20x%d)",
-                num_dice,
-                die_to_roll,
-                crit_threat,
-                crit_mult);
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y++ - current_panel_status->scroll,
-                "ATTACK: +%d * %d",
-                actor_calc_attack_bonus(world->player),
-                actor_calc_attacks_per_round(world->player)); // TODO: make this represent the individual attack bonuses for each attack
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y++ - current_panel_status->scroll,
-                "DAMAGE: +%d",
-                actor_calc_damage_bonus(world->player));
+                world->player->max_hp);
             y++;
 
             TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);

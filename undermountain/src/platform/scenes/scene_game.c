@@ -34,6 +34,8 @@
 
 // TODO: prompts
 
+/* Input variables */
+
 static int mouse_x;
 static int mouse_y;
 static int mouse_tile_x;
@@ -45,6 +47,8 @@ static int automove_y;
 static struct actor *automove_actor;
 
 static bool took_turn;
+
+/* Directional actions */
 
 enum directional_action
 {
@@ -102,6 +106,8 @@ static bool do_directional_action(struct actor *player, int x, int y)
     return success;
 }
 
+/* Inventory menu actions */
+
 enum inventory_action
 {
     INVENTORY_ACTION_NONE,
@@ -113,6 +119,8 @@ enum inventory_action
 
 static enum inventory_action inventory_action;
 
+/* Character menu actions */
+
 enum character_action
 {
     CHARACTER_ACTION_NONE,
@@ -121,6 +129,8 @@ enum character_action
 };
 
 static enum character_action character_action;
+
+/* Targeting */
 
 enum targeting
 {
@@ -135,6 +145,8 @@ static enum targeting targeting;
 static int target_x;
 static int target_y;
 
+/* Viewport */
+
 static int view_x;
 static int view_y;
 static int view_width;
@@ -148,8 +160,12 @@ static bool view_is_inside(int x, int y)
            y < view_height;
 }
 
+/* Noise */
+
 static TCOD_noise_t noise;
 static float noise_x;
+
+/* Generic rect */
 
 struct rect
 {
@@ -170,7 +186,11 @@ static bool rect_is_inside(struct rect rect, int x, int y)
            y < rect.y + rect.height;
 }
 
+/* Message log */
+
 static struct rect message_log_rect;
+
+/* Side panel */
 
 enum panel
 {
@@ -258,6 +278,8 @@ static struct item *panel_inventory_get_selected(void)
     }
     return NULL;
 }
+
+/* Tooltips */
 
 struct tooltip_data
 {
@@ -365,6 +387,68 @@ static void projectile_on_hit_set_took_turn(void *on_hit_params)
     took_turn = true;
 }
 
+static bool player_interact(TCOD_key_t key, int x, int y)
+{
+    if (directional_action == DIRECTIONAL_ACTION_NONE)
+    {
+        if (key.lctrl)
+        {
+            if (map_is_inside(x, y))
+            {
+                struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
+                if (weapon)
+                {
+                    if (item_datum[weapon->type].ranged)
+                    {
+                        actor_shoot(world->player, x, y, &projectile_on_hit_set_took_turn, NULL);
+                        return false;
+                    }
+                }
+
+                bool hit = false;
+                struct map *map = &world->maps[world->player->floor];
+                struct tile *tile = &map->tiles[x][y];
+                if (tile->actor && tile->actor != world->player)
+                {
+                    hit = true;
+                    if (actor_attack(world->player, tile->actor, NULL))
+                    {
+                        return true;
+                    }
+                }
+                if (tile->object)
+                {
+                    hit = true;
+                    if (actor_bash(world->player, tile->object))
+                    {
+                        return true;
+                    }
+                }
+                if (!hit)
+                {
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_white,
+                        "%s swings at the air!",
+                        world->player->name);
+                }
+            }
+        }
+        else
+        {
+            return actor_move(world->player, x, y);
+        }
+    }
+    else
+    {
+        return do_directional_action(world->player, x, y);
+    }
+
+    return false;
+}
+
 static bool toolip_option_on_click_move(void)
 {
     automoving = true;
@@ -460,21 +544,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x - 1;
                 int y = world->player->y + 1;
-                if (directional_action == DIRECTIONAL_ACTION_NONE)
-                {
-                    if (key.lctrl)
-                    {
-                        took_turn = actor_swing(world->player, x, y);
-                    }
-                    else
-                    {
-                        took_turn = actor_move(world->player, x, y);
-                    }
-                }
-                else
-                {
-                    took_turn = do_directional_action(world->player, x, y);
-                }
+                took_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -490,21 +560,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x;
                 int y = world->player->y + 1;
-                if (directional_action == DIRECTIONAL_ACTION_NONE)
-                {
-                    if (key.lctrl)
-                    {
-                        took_turn = actor_swing(world->player, x, y);
-                    }
-                    else
-                    {
-                        took_turn = actor_move(world->player, x, y);
-                    }
-                }
-                else
-                {
-                    took_turn = do_directional_action(world->player, x, y);
-                }
+                took_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -519,21 +575,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x + 1;
                 int y = world->player->y + 1;
-                if (directional_action == DIRECTIONAL_ACTION_NONE)
-                {
-                    if (key.lctrl)
-                    {
-                        took_turn = actor_swing(world->player, x, y);
-                    }
-                    else
-                    {
-                        took_turn = actor_move(world->player, x, y);
-                    }
-                }
-                else
-                {
-                    took_turn = do_directional_action(world->player, x, y);
-                }
+                took_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -549,21 +591,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x - 1;
                 int y = world->player->y;
-                if (directional_action == DIRECTIONAL_ACTION_NONE)
-                {
-                    if (key.lctrl)
-                    {
-                        took_turn = actor_swing(world->player, x, y);
-                    }
-                    else
-                    {
-                        took_turn = actor_move(world->player, x, y);
-                    }
-                }
-                else
-                {
-                    took_turn = do_directional_action(world->player, x, y);
-                }
+                took_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -587,21 +615,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x + 1;
                 int y = world->player->y;
-                if (directional_action == DIRECTIONAL_ACTION_NONE)
-                {
-                    if (key.lctrl)
-                    {
-                        took_turn = actor_swing(world->player, x, y);
-                    }
-                    else
-                    {
-                        took_turn = actor_move(world->player, x, y);
-                    }
-                }
-                else
-                {
-                    took_turn = do_directional_action(world->player, x, y);
-                }
+                took_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -616,21 +630,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x - 1;
                 int y = world->player->y - 1;
-                if (directional_action == DIRECTIONAL_ACTION_NONE)
-                {
-                    if (key.lctrl)
-                    {
-                        took_turn = actor_swing(world->player, x, y);
-                    }
-                    else
-                    {
-                        took_turn = actor_move(world->player, x, y);
-                    }
-                }
-                else
-                {
-                    took_turn = do_directional_action(world->player, x, y);
-                }
+                took_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -646,21 +646,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x;
                 int y = world->player->y - 1;
-                if (directional_action == DIRECTIONAL_ACTION_NONE)
-                {
-                    if (key.lctrl)
-                    {
-                        took_turn = actor_swing(world->player, x, y);
-                    }
-                    else
-                    {
-                        took_turn = actor_move(world->player, x, y);
-                    }
-                }
-                else
-                {
-                    took_turn = do_directional_action(world->player, x, y);
-                }
+                took_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -675,21 +661,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x + 1;
                 int y = world->player->y - 1;
-                if (directional_action == DIRECTIONAL_ACTION_NONE)
-                {
-                    if (key.lctrl)
-                    {
-                        took_turn = actor_swing(world->player, x, y);
-                    }
-                    else
-                    {
-                        took_turn = actor_move(world->player, x, y);
-                    }
-                }
-                else
-                {
-                    took_turn = do_directional_action(world->player, x, y);
-                }
+                took_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -1859,9 +1831,10 @@ static void render(TCOD_console_t console)
                             panel_rect.console,
                             1,
                             y++ - current_panel_status->scroll,
-                            "%c) %s: %s", equip_slot + 'a' - 1,
+                            "%c) %s: %s (%d)", equip_slot + 'a' - 1,
                             equip_slot_data.label,
-                            item_data.name);
+                            item_data.name,
+                            equipment->current_stack);
                     }
                     else
                     {
@@ -1869,8 +1842,9 @@ static void render(TCOD_console_t console)
                             panel_rect.console,
                             1,
                             y++ - current_panel_status->scroll,
-                            "%s: %s", equip_slot_data.label,
-                            item_data.name);
+                            "%s: %s (%d)", equip_slot_data.label,
+                            item_data.name,
+                            equipment->current_stack);
                     }
                 }
                 else

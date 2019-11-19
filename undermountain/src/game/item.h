@@ -13,6 +13,7 @@ struct item_common
 enum equip_slot
 {
     EQUIP_SLOT_NONE,
+    EQUIP_SLOT_AMMUNITION,
     EQUIP_SLOT_ARMOR,
     EQUIP_SLOT_MAIN_HAND,
     EQUIP_SLOT_OFF_HAND,
@@ -26,9 +27,18 @@ struct equip_slot_data
     char *label; // TODO: not the biggest fan of this solution
 };
 
+enum ammunition_type
+{
+    AMMUNITION_TYPE_NONE,
+    AMMUNITION_TYPE_ARROW,
+    AMMUNITION_TYPE_BOLT
+};
+
 enum item_type
 {
     ITEM_TYPE_BODKIN_ARROW,
+    ITEM_TYPE_BOLT,
+    ITEM_TYPE_CROSSBOW,
     ITEM_TYPE_IRON_ARMOR,
     ITEM_TYPE_GREATSWORD,
     ITEM_TYPE_LONGSWORD,
@@ -55,7 +65,7 @@ struct item_data
     int max_durability;
     bool quaffable;
     int max_stack;
-    bool arrow;
+    enum ammunition_type ammunition_type;
 };
 
 struct item

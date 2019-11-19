@@ -244,31 +244,16 @@ void actor_ai(struct actor *actor)
             }
             if (ranged)
             {
-                if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
+                if (actor_shoot(actor, target->x, target->y, NULL, NULL))
                 {
-                    // TODO: imight want to prioritize retreating rather than perfoming a melee attack
-                    if (actor->dead)
-                    {
-                        goto done;
-                    }
-                    if (actor_attack(actor, target))
-                    {
-                        goto done;
-                    }
-                }
-                else
-                {
-                    if (actor_shoot(actor, target->x, target->y, NULL, NULL))
-                    {
-                        goto done;
-                    }
+                    goto done;
                 }
             }
             else
             {
                 if (distance_between(actor->x, actor->y, target->x, target->y) < 2.0f)
                 {
-                    if (actor_attack(actor, target))
+                    if (actor_attack(actor, target, NULL))
                     {
                         goto done;
                     }
@@ -498,7 +483,15 @@ bool actor_move(struct actor *actor, int x, int y)
         }
         else
         {
-            return actor_attack(actor, tile->actor);
+            struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+            if (weapon && item_datum[weapon->type].ranged)
+            {
+                return actor_shoot(world->player, x, y, NULL, NULL);
+            }
+            else
+            {
+                return actor_attack(actor, tile->actor, NULL);
+            }
         }
     }
 
@@ -1194,46 +1187,6 @@ bool actor_bash(struct actor *actor, struct object *object)
     return true;
 }
 
-bool actor_swing(struct actor *actor, int x, int y)
-{
-    if (!map_is_inside(x, y))
-    {
-        return false;
-    }
-
-    bool hit = false;
-    struct map *map = &world->maps[actor->floor];
-    struct tile *tile = &map->tiles[x][y];
-    if (tile->actor && tile->actor != actor)
-    {
-        hit = true;
-        if (actor_attack(actor, tile->actor))
-        {
-            return true;
-        }
-    }
-    if (tile->object)
-    {
-        hit = true;
-        if (actor_bash(actor, tile->object))
-        {
-            return true;
-        }
-    }
-    if (!hit)
-    {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "%s swings at the air!",
-            actor->name);
-    }
-
-    return true;
-}
-
 bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
 {
     if (x == actor->x && y == actor->y)
@@ -1255,6 +1208,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
+    struct item_data item_data = item_datum[weapon->type];
     if (!item_datum[weapon->type].ranged)
     {
         world_log(
@@ -1268,19 +1222,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
-    // TODO: allow actor to select what ammunition to use
-    // new equip slot for ammunition?
-    struct item *ammunition = NULL;
-    TCOD_LIST_FOREACH(actor->items)
-    {
-        struct item *item = *iterator;
-        struct item_data item_data = item_datum[item->type];
-        if (item_data.arrow && item->current_stack > 0)
-        {
-            ammunition = item;
-            break;
-        }
-    }
+    struct item *ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
     if (!ammunition)
     {
         world_log(
@@ -1288,13 +1230,25 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
             actor->x,
             actor->y,
             TCOD_white,
-            "%s has no ammunition!",
+            "%s has no ammunition equipped!",
+            actor->name);
+
+        return false;
+    }
+    if (item_datum[ammunition->type].ammunition_type != item_data.ammunition_type)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s has unsuitable ammunition equipped!",
             actor->name);
 
         return false;
     }
     ammunition->current_stack--;
-    if (ammunition->current_stack == 0)
+    if (ammunition->current_stack <= 0)
     {
         struct map *map = &world->maps[ammunition->floor];
         TCOD_list_remove(map->items, ammunition);
@@ -1312,6 +1266,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         x,
         y,
         actor,
+        ammunition,
         on_hit,
         on_hit_params);
     struct map *map = &world->maps[actor->floor];
@@ -1320,7 +1275,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     return true;
 }
 
-bool actor_attack(struct actor *actor, struct actor *other)
+bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition)
 {
     int min_damage = 1;
     int max_damage = 3;
@@ -1376,19 +1331,6 @@ bool actor_attack(struct actor *actor, struct actor *other)
 // TODO: implement
 bool actor_cast_spell(struct actor *actor, int x, int y)
 {
-    struct map *map = &world->maps[actor->floor];
-    struct projectile *projectile = projectile_new(
-        '*',
-        actor->floor,
-        actor->x,
-        actor->y,
-        x,
-        y,
-        actor,
-        NULL,
-        NULL);
-    TCOD_list_push(map->projectiles, projectile);
-
     return false;
 }
 

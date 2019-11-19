@@ -632,6 +632,9 @@ void map_generate(struct map *map)
             struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
             TCOD_list_push(map->items, longbow);
             actor->equipment[EQUIP_SLOT_MAIN_HAND] = longbow;
+            struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, map->floor, x, y, 10);
+            TCOD_list_push(map->items, bodkin_arrow);
+            actor->equipment[EQUIP_SLOT_AMMUNITION] = bodkin_arrow;
         }
     }
 
@@ -648,7 +651,7 @@ void map_generate(struct map *map)
             map->floor,
             x,
             y,
-			1);
+            1);
         struct tile *tile = &map->tiles[x][y];
         TCOD_list_push(map->items, item);
         TCOD_list_push(tile->items, item);

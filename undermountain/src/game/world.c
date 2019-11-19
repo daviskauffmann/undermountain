@@ -146,6 +146,12 @@ void world_new(void)
             struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, floor, x, y, 50);
             TCOD_list_push(map->items, bodkin_arrow);
             TCOD_list_push(player->items, bodkin_arrow);
+            struct item *bolt = item_new(ITEM_TYPE_BOLT, floor, x, y, 50);
+            TCOD_list_push(map->items, bolt);
+            TCOD_list_push(player->items, bolt);
+            struct item *crossbow = item_new(ITEM_TYPE_CROSSBOW, floor, x, y, 1);
+            TCOD_list_push(map->items, crossbow);
+            TCOD_list_push(player->items, crossbow);
             struct item *iron_armor = item_new(ITEM_TYPE_IRON_ARMOR, floor, x, y, 1);
             TCOD_list_push(map->items, iron_armor);
             TCOD_list_push(player->items, iron_armor);

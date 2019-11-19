@@ -6,7 +6,7 @@
 
 #include "assets.h"
 
-struct item *item_new(enum item_type type, int floor, int x, int y)
+struct item *item_new(enum item_type type, int floor, int x, int y, int stack)
 {
     struct item *item = malloc(sizeof(struct item));
     assert(item);
@@ -15,6 +15,7 @@ struct item *item_new(enum item_type type, int floor, int x, int y)
     item->x = x;
     item->y = y;
     item->current_durability = item_datum[type].max_durability;
+    item->current_stack = MIN(item_datum[type].max_stack, stack);
     return item;
 }
 

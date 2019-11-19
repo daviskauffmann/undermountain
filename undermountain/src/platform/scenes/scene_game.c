@@ -1949,9 +1949,10 @@ static void render(TCOD_console_t console)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        "%c) %s",
+                        "%c) %s (%d)",
                         y - 1 + 'a' - current_panel_status->scroll,
-                        item_data.name);
+                        item_data.name,
+                        item->current_stack);
                 }
                 else
                 {
@@ -1959,7 +1960,9 @@ static void render(TCOD_console_t console)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        item_data.name);
+                        "%s (%d)",
+                        item_data.name,
+                        item->current_stack);
                 }
                 TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
                 y++;

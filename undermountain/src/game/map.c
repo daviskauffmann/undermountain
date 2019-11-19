@@ -629,7 +629,7 @@ void map_generate(struct map *map)
         // TODO: default inventory/equipment
         if (monster == MONSTER_BUGBEAR)
         {
-            struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y);
+            struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
             TCOD_list_push(map->items, longbow);
             actor->equipment[EQUIP_SLOT_MAIN_HAND] = longbow;
         }
@@ -647,7 +647,8 @@ void map_generate(struct map *map)
             TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1),
             map->floor,
             x,
-            y);
+            y,
+			1);
         struct tile *tile = &map->tiles[x][y];
         TCOD_list_push(map->items, item);
         TCOD_list_push(tile->items, item);

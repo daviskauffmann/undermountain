@@ -995,7 +995,7 @@ bool actor_grab(struct actor *actor, int x, int y)
     item->floor = actor->floor;
     item->x = actor->x;
     item->y = actor->y;
-    TCOD_list_push(actor->items, item); // TODO: stacking?
+    TCOD_list_push(actor->items, item);
 
     world_log(
         actor->floor,
@@ -1266,6 +1266,40 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
             actor->name);
 
         return false;
+    }
+
+    // TODO: allow actor to select what ammunition to use
+    // new equip slot for ammunition?
+    struct item *ammunition = NULL;
+    TCOD_LIST_FOREACH(actor->items)
+    {
+        struct item *item = *iterator;
+        struct item_data item_data = item_datum[item->type];
+        if (item_data.arrow && item->current_stack > 0)
+        {
+            ammunition = item;
+            break;
+        }
+    }
+    if (!ammunition)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s has no ammunition!",
+            actor->name);
+
+        return false;
+    }
+    ammunition->current_stack--;
+    if (ammunition->current_stack == 0)
+    {
+        struct map *map = &world->maps[ammunition->floor];
+        TCOD_list_remove(map->items, ammunition);
+        TCOD_list_remove(actor->items, ammunition);
+        item_delete(ammunition);
     }
 
     float angle = angle_between(actor->x, actor->y, x, y);

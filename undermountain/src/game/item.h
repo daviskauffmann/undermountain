@@ -28,6 +28,7 @@ struct equip_slot_data
 
 enum item_type
 {
+    ITEM_TYPE_BODKIN_ARROW,
     ITEM_TYPE_IRON_ARMOR,
     ITEM_TYPE_GREATSWORD,
     ITEM_TYPE_LONGSWORD,
@@ -53,6 +54,8 @@ struct item_data
     bool ranged;
     int max_durability;
     bool quaffable;
+    int max_stack;
+    bool arrow;
 };
 
 struct item
@@ -62,9 +65,10 @@ struct item
     int x;
     int y;
     int current_durability;
+    int current_stack;
 };
 
-struct item *item_new(enum item_type type, int floor, int x, int y);
+struct item *item_new(enum item_type type, int floor, int x, int y, int stack);
 void item_delete(struct item *item);
 
 #endif

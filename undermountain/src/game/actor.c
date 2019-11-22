@@ -174,12 +174,10 @@ void actor_ai(struct actor *actor)
         TCOD_LIST_FOREACH(map->objects)
         {
             struct object *object = *iterator;
-
             if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
                 object->type == OBJECT_TYPE_FOUNTAIN)
             {
                 float distance = distance_between_sq(actor->x, actor->y, object->x, object->y);
-
                 if (distance < min_distance)
                 {
                     target = object;
@@ -213,12 +211,10 @@ void actor_ai(struct actor *actor)
         TCOD_LIST_FOREACH(map->actors)
         {
             struct actor *other = *iterator;
-
             if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
                 other->faction != actor->faction)
             {
                 float distance = distance_between_sq(actor->x, actor->y, other->x, other->y);
-
                 if (distance < min_distance)
                 {
                     target = other;

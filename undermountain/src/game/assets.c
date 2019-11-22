@@ -144,9 +144,10 @@ void assets_load(void)
 
     ITEM_COMMON(0);
 
-    EQUIP_SLOT_DATA(EQUIP_SLOT_ARMOR, "Armor", "Armor ");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand", "M-Hand");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand", "O-Hand");
+	EQUIP_SLOT_DATA(EQUIP_SLOT_AMMUNITION, "Ammunition", "Ammunition");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_ARMOR, "Armor", "Armor     ");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand", "Main Hand ");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand", "Off Hand  ");
 
     ITEM_DATA(ITEM_TYPE_BODKIN_ARROW, "Bodkin Arrow", "Arrow designed for penetrating armor.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_ARROW);
     ITEM_DATA(ITEM_TYPE_BOLT, "Bolt", "Standard ammunition for a crossbow.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_BOLT);

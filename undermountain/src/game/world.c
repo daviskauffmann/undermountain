@@ -22,8 +22,7 @@
 // TODO: resurrect corpses
 
 // TODO: optimize
-// decide on a target ms per turn, maybe 16ms
-// the world_turn() function should never take longer than that to run
+// pathfinding takes a while
 
 // TODO: traps
 
@@ -56,34 +55,6 @@
 
 // TODO: have different TCOD_random_t instances for different things
 
-// TODO: possibly redo input to be more like commit 67aa306?
-// look at world.c, line 180 in the world_update() function
-// this type of input allows for multiple player characters or playable character switching on the fly
-// a practical worldplay application might be a mind control spell
-// unfortunately, with the implementation i did before, it resulted in each actor taking an entire frame to process
-// not because of computation time, but because the actor would do their ai that frame, and then on the next update, it would hit the next actor to process them, and so on
-// some research and testing needs to be done to see if this is just a necessary consequence or maybe there is a smarter way to accomplish this
-// here is my proposal:
-// give all actors a bool to say whether they are input controlled or not
-// world_update()
-//   if waiting_for_input is true
-//     return
-//   loop through all the maps
-//     loop through all the actors
-//       if the current actor has enough energy
-//         remove some energy
-//         if the current actor is input controlled
-//           set waiting_for_input to true
-//           set the world->player to the current actor (so we need to independently track the main character for win/lose state reasons?)
-//           break out of the loop
-//         otherwise
-//           process ai for this actor
-// scene_game->input()
-//   took_turn can be local now, set to false at the beginning
-//   do everything as normal, applying input to the current world->player and storing the result in took_turn
-//   if took_turn is true and world->player->energy is over a threshold
-//     instead of calling world_turn(), just set waiting_for_input to false
-
 struct world *world;
 
 void world_init(void)
@@ -106,7 +77,6 @@ void world_quit(void)
     TCOD_LIST_FOREACH(world->messages)
     {
         struct message *message = *iterator;
-
         message_delete(message);
     }
     TCOD_list_delete(world->messages);
@@ -303,7 +273,9 @@ void world_turn(void)
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
-        actor_ai(actor);
+		if (actor != world->player) {
+			actor_ai(actor);
+		}
     }
     if (world->player->dead)
     {

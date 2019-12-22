@@ -1831,7 +1831,8 @@ static void render(TCOD_console_t console)
                             panel_rect.console,
                             1,
                             y++ - current_panel_status->scroll,
-                            "%c) %s: %s (%d)", equip_slot + 'a' - 1,
+                            equipment->current_stack > 1 ? "%c) %s: %s (%d)" : "%c) %s: %s",
+                            equip_slot + 'a' - 1,
                             equip_slot_data.label,
                             item_data.name,
                             equipment->current_stack);
@@ -1842,7 +1843,8 @@ static void render(TCOD_console_t console)
                             panel_rect.console,
                             1,
                             y++ - current_panel_status->scroll,
-                            "%s: %s (%d)", equip_slot_data.label,
+                            equipment->current_stack > 1 ? "%s: %s (%d)" : "%s: %s", 
+                            equip_slot_data.label,
                             item_data.name,
                             equipment->current_stack);
                     }
@@ -1855,7 +1857,7 @@ static void render(TCOD_console_t console)
                             panel_rect.console,
                             1,
                             y++ - current_panel_status->scroll,
-                            "%c) %s: N/A", equip_slot + 'a' - 1,
+                            "%c) %s:", equip_slot + 'a' - 1,
                             equip_slot_data.label);
                     }
                     else
@@ -1864,7 +1866,7 @@ static void render(TCOD_console_t console)
                             panel_rect.console,
                             1,
                             y++ - current_panel_status->scroll,
-                            "%s: N/A", equip_slot_data.label);
+                            "%s:", equip_slot_data.label);
                     }
                 }
                 TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
@@ -1923,7 +1925,7 @@ static void render(TCOD_console_t console)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        "%c) %s (%d)",
+                        item->current_stack > 1 ? "%c) %s (%d)" : "%c) %s",
                         y - 1 + 'a' - current_panel_status->scroll,
                         item_data.name,
                         item->current_stack);
@@ -1934,7 +1936,7 @@ static void render(TCOD_console_t console)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        "%s (%d)",
+                        item->current_stack > 1 ? "%s (%d)" : "%s",
                         item_data.name,
                         item->current_stack);
                 }

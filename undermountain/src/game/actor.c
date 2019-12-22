@@ -158,11 +158,6 @@ void actor_calc_fov(struct actor *actor)
 
 void actor_ai(struct actor *actor)
 {
-    if (actor == world->player)
-    {
-        return;
-    }
-
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[actor->x][actor->y];
 
@@ -975,6 +970,19 @@ bool actor_grab(struct actor *actor, int x, int y)
             actor->y,
             TCOD_white,
             "%s cannot find anything to pick up",
+            actor->name);
+
+        return false;
+    }
+
+    if (TCOD_list_size(actor->items) >= 26)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s is carrying too many items",
             actor->name);
 
         return false;

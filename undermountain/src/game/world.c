@@ -55,6 +55,12 @@
 
 // TODO: have different TCOD_random_t instances for different things
 
+// TODO: stop using TCOD_list_t for things that maps store
+// a dynamically growing contiguous array would be a lot better
+// linked lists are faster for insertion/deletion, but that happens very rarely in games compared to traversal/random access
+// that way, the CPU cache will be more efficiently used when looping over stuff in maps
+// the lists of pointers that tiles store could probably stay the way it is, since it contains pointers that would be spread out in memory anyways
+
 struct world *world;
 
 void world_init(void)
@@ -195,6 +201,7 @@ void world_update(void)
         if (actor->dead)
         {
             actor->current_hp = 0;
+            // move actor to corpses array
             iterator = TCOD_list_remove_iterator(map->actors, iterator);
             TCOD_list_push(map->corpses, actor);
             struct tile *tile = &map->tiles[actor->x][actor->y];
@@ -202,6 +209,7 @@ void world_update(void)
             tile->actor = NULL;
             if (actor != world->player)
             {
+                // move equipment to inventory
                 for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
                 {
                     struct item *equipment = actor->equipment[i];
@@ -211,6 +219,7 @@ void world_update(void)
                         actor->equipment[i] = NULL;
                     }
                 }
+                // move inventory to ground
                 TCOD_LIST_FOREACH(actor->items)
                 {
                     struct item *item = *iterator;

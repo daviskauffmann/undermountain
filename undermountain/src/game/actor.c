@@ -42,7 +42,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->leader = NULL;
     actor->glow = false;
     actor->glow_fov = NULL;
-    actor->torch = TCOD_random_get_int(NULL, 0, 20) == 0;
+    actor->torch = TCOD_random_get_int(world->random, 0, 20) == 0;
     actor->torch_fov = NULL;
     actor->flash_fade_coef = 0.0f;
     actor->dead = false;
@@ -62,6 +62,11 @@ void actor_delete(struct actor *actor)
     if (actor->fov != NULL)
     {
         TCOD_map_delete(actor->fov);
+    }
+    TCOD_LIST_FOREACH(actor->items)
+    {
+        struct item *item = *iterator;
+        item_delete(item);
     }
     TCOD_list_delete(actor->items);
     free(actor->name);
@@ -328,10 +333,10 @@ void actor_ai(struct actor *actor)
     }
 
     // move randomly
-    if (TCOD_random_get_int(NULL, 0, 1) == 0)
+    if (TCOD_random_get_int(world->random, 0, 1) == 0)
     {
-        int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
-        int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
+        int x = actor->x + TCOD_random_get_int(world->random, -1, 1);
+        int y = actor->y + TCOD_random_get_int(world->random, -1, 1);
         actor_move(actor, x, y);
 
         goto done;
@@ -348,7 +353,7 @@ void actor_give_experience(struct actor *actor, int experience)
         actor->x,
         actor->y,
         TCOD_azure,
-        "%s gains %d experience",
+        "%s gains %d experience.",
         actor->name,
         experience);
 
@@ -492,21 +497,6 @@ bool actor_move(struct actor *actor, int x, int y)
     next_tile->actor = actor;
     actor->x = x;
     actor->y = y;
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-    {
-        struct item *equipment = actor->equipment[i];
-        if (equipment)
-        {
-            equipment->x = actor->x;
-            equipment->y = actor->y;
-        }
-    }
-    TCOD_LIST_FOREACH(actor->items)
-    {
-        struct item *item = *iterator;
-        item->x = actor->x;
-        item->y = actor->y;
-    }
     return true;
 }
 
@@ -530,43 +520,13 @@ bool actor_swap(struct actor *actor, struct actor *other)
     other->y = temp_y;
     other_tile->actor = actor;
     tile->actor = other;
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-    {
-        struct item *equipment = actor->equipment[i];
-        if (equipment)
-        {
-            equipment->x = actor->x;
-            equipment->y = actor->y;
-        }
-    }
-    TCOD_LIST_FOREACH(actor->items)
-    {
-        struct item *item = *iterator;
-        item->x = actor->x;
-        item->y = actor->y;
-    }
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-    {
-        struct item *equipment = other->equipment[i];
-        if (equipment)
-        {
-            equipment->x = other->x;
-            equipment->y = other->y;
-        }
-    }
-    TCOD_LIST_FOREACH(other->items)
-    {
-        struct item *item = *iterator;
-        item->x = other->x;
-        item->y = other->y;
-    }
 
     world_log(
         actor->floor,
         actor->x,
         actor->y,
         TCOD_white,
-        "%s swaps with %s",
+        "%s swaps with %s.",
         actor->name,
         other->name);
 
@@ -591,7 +551,7 @@ bool actor_open_door(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_orange,
-            "%s opens the door",
+            "%s opens the door.",
             actor->name);
 
         return true;
@@ -602,7 +562,7 @@ bool actor_open_door(struct actor *actor, int x, int y)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't open the door",
+        "%s can't open the door.",
         actor->name);
 
     return false;
@@ -626,7 +586,7 @@ bool actor_close_door(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_orange,
-            "%s closes the door",
+            "%s closes the door.",
             actor->name);
 
         return true;
@@ -637,13 +597,13 @@ bool actor_close_door(struct actor *actor, int x, int y)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't close the door",
+        "%s can't close the door.",
         actor->name);
 
     return false;
 }
 
-bool actor_descend(struct actor *actor, bool with_leader)
+bool actor_descend(struct actor *actor, bool with_leader, void ***iterator)
 {
     if (actor->floor >= NUM_MAPS)
     {
@@ -652,7 +612,7 @@ bool actor_descend(struct actor *actor, bool with_leader)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s has reached the end",
+            "%s has reached the end.",
             actor->name);
 
         return false;
@@ -667,7 +627,7 @@ bool actor_descend(struct actor *actor, bool with_leader)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't descend here",
+            "%s can't descend here.",
             actor->name);
 
         return false;
@@ -675,35 +635,20 @@ bool actor_descend(struct actor *actor, bool with_leader)
 
     struct map *next_map = &world->maps[actor->floor + 1];
     struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
-    TCOD_list_remove(map->actors, actor);
+    if (iterator)
+    {
+        *iterator = TCOD_list_remove_iterator(map->actors, *iterator);
+    }
+    else
+    {
+        TCOD_list_remove(map->actors, actor);
+    }
     tile->actor = NULL;
     actor->floor++;
     actor->x = next_map->stair_up_x;
     actor->y = next_map->stair_up_y;
     TCOD_list_push(next_map->actors, actor);
     next_tile->actor = actor;
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-    {
-        struct item *equipment = actor->equipment[i];
-        if (equipment)
-        {
-            equipment->floor = actor->floor;
-            equipment->x = actor->x;
-            equipment->y = actor->y;
-
-            TCOD_list_remove(map->items, equipment);
-            TCOD_list_push(next_map->items, equipment);
-        }
-    }
-    TCOD_LIST_FOREACH(actor->items)
-    {
-        struct item *item = *iterator;
-        item->floor = actor->floor;
-        item->x = actor->x;
-        item->y = actor->y;
-        TCOD_list_remove(map->items, item);
-        TCOD_list_push(next_map->items, item);
-    }
 
     if (!with_leader)
     {
@@ -712,7 +657,7 @@ bool actor_descend(struct actor *actor, bool with_leader)
             struct actor *other = *iterator;
             if (other && other->leader == actor)
             {
-                // actor_descend(other, true);
+                actor_descend(other, true, &iterator);
             }
         }
     }
@@ -722,13 +667,13 @@ bool actor_descend(struct actor *actor, bool with_leader)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s descends",
+        "%s descends.",
         actor->name);
 
     return true;
 }
 
-bool actor_ascend(struct actor *actor, bool with_leader)
+bool actor_ascend(struct actor *actor, bool with_leader, void ***iterator)
 {
     if (actor->floor == 0)
     {
@@ -737,7 +682,7 @@ bool actor_ascend(struct actor *actor, bool with_leader)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't go any higher",
+            "%s can't go any higher.",
             actor->name);
 
         return false;
@@ -752,7 +697,7 @@ bool actor_ascend(struct actor *actor, bool with_leader)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s can't ascend here",
+            "%s can't ascend here.",
             actor->name);
 
         return false;
@@ -760,35 +705,20 @@ bool actor_ascend(struct actor *actor, bool with_leader)
 
     struct map *next_map = &world->maps[actor->floor - 1];
     struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
-    TCOD_list_remove(map->actors, actor);
+    if (iterator)
+    {
+        *iterator = TCOD_list_remove_iterator(map->actors, *iterator);
+    }
+    else
+    {
+        TCOD_list_remove(map->actors, actor);
+    }
     tile->actor = NULL;
     actor->floor--;
     actor->x = next_map->stair_down_x;
     actor->y = next_map->stair_down_y;
     TCOD_list_push(next_map->actors, actor);
     next_tile->actor = actor;
-    for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
-    {
-        struct item *equipment = actor->equipment[i];
-        if (equipment)
-        {
-            equipment->floor = actor->floor;
-            equipment->x = actor->x;
-            equipment->y = actor->y;
-            TCOD_list_remove(map->items, equipment);
-            TCOD_list_push(next_map->items, equipment);
-        }
-    }
-
-    TCOD_LIST_FOREACH(actor->items)
-    {
-        struct item *item = *iterator;
-        item->floor = actor->floor;
-        item->x = actor->x;
-        item->y = actor->y;
-        TCOD_list_remove(map->items, item);
-        TCOD_list_push(next_map->items, item);
-    }
 
     if (!with_leader)
     {
@@ -797,7 +727,7 @@ bool actor_ascend(struct actor *actor, bool with_leader)
             struct actor *other = *iterator;
             if (other && other->leader == actor)
             {
-                // actor_ascend(other, true);
+                actor_ascend(other, true, &iterator);
             }
         }
     }
@@ -807,7 +737,7 @@ bool actor_ascend(struct actor *actor, bool with_leader)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s ascends",
+        "%s ascends.",
         actor->name);
 
     return true;
@@ -829,7 +759,7 @@ bool actor_open_chest(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_orange,
-            "%s opens the chest",
+            "%s opens the chest.",
             actor->name);
 
         return true;
@@ -840,7 +770,7 @@ bool actor_open_chest(struct actor *actor, int x, int y)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't open the chest",
+        "%s can't open the chest.",
         actor->name);
 
     return false;
@@ -862,7 +792,7 @@ bool actor_pray(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_orange,
-            "%s prays at the altar",
+            "%s prays at the altar.",
             actor->name);
 
         return true;
@@ -873,7 +803,7 @@ bool actor_pray(struct actor *actor, int x, int y)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't pray here",
+        "%s can't pray here.",
         actor->name);
 
     return false;
@@ -902,7 +832,7 @@ bool actor_drink(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_orange,
-            "%s drinks from the fountain, restoring %d health",
+            "%s drinks from the fountain, restoring %d health.",
             actor->name,
             hp);
 
@@ -914,7 +844,7 @@ bool actor_drink(struct actor *actor, int x, int y)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s can't drink here",
+        "%s can't drink here.",
         actor->name);
 
     return false;
@@ -936,7 +866,7 @@ bool actor_sit(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_orange,
-            "%s sits on the throne",
+            "%s sits on the throne.",
             actor->name);
 
         return true;
@@ -969,7 +899,7 @@ bool actor_grab(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s cannot find anything to pick up",
+            "%s cannot find anything to pick up.",
             actor->name);
 
         return false;
@@ -982,7 +912,7 @@ bool actor_grab(struct actor *actor, int x, int y)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s is carrying too many items",
+            "%s is carrying too many items.",
             actor->name);
 
         return false;
@@ -993,13 +923,14 @@ bool actor_grab(struct actor *actor, int x, int y)
     item->x = actor->x;
     item->y = actor->y;
     TCOD_list_push(actor->items, item);
+    TCOD_list_remove(map->items, item);
 
     world_log(
         actor->floor,
         actor->x,
         actor->y,
         TCOD_white,
-        "%s picks up %s",
+        "%s picks up %s.",
         actor->name,
         item_datum[item->type].name);
 
@@ -1014,6 +945,7 @@ bool actor_drop(struct actor *actor, struct item *item)
     item->x = actor->x;
     item->y = actor->y;
     TCOD_list_push(tile->items, item);
+    TCOD_list_push(map->items, item);
     TCOD_list_remove(actor->items, item);
 
     world_log(
@@ -1021,7 +953,7 @@ bool actor_drop(struct actor *actor, struct item *item)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s drops %s",
+        "%s drops %s.",
         actor->name,
         item_datum[item->type].name);
 
@@ -1039,7 +971,7 @@ bool actor_equip(struct actor *actor, struct item *item)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s cannot equip %s",
+            "%s cannot equip %s.",
             actor->name,
             item_data.name);
 
@@ -1073,7 +1005,7 @@ bool actor_equip(struct actor *actor, struct item *item)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s equips %s",
+        "%s equips %s.",
         actor->name,
         item_data.name);
 
@@ -1090,7 +1022,7 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s is not equipping anything their %s slot",
+            "%s is not equipping anything their %s slot.",
             actor->name,
             equip_slot_datum[equip_slot].name);
 
@@ -1105,7 +1037,7 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s unequips %s",
+        "%s unequips %s.",
         actor->name,
         item_datum[equipment->type].name);
 
@@ -1122,7 +1054,7 @@ bool actor_quaff(struct actor *actor, struct item *item)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s cannot quaff %s",
+            "%s cannot quaff %s.",
             actor->name,
             item_data.name);
 
@@ -1144,14 +1076,17 @@ bool actor_quaff(struct actor *actor, struct item *item)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s quaffs %s",
+        "%s quaffs %s.",
         actor->name,
         item_data.name);
 
-    struct map *map = &world->maps[actor->floor];
-    TCOD_list_remove(map->items, item);
-    TCOD_list_remove(actor->items, item);
-    item_delete(item);
+    item->current_stack--;
+    if (item->current_stack <= 0)
+    {
+        struct map *map = &world->maps[actor->floor];
+        TCOD_list_remove(actor->items, item);
+        item_delete(item);
+    }
 
     return true;
 }
@@ -1166,7 +1101,7 @@ bool actor_bash(struct actor *actor, struct object *object)
             actor->x,
             actor->y,
             TCOD_white,
-            "%s cannot destroy the %s",
+            "%s cannot destroy the %s.",
             actor->name,
             object_data.name);
 
@@ -1184,7 +1119,7 @@ bool actor_bash(struct actor *actor, struct object *object)
         actor->x,
         actor->y,
         TCOD_white,
-        "%s destroys the %s",
+        "%s destroys the %s.",
         actor->name,
         object_data.name);
 
@@ -1255,8 +1190,8 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
     if (ammunition->current_stack <= 0)
     {
         struct map *map = &world->maps[ammunition->floor];
-        TCOD_list_remove(map->items, ammunition);
         TCOD_list_remove(actor->items, ammunition);
+        actor->equipment[EQUIP_SLOT_AMMUNITION] = NULL;
         item_delete(ammunition);
     }
 
@@ -1290,7 +1225,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
         min_damage = item_data.min_damage;
         max_damage = item_data.max_damage;
     }
-    int damage = TCOD_random_get_int(NULL, min_damage, max_damage);
+    int damage = TCOD_random_get_int(world->random, min_damage, max_damage);
     struct item *armor = other->equipment[EQUIP_SLOT_ARMOR];
     if (armor)
     {
@@ -1305,7 +1240,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     if (shield)
     {
         struct item_data item_data = item_datum[shield->type];
-        if (TCOD_random_get_float(NULL, 0.0f, 1.0f) <= item_data.block_chance)
+        if (TCOD_random_get_float(world->random, 0.0f, 1.0f) <= item_data.block_chance)
         {
             damage = 0;
         }
@@ -1316,7 +1251,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
         actor->x,
         actor->y,
         TCOD_white,
-        "%s hits %s for %d",
+        "%s hits %s for %d.",
         actor->name,
         other->name,
         damage);
@@ -1347,12 +1282,12 @@ void actor_die(struct actor *actor, struct actor *killer)
         actor->x,
         actor->y,
         TCOD_red,
-        "%s dies",
+        "%s dies.",
         actor->name);
 
     if (killer)
     {
-        int experience = TCOD_random_get_int(NULL, 50, 100) * actor->level;
+        int experience = TCOD_random_get_int(world->random, 50, 100) * actor->level;
         actor_give_experience(killer, experience);
     }
 
@@ -1363,6 +1298,6 @@ void actor_die(struct actor *actor, struct actor *killer)
             actor->x,
             actor->y,
             TCOD_green,
-            "Game over! Press 'ESC' to return to the menu");
+            "Game over! Press 'ESC' to return to the menu.");
     }
 }

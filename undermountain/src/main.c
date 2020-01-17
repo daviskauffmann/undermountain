@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <libtcod.h>
-
 #include "platform/config.h"
 #include "platform/platform.h"
 
@@ -20,7 +18,6 @@ int main(int argc, char *argv[])
         if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0)
         {
             printf("%s %s\n", TITLE, VERSION);
-            printf("%s\n", TCOD_STRVERSIONNAME);
         }
     }
 

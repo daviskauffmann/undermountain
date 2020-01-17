@@ -8,6 +8,7 @@
 #include "projectile.h"
 #include "room.h"
 #include "util.h"
+#include "world.h"
 
 #define MAP_ALGORITHM_CUSTOM 0
 #define MAP_ALGORITHM_BSP 1
@@ -192,10 +193,10 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
             maxy--;
         }
 #if BSP_RANDOM_ROOMS
-        minx = TCOD_random_get_int(NULL, minx, maxx - BSP_MIN_ROOM_SIZE + 1);
-        miny = TCOD_random_get_int(NULL, miny, maxy - BSP_MIN_ROOM_SIZE + 1);
-        maxx = TCOD_random_get_int(NULL, minx + BSP_MIN_ROOM_SIZE - 1, maxx);
-        maxy = TCOD_random_get_int(NULL, miny + BSP_MIN_ROOM_SIZE - 1, maxy);
+        minx = TCOD_random_get_int(world->random, minx, maxx - BSP_MIN_ROOM_SIZE + 1);
+        miny = TCOD_random_get_int(world->random, miny, maxy - BSP_MIN_ROOM_SIZE + 1);
+        maxx = TCOD_random_get_int(world->random, minx + BSP_MIN_ROOM_SIZE - 1, maxx);
+        maxy = TCOD_random_get_int(world->random, miny + BSP_MIN_ROOM_SIZE - 1, maxy);
 #endif
         node->x = minx;
         node->y = miny;
@@ -223,9 +224,9 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
         {
             if (left->x + left->w - 1 < right->x || right->x + right->w - 1 < left->x)
             {
-                int x1 = TCOD_random_get_int(NULL, left->x, left->x + left->w - 1);
-                int x2 = TCOD_random_get_int(NULL, right->x, right->x + right->w - 1);
-                int y = TCOD_random_get_int(NULL, left->y + left->h, right->y);
+                int x1 = TCOD_random_get_int(world->random, left->x, left->x + left->w - 1);
+                int x2 = TCOD_random_get_int(world->random, right->x, right->x + right->w - 1);
+                int y = TCOD_random_get_int(world->random, left->y + left->h, right->y);
                 vline_up(map, x1, y - 1);
                 hline(map, x1, y, x2);
                 vline_down(map, x2, y + 1);
@@ -234,7 +235,7 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
             {
                 int minx = MAX(left->x, right->x);
                 int maxx = MIN(left->x + left->w - 1, right->x + right->w - 1);
-                int x = TCOD_random_get_int(NULL, minx, maxx);
+                int x = TCOD_random_get_int(world->random, minx, maxx);
                 vline_down(map, x, right->y);
                 vline_up(map, x, right->y - 1);
             }
@@ -243,9 +244,9 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
         {
             if (left->y + left->h - 1 < right->y || right->y + right->h - 1 < left->y)
             {
-                int y1 = TCOD_random_get_int(NULL, left->y, left->y + left->h - 1);
-                int y2 = TCOD_random_get_int(NULL, right->y, right->y + right->h - 1);
-                int x = TCOD_random_get_int(NULL, left->x + left->w, right->x);
+                int y1 = TCOD_random_get_int(world->random, left->y, left->y + left->h - 1);
+                int y2 = TCOD_random_get_int(world->random, right->y, right->y + right->h - 1);
+                int x = TCOD_random_get_int(world->random, left->x + left->w, right->x);
                 hline_left(map, x - 1, y1);
                 vline(map, x, y1, y2);
                 hline_right(map, x + 1, y2);
@@ -254,7 +255,7 @@ static bool traverse_node(TCOD_bsp_t *node, struct map *map)
             {
                 int miny = MAX(left->y, right->y);
                 int maxy = MIN(left->y + left->h - 1, right->y + right->h - 1);
-                int y = TCOD_random_get_int(NULL, miny, maxy);
+                int y = TCOD_random_get_int(world->random, miny, maxy);
                 hline_left(map, right->x - 1, y);
                 hline_right(map, right->x, y);
             }
@@ -278,10 +279,10 @@ void map_generate(struct map *map)
 #if MAP_ALGORITHM == MAP_ALGORITHM_CUSTOM
     for (int i = 0; i < CUSTOM_NUM_ROOM_ATTEMPTS; i++)
     {
-        int room_x = TCOD_random_get_int(NULL, 0, MAP_WIDTH);
-        int room_y = TCOD_random_get_int(NULL, 0, MAP_HEIGHT);
-        int room_w = TCOD_random_get_int(NULL, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE);
-        int room_h = TCOD_random_get_int(NULL, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE);
+        int room_x = TCOD_random_get_int(world->random, 0, MAP_WIDTH);
+        int room_y = TCOD_random_get_int(world->random, 0, MAP_HEIGHT);
+        int room_w = TCOD_random_get_int(world->random, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE);
+        int room_h = TCOD_random_get_int(world->random, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE);
         if (room_x < 2 ||
             room_x + room_w > MAP_WIDTH - 2 ||
             room_y < 2 ||
@@ -290,7 +291,7 @@ void map_generate(struct map *map)
             continue;
         }
 
-        if (TCOD_random_get_float(NULL, 0, 1) < CUSTOM_PREVENT_OVERLAP_CHANCE)
+        if (TCOD_random_get_float(world->random, 0, 1) < CUSTOM_PREVENT_OVERLAP_CHANCE)
         {
             bool overlap = false;
             for (int x = room_x - 2; x < room_x + room_w + 2; x++)
@@ -329,7 +330,7 @@ void map_generate(struct map *map)
         struct room *next_room = TCOD_list_get(map->rooms, i + 1);
         room_get_random_pos(room, &x1, &y1);
         room_get_random_pos(next_room, &x2, &y2);
-        if (TCOD_random_get_int(NULL, 0, 1) == 0)
+        if (TCOD_random_get_int(world->random, 0, 1) == 0)
         {
             vline(map, x1, y1, y2);
             hline(map, x1, y2, x2);
@@ -388,7 +389,7 @@ void map_generate(struct map *map)
         {
             bool put_door = false;
             struct tile *tile = &map->tiles[x][y];
-            if (tile->type == TILE_TYPE_FLOOR && TCOD_random_get_float(NULL, 0, 1) < DOOR_CHANCE)
+            if (tile->type == TILE_TYPE_FLOOR && TCOD_random_get_float(world->random, 0, 1) < DOOR_CHANCE)
             {
                 if (map->tiles[x][y - 1].type == TILE_TYPE_FLOOR &&
                     map->tiles[x + 1][y - 1].type == TILE_TYPE_FLOOR &&
@@ -493,7 +494,7 @@ void map_generate(struct map *map)
         TCOD_color_t light_color = TCOD_white;
         float light_intensity = 0.0f;
         bool light_flicker = false;
-        switch (TCOD_random_get_int(NULL, 0, 4))
+        switch (TCOD_random_get_int(world->random, 0, 4))
         {
         case 0:
         {
@@ -507,15 +508,15 @@ void map_generate(struct map *map)
         case 1:
         {
             TCOD_color_t random_color = TCOD_color_RGB(
-                (unsigned char)TCOD_random_get_int(NULL, 0, 255),
-                (unsigned char)TCOD_random_get_int(NULL, 0, 255),
-                (unsigned char)TCOD_random_get_int(NULL, 0, 255));
+                (unsigned char)TCOD_random_get_int(world->random, 0, 255),
+                (unsigned char)TCOD_random_get_int(world->random, 0, 255),
+                (unsigned char)TCOD_random_get_int(world->random, 0, 255));
             type = OBJECT_TYPE_BRAZIER;
             color = random_color;
-            light_radius = TCOD_random_get_int(NULL, 5, 20);
+            light_radius = TCOD_random_get_int(world->random, 5, 20);
             light_color = random_color;
-            light_intensity = TCOD_random_get_float(NULL, 0.1f, 0.2f);
-            light_flicker = TCOD_random_get_int(NULL, 0, 1) == 0 ? true : false;
+            light_intensity = TCOD_random_get_float(world->random, 0.1f, 0.2f);
+            light_flicker = TCOD_random_get_int(world->random, 0, 1) == 0 ? true : false;
         }
         break;
         case 2:
@@ -560,13 +561,13 @@ void map_generate(struct map *map)
         {
             room_get_random_pos(room, &x, &y);
         } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
-        enum race race = TCOD_random_get_int(NULL, RACE_DWARF, RACE_HUMAN);
+        enum race race = TCOD_random_get_int(world->random, RACE_DWARF, RACE_HUMAN);
         char *name;
         switch (race)
         {
         case RACE_DWARF:
         {
-            if (TCOD_random_get_int(NULL, 0, 1) == 0)
+            if (TCOD_random_get_int(world->random, 0, 1) == 0)
             {
                 name = "dwarf male";
             }
@@ -578,7 +579,7 @@ void map_generate(struct map *map)
         break;
         default:
         {
-            if (TCOD_random_get_int(NULL, 0, 1) == 0)
+            if (TCOD_random_get_int(world->random, 0, 1) == 0)
             {
                 name = "standard male";
             }
@@ -592,7 +593,7 @@ void map_generate(struct map *map)
         struct actor *actor = actor_new(
             TCOD_namegen_generate(name, false),
             race,
-            TCOD_random_get_int(NULL, CLASS_MAGE, CLASS_WARRIOR),
+            TCOD_random_get_int(world->random, CLASS_MAGE, CLASS_WARRIOR),
             FACTION_GOOD,
             map->floor + 1,
             map->floor,
@@ -612,7 +613,7 @@ void map_generate(struct map *map)
         {
             room_get_random_pos(room, &x, &y);
         } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
-        enum monster monster = TCOD_random_get_int(NULL, 0, NUM_MONSTERS - 1);
+        enum monster monster = TCOD_random_get_int(world->random, 0, NUM_MONSTERS - 1);
         struct actor_prototype *monster_prototype = &monster_prototypes[monster];
         struct actor *actor = actor_new(
             monster_prototype->name,
@@ -630,10 +631,8 @@ void map_generate(struct map *map)
         if (monster == MONSTER_BUGBEAR)
         {
             struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
-            TCOD_list_push(map->items, longbow);
             actor->equipment[EQUIP_SLOT_MAIN_HAND] = longbow;
             struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, map->floor, x, y, 10);
-            TCOD_list_push(map->items, bodkin_arrow);
             actor->equipment[EQUIP_SLOT_AMMUNITION] = bodkin_arrow;
         }
     }
@@ -647,7 +646,7 @@ void map_generate(struct map *map)
             room_get_random_pos(room, &x, &y);
         } while (map->tiles[x][y].object != NULL);
         struct item *item = item_new(
-            TCOD_random_get_int(NULL, 0, NUM_ITEM_TYPES - 1),
+            TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1),
             map->floor,
             x,
             y,
@@ -665,7 +664,7 @@ bool map_is_inside(int x, int y)
 
 struct room *map_get_random_room(struct map *map)
 {
-    return TCOD_list_get(map->rooms, TCOD_random_get_int(NULL, 0, TCOD_list_size(map->rooms) - 1));
+    return TCOD_list_get(map->rooms, TCOD_random_get_int(world->random, 0, TCOD_list_size(map->rooms) - 1));
 }
 
 bool map_is_transparent(struct map *map, int x, int y)

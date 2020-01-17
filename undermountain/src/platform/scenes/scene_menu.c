@@ -1,5 +1,6 @@
 #include "scene_menu.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include <libtcod.h>

@@ -17,6 +17,8 @@ enum world_state
 struct world
 {
     enum world_state state;
+    unsigned int seed;
+    TCOD_random_t random;
     struct map maps[NUM_MAPS];
     TCOD_list_t messages;
     struct actor *player;

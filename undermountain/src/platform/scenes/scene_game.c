@@ -468,6 +468,16 @@ static bool toolip_option_on_click_move(void)
     return false;
 }
 
+static bool toolip_option_on_click_equip(void)
+{
+    return actor_equip(world->player, tooltip_data.item);
+}
+
+static bool toolip_option_on_click_unequip(void)
+{
+    return actor_unequip(world->player, tooltip_data.equip_slot);
+}
+
 static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
     mouse_x = mouse.cx;
@@ -758,7 +768,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    took_turn = actor_ascend(world->player, false);
+                    took_turn = actor_ascend(world->player, false, NULL);
                 }
             }
             break;
@@ -766,7 +776,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    took_turn = actor_descend(world->player, false);
+                    took_turn = actor_descend(world->player, false, NULL);
                 }
             }
             break;
@@ -790,8 +800,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose a direction, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -805,8 +815,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose a direction, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -822,8 +832,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose an item to drop, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose an item to drop. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -839,8 +849,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose an item to equip, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose an item to equip. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -922,8 +932,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose a direction, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -937,8 +947,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose a direction, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -952,8 +962,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose a direction, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -970,8 +980,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose an item to quaff, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose an item to quaff. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -985,8 +995,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose a direction, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -1011,8 +1021,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose an item to unequip, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose an item to unequip. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -1026,8 +1036,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     world->player->floor,
                     world->player->x,
                     world->player->y,
-                    TCOD_white,
-                    "Choose an item to examine, ESC to cancel");
+                    TCOD_yellow,
+                    "Choose an item to examine. Press 'ESC' to cancel.");
             }
             break;
             case 'x':
@@ -1042,8 +1052,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_white,
-                        "Choose an equipment to examine, ESC to cancel");
+                        TCOD_yellow,
+                        "Choose an equipment to examine. Press 'ESC' to cancel.");
                 }
                 else
                 {
@@ -1223,7 +1233,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         struct item_data item_data = item_datum[item->type];
                         if (item_data.equip_slot != EQUIP_SLOT_NONE)
                         {
-                            tooltip_options_add("Equip", NULL);
+                            tooltip_options_add("Equip", &toolip_option_on_click_equip);
                         }
                         if (item_data.quaffable)
                         {
@@ -1245,7 +1255,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         if (equipment)
                         {
                             tooltip_show();
-                            tooltip_options_add("Unequip", NULL);
+                            tooltip_options_add("Unequip", &toolip_option_on_click_unequip);
                             tooltip_data.equip_slot = equip_slot;
                             tooltip_options_add("Cancel", NULL);
                         }
@@ -1660,7 +1670,8 @@ static void render(TCOD_console_t console)
                         view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
-                        "%s (dead)",
+                        "Lv.%d %s (dead)",
+                        corpse->level,
                         corpse->name);
 
                     goto done;
@@ -1843,7 +1854,7 @@ static void render(TCOD_console_t console)
                             panel_rect.console,
                             1,
                             y++ - current_panel_status->scroll,
-                            equipment->current_stack > 1 ? "%s: %s (%d)" : "%s: %s", 
+                            equipment->current_stack > 1 ? "%s: %s (%d)" : "%s: %s",
                             equip_slot_data.label,
                             item_data.name,
                             equipment->current_stack);

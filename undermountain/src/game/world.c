@@ -6,15 +6,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "actor.h"
 #include "message.h"
 #include "object.h"
 #include "projectile.h"
 #include "util.h"
-
-// TODO: items and equipment that are inside inventories have their positions painstakingly updated when their carrier moves
-// is this necessary?
 
 // TODO: there is a lot of repetition of things with light properties
 // pack them into a light struct?
@@ -33,7 +31,7 @@
 // calculate whether the player can hear and identify the sound and put it in the log if so
 // sound "reflection"?
 
-// TOOD: redo map generation
+// TODO: redo map generation
 // no need for overworld map, world will start on the first dungeon
 // we need to define a win condition for the world, probably just grabbing an amulet or something and returning to the entrance?
 // ascending the first floor stairs will end the world
@@ -53,8 +51,6 @@
 // if we have a small number of maps, this might not be a problem
 // might interfere with the above todo
 
-// TODO: have different TCOD_random_t instances for different things
-
 // TODO: stop using TCOD_list_t for things that maps store
 // a dynamically growing contiguous array would be a lot better
 // linked lists are faster for insertion/deletion, but that happens very rarely in games compared to traversal/random access
@@ -68,6 +64,8 @@ void world_init(void)
     world = malloc(sizeof(struct world));
     assert(world);
     world->state = WORLD_STATE_PLAY;
+    world->seed = 0;
+    world->random = NULL;
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
@@ -91,6 +89,7 @@ void world_quit(void)
         struct map *map = &world->maps[i];
         map_reset(map);
     }
+    TCOD_random_delete(world->random);
     free(world);
     world = NULL;
 }
@@ -98,6 +97,10 @@ void world_quit(void)
 // TODO: this should accept an actor which will become the player, presumably passed from a character creation menu
 void world_new(void)
 {
+    world->seed = (unsigned int)time(0);
+    world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, world->seed);
+    printf("World seed is %d.\n", world->seed);
+
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
@@ -120,31 +123,22 @@ void world_new(void)
             struct tile *tile = &map->tiles[x][y];
             tile->actor = player;
             struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, floor, x, y, 50);
-            TCOD_list_push(map->items, bodkin_arrow);
             TCOD_list_push(player->items, bodkin_arrow);
             struct item *bolt = item_new(ITEM_TYPE_BOLT, floor, x, y, 50);
-            TCOD_list_push(map->items, bolt);
             TCOD_list_push(player->items, bolt);
             struct item *crossbow = item_new(ITEM_TYPE_CROSSBOW, floor, x, y, 1);
-            TCOD_list_push(map->items, crossbow);
             TCOD_list_push(player->items, crossbow);
             struct item *iron_armor = item_new(ITEM_TYPE_IRON_ARMOR, floor, x, y, 1);
-            TCOD_list_push(map->items, iron_armor);
             TCOD_list_push(player->items, iron_armor);
             struct item *greatsword = item_new(ITEM_TYPE_GREATSWORD, floor, x, y, 1);
-            TCOD_list_push(map->items, greatsword);
             TCOD_list_push(player->items, greatsword);
             struct item *longsword = item_new(ITEM_TYPE_LONGSWORD, floor, x, y, 1);
-            TCOD_list_push(map->items, longsword);
             TCOD_list_push(player->items, longsword);
             struct item *longbow = item_new(ITEM_TYPE_LONGBOW, floor, x, y, 1);
-            TCOD_list_push(map->items, longbow);
             TCOD_list_push(player->items, longbow);
             struct item *kite_shield = item_new(ITEM_TYPE_KITE_SHIELD, floor, x, y, 1);
-            TCOD_list_push(map->items, kite_shield);
             TCOD_list_push(player->items, kite_shield);
-            struct item *healing_potion = item_new(ITEM_TYPE_HEALING_POTION, floor, x, y, 1);
-            TCOD_list_push(map->items, healing_potion);
+            struct item *healing_potion = item_new(ITEM_TYPE_HEALING_POTION, floor, x, y, 10);
             TCOD_list_push(player->items, healing_potion);
 
             world_log(
@@ -177,7 +171,7 @@ void world_save(const char *filename)
     TCOD_zip_save_to_file(zip, filename);
     // TODO: save world to zip
     TCOD_zip_delete(zip);
-    printf("World saved\n");
+    printf("World saved.\n");
 }
 
 void world_load(const char *filename)
@@ -187,7 +181,7 @@ void world_load(const char *filename)
     // TODO: load world from zip
     TCOD_zip_delete(zip);
     world_new(); // DEBUG: just start a new world
-    printf("World loaded\n");
+    printf("World loaded.\n");
 }
 
 void world_update(void)
@@ -277,14 +271,14 @@ void world_turn(void)
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
-        actor_calc_fov(actor);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-		if (actor != world->player) {
-			actor_ai(actor);
-		}
+        if (!actor->dead)
+        {
+            actor_calc_fov(actor);
+            if (actor != world->player)
+            {
+                actor_ai(actor);
+            }
+        }
     }
     if (world->player->dead)
     {

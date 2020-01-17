@@ -20,8 +20,7 @@ int platform_run(void)
     TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
     if (TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer) != 0)
     {
-        printf("Error: Couldn't initialize root console\n%s\n", TCOD_get_error());
-
+        printf("Error: Couldn't initialize root console.\n%s\n", TCOD_get_error());
         return 1;
     }
 
@@ -44,7 +43,6 @@ int platform_run(void)
                 if (key.lalt)
                 {
                     fullscreen = !fullscreen;
-
                     TCOD_console_set_fullscreen(fullscreen);
                 }
             }

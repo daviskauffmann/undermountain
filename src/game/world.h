@@ -32,7 +32,7 @@ void world_quit(void);
 void world_new(void);
 void world_save(const char *filename);
 void world_load(const char *filename);
-void world_update(void);
+void world_update(float delta_time);
 void world_turn(void);
 void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...);
 

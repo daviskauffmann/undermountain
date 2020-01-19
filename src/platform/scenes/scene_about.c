@@ -48,7 +48,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     return &about_scene;
 }
 
-static struct scene *update(float delta)
+static struct scene *update(float delta_time)
 {
     return &about_scene;
 }

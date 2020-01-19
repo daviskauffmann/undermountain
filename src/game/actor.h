@@ -119,7 +119,7 @@ struct actor
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
 void actor_delete(struct actor *actor);
 int actor_calc_experience_to_level(int level);
-void actor_update_flash(struct actor *actor);
+void actor_update_flash(struct actor *actor, float delta_time);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);

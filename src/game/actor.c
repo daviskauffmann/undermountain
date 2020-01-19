@@ -10,8 +10,9 @@
 #include "assets.h"
 #include "item.h"
 #include "projectile.h"
-#include "world.h"
+#include "room.h"
 #include "util.h"
+#include "world.h"
 
 // TODO: actors should ascend/descend with their leader
 
@@ -78,13 +79,13 @@ int actor_calc_experience_to_level(int level)
     return level * (level - 1) / 2 * 1000;
 }
 
-void actor_update_flash(struct actor *actor)
+void actor_update_flash(struct actor *actor, float delta_time)
 {
     if (actor->flash_fade_coef > 0)
     {
         // TODO: slower/faster fade depending on circumstances
         // TODO: different fade functions such as sin
-        actor->flash_fade_coef -= 4.0f * TCOD_sys_get_last_frame_length();
+        actor->flash_fade_coef -= 4.0f * delta_time;
 
         // world->state == WORLD_STATE_WAIT;
     }
@@ -464,6 +465,20 @@ bool actor_move(struct actor *actor, int x, int y)
             return actor_sit(actor, x, y);
         }
         break;
+        case OBJECT_TYPE_TRAP:
+        {
+            // TODO: trap effects
+            tile->object->destroyed = true;
+
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s triggers a trap!",
+                actor->name);
+        }
+        break;
         default:
             break;
         }
@@ -756,6 +771,9 @@ bool actor_open_chest(struct actor *actor, int x, int y)
     struct tile *tile = &map->tiles[x][y];
     if (tile->object && tile->object->type == OBJECT_TYPE_CHEST)
     {
+        // TODO: give item
+        tile->object->destroyed = true;
+
         world_log(
             actor->floor,
             actor->x,

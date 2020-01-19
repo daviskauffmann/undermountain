@@ -118,8 +118,9 @@ void assets_load(void)
     OBJECT_DATA(OBJECT_TYPE_STAIR_DOWN, "Stair Down", '>', true, true);
     OBJECT_DATA(OBJECT_TYPE_STAIR_UP, "Stair Up", '<', true, true);
     OBJECT_DATA(OBJECT_TYPE_THRONE, "Throne", '\\', true, false);
+    OBJECT_DATA(OBJECT_TYPE_TRAP, "Trap", '^', true, true);
 
-    ACTOR_COMMON(10, 5, TCOD_white, 0.05f, 10, TCOD_light_amber, 0.25f);
+    ACTOR_COMMON(10, 5, TCOD_white, 0.1f, 10, TCOD_light_amber, 0.25f);
 
     RACE_DATA(RACE_HUMAN, "Human", '@');
     RACE_DATA(RACE_DWARF, "Dwarf", '@');

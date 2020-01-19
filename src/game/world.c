@@ -23,8 +23,12 @@
 // pathfinding takes a while
 
 // TODO: traps
+// traps should be invisible (unless the actor can see them though skills or magic)
+// different trap types
 
 // TOOD: chests
+// should chests just give items and disappear?
+// or maybe they should be containers that actors can store items in
 
 // TODO: sound and sound propogation
 // play "sounds" in the game such as footsteps and monster noises
@@ -184,7 +188,7 @@ void world_load(const char *filename)
     printf("World loaded.\n");
 }
 
-void world_update(void)
+void world_update(float delta_time)
 {
     world->state = world->player->dead ? WORLD_STATE_LOSE : WORLD_STATE_PLAY;
 
@@ -230,7 +234,7 @@ void world_update(void)
             }
             continue;
         }
-        actor_update_flash(actor);
+        actor_update_flash(actor, delta_time);
     }
     TCOD_LIST_FOREACH(map->projectiles)
     {

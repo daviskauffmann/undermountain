@@ -66,8 +66,6 @@ int platform_run(void)
             break;
         }
 
-        TCOD_console_set_default_background(NULL, TCOD_black);
-        TCOD_console_set_default_foreground(NULL, TCOD_white);
         TCOD_console_clear(NULL);
         scene->render(NULL);
         TCOD_console_flush();

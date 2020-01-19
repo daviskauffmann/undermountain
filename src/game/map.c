@@ -166,8 +166,10 @@ static void vline_down(struct map *map, int x, int y)
     }
 }
 
-static bool traverse_node(TCOD_bsp_t *node, struct map *map)
+static bool traverse_node(TCOD_bsp_t *node, void *data)
 {
+    struct map *map = (struct map *)data;
+
     if (TCOD_bsp_is_leaf(node))
     {
         int minx = node->x + 1;
@@ -494,7 +496,7 @@ void map_generate(struct map *map)
         TCOD_color_t light_color = TCOD_white;
         float light_intensity = 0.0f;
         bool light_flicker = false;
-        switch (TCOD_random_get_int(world->random, 0, 4))
+        switch (TCOD_random_get_int(world->random, 0, 5))
         {
         case 0:
         {
@@ -535,6 +537,11 @@ void map_generate(struct map *map)
         {
             type = OBJECT_TYPE_THRONE;
             color = TCOD_yellow;
+        }
+        break;
+        case 5:
+        {
+            type = OBJECT_TYPE_TRAP;
         }
         break;
         default:

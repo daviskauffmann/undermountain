@@ -145,7 +145,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     return &menu_scene;
 }
 
-static struct scene *update(float delta)
+static struct scene *update(float delta_time)
 {
     return &menu_scene;
 }

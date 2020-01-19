@@ -1,2 +1,4 @@
-bin/main.exe
+bin
+build
+
 save.gz

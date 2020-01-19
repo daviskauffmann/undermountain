@@ -512,6 +512,13 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                     panel_state[panel].selection_mode = false;
                 }
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Action cancelled.");
             }
             else if (panel_rect.visible)
             {
@@ -1002,6 +1009,15 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
             }
             break;
+            case 'T':
+            {
+                if (world->state == WORLD_STATE_PLAY)
+                {
+                    world->player->glow = !world->player->glow;
+                    took_turn = true;
+                }
+                break;
+            }
             case 't':
             {
                 if (world->state == WORLD_STATE_PLAY)
@@ -1318,7 +1334,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     return &game_scene;
 }
 
-static struct scene *update(float delta)
+static struct scene *update(float delta_time)
 {
     message_log_rect.x = 0;
     message_log_rect.height = console_height / 4;
@@ -1363,7 +1379,7 @@ static struct scene *update(float delta)
         view_y = 0;
     }
 
-    world_update();
+    world_update(delta_time);
     if (took_turn)
     {
         world_turn();
@@ -1379,6 +1395,13 @@ static struct scene *update(float delta)
 
 static void render(TCOD_console_t console)
 {
+    TCOD_console_set_default_background(
+        console,
+        TCOD_color_multiply_scalar(
+            tile_common.ambient_color,
+            tile_common.ambient_intensity));
+    TCOD_console_set_default_foreground(console, TCOD_white);
+
     struct map *map = &world->maps[world->player->floor];
 
     {

@@ -8,7 +8,7 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "command": "make",
+            "command": "make"
         },
         {
             "label": "Build & Run",
@@ -21,6 +21,15 @@
             "args": [
                 "run"
             ]
-        }
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "group": "build",
+            "command": "make",
+            "args": [
+                "clean"
+            ]
+        },
     ]
 }

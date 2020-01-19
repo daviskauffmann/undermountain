@@ -12,6 +12,7 @@
 #include "message.h"
 #include "object.h"
 #include "projectile.h"
+#include "room.h"
 #include "util.h"
 
 // TODO: there is a lot of repetition of things with light properties
@@ -55,12 +56,6 @@
 // if we have a small number of maps, this might not be a problem
 // might interfere with the above todo
 
-// TODO: stop using TCOD_list_t for things that maps store
-// a dynamically growing contiguous array would be a lot better
-// linked lists are faster for insertion/deletion, but that happens very rarely in games compared to traversal/random access
-// that way, the CPU cache will be more efficiently used when looping over stuff in maps
-// the lists of pointers that tiles store could probably stay the way it is, since it contains pointers that would be spread out in memory anyways
-
 struct world *world;
 
 void world_init(void)
@@ -99,11 +94,11 @@ void world_quit(void)
 }
 
 // TODO: this should accept an actor which will become the player, presumably passed from a character creation menu
-void world_new(void)
+void world_create(void)
 {
     world->seed = (unsigned int)time(0);
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, world->seed);
-    printf("World seed is %d.\n", world->seed);
+    printf("World created with seed %d.\n", world->seed);
 
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -167,13 +162,199 @@ void world_new(void)
             tile->actor = pet;
         }
     }
+
+    struct map *map = &world->maps[world->player->floor];
+    TCOD_LIST_FOREACH(map->objects)
+    {
+        struct object *object = *iterator;
+        object_calc_light(object);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_light(actor);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_fov(actor);
+    }
 }
 
 void world_save(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
+    TCOD_zip_put_int(zip, world->state);
+    TCOD_zip_put_int(zip, world->seed);
+    // TODO: save random state
+    TCOD_zip_put_int(zip, world->turn);
+    int player_map = -1;
+    int player_index = -1;
+    for (int floor = 0; floor < NUM_MAPS; floor++)
+    {
+        struct map *map = &world->maps[floor];
+        TCOD_zip_put_int(zip, map->stair_down_x);
+        TCOD_zip_put_int(zip, map->stair_down_y);
+        TCOD_zip_put_int(zip, map->stair_up_x);
+        TCOD_zip_put_int(zip, map->stair_up_x);
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            for (int y = 0; y < MAP_HEIGHT; y++)
+            {
+                struct tile *tile = &map->tiles[x][y];
+                TCOD_zip_put_int(zip, tile->type);
+                TCOD_zip_put_int(zip, tile->seen);
+            }
+        }
+        TCOD_zip_put_int(zip, TCOD_list_size(map->rooms));
+        TCOD_LIST_FOREACH(map->rooms)
+        {
+            struct room *room = *iterator;
+            TCOD_zip_put_int(zip, room->x);
+            TCOD_zip_put_int(zip, room->y);
+            TCOD_zip_put_int(zip, room->w);
+            TCOD_zip_put_int(zip, room->h);
+        }
+        TCOD_zip_put_int(zip, TCOD_list_size(map->objects));
+        TCOD_LIST_FOREACH(map->objects)
+        {
+            struct object *object = *iterator;
+            TCOD_zip_put_int(zip, object->type);
+            TCOD_zip_put_int(zip, object->x);
+            TCOD_zip_put_int(zip, object->y);
+            TCOD_zip_put_color(zip, object->color);
+            TCOD_zip_put_int(zip, object->light_radius);
+            TCOD_zip_put_color(zip, object->light_color);
+            TCOD_zip_put_float(zip, object->light_intensity);
+            TCOD_zip_put_int(zip, object->light_flicker);
+            TCOD_zip_put_int(zip, object->destroyed);
+        }
+        TCOD_zip_put_int(zip, TCOD_list_size(map->actors));
+        int index = 0;
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *actor = *iterator;
+            TCOD_zip_put_string(zip, actor->name);
+            TCOD_zip_put_int(zip, actor->race);
+            TCOD_zip_put_int(zip, actor->class);
+            TCOD_zip_put_int(zip, actor->faction);
+            TCOD_zip_put_int(zip, actor->level);
+            TCOD_zip_put_int(zip, actor->experience);
+            TCOD_zip_put_int(zip, actor->max_hp);
+            TCOD_zip_put_int(zip, actor->current_hp);
+            for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            {
+                struct item *item = actor->equipment[equip_slot];
+                if (item)
+                {
+                    TCOD_zip_put_int(zip, 1);
+                    TCOD_zip_put_int(zip, item->type);
+                    TCOD_zip_put_int(zip, item->x);
+                    TCOD_zip_put_int(zip, item->y);
+                    TCOD_zip_put_int(zip, item->current_durability);
+                    TCOD_zip_put_int(zip, item->current_stack);
+                }
+                else
+                {
+                    TCOD_zip_put_int(zip, 0);
+                }
+            }
+            TCOD_zip_put_int(zip, TCOD_list_size(actor->items));
+            TCOD_LIST_FOREACH(actor->items)
+            {
+                struct item *item = *iterator;
+                TCOD_zip_put_int(zip, item->type);
+                TCOD_zip_put_int(zip, item->x);
+                TCOD_zip_put_int(zip, item->y);
+                TCOD_zip_put_int(zip, item->current_durability);
+                TCOD_zip_put_int(zip, item->current_stack);
+            }
+            TCOD_zip_put_int(zip, actor->x);
+            TCOD_zip_put_int(zip, actor->y);
+            TCOD_zip_put_int(zip, actor->last_seen_x);
+            TCOD_zip_put_int(zip, actor->last_seen_y);
+            TCOD_zip_put_int(zip, actor->turns_chased);
+            // TODO: save leader
+            TCOD_zip_put_int(zip, actor->glow);
+            TCOD_zip_put_int(zip, actor->torch);
+            TCOD_zip_put_color(zip, actor->flash_color);
+            TCOD_zip_put_float(zip, actor->flash_fade_coef);
+            TCOD_zip_put_int(zip, actor->dead);
+
+            // remember where the player is in the array
+            if (actor == world->player)
+            {
+                player_map = floor;
+                player_index = index;
+            }
+            index++;
+        }
+        TCOD_zip_put_int(zip, TCOD_list_size(map->corpses));
+        TCOD_LIST_FOREACH(map->corpses)
+        {
+            struct actor *corpse = *iterator;
+            TCOD_zip_put_string(zip, corpse->name);
+            TCOD_zip_put_int(zip, corpse->race);
+            TCOD_zip_put_int(zip, corpse->class);
+            TCOD_zip_put_int(zip, corpse->faction);
+            TCOD_zip_put_int(zip, corpse->level);
+            TCOD_zip_put_int(zip, corpse->experience);
+            TCOD_zip_put_int(zip, corpse->max_hp);
+            TCOD_zip_put_int(zip, corpse->current_hp);
+            for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            {
+                struct item *item = corpse->equipment[equip_slot];
+                if (item)
+                {
+                    TCOD_zip_put_int(zip, 1);
+                    TCOD_zip_put_int(zip, item->type);
+                    TCOD_zip_put_int(zip, item->x);
+                    TCOD_zip_put_int(zip, item->y);
+                    TCOD_zip_put_int(zip, item->current_durability);
+                    TCOD_zip_put_int(zip, item->current_stack);
+                }
+                else
+                {
+                    TCOD_zip_put_int(zip, 0);
+                }
+            }
+            TCOD_zip_put_int(zip, TCOD_list_size(corpse->items));
+            TCOD_LIST_FOREACH(corpse->items)
+            {
+                struct item *item = *iterator;
+                TCOD_zip_put_int(zip, item->type);
+                TCOD_zip_put_int(zip, item->x);
+                TCOD_zip_put_int(zip, item->y);
+                TCOD_zip_put_int(zip, item->current_durability);
+                TCOD_zip_put_int(zip, item->current_stack);
+            }
+            TCOD_zip_put_int(zip, corpse->x);
+            TCOD_zip_put_int(zip, corpse->y);
+            TCOD_zip_put_int(zip, corpse->last_seen_x);
+            TCOD_zip_put_int(zip, corpse->last_seen_y);
+            TCOD_zip_put_int(zip, corpse->turns_chased);
+            // TODO: save leader
+            TCOD_zip_put_int(zip, corpse->glow);
+            TCOD_zip_put_int(zip, corpse->torch);
+            TCOD_zip_put_color(zip, corpse->flash_color);
+            TCOD_zip_put_float(zip, corpse->flash_fade_coef);
+            TCOD_zip_put_int(zip, corpse->dead);
+        }
+        TCOD_zip_put_int(zip, TCOD_list_size(map->items));
+        TCOD_LIST_FOREACH(map->items)
+        {
+            struct item *item = *iterator;
+            TCOD_zip_put_int(zip, item->type);
+            TCOD_zip_put_int(zip, item->x);
+            TCOD_zip_put_int(zip, item->y);
+            TCOD_zip_put_int(zip, item->current_durability);
+            TCOD_zip_put_int(zip, item->current_stack);
+        }
+        // TODO: save projectiles?
+    }
+    TCOD_zip_put_int(zip, player_map);
+    TCOD_zip_put_int(zip, player_index);
     TCOD_zip_save_to_file(zip, filename);
-    // TODO: save world to zip
     TCOD_zip_delete(zip);
     printf("World saved.\n");
 }
@@ -182,10 +363,243 @@ void world_load(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
     TCOD_zip_load_from_file(zip, filename);
-    // TODO: load world from zip
+    world->state = TCOD_zip_get_int(zip);
+    world->seed = TCOD_zip_get_int(zip);
+    // TODO: load random state
+    world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, world->seed);
+    world->turn = TCOD_zip_get_int(zip);
+    for (int floor = 0; floor < NUM_MAPS; floor++)
+    {
+        struct map *map = &world->maps[floor];
+        map->stair_down_x = TCOD_zip_get_int(zip);
+        map->stair_down_y = TCOD_zip_get_int(zip);
+        map->stair_up_x = TCOD_zip_get_int(zip);
+        map->stair_up_x = TCOD_zip_get_int(zip);
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            for (int y = 0; y < MAP_HEIGHT; y++)
+            {
+                struct tile *tile = &map->tiles[x][y];
+                tile->type = TCOD_zip_get_int(zip);
+                tile->seen = TCOD_zip_get_int(zip);
+            }
+        }
+        int num_rooms = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_rooms; i++)
+        {
+            int x = TCOD_zip_get_int(zip);
+            int y = TCOD_zip_get_int(zip);
+            int w = TCOD_zip_get_int(zip);
+            int h = TCOD_zip_get_int(zip);
+            struct room *room = room_new(x, y, w, h);
+            TCOD_list_push(map->rooms, room);
+        }
+        int num_objects = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_objects; i++)
+        {
+            enum object_type type = TCOD_zip_get_int(zip);
+            int x = TCOD_zip_get_int(zip);
+            int y = TCOD_zip_get_int(zip);
+            TCOD_color_t color = TCOD_zip_get_color(zip);
+            int light_radius = TCOD_zip_get_int(zip);
+            TCOD_color_t light_color = TCOD_zip_get_color(zip);
+            float light_intensity = TCOD_zip_get_float(zip);
+            bool light_flicker = TCOD_zip_get_int(zip);
+            bool destroyed = TCOD_zip_get_int(zip);
+            struct object *object = object_new(type, floor, x, y, color, light_radius, light_color, light_intensity, light_flicker);
+            object->destroyed = destroyed;
+            TCOD_list_push(map->objects, object);
+            struct tile *tile = &map->tiles[x][y];
+            tile->object = object;
+        }
+        int num_actors = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_actors; i++)
+        {
+            const char *name = TCOD_zip_get_string(zip);
+            int race = TCOD_zip_get_int(zip);
+            int class = TCOD_zip_get_int(zip);
+            int faction = TCOD_zip_get_int(zip);
+            int level = TCOD_zip_get_int(zip);
+            int experience = TCOD_zip_get_int(zip);
+            int max_hp = TCOD_zip_get_int(zip);
+            int current_hp = TCOD_zip_get_int(zip);
+            struct item *equipment[NUM_EQUIP_SLOTS];
+            for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            {
+                bool exists = TCOD_zip_get_int(zip);
+                if (exists)
+                {
+                    enum item_type type = TCOD_zip_get_int(zip);
+                    int x = TCOD_zip_get_int(zip);
+                    int y = TCOD_zip_get_int(zip);
+                    int current_durability = TCOD_zip_get_int(zip);
+                    int current_stack = TCOD_zip_get_int(zip);
+                    struct item *item = item_new(type, floor, x, y, current_stack);
+                    item->current_durability = current_durability;
+                    equipment[equip_slot] = item;
+                }
+                else
+                {
+                    equipment[equip_slot] = NULL;
+                }
+            }
+            TCOD_list_t items = TCOD_list_new();
+            int num_items = TCOD_zip_get_int(zip);
+            for (int i = 0; i < num_items; i++)
+            {
+                enum item_type type = TCOD_zip_get_int(zip);
+                int x = TCOD_zip_get_int(zip);
+                int y = TCOD_zip_get_int(zip);
+                int current_durability = TCOD_zip_get_int(zip);
+                int current_stack = TCOD_zip_get_int(zip);
+                struct item *item = item_new(type, floor, x, y, current_stack);
+                item->current_durability = current_durability;
+                TCOD_list_push(items, item);
+            }
+            int x = TCOD_zip_get_int(zip);
+            int y = TCOD_zip_get_int(zip);
+            int last_seen_x = TCOD_zip_get_int(zip);
+            int last_seen_y = TCOD_zip_get_int(zip);
+            int turns_chased = TCOD_zip_get_int(zip);
+            // TODO: load leader
+            bool glow = TCOD_zip_get_int(zip);
+            bool torch = TCOD_zip_get_int(zip);
+            TCOD_color_t flash_color = TCOD_zip_get_color(zip);
+            float flash_fade_coef = TCOD_zip_get_float(zip);
+            bool dead = TCOD_zip_get_int(zip);
+            struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y);
+            actor->experience = experience;
+            actor->max_hp = max_hp;
+            actor->current_hp = current_hp;
+            for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            {
+                actor->equipment[equip_slot] = equipment[equip_slot];
+            }
+            TCOD_list_delete(actor->items);
+            actor->items = items;
+            actor->last_seen_x = last_seen_x;
+            actor->last_seen_y = last_seen_y;
+            actor->turns_chased = turns_chased;
+            actor->glow = glow;
+            actor->torch = torch;
+            actor->flash_color = flash_color;
+            actor->flash_fade_coef = flash_fade_coef;
+            actor->dead = dead;
+            TCOD_list_push(map->actors, actor);
+            struct tile *tile = &map->tiles[x][y];
+            tile->actor = actor;
+        }
+        int num_corpses = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_corpses; i++)
+        {
+            const char *name = TCOD_zip_get_string(zip);
+            int race = TCOD_zip_get_int(zip);
+            int class = TCOD_zip_get_int(zip);
+            int faction = TCOD_zip_get_int(zip);
+            int level = TCOD_zip_get_int(zip);
+            int experience = TCOD_zip_get_int(zip);
+            int max_hp = TCOD_zip_get_int(zip);
+            int current_hp = TCOD_zip_get_int(zip);
+            struct item *equipment[NUM_EQUIP_SLOTS];
+            for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            {
+                bool exists = TCOD_zip_get_int(zip);
+                if (exists)
+                {
+                    enum item_type type = TCOD_zip_get_int(zip);
+                    int x = TCOD_zip_get_int(zip);
+                    int y = TCOD_zip_get_int(zip);
+                    int current_durability = TCOD_zip_get_int(zip);
+                    int current_stack = TCOD_zip_get_int(zip);
+                    struct item *item = item_new(type, floor, x, y, current_stack);
+                    item->current_durability = current_durability;
+                    equipment[equip_slot] = item;
+                }
+                else
+                {
+                    equipment[equip_slot] = NULL;
+                }
+            }
+            TCOD_list_t items = TCOD_list_new();
+            int num_items = TCOD_zip_get_int(zip);
+            for (int i = 0; i < num_items; i++)
+            {
+                enum item_type type = TCOD_zip_get_int(zip);
+                int x = TCOD_zip_get_int(zip);
+                int y = TCOD_zip_get_int(zip);
+                int current_durability = TCOD_zip_get_int(zip);
+                int current_stack = TCOD_zip_get_int(zip);
+                struct item *item = item_new(type, floor, x, y, current_stack);
+                item->current_durability = current_durability;
+                TCOD_list_push(items, item);
+            }
+            int x = TCOD_zip_get_int(zip);
+            int y = TCOD_zip_get_int(zip);
+            int last_seen_x = TCOD_zip_get_int(zip);
+            int last_seen_y = TCOD_zip_get_int(zip);
+            int turns_chased = TCOD_zip_get_int(zip);
+            // TODO: load leader
+            bool glow = TCOD_zip_get_int(zip);
+            bool torch = TCOD_zip_get_int(zip);
+            TCOD_color_t flash_color = TCOD_zip_get_color(zip);
+            float flash_fade_coef = TCOD_zip_get_float(zip);
+            bool dead = TCOD_zip_get_int(zip);
+            struct actor *corpse = actor_new(name, race, class, faction, level, floor, x, y);
+            corpse->experience = experience;
+            corpse->max_hp = max_hp;
+            corpse->current_hp = current_hp;
+            for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            {
+                corpse->equipment[equip_slot] = equipment[equip_slot];
+            }
+            TCOD_list_delete(corpse->items);
+            corpse->items = items;
+            corpse->last_seen_x = last_seen_x;
+            corpse->last_seen_y = last_seen_y;
+            corpse->turns_chased = turns_chased;
+            corpse->glow = glow;
+            corpse->torch = torch;
+            corpse->flash_color = flash_color;
+            corpse->flash_fade_coef = flash_fade_coef;
+            corpse->dead = dead;
+            TCOD_list_push(map->corpses, corpse);
+            struct tile *tile = &map->tiles[x][y];
+            TCOD_list_push(tile->corpses, corpse);
+        }
+        int num_items = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_items; i++)
+        {
+            enum item_type type = TCOD_zip_get_int(zip);
+            int x = TCOD_zip_get_int(zip);
+            int y = TCOD_zip_get_int(zip);
+            int current_durability = TCOD_zip_get_int(zip);
+            int current_stack = TCOD_zip_get_int(zip);
+            struct item *item = item_new(type, floor, x, y, current_stack);
+            item->current_durability = current_durability;
+            TCOD_list_push(map->items, item);
+        }
+    }
+    int player_map = TCOD_zip_get_int(zip);
+    int player_index = TCOD_zip_get_int(zip);
+    world->player = TCOD_list_get(world->maps[player_map].actors, player_index);
     TCOD_zip_delete(zip);
-    world_new(); // DEBUG: just start a new world
-    printf("World loaded.\n");
+    struct map *map = &world->maps[world->player->floor];
+    TCOD_LIST_FOREACH(map->objects)
+    {
+        struct object *object = *iterator;
+        object_calc_light(object);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_light(actor);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_fov(actor);
+    }
+    printf("World loaded with seed %d.\n", world->seed);
 }
 
 void world_update(float delta_time)

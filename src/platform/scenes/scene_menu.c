@@ -62,8 +62,8 @@ static struct scene *select_option(enum option option)
         }
         else
         {
-            // TODO: go to character creation and pass the result to world_new()
-            world_new();
+            // TODO: go to character creation and pass the result to world_create()
+            world_create();
         }
 
         menu_scene.quit();

@@ -3,8 +3,6 @@
 
 #include <libtcod.h>
 
-enum race_size;
-
 struct item_common
 {
     char __placeholder;

@@ -15,6 +15,7 @@ struct actor_prototype monster_prototypes[NUM_MONSTERS];
 struct item_common item_common;
 struct equip_slot_data equip_slot_datum[NUM_EQUIP_SLOTS];
 struct item_data item_datum[NUM_ITEM_TYPES];
+struct spell_data spell_datum[NUM_SPELL_TYPES];
 
 #define TILE_COMMON(_ambient_color, _ambient_intensity) \
     tile_common.ambient_color = _ambient_color;         \
@@ -94,6 +95,9 @@ struct item_data item_datum[NUM_ITEM_TYPES];
     item_datum[_type].max_stack = _max_stack;                                                                                                                                                                \
     item_datum[_type].ammunition_type = _ammunition_type;
 
+#define SPELL_DATA(_type, _name) \
+    spell_datum[_type].name = _name;
+
 void assets_load(void)
 {
     TCOD_namegen_parse("assets/namegen.cfg", NULL);
@@ -145,7 +149,7 @@ void assets_load(void)
 
     ITEM_COMMON(0);
 
-	EQUIP_SLOT_DATA(EQUIP_SLOT_AMMUNITION, "Ammunition", "Ammunition");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_AMMUNITION, "Ammunition", "Ammunition");
     EQUIP_SLOT_DATA(EQUIP_SLOT_ARMOR, "Armor", "Armor     ");
     EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand", "Main Hand ");
     EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand", "Off Hand  ");
@@ -159,6 +163,8 @@ void assets_load(void)
     ITEM_DATA(ITEM_TYPE_LONGBOW, "Longbow", "A tall war bow.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 1, 8, true, 100, false, 1, AMMUNITION_TYPE_ARROW);
     ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", '|', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE);
     ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, 10, AMMUNITION_TYPE_NONE);
+
+    SPELL_DATA(SPELL_TYPE_HEAL, "Heal");
 }
 
 void assets_unload(void)

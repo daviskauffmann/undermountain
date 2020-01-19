@@ -246,7 +246,7 @@ static enum equip_slot panel_character_get_selected(void)
 {
     if (panel_rect.visible && current_panel == PANEL_CHARACTER)
     {
-        int y = 15;
+        int y = 7;
         for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
         {
             if (mouse_x > panel_rect.x &&
@@ -281,6 +281,25 @@ static struct item *panel_inventory_get_selected(void)
     return NULL;
 }
 
+static enum spell_type panel_spellbook_get_selected(void)
+{
+    if (panel_rect.visible && current_panel == PANEL_SPELLBOOK)
+    {
+        int y = 1;
+        for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
+        {
+            if (mouse_x > panel_rect.x &&
+                mouse_x < panel_rect.x + panel_rect.width &&
+                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
+            {
+                return spell_type;
+            }
+            y++;
+        }
+    }
+    return -1;
+}
+
 /* Tooltips */
 
 struct tooltip_data
@@ -307,7 +326,7 @@ struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
 {
     struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
     assert(tooltip_option);
-    tooltip_option->text = strdup(text);
+    tooltip_option->text = TCOD_strdup(text);
     tooltip_option->on_click = on_click;
     return tooltip_option;
 }
@@ -370,7 +389,7 @@ static struct tooltip_option *tooltip_get_selected(void)
 
 static void init(struct scene *previous_scene)
 {
-    took_turn = true;
+    took_turn = false;
 
     message_log_rect.console = TCOD_console_new(console_width, console_height);
     message_log_rect.visible = true;
@@ -757,7 +776,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
 
                 handled = true;
             }
-
             for (enum panel panel = 0; panel < NUM_PANELS; panel++)
             {
                 if (panel_state[panel].selection_mode)
@@ -765,7 +783,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     handled = true;
                 }
             }
-
             if (handled)
             {
                 break;
@@ -2002,14 +2019,24 @@ static void render(TCOD_console_t console)
         break;
         case PANEL_SPELLBOOK:
         {
-            for (int y = 1; y <= 26; y++)
+            int y = 1;
+            for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
             {
+                struct spell_data spell_data = spell_datum[spell_type];
+                TCOD_color_t color =
+                    spell_type == panel_spellbook_get_selected()
+                        ? TCOD_yellow
+                        : TCOD_white;
+                TCOD_console_set_default_foreground(panel_rect.console, color);
                 TCOD_console_printf(
                     panel_rect.console,
                     1,
                     y - current_panel_status->scroll,
-                    "%d) spell",
-                    y);
+                    "%c) %s",
+                    y - 1 + 'a' - current_panel_status->scroll,
+                    spell_data.name);
+                TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
+                y++;
             }
 
             TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);

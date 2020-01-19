@@ -18,18 +18,18 @@ struct world
 {
     enum world_state state;
     unsigned int seed;
+    unsigned int turn;
     TCOD_random_t random;
     struct map maps[NUM_MAPS];
     TCOD_list_t messages;
     struct actor *player;
-    unsigned int turn;
 };
 
 extern struct world *world;
 
 void world_init(void);
 void world_quit(void);
-void world_new(void);
+void world_create(void);
 void world_save(const char *filename);
 void world_load(const char *filename);
 void world_update(float delta_time);

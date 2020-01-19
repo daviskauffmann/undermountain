@@ -9,7 +9,7 @@ struct message *message_new(char *text, TCOD_color_t color)
 {
     struct message *message = malloc(sizeof(struct message));
     assert(message);
-    message->text = strdup(text);
+    message->text = TCOD_strdup(text);
     message->color = color;
     return message;
 }

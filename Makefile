@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -ggdb -std=gnu99 -Wall -Wextra -Wno-unused-parameter
+CFLAGS := -ggdb -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
 
 BIN	:= bin
 SRC	:= src

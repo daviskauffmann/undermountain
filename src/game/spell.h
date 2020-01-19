@@ -12,4 +12,16 @@
 // activating a spell should be a input module thing, not an actor thing
 //     it doesn't make much sense for an npc to activate a spell, their AI would just cast it
 
+enum spell_type
+{
+    SPELL_TYPE_HEAL,
+
+    NUM_SPELL_TYPES
+};
+
+struct spell_data
+{
+    const char *name;
+};
+
 #endif

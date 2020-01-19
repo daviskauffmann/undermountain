@@ -4,6 +4,7 @@
 #include "actor.h"
 #include "item.h"
 #include "object.h"
+#include "spell.h"
 #include "tile.h"
 
 extern struct tile_common tile_common;
@@ -17,6 +18,7 @@ extern struct actor_prototype monster_prototypes[NUM_MONSTERS];
 extern struct item_common item_common;
 extern struct equip_slot_data equip_slot_datum[NUM_EQUIP_SLOTS];
 extern struct item_data item_datum[NUM_ITEM_TYPES];
+extern struct spell_data spell_datum[NUM_SPELL_TYPES];
 
 void assets_load(void);
 void assets_unload(void);

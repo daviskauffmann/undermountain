@@ -510,9 +510,9 @@ void map_generate(struct map *map)
         case 1:
         {
             TCOD_color_t random_color = TCOD_color_RGB(
-                (unsigned char)TCOD_random_get_int(world->random, 0, 255),
-                (unsigned char)TCOD_random_get_int(world->random, 0, 255),
-                (unsigned char)TCOD_random_get_int(world->random, 0, 255));
+                TCOD_random_get_int(world->random, 0, 255),
+                TCOD_random_get_int(world->random, 0, 255),
+                TCOD_random_get_int(world->random, 0, 255));
             type = OBJECT_TYPE_BRAZIER;
             color = random_color;
             light_radius = TCOD_random_get_int(world->random, 5, 20);

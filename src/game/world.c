@@ -196,7 +196,7 @@ void world_save(const char *filename)
         TCOD_zip_put_int(zip, map->stair_down_x);
         TCOD_zip_put_int(zip, map->stair_down_y);
         TCOD_zip_put_int(zip, map->stair_up_x);
-        TCOD_zip_put_int(zip, map->stair_up_x);
+        TCOD_zip_put_int(zip, map->stair_up_y);
         for (int x = 0; x < MAP_WIDTH; x++)
         {
             for (int y = 0; y < MAP_HEIGHT; y++)
@@ -374,7 +374,7 @@ void world_load(const char *filename)
         map->stair_down_x = TCOD_zip_get_int(zip);
         map->stair_down_y = TCOD_zip_get_int(zip);
         map->stair_up_x = TCOD_zip_get_int(zip);
-        map->stair_up_x = TCOD_zip_get_int(zip);
+        map->stair_up_y = TCOD_zip_get_int(zip);
         for (int x = 0; x < MAP_WIDTH; x++)
         {
             for (int y = 0; y < MAP_HEIGHT; y++)

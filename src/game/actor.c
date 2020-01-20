@@ -212,7 +212,8 @@ void actor_ai(struct actor *actor)
         TCOD_LIST_FOREACH(map->actors)
         {
             struct actor *other = *iterator;
-            if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
+            if (!other->dead &&
+                TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
                 other->faction != actor->faction)
             {
                 float distance = distance_between_sq(actor->x, actor->y, other->x, other->y);

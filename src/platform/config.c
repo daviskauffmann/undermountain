@@ -21,7 +21,7 @@ void config_load(void)
     console_width = 80;
     console_height = 50;
     fullscreen = false;
-    console_renderer = TCOD_RENDERER_SDL;
+    console_renderer = TCOD_RENDERER_SDL2;
 }
 
 void config_save(void)

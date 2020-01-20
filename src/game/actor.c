@@ -237,7 +237,22 @@ void actor_ai(struct actor *actor)
                 struct item_data item_data = item_datum[weapon->type];
                 if (item_data.ranged)
                 {
-                    ranged = true;
+                    // wielding a ranged weapon, but need to make sure I have ammo slotted
+                    struct item *ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+                    if (ammunition)
+                    {
+                        ranged = true;
+                    }
+                    else
+                    {
+                        // out of ammo! might as well unequip this weapon
+                        // TODO: look in inventory to find suitable ammunition and equip it
+                        // if not, look for another weapon to equip
+                        if (actor_unequip(actor, EQUIP_SLOT_MAIN_HAND))
+                        {
+                            goto done;
+                        }
+                    }
                 }
             }
             if (ranged)

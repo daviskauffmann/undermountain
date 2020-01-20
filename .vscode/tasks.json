@@ -11,6 +11,15 @@
             "command": "make"
         },
         {
+            "label": "Setup",
+            "type": "shell",
+            "group": "build",
+            "command": "make",
+            "args": [
+                "setup"
+            ]
+        },
+        {
             "label": "Build & Run",
             "type": "shell",
             "group": {

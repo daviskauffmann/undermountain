@@ -577,6 +577,8 @@ void world_load(const char *filename)
             struct item *item = item_new(type, floor, x, y, current_stack);
             item->current_durability = current_durability;
             TCOD_list_push(map->items, item);
+            struct tile *tile = &map->tiles[x][y];
+            TCOD_list_push(tile->items, item);
         }
     }
     int player_map = TCOD_zip_get_int(zip);

@@ -3,8 +3,9 @@ CFLAGS := -ggdb -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
 
 SRC	:= src
 DEPS := deps
-BIN	:= bin
 BUILD := build
+BIN	:= bin
+EXE := undermountain
 
 SOURCES	:= \
 	$(SRC)/main.c \
@@ -27,23 +28,27 @@ SOURCES	:= \
 	$(SRC)/platform/scenes/scene_menu.c
 OBJECTS := $(patsubst $(SRC)/%,$(BUILD)/%,$(SOURCES:.c=.o))
 DEPENDENCIES := $(OBJECTS:.o=.d)
-INCLUDEDIRS := -I$(DEPS)/libtcod/src
-LIBDIRS := -L$(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
-LIBRARIES := -ltcod
-EXECUTABLE := main
+INCLUDE := \
+	-I$(DEPS)/libtcod/src \
+	-I$(DEPS)/libtcod/buildsys/scons/dependencies/mingw/SDL2-2.0.8/x86_64-w64-mingw32/include/SDL2
+LIB := \
+	-L$(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG \
+	-L$(DEPS)/libtcod/buildsys/scons/dependencies/mingw/SDL2-2.0.8/x86_64-w64-mingw32/lib
+LIBRARIES := -ltcod -lSDL2
+TARGET := $(BIN)/$(EXE)
 
 .PHONY: all
-all: $(BIN)/$(EXECUTABLE)
+all: $(TARGET)
 
-$(BIN)/$(EXECUTABLE): $(OBJECTS)
+$(TARGET): $(OBJECTS)
 	mkdir -p $(@D)
-	$(CC) $^ -o $@ $(LIBDIRS) $(LIBRARIES)
+	$(CC) $^ -o $@ $(LIB) $(LIBRARIES)
 	cp $(DEPS)/libtcod/buildsys/scons/dependencies/mingw/SDL2-2.0.8/x86_64-w64-mingw32/bin/SDL2.dll $(BIN)
 	cp $(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG/libtcod.dll $(BIN)
 
 $(BUILD)/%.o: $(SRC)/%.c
 	mkdir -p $(@D)
-	$(CC) -c $< -o $@ -MMD -MF $(@:.o=.d) $(CFLAGS) $(INCLUDEDIRS)
+	$(CC) -c $< -o $@ -MMD -MF $(@:.o=.d) $(CFLAGS) $(INCLUDE)
 
 -include $(DEPENDENCIES)
 
@@ -53,7 +58,7 @@ setup:
 
 .PHONY: run
 run: all
-	./$(BIN)/$(EXECUTABLE)
+	./$(TARGET)
 
 .PHONY: clean
 clean:

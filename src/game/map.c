@@ -274,7 +274,7 @@ void map_generate(struct map *map)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             struct tile *tile = &map->tiles[x][y];
-            tile->type = TILE_TYPE_WALL;
+            tile->type = TILE_TYPE_EMPTY;
         }
     }
 

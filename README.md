@@ -2,6 +2,8 @@
 
 ## Getting Started
 
+I am on Windows using MinGW64, so that is the only development platform supported at this time.
+
 Install third party libraries.
 
 ```sh

@@ -100,7 +100,7 @@ struct spell_data spell_datum[NUM_SPELL_TYPES];
 
 void assets_load(void)
 {
-    TCOD_namegen_parse("assets/namegen.cfg", NULL);
+    TCOD_namegen_parse("data/namegen.txt", NULL);
 
     // TODO: load from file
     // see content.json

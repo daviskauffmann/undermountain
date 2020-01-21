@@ -17,7 +17,7 @@ int platform_run(void)
     assets_load();
 
     TCOD_sys_set_fps(FPS);
-    TCOD_console_set_custom_font(font_file, font_flags, font_char_horiz, font_char_vertic);
+    TCOD_console_set_custom_font(font_file, font_flags, font_layout_width, font_layout_height);
     if (TCOD_console_init_root(console_width, console_height, TITLE, fullscreen, console_renderer) != 0)
     {
         printf("Error: Couldn't initialize root console.\n%s\n", TCOD_get_error());

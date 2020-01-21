@@ -26,3 +26,7 @@ Cleanup all build files and binaries.
 ```sh
 make clean
 ```
+
+## Configuration
+
+Copy `config.txt` and rename to `config.local.txt` to make local changes to the configuration. This file is not source controlled.

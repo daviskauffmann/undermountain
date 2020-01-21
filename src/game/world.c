@@ -733,7 +733,7 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
     char *line_end;
     do
     {
-        if (TCOD_list_size(world->messages) == (50 / 4) - 2) // TODO: hardcoded console_height for now because we're gonna throw all this away soon
+        if (TCOD_list_size(world->messages) == (TCOD_console_get_height(NULL) / 4) - 2) // TODO: hardcoded message_log_rect.height for now because we're gonna throw all this away soon
         {
             struct message *message = TCOD_list_get(world->messages, 0);
             TCOD_list_remove(world->messages, message);

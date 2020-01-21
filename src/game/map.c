@@ -10,15 +10,16 @@
 #include "util.h"
 #include "world.h"
 
-#define MAP_ALGORITHM_CUSTOM 0
+#define MAP_ALGORITHM_DEFAULT 0
 #define MAP_ALGORITHM_BSP 1
-#define MAP_ALGORITHM MAP_ALGORITHM_CUSTOM
+#define MAP_ALGORITHM MAP_ALGORITHM_DEFAULT
 
-#if MAP_ALGORITHM == MAP_ALGORITHM_CUSTOM
-#define CUSTOM_NUM_ROOM_ATTEMPTS 20
-#define CUSTOM_MIN_ROOM_SIZE 5
-#define CUSTOM_MAX_ROOM_SIZE 15
-#define CUSTOM_PREVENT_OVERLAP_CHANCE 0.5f
+#if MAP_ALGORITHM == MAP_ALGORITHM_DEFAULT
+#define DEFAULT_NUM_ROOM_ATTEMPTS 20
+#define DEFAULT_MIN_ROOM_SIZE 5
+#define DEFAULT_MAX_ROOM_SIZE 15
+#define DEFAULT_ROOM_BUFFER 3
+#define DEFAULT_PREVENT_OVERLAP_CHANCE 0.5f
 #elif MAP_ALGORITHM == MAP_ALGORITHM_BSP
 #define BSP_MIN_ROOM_SIZE 4
 #define BSP_DEPTH 8
@@ -274,31 +275,35 @@ void map_generate(struct map *map)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             struct tile *tile = &map->tiles[x][y];
+#if MAP_ALGORITHM == MAP_ALGORITHM_DEFAULT
             tile->type = TILE_TYPE_EMPTY;
+#elif MAP_ALGORITHM == MAP_ALGORITHM_BSP
+            tile->type = TILE_TYPE_WALL;
+#endif
         }
     }
 
-#if MAP_ALGORITHM == MAP_ALGORITHM_CUSTOM
-    for (int i = 0; i < CUSTOM_NUM_ROOM_ATTEMPTS; i++)
+#if MAP_ALGORITHM == MAP_ALGORITHM_DEFAULT
+    for (int i = 0; i < DEFAULT_NUM_ROOM_ATTEMPTS; i++)
     {
         int room_x = TCOD_random_get_int(world->random, 0, MAP_WIDTH);
         int room_y = TCOD_random_get_int(world->random, 0, MAP_HEIGHT);
-        int room_w = TCOD_random_get_int(world->random, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE);
-        int room_h = TCOD_random_get_int(world->random, CUSTOM_MIN_ROOM_SIZE, CUSTOM_MAX_ROOM_SIZE);
-        if (room_x < 2 ||
-            room_x + room_w > MAP_WIDTH - 2 ||
-            room_y < 2 ||
-            room_y + room_h > MAP_HEIGHT - 2)
+        int room_w = TCOD_random_get_int(world->random, DEFAULT_MIN_ROOM_SIZE, DEFAULT_MAX_ROOM_SIZE);
+        int room_h = TCOD_random_get_int(world->random, DEFAULT_MIN_ROOM_SIZE, DEFAULT_MAX_ROOM_SIZE);
+        if (room_x < DEFAULT_ROOM_BUFFER ||
+            room_x + room_w > MAP_WIDTH - DEFAULT_ROOM_BUFFER ||
+            room_y < DEFAULT_ROOM_BUFFER ||
+            room_y + room_h > MAP_HEIGHT - DEFAULT_ROOM_BUFFER)
         {
             continue;
         }
 
-        if (TCOD_random_get_float(world->random, 0, 1) < CUSTOM_PREVENT_OVERLAP_CHANCE)
+        if (TCOD_random_get_float(world->random, 0, 1) < DEFAULT_PREVENT_OVERLAP_CHANCE)
         {
             bool overlap = false;
-            for (int x = room_x - 2; x < room_x + room_w + 2; x++)
+            for (int x = room_x - DEFAULT_ROOM_BUFFER; x < room_x + room_w + DEFAULT_ROOM_BUFFER; x++)
             {
-                for (int y = room_y - 2; y < room_y + room_h + 2; y++)
+                for (int y = room_y - DEFAULT_ROOM_BUFFER; y < room_y + room_h + DEFAULT_ROOM_BUFFER; y++)
                 {
                     struct tile *tile = &map->tiles[x][y];
                     if (tile->type == TILE_TYPE_FLOOR)

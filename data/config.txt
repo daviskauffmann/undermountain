@@ -1,0 +1,9 @@
+config {
+	console_width = 120
+	console_height = 60
+
+	font_file = "data/terminal.png"
+	font_layout_row = false
+	font_layout_width = 16
+	font_layout_height = 16
+}

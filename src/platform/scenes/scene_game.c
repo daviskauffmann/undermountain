@@ -1537,27 +1537,27 @@ static void render(TCOD_console_t console)
 
                     if (tile->seen)
                     {
-                        // select wall graphic
                         int glyph = tile_data.glyph;
                         if (tile->type == TILE_TYPE_WALL)
                         {
+                            // select wall graphic
                             int glyphs[] = {
-                                TCOD_CHAR_BLOCK3, //  0 - none
-                                TCOD_CHAR_VLINE,  //  1 - N
-                                TCOD_CHAR_HLINE,  //  2 - E
-                                TCOD_CHAR_SW,     //  3 - NE
-                                TCOD_CHAR_VLINE,  //  4 - S
-                                TCOD_CHAR_VLINE,  //  5 - NS
-                                TCOD_CHAR_NW,     //  6 - SE
-                                TCOD_CHAR_TEEE,   //  7 - NES
-                                TCOD_CHAR_HLINE,  //  8 - W
-                                TCOD_CHAR_SE,     //  9 - NW
-                                TCOD_CHAR_HLINE,  // 10 - EW
-                                TCOD_CHAR_TEEN,   // 11 - NEW
-                                TCOD_CHAR_NE,     // 12 - SW
-                                TCOD_CHAR_TEEW,   // 13 - NSW
-                                TCOD_CHAR_TEES,   // 14 - ESW
-                                TCOD_CHAR_CROSS}; // 15 - NESW
+                                TCOD_CHAR_BLOCK3,  //  0 - none
+                                TCOD_CHAR_DVLINE,  //  1 - N
+                                TCOD_CHAR_DHLINE,  //  2 - E
+                                TCOD_CHAR_DSW,     //  3 - NE
+                                TCOD_CHAR_DVLINE,  //  4 - S
+                                TCOD_CHAR_DVLINE,  //  5 - NS
+                                TCOD_CHAR_DNW,     //  6 - SE
+                                TCOD_CHAR_DTEEE,   //  7 - NES
+                                TCOD_CHAR_DHLINE,  //  8 - W
+                                TCOD_CHAR_DSE,     //  9 - NW
+                                TCOD_CHAR_DHLINE,  // 10 - EW
+                                TCOD_CHAR_DTEEN,   // 11 - NEW
+                                TCOD_CHAR_DNE,     // 12 - SW
+                                TCOD_CHAR_DTEEW,   // 13 - NSW
+                                TCOD_CHAR_DTEES,   // 14 - ESW
+                                TCOD_CHAR_DCROSS}; // 15 - NESW
                             int index = 0;
                             if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
                             {

@@ -31,6 +31,8 @@
 // should chests just give items and disappear?
 // or maybe they should be containers that actors can store items in
 
+// TODO: wands and staves?
+
 // TODO: sound and sound propogation
 // play "sounds" in the game such as footsteps and monster noises
 // calculate whether the player can hear and identify the sound and put it in the log if so
@@ -65,6 +67,7 @@ void world_init(void)
     world->state = WORLD_STATE_PLAY;
     world->seed = 0;
     world->random = NULL;
+    world->turn = 0;
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
@@ -72,7 +75,6 @@ void world_init(void)
     }
     world->messages = TCOD_list_new();
     world->player = NULL;
-    world->turn = 0;
 }
 
 void world_quit(void)
@@ -116,7 +118,6 @@ void world_create(void)
             int x = map->stair_up_x;
             int y = map->stair_up_y;
             struct actor *player = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
-            player->torch = false;
             world->player = player;
             TCOD_list_push(map->actors, player);
             struct tile *tile = &map->tiles[x][y];
@@ -155,8 +156,6 @@ void world_create(void)
             int y = map->stair_up_y + 1;
             struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, x, y);
             pet->leader = world->player;
-            pet->glow = false;
-            pet->torch = false;
             TCOD_list_push(map->actors, pet);
             struct tile *tile = &map->tiles[x][y];
             tile->actor = pet;
@@ -269,14 +268,17 @@ void world_save(const char *filename)
                 TCOD_zip_put_int(zip, item->current_durability);
                 TCOD_zip_put_int(zip, item->current_stack);
             }
+            TCOD_zip_put_int(zip, actor->readied_spell);
             TCOD_zip_put_int(zip, actor->x);
             TCOD_zip_put_int(zip, actor->y);
             TCOD_zip_put_int(zip, actor->last_seen_x);
             TCOD_zip_put_int(zip, actor->last_seen_y);
             TCOD_zip_put_int(zip, actor->turns_chased);
             // TODO: save leader
-            TCOD_zip_put_int(zip, actor->glow);
-            TCOD_zip_put_int(zip, actor->torch);
+            TCOD_zip_put_int(zip, actor->light_radius);
+            TCOD_zip_put_color(zip, actor->light_color);
+            TCOD_zip_put_float(zip, actor->light_intensity);
+            TCOD_zip_put_int(zip, actor->light_flicker);
             TCOD_zip_put_color(zip, actor->flash_color);
             TCOD_zip_put_float(zip, actor->flash_fade_coef);
             TCOD_zip_put_int(zip, actor->dead);
@@ -328,14 +330,17 @@ void world_save(const char *filename)
                 TCOD_zip_put_int(zip, item->current_durability);
                 TCOD_zip_put_int(zip, item->current_stack);
             }
+            TCOD_zip_put_int(zip, corpse->readied_spell);
             TCOD_zip_put_int(zip, corpse->x);
             TCOD_zip_put_int(zip, corpse->y);
             TCOD_zip_put_int(zip, corpse->last_seen_x);
             TCOD_zip_put_int(zip, corpse->last_seen_y);
             TCOD_zip_put_int(zip, corpse->turns_chased);
             // TODO: save leader
-            TCOD_zip_put_int(zip, corpse->glow);
-            TCOD_zip_put_int(zip, corpse->torch);
+            TCOD_zip_put_int(zip, corpse->light_radius);
+            TCOD_zip_put_color(zip, corpse->light_color);
+            TCOD_zip_put_float(zip, corpse->light_intensity);
+            TCOD_zip_put_int(zip, corpse->light_flicker);
             TCOD_zip_put_color(zip, corpse->flash_color);
             TCOD_zip_put_float(zip, corpse->flash_fade_coef);
             TCOD_zip_put_int(zip, corpse->dead);
@@ -456,14 +461,17 @@ void world_load(const char *filename)
                 item->current_durability = current_durability;
                 TCOD_list_push(items, item);
             }
+            enum spell_type readied_spell = TCOD_zip_get_int(zip);
             int x = TCOD_zip_get_int(zip);
             int y = TCOD_zip_get_int(zip);
             int last_seen_x = TCOD_zip_get_int(zip);
             int last_seen_y = TCOD_zip_get_int(zip);
             int turns_chased = TCOD_zip_get_int(zip);
             // TODO: load leader
-            bool glow = TCOD_zip_get_int(zip);
-            bool torch = TCOD_zip_get_int(zip);
+            int light_radius = TCOD_zip_get_int(zip);
+            TCOD_color_t light_color = TCOD_zip_get_color(zip);
+            float light_intensity = TCOD_zip_get_float(zip);
+            int light_flicker = TCOD_zip_get_int(zip);
             TCOD_color_t flash_color = TCOD_zip_get_color(zip);
             float flash_fade_coef = TCOD_zip_get_float(zip);
             bool dead = TCOD_zip_get_int(zip);
@@ -477,11 +485,14 @@ void world_load(const char *filename)
             }
             TCOD_list_delete(actor->items);
             actor->items = items;
+            actor->readied_spell = readied_spell;
             actor->last_seen_x = last_seen_x;
             actor->last_seen_y = last_seen_y;
             actor->turns_chased = turns_chased;
-            actor->glow = glow;
-            actor->torch = torch;
+            actor->light_radius = light_radius;
+            actor->light_color = light_color;
+            actor->light_intensity = light_intensity;
+            actor->light_flicker = light_flicker;
             actor->flash_color = flash_color;
             actor->flash_fade_coef = flash_fade_coef;
             actor->dead = dead;
@@ -533,14 +544,17 @@ void world_load(const char *filename)
                 item->current_durability = current_durability;
                 TCOD_list_push(items, item);
             }
+            enum spell_type readied_spell = TCOD_zip_get_int(zip);
             int x = TCOD_zip_get_int(zip);
             int y = TCOD_zip_get_int(zip);
             int last_seen_x = TCOD_zip_get_int(zip);
             int last_seen_y = TCOD_zip_get_int(zip);
             int turns_chased = TCOD_zip_get_int(zip);
             // TODO: load leader
-            bool glow = TCOD_zip_get_int(zip);
-            bool torch = TCOD_zip_get_int(zip);
+            int light_radius = TCOD_zip_get_int(zip);
+            TCOD_color_t light_color = TCOD_zip_get_color(zip);
+            float light_intensity = TCOD_zip_get_float(zip);
+            int light_flicker = TCOD_zip_get_int(zip);
             TCOD_color_t flash_color = TCOD_zip_get_color(zip);
             float flash_fade_coef = TCOD_zip_get_float(zip);
             bool dead = TCOD_zip_get_int(zip);
@@ -554,11 +568,14 @@ void world_load(const char *filename)
             }
             TCOD_list_delete(corpse->items);
             corpse->items = items;
+            corpse->readied_spell = readied_spell;
             corpse->last_seen_x = last_seen_x;
             corpse->last_seen_y = last_seen_y;
             corpse->turns_chased = turns_chased;
-            corpse->glow = glow;
-            corpse->torch = torch;
+            corpse->light_radius = light_radius;
+            corpse->light_color = light_color;
+            corpse->light_intensity = light_intensity;
+            corpse->light_flicker = light_flicker;
             corpse->flash_color = flash_color;
             corpse->flash_fade_coef = flash_fade_coef;
             corpse->dead = dead;

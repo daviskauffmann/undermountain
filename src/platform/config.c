@@ -31,12 +31,12 @@ void config_load(void)
 
         TCOD_parser_t parser = TCOD_parser_new();
         TCOD_parser_struct_t config = TCOD_parser_new_struct(parser, "config");
-        TCOD_struct_add_property(config, "console_width", TCOD_TYPE_INT, false);
-        TCOD_struct_add_property(config, "console_height", TCOD_TYPE_INT, false);
-        TCOD_struct_add_property(config, "font_file", TCOD_TYPE_STRING, false);
-        TCOD_struct_add_property(config, "font_layout_row", TCOD_TYPE_BOOL, false);
-        TCOD_struct_add_property(config, "font_layout_width", TCOD_TYPE_INT, false);
-        TCOD_struct_add_property(config, "font_layout_height", TCOD_TYPE_INT, false);
+        TCOD_struct_add_property(config, "console_width", TCOD_TYPE_INT, true);
+        TCOD_struct_add_property(config, "console_height", TCOD_TYPE_INT, true);
+        TCOD_struct_add_property(config, "font_file", TCOD_TYPE_STRING, true);
+        TCOD_struct_add_property(config, "font_layout_row", TCOD_TYPE_BOOL, true);
+        TCOD_struct_add_property(config, "font_layout_width", TCOD_TYPE_INT, true);
+        TCOD_struct_add_property(config, "font_layout_height", TCOD_TYPE_INT, true);
         TCOD_parser_run(parser, config_file, NULL);
 
         console_width = TCOD_parser_get_int_property(parser, "config.console_width");

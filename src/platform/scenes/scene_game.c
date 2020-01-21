@@ -19,6 +19,7 @@
 #include "../../game/item.h"
 #include "../../game/message.h"
 #include "../../game/projectile.h"
+#include "../../game/spell.h"
 #include "../../game/util.h"
 #include "../../game/world.h"
 
@@ -131,6 +132,16 @@ enum character_action
 };
 
 static enum character_action character_action;
+
+/* Spellbook actions */
+
+enum spellbook_action
+{
+    SPELLBOOK_ACTION_NONE,
+    SPELLBOOK_ACTION_SELECT
+};
+
+static enum spellbook_action spellbook_action;
 
 /* Targeting */
 
@@ -310,6 +321,7 @@ struct tooltip_data
     struct item *item;
     struct actor *actor;
     enum equip_slot equip_slot;
+    enum spell_type spell_type;
 };
 
 struct tooltip_option
@@ -522,11 +534,13 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (directional_action != DIRECTIONAL_ACTION_NONE ||
                      inventory_action != INVENTORY_ACTION_NONE ||
-                     character_action != CHARACTER_ACTION_NONE)
+                     character_action != CHARACTER_ACTION_NONE ||
+                     spellbook_action != SPELLBOOK_ACTION_NONE)
             {
                 directional_action = DIRECTIONAL_ACTION_NONE;
                 inventory_action = INVENTORY_ACTION_NONE;
                 character_action = CHARACTER_ACTION_NONE;
+                spellbook_action = SPELLBOOK_ACTION_NONE;
                 for (enum panel panel = 0; panel < NUM_PANELS; panel++)
                 {
                     panel_state[panel].selection_mode = false;
@@ -776,11 +790,39 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
 
                 handled = true;
             }
+            else if (spellbook_action != SPELLBOOK_ACTION_NONE && alpha >= 0 && alpha < NUM_SPELL_TYPES)
+            {
+                enum spell_type spell_type = (enum spell_type)alpha;
+                switch (spellbook_action)
+                {
+                case SPELLBOOK_ACTION_SELECT:
+                {
+                    world->player->readied_spell = spell_type;
+
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "%s selected.",
+                        spell_data[world->player->readied_spell].name);
+                }
+                break;
+                default:
+                    break;
+                }
+
+                spellbook_action = SPELLBOOK_ACTION_NONE;
+                panel_state[PANEL_SPELLBOOK].selection_mode = false;
+
+                handled = true;
+            }
             for (enum panel panel = 0; panel < NUM_PANELS; panel++)
             {
                 if (panel_state[panel].selection_mode)
                 {
                     handled = true;
+                    break;
                 }
             }
             if (handled)
@@ -1030,16 +1072,36 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    world->player->glow = !world->player->glow;
+                    if (world->player->light_radius >= 0 && TCOD_color_equals(world->player->light_color, actor_common.glow_color))
+                    {
+                        world->player->light_radius = -1;
+                    }
+                    else
+                    {
+                        world->player->light_radius = actor_common.glow_radius;
+                        world->player->light_color = actor_common.glow_color;
+                        world->player->light_intensity = actor_common.glow_intensity;
+                        world->player->light_flicker = false;
+                    }
                     took_turn = true;
                 }
-                break;
             }
+            break;
             case 't':
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    world->player->torch = !world->player->torch;
+                    if (world->player->light_radius >= 0 && TCOD_color_equals(world->player->light_color, actor_common.torch_color))
+                    {
+                        world->player->light_radius = -1;
+                    }
+                    else
+                    {
+                        world->player->light_radius = actor_common.torch_radius;
+                        world->player->light_color = actor_common.torch_color;
+                        world->player->light_intensity = actor_common.torch_intensity;
+                        world->player->light_flicker = true;
+                    }
                     took_turn = true;
                 }
             }
@@ -1106,20 +1168,45 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
             }
             break;
+            case 'Z':
+            {
+                if (world->state == WORLD_STATE_PLAY)
+                {
+                    panel_show(PANEL_SPELLBOOK);
+                    spellbook_action = SPELLBOOK_ACTION_SELECT;
+                    panel_state[PANEL_SPELLBOOK].selection_mode = true;
+
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "Choose a spell. Press 'ESC' to cancel.");
+                }
+            }
+            break;
             case 'z':
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    if (targeting == TARGETING_SPELL)
+                    enum spell_range spell_range = spell_data[world->player->readied_spell].range;
+                    if (spell_range == SPELL_RANGE_SELF)
                     {
-                        actor_cast_spell(world->player, target_x, target_y);
-                        targeting = TARGETING_NONE;
+                        took_turn = actor_cast_spell(world->player, world->player->x, world->player->y);
                     }
-                    else
+                    else if (spell_range == SPELL_RANGE_TARGET)
                     {
-                        targeting = TARGETING_SPELL;
-                        target_x = world->player->x;
-                        target_y = world->player->y;
+                        if (targeting == TARGETING_SPELL)
+                        {
+                            took_turn = actor_cast_spell(world->player, target_x, target_y);
+                            targeting = TARGETING_NONE;
+                        }
+                        else
+                        {
+                            targeting = TARGETING_SPELL;
+                            target_x = world->player->x;
+                            target_y = world->player->y;
+                        }
                     }
                 }
             }
@@ -1212,14 +1299,43 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     enum equip_slot equip_slot = panel_character_get_selected();
                     if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                     {
-                        if (world->state == WORLD_STATE_PLAY)
+                        switch (character_action)
                         {
-                            took_turn = actor_unequip(world->player, equip_slot);
+                        case CHARACTER_ACTION_UNEQUIP:
+                        {
+                            if (world->state == WORLD_STATE_PLAY)
+                            {
+                                took_turn = actor_unequip(world->player, equip_slot);
+                            }
+                        }
+                        break;
+                        default:
+                            break;
                         }
                     }
 
                     character_action = CHARACTER_ACTION_NONE;
                     panel_state[PANEL_CHARACTER].selection_mode = false;
+                }
+                else if (spellbook_action != SPELLBOOK_ACTION_NONE)
+                {
+                    enum spell_type spell_type = panel_spellbook_get_selected();
+                    if (spell_type >= 0 && spell_type < NUM_SPELL_TYPES)
+                    {
+                        switch (spellbook_action)
+                        {
+                        case SPELLBOOK_ACTION_SELECT:
+                        {
+                            world->player->readied_spell = spell_type;
+                        }
+                        break;
+                        default:
+                            break;
+                        }
+                    }
+
+                    spellbook_action = SPELLBOOK_ACTION_NONE;
+                    panel_state[PANEL_SPELLBOOK].selection_mode = false;
                 }
             }
         }
@@ -1300,6 +1416,25 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                             tooltip_data.equip_slot = equip_slot;
                             tooltip_options_add("Cancel", NULL);
                         }
+                    }
+                }
+                break;
+                case PANEL_SPELLBOOK:
+                {
+                    enum spell_type spell_type = panel_spellbook_get_selected();
+                    if (spell_type >= 0 && spell_type < NUM_SPELL_TYPES)
+                    {
+                        tooltip_show();
+                        if (world->player->readied_spell == spell_type)
+                        {
+                            tooltip_options_add("Unready", NULL);
+                        }
+                        else
+                        {
+                            tooltip_options_add("Ready", NULL);
+                        }
+                        tooltip_data.spell_type = spell_type;
+                        tooltip_options_add("Cancel", NULL);
                     }
                 }
                 break;
@@ -1447,35 +1582,6 @@ static void render(TCOD_console_t console)
                     {
                         tile->seen = true;
 
-                        TCOD_LIST_FOREACH(map->actors)
-                        {
-                            struct actor *actor = *iterator;
-                            if (actor->glow_fov && TCOD_map_is_in_fov(actor->glow_fov, x, y))
-                            {
-                                float radius_sq = powf((float)actor_common.glow_radius, 2);
-                                float distance_sq =
-                                    powf((float)(x - actor->x), 2) +
-                                    powf((float)(y - actor->y), 2);
-                                float coef = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq);
-                                fg_color = TCOD_color_lerp(
-                                    fg_color,
-                                    TCOD_color_lerp(
-                                        tile_datum.color,
-                                        actor_common.glow_color,
-                                        coef),
-                                    coef);
-                                bg_color = TCOD_color_lerp(
-                                    bg_color,
-                                    TCOD_color_multiply_scalar(
-                                        fg_color,
-                                        actor_common.glow_intensity),
-                                    coef);
-                            }
-                        }
-
                         TCOD_LIST_FOREACH(map->objects)
                         {
                             struct object *object = *iterator;
@@ -1504,32 +1610,31 @@ static void render(TCOD_console_t console)
                                     coef);
                             }
                         }
-
                         TCOD_LIST_FOREACH(map->actors)
                         {
                             struct actor *actor = *iterator;
-                            if (actor->torch_fov && TCOD_map_is_in_fov(actor->torch_fov, x, y))
+                            if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
                             {
-                                float radius_sq = powf((float)actor_common.torch_radius, 2);
+                                float radius_sq = powf(actor->light_radius, 2);
                                 float distance_sq =
-                                    powf(x - actor->x + dx, 2) +
-                                    powf(y - actor->y + dy, 2);
+                                    powf((float)(x - actor->x + (actor->light_flicker ? dx : 0)), 2) +
+                                    powf((float)(y - actor->y + (actor->light_flicker ? dy : 0)), 2);
                                 float coef = CLAMP(
                                     0.0f,
                                     1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + di);
+                                    (radius_sq - distance_sq) / radius_sq + (actor->light_flicker ? di : 0));
                                 fg_color = TCOD_color_lerp(
                                     fg_color,
                                     TCOD_color_lerp(
                                         tile_datum.color,
-                                        actor_common.torch_color,
+                                        actor->light_color,
                                         coef),
                                     coef);
                                 bg_color = TCOD_color_lerp(
                                     bg_color,
                                     TCOD_color_multiply_scalar(
                                         fg_color,
-                                        actor_common.torch_intensity),
+                                        actor->light_intensity),
                                     coef);
                             }
                         }
@@ -2068,13 +2173,25 @@ static void render(TCOD_console_t console)
                         ? TCOD_yellow
                         : TCOD_white;
                 TCOD_console_set_default_foreground(panel_rect.console, color);
-                TCOD_console_printf(
-                    panel_rect.console,
-                    1,
-                    y - current_panel_status->scroll,
-                    "%c) %s",
-                    y - 1 + 'a' - current_panel_status->scroll,
-                    spell_datum.name);
+                if (current_panel_status->selection_mode)
+                {
+                    TCOD_console_printf(
+                        panel_rect.console,
+                        1,
+                        y - current_panel_status->scroll,
+                        "%c) %s",
+                        y - 1 + 'a' - current_panel_status->scroll,
+                        spell_datum.name);
+                }
+                else
+                {
+                    TCOD_console_printf(
+                        panel_rect.console,
+                        1,
+                        y - current_panel_status->scroll,
+                        world->player->readied_spell == spell_type ? "> %s" : "%s",
+                        spell_datum.name);
+                }
                 TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
                 y++;
             }

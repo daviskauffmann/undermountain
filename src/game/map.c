@@ -659,12 +659,13 @@ void map_generate(struct map *map)
         {
             room_get_random_pos(room, &x, &y);
         } while (map->tiles[x][y].object != NULL);
+        enum item_type type = TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1);
         struct item *item = item_new(
-            TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1),
+            type,
             map->floor,
             x,
             y,
-            1);
+            item_data[type].max_stack);
         struct tile *tile = &map->tiles[x][y];
         TCOD_list_push(map->items, item);
         TCOD_list_push(tile->items, item);

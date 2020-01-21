@@ -95,15 +95,15 @@ struct spell_datum spell_data[NUM_SPELL_TYPES];
     item_data[_type].max_stack = _max_stack;                                                                                                                                                                 \
     item_data[_type].ammunition_type = _ammunition_type;
 
-#define SPELL_DATA(_type, _name) \
-    spell_data[_type].name = _name;
+#define SPELL_DATA(_type, _name, _range) \
+    spell_data[_type].name = _name;      \
+    spell_data[_type].range = _range;
 
 void assets_load(void)
 {
     TCOD_namegen_parse("data/namegen.txt", NULL);
 
     // TODO: load from file
-    // see content.json
 
     TILE_COMMON(TCOD_color_RGB(16, 16, 32), 0.05f);
 
@@ -164,7 +164,8 @@ void assets_load(void)
     ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", '|', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE);
     ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, 10, AMMUNITION_TYPE_NONE);
 
-    SPELL_DATA(SPELL_TYPE_HEAL, "Heal");
+    SPELL_DATA(SPELL_TYPE_HEAL, "Heal", SPELL_RANGE_SELF);
+    SPELL_DATA(SPELL_TYPE_LIGHTNING, "Lightning", SPELL_RANGE_TARGET);
 }
 
 void assets_unload(void)

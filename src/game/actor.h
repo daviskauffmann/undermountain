@@ -4,6 +4,7 @@
 #include <libtcod.h>
 
 #include "item.h"
+#include "spell.h"
 
 struct object;
 
@@ -99,6 +100,7 @@ struct actor
     int current_hp;
     struct item *equipment[NUM_EQUIP_SLOTS];
     TCOD_list_t items;
+    enum spell_type readied_spell;
     int floor;
     int x;
     int y;
@@ -107,10 +109,11 @@ struct actor
     int last_seen_y;
     int turns_chased;
     struct actor *leader;
-    bool glow;
-    TCOD_map_t glow_fov;
-    bool torch;
-    TCOD_map_t torch_fov;
+    int light_radius;
+    TCOD_color_t light_color;
+    float light_intensity;
+    bool light_flicker;
+    TCOD_map_t light_fov;
     TCOD_color_t flash_color;
     float flash_fade_coef;
     bool dead;

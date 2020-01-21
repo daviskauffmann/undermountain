@@ -33,6 +33,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
         actor->equipment[equip_slot] = NULL;
     }
     actor->items = TCOD_list_new();
+    actor->readied_spell = SPELL_TYPE_HEAL;
     actor->floor = floor;
     actor->x = x;
     actor->y = y;
@@ -41,10 +42,19 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->last_seen_y = -1;
     actor->turns_chased = 0;
     actor->leader = NULL;
-    actor->glow = false;
-    actor->glow_fov = NULL;
-    actor->torch = TCOD_random_get_int(world->random, 0, 20) == 0;
-    actor->torch_fov = NULL;
+    actor->light_radius = -1;
+    actor->light_color = TCOD_white;
+    actor->light_intensity = 0;
+    actor->light_flicker = false;
+    actor->light_fov = NULL;
+    if (TCOD_random_get_int(world->random, 0, 20) == 0)
+    {
+        actor->light_radius = actor_common.torch_radius;
+        actor->light_color = actor_common.torch_color;
+        actor->light_intensity = actor_common.torch_intensity;
+        actor->light_flicker = true;
+    }
+    actor->flash_color = TCOD_white;
     actor->flash_fade_coef = 0.0f;
     actor->dead = false;
     return actor;
@@ -52,13 +62,9 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
 
 void actor_delete(struct actor *actor)
 {
-    if (actor->torch_fov != NULL)
+    if (actor->light_fov != NULL)
     {
-        TCOD_map_delete(actor->torch_fov);
-    }
-    if (actor->glow_fov != NULL)
-    {
-        TCOD_map_delete(actor->glow_fov);
+        TCOD_map_delete(actor->light_fov);
     }
     if (actor->fov != NULL)
     {
@@ -97,25 +103,16 @@ void actor_update_flash(struct actor *actor, float delta_time)
 
 void actor_calc_light(struct actor *actor)
 {
-    if (actor->glow_fov)
+    if (actor->light_fov)
     {
-        TCOD_map_delete(actor->glow_fov);
-        actor->glow_fov = NULL;
-    }
-    if (actor->torch_fov)
-    {
-        TCOD_map_delete(actor->torch_fov);
-        actor->torch_fov = NULL;
+        TCOD_map_delete(actor->light_fov);
+        actor->light_fov = NULL;
     }
 
-    struct map *map = &world->maps[actor->floor];
-    if (actor->torch)
+    if (actor->light_radius >= 0)
     {
-        actor->torch_fov = map_to_fov_map(map, actor->x, actor->y, actor_common.torch_radius);
-    }
-    else if (actor->glow)
-    {
-        actor->glow_fov = map_to_fov_map(map, actor->x, actor->y, actor_common.glow_radius);
+        struct map *map = &world->maps[actor->floor];
+        actor->light_fov = map_to_fov_map(map, actor->x, actor->y, actor->light_radius);
     }
 }
 
@@ -147,11 +144,7 @@ void actor_calc_fov(struct actor *actor)
                 TCOD_LIST_FOREACH(map->actors)
                 {
                     struct actor *other = *iterator;
-                    if (other->glow_fov && TCOD_map_is_in_fov(other->glow_fov, x, y))
-                    {
-                        TCOD_map_set_in_fov(actor->fov, x, y, true);
-                    }
-                    if (other->torch_fov && TCOD_map_is_in_fov(other->torch_fov, x, y))
+                    if (other->light_fov && TCOD_map_is_in_fov(other->light_fov, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
                     }
@@ -1097,16 +1090,6 @@ bool actor_quaff(struct actor *actor, struct item *item)
         return false;
     }
 
-    if (item->type == ITEM_TYPE_HEALING_POTION)
-    {
-        int hp = actor->max_hp - actor->current_hp;
-        actor->current_hp += hp;
-        if (actor->current_hp > actor->max_hp)
-        {
-            actor->current_hp = actor->max_hp;
-        }
-    }
-
     world_log(
         actor->floor,
         actor->x,
@@ -1115,6 +1098,31 @@ bool actor_quaff(struct actor *actor, struct item *item)
         "%s quaffs %s.",
         actor->name,
         item_datum.name);
+
+    switch (item->type)
+    {
+    case ITEM_TYPE_HEALING_POTION:
+    {
+        int hp = actor->max_hp - actor->current_hp;
+        actor->current_hp += hp;
+        if (actor->current_hp > actor->max_hp)
+        {
+            actor->current_hp = actor->max_hp;
+        }
+
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s heals for %d.",
+            actor->name,
+            hp);
+    }
+    break;
+    default:
+        break;
+    }
 
     item->current_stack--;
     if (item->current_stack <= 0)
@@ -1301,10 +1309,94 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     return true;
 }
 
-// TODO: implement
 bool actor_cast_spell(struct actor *actor, int x, int y)
 {
-    return false;
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    // TODO: mana and/or some other kind of spell limiter
+
+    // TODO: spell projectiles
+
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s casts %s.",
+        actor->name,
+        spell_data[actor->readied_spell].name);
+
+    switch (actor->readied_spell)
+    {
+    case SPELL_TYPE_HEAL:
+    {
+        int hp = actor->max_hp - actor->current_hp;
+        actor->current_hp += hp;
+        if (actor->current_hp > actor->max_hp)
+        {
+            actor->current_hp = actor->max_hp;
+        }
+
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s heals for %d.",
+            actor->name,
+            hp);
+    }
+    break;
+    case SPELL_TYPE_LIGHTNING:
+    {
+        struct map *map = &world->maps[actor->floor];
+        struct tile *tile = &map->tiles[x][y];
+        struct actor *other = tile->actor;
+        if (other)
+        {
+            int damage = TCOD_random_get_int(world->random, 1, 4);
+
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s zaps %s for %d.",
+                actor->name,
+                other->name,
+                damage);
+
+            other->current_hp -= damage;
+            other->flash_color = TCOD_red;
+            other->flash_fade_coef = 1.0f;
+            if (other->current_hp <= 0)
+            {
+                actor_die(other, actor);
+            }
+        }
+        else
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s cannot cast %s here.",
+                actor->name,
+                spell_data[actor->readied_spell].name);
+
+            return false;
+        }
+    }
+    break;
+    default:
+        break;
+    }
+
+    return true;
 }
 
 void actor_die(struct actor *actor, struct actor *killer)

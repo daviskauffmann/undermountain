@@ -40,7 +40,7 @@ void object_calc_light(struct object *object)
         TCOD_map_delete(object->light_fov);
     }
 
-    if (object->light_radius != -1)
+    if (object->light_radius >= 0)
     {
         struct map *map = &world->maps[object->floor];
         object->light_fov = map_to_fov_map(map, object->x, object->y, object->light_radius);

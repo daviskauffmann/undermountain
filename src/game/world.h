@@ -4,6 +4,7 @@
 #include <libtcod.h>
 
 #include "map.h"
+#include "spell.h"
 
 #define NUM_MAPS 60
 
@@ -18,8 +19,8 @@ struct world
 {
     enum world_state state;
     unsigned int seed;
-    unsigned int turn;
     TCOD_random_t random;
+    unsigned int turn;
     struct map maps[NUM_MAPS];
     TCOD_list_t messages;
     struct actor *player;

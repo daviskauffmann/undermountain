@@ -19,7 +19,7 @@ enum equip_slot
     NUM_EQUIP_SLOTS
 };
 
-struct equip_slot_data
+struct equip_slot_datum
 {
     char *name;
     char *label; // TODO: not the biggest fan of this solution
@@ -47,7 +47,7 @@ enum item_type
     NUM_ITEM_TYPES
 };
 
-struct item_data
+struct item_datum
 {
     const char *name;
     const char *description;

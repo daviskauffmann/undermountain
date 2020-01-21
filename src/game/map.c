@@ -684,18 +684,18 @@ struct room *map_get_random_room(struct map *map)
 bool map_is_transparent(struct map *map, int x, int y)
 {
     struct tile *tile = &map->tiles[x][y];
-    if (tile->object && !object_datum[tile->object->type].is_transparent)
+    if (tile->object && !object_data[tile->object->type].is_transparent)
     {
         return false;
     }
-    return tile_datum[tile->type].is_transparent;
+    return tile_data[tile->type].is_transparent;
 }
 
 bool map_is_walkable(struct map *map, int x, int y)
 {
     struct tile *tile = &map->tiles[x][y];
     if (tile->object &&
-        !object_datum[tile->object->type].is_walkable &&
+        !object_data[tile->object->type].is_walkable &&
         tile->object->type != OBJECT_TYPE_DOOR_CLOSED)
     {
         return false;
@@ -704,7 +704,7 @@ bool map_is_walkable(struct map *map, int x, int y)
     {
         return false;
     }
-    return tile_datum[tile->type].is_walkable;
+    return tile_data[tile->type].is_walkable;
 }
 
 TCOD_map_t map_to_TCOD_map(struct map *map)

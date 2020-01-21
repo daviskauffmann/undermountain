@@ -5,37 +5,37 @@
 #include "util.h"
 
 struct tile_common tile_common;
-struct tile_data tile_datum[NUM_TILE_TYPES];
+struct tile_datum tile_data[NUM_TILE_TYPES];
 struct object_common object_common;
-struct object_data object_datum[NUM_OBJECT_TYPES];
+struct object_datum object_data[NUM_OBJECT_TYPES];
 struct actor_common actor_common;
-struct race_data race_datum[NUM_RACES];
-struct class_data class_datum[NUM_CLASSES];
+struct race_datum race_data[NUM_RACES];
+struct class_datum class_data[NUM_CLASSES];
 struct actor_prototype monster_prototypes[NUM_MONSTERS];
 struct item_common item_common;
-struct equip_slot_data equip_slot_datum[NUM_EQUIP_SLOTS];
-struct item_data item_datum[NUM_ITEM_TYPES];
-struct spell_data spell_datum[NUM_SPELL_TYPES];
+struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
+struct item_datum item_data[NUM_ITEM_TYPES];
+struct spell_datum spell_data[NUM_SPELL_TYPES];
 
 #define TILE_COMMON(_ambient_color, _ambient_intensity) \
     tile_common.ambient_color = _ambient_color;         \
     tile_common.ambient_intensity = _ambient_intensity;
 
 #define TILE_DATA(_type, _name, _glyph, _color, _is_transparent, _is_walkable) \
-    tile_datum[_type].name = _name;                                            \
-    tile_datum[_type].glyph = _glyph;                                          \
-    tile_datum[_type].color = _color;                                          \
-    tile_datum[_type].is_transparent = _is_transparent;                        \
-    tile_datum[_type].is_walkable = _is_walkable;
+    tile_data[_type].name = _name;                                             \
+    tile_data[_type].glyph = _glyph;                                           \
+    tile_data[_type].color = _color;                                           \
+    tile_data[_type].is_transparent = _is_transparent;                         \
+    tile_data[_type].is_walkable = _is_walkable;
 
 #define OBJECT_COMMON(_placeholder) \
     object_common.__placeholder = _placeholder;
 
 #define OBJECT_DATA(_type, _name, _glyph, _is_transparent, _is_walkable) \
-    object_datum[_type].name = _name;                                    \
-    object_datum[_type].glyph = _glyph;                                  \
-    object_datum[_type].is_transparent = _is_transparent;                \
-    object_datum[_type].is_walkable = _is_walkable;
+    object_data[_type].name = _name;                                     \
+    object_data[_type].glyph = _glyph;                                   \
+    object_data[_type].is_transparent = _is_transparent;                 \
+    object_data[_type].is_walkable = _is_walkable;
 
 #define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _glow_intensity, _torch_radius, _torch_color, _torch_intensity) \
     actor_common.turns_to_chase = _turns_to_chase;                                                                               \
@@ -47,12 +47,12 @@ struct spell_data spell_datum[NUM_SPELL_TYPES];
     actor_common.torch_intensity = _torch_intensity;
 
 #define RACE_DATA(_race, _name, _glyph) \
-    race_datum[_race].name = _name;     \
-    race_datum[_race].glyph = _glyph;
+    race_data[_race].name = _name;      \
+    race_data[_race].glyph = _glyph;
 
 #define CLASS_DATA(_class, _name, _color) \
-    class_datum[_class].name = _name;     \
-    class_datum[_class].color = _color;
+    class_data[_class].name = _name;      \
+    class_data[_class].color = _color;
 
 #define MONSTER_PROTOTYPE(_monster, _name, _race, _class) \
     monster_prototypes[_monster].name = _name;            \
@@ -60,43 +60,43 @@ struct spell_data spell_datum[NUM_SPELL_TYPES];
     monster_prototypes[_monster].class = _class;
 
 #define ABILITY_DATA(_ability, _name, _abbreviation, _description) \
-    ability_datum[_ability].name = _name;                          \
-    ability_datum[_ability].abbreviation = _abbreviation;          \
-    ability_datum[_ability].description = _description;
+    ability_data[_ability].name = _name;                           \
+    ability_data[_ability].abbreviation = _abbreviation;           \
+    ability_data[_ability].description = _description;
 
 #define ITEM_COMMON(_placeholder) \
     item_common.__placeholder = _placeholder;
 
 #define EQUIP_SLOT_DATA(_type, _name, _label) \
-    equip_slot_datum[_type].name = _name;     \
-    equip_slot_datum[_type].label = _label;
+    equip_slot_data[_type].name = _name;      \
+    equip_slot_data[_type].label = _label;
 
 #define BASE_ITEM_DATA(_type, _glyph, _color, _equip_slot, _ranged, _two_handed) \
-    base_item_datum[_type].glyph = _glyph;                                       \
-    base_item_datum[_type].color = _color;                                       \
-    base_item_datum[_type].equip_slot = _equip_slot;                             \
-    base_item_datum[_type].ranged = _ranged;                                     \
-    base_item_datum[_type].two_handed = _two_handed;
+    base_item_data[_type].glyph = _glyph;                                        \
+    base_item_data[_type].color = _color;                                        \
+    base_item_data[_type].equip_slot = _equip_slot;                              \
+    base_item_data[_type].ranged = _ranged;                                      \
+    base_item_data[_type].two_handed = _two_handed;
 
 #define ITEM_DATA(_type, _name, _description, _glyph, _color, _equip_slot, _two_handed, _armor, _block_chance, _min_damage, _max_damage, _ranged, _max_durability, _quaffable, _max_stack, _ammunition_type) \
-    item_datum[_type].name = _name;                                                                                                                                                                          \
-    item_datum[_type].description = _description;                                                                                                                                                            \
-    item_datum[_type].glyph = _glyph;                                                                                                                                                                        \
-    item_datum[_type].color = _color;                                                                                                                                                                        \
-    item_datum[_type].equip_slot = _equip_slot;                                                                                                                                                              \
-    item_datum[_type].two_handed = _two_handed;                                                                                                                                                              \
-    item_datum[_type].armor = _armor;                                                                                                                                                                        \
-    item_datum[_type].block_chance = _block_chance;                                                                                                                                                          \
-    item_datum[_type].min_damage = _min_damage;                                                                                                                                                              \
-    item_datum[_type].max_damage = _max_damage;                                                                                                                                                              \
-    item_datum[_type].ranged = _ranged;                                                                                                                                                                      \
-    item_datum[_type].max_durability = _max_durability;                                                                                                                                                      \
-    item_datum[_type].quaffable = _quaffable;                                                                                                                                                                \
-    item_datum[_type].max_stack = _max_stack;                                                                                                                                                                \
-    item_datum[_type].ammunition_type = _ammunition_type;
+    item_data[_type].name = _name;                                                                                                                                                                           \
+    item_data[_type].description = _description;                                                                                                                                                             \
+    item_data[_type].glyph = _glyph;                                                                                                                                                                         \
+    item_data[_type].color = _color;                                                                                                                                                                         \
+    item_data[_type].equip_slot = _equip_slot;                                                                                                                                                               \
+    item_data[_type].two_handed = _two_handed;                                                                                                                                                               \
+    item_data[_type].armor = _armor;                                                                                                                                                                         \
+    item_data[_type].block_chance = _block_chance;                                                                                                                                                           \
+    item_data[_type].min_damage = _min_damage;                                                                                                                                                               \
+    item_data[_type].max_damage = _max_damage;                                                                                                                                                               \
+    item_data[_type].ranged = _ranged;                                                                                                                                                                       \
+    item_data[_type].max_durability = _max_durability;                                                                                                                                                       \
+    item_data[_type].quaffable = _quaffable;                                                                                                                                                                 \
+    item_data[_type].max_stack = _max_stack;                                                                                                                                                                 \
+    item_data[_type].ammunition_type = _ammunition_type;
 
 #define SPELL_DATA(_type, _name) \
-    spell_datum[_type].name = _name;
+    spell_data[_type].name = _name;
 
 void assets_load(void)
 {

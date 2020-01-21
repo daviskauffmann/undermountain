@@ -24,7 +24,7 @@ enum object_type
     NUM_OBJECT_TYPES
 };
 
-struct object_data
+struct object_datum
 {
     const char *name;
     unsigned char glyph;

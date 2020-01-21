@@ -19,7 +19,7 @@ enum spell_type
     NUM_SPELL_TYPES
 };
 
-struct spell_data
+struct spell_datum
 {
     const char *name;
 };

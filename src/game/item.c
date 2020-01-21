@@ -14,8 +14,8 @@ struct item *item_new(enum item_type type, int floor, int x, int y, int stack)
     item->floor = floor;
     item->x = x;
     item->y = y;
-    item->current_durability = item_datum[type].max_durability;
-    item->current_stack = MIN(item_datum[type].max_stack, stack);
+    item->current_durability = item_data[type].max_durability;
+    item->current_stack = MIN(item_data[type].max_stack, stack);
     return item;
 }
 

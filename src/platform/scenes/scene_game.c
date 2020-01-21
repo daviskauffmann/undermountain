@@ -419,7 +419,7 @@ static bool player_interact(TCOD_key_t key, int x, int y)
                 struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
                 if (weapon)
                 {
-                    if (item_datum[weapon->type].ranged)
+                    if (item_data[weapon->type].ranged)
                     {
                         actor_shoot(world->player, x, y, &projectile_on_hit_set_took_turn, NULL);
                         return false;
@@ -1271,12 +1271,12 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     {
                         tooltip_show();
                         tooltip_options_add("Drop", NULL);
-                        struct item_data item_data = item_datum[item->type];
-                        if (item_data.equip_slot != EQUIP_SLOT_NONE)
+                        struct item_datum item_datum = item_data[item->type];
+                        if (item_datum.equip_slot != EQUIP_SLOT_NONE)
                         {
                             tooltip_options_add("Equip", &toolip_option_on_click_equip);
                         }
-                        if (item_data.quaffable)
+                        if (item_datum.quaffable)
                         {
                             tooltip_options_add("Quaff", NULL);
                         }
@@ -1436,10 +1436,10 @@ static void render(TCOD_console_t console)
                 if (map_is_inside(x, y))
                 {
                     struct tile *tile = &map->tiles[x][y];
-                    struct tile_data tile_data = tile_datum[tile->type];
+                    struct tile_datum tile_datum = tile_data[tile->type];
                     TCOD_color_t fg_color = TCOD_color_multiply(
                         tile_common.ambient_color,
-                        tile_data.color);
+                        tile_datum.color);
                     TCOD_color_t bg_color = TCOD_color_multiply_scalar(
                         fg_color,
                         tile_common.ambient_intensity);
@@ -1463,7 +1463,7 @@ static void render(TCOD_console_t console)
                                 fg_color = TCOD_color_lerp(
                                     fg_color,
                                     TCOD_color_lerp(
-                                        tile_data.color,
+                                        tile_datum.color,
                                         actor_common.glow_color,
                                         coef),
                                     coef);
@@ -1492,7 +1492,7 @@ static void render(TCOD_console_t console)
                                 fg_color = TCOD_color_lerp(
                                     fg_color,
                                     TCOD_color_lerp(
-                                        tile_data.color,
+                                        tile_datum.color,
                                         object->light_color,
                                         coef),
                                     coef);
@@ -1521,7 +1521,7 @@ static void render(TCOD_console_t console)
                                 fg_color = TCOD_color_lerp(
                                     fg_color,
                                     TCOD_color_lerp(
-                                        tile_data.color,
+                                        tile_datum.color,
                                         actor_common.torch_color,
                                         coef),
                                     coef);
@@ -1537,7 +1537,7 @@ static void render(TCOD_console_t console)
 
                     if (tile->seen)
                     {
-                        int glyph = tile_data.glyph;
+                        int glyph = tile_datum.glyph;
                         if (tile->type == TILE_TYPE_WALL)
                         {
                             // select wall graphic
@@ -1630,7 +1630,7 @@ static void render(TCOD_console_t console)
                 console,
                 object->x - view_x,
                 object->y - view_y,
-                object_datum[object->type].glyph);
+                object_data[object->type].glyph);
         }
     }
     TCOD_LIST_FOREACH(map->items)
@@ -1638,17 +1638,17 @@ static void render(TCOD_console_t console)
         struct item *item = *iterator;
         if (TCOD_map_is_in_fov(world->player->fov, item->x, item->y))
         {
-            struct item_data item_data = item_datum[item->type];
+            struct item_datum item_datum = item_data[item->type];
             TCOD_console_set_char_foreground(
                 console,
                 item->x - view_x,
                 item->y - view_y,
-                item_data.color);
+                item_datum.color);
             TCOD_console_set_char(
                 console,
                 item->x - view_x,
                 item->y - view_y,
-                item_data.glyph);
+                item_datum.glyph);
         }
     }
     TCOD_LIST_FOREACH(map->projectiles)
@@ -1685,7 +1685,7 @@ static void render(TCOD_console_t console)
                 console,
                 object->x - view_x,
                 object->y - view_y,
-                object_datum[object->type].glyph);
+                object_data[object->type].glyph);
         }
     }
     TCOD_LIST_FOREACH(map->actors)
@@ -1693,7 +1693,7 @@ static void render(TCOD_console_t console)
         struct actor *actor = *iterator;
         if (!actor->dead && TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y))
         {
-            TCOD_color_t color = class_datum[actor->class].color;
+            TCOD_color_t color = class_data[actor->class].color;
             if (actor->flash_fade_coef > 0)
             {
                 color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade_coef);
@@ -1707,7 +1707,7 @@ static void render(TCOD_console_t console)
                 console,
                 actor->x - view_x,
                 actor->y - view_y,
-                race_datum[actor->race].glyph);
+                race_data[actor->race].glyph);
         }
     }
 
@@ -1777,7 +1777,7 @@ static void render(TCOD_console_t console)
                         view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
-                        item_datum[item->type].name);
+                        item_data[item->type].name);
 
                     goto done;
                 }
@@ -1789,7 +1789,7 @@ static void render(TCOD_console_t console)
                         view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
-                        object_datum[tile->object->type].name);
+                        object_data[tile->object->type].name);
 
                     goto done;
                 }
@@ -1799,7 +1799,7 @@ static void render(TCOD_console_t console)
                     view_height - 2,
                     TCOD_BKGND_NONE,
                     TCOD_CENTER,
-                    tile_datum[tile->type].name);
+                    tile_data[tile->type].name);
             done:;
             }
             else
@@ -1813,7 +1813,7 @@ static void render(TCOD_console_t console)
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
                         "%s (known)",
-                        tile_datum[tile->type].name);
+                        tile_data[tile->type].name);
                 }
                 else
                 {
@@ -1895,13 +1895,13 @@ static void render(TCOD_console_t console)
                 1,
                 y++ - current_panel_status->scroll,
                 "RACE : %s",
-                race_datum[world->player->race].name);
+                race_data[world->player->race].name);
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y++ - current_panel_status->scroll,
                 "CLASS: %s",
-                class_datum[world->player->class].name);
+                class_data[world->player->class].name);
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -1923,11 +1923,11 @@ static void render(TCOD_console_t console)
                         ? TCOD_yellow
                         : TCOD_white;
                 TCOD_console_set_default_foreground(panel_rect.console, color);
-                struct equip_slot_data equip_slot_data = equip_slot_datum[equip_slot];
+                struct equip_slot_datum equip_slot_datum = equip_slot_data[equip_slot];
                 if (world->player->equipment[equip_slot])
                 {
                     struct item *equipment = world->player->equipment[equip_slot];
-                    struct item_data item_data = item_datum[equipment->type];
+                    struct item_datum item_datum = item_data[equipment->type];
                     if (current_panel_status->selection_mode)
                     {
                         TCOD_console_printf(
@@ -1936,8 +1936,8 @@ static void render(TCOD_console_t console)
                             y++ - current_panel_status->scroll,
                             equipment->current_stack > 1 ? "%c) %s: %s (%d)" : "%c) %s: %s",
                             equip_slot + 'a' - 1,
-                            equip_slot_data.label,
-                            item_data.name,
+                            equip_slot_datum.label,
+                            item_datum.name,
                             equipment->current_stack);
                     }
                     else
@@ -1947,8 +1947,8 @@ static void render(TCOD_console_t console)
                             1,
                             y++ - current_panel_status->scroll,
                             equipment->current_stack > 1 ? "%s: %s (%d)" : "%s: %s",
-                            equip_slot_data.label,
-                            item_data.name,
+                            equip_slot_datum.label,
+                            item_datum.name,
                             equipment->current_stack);
                     }
                 }
@@ -1961,7 +1961,7 @@ static void render(TCOD_console_t console)
                             1,
                             y++ - current_panel_status->scroll,
                             "%c) %s:", equip_slot + 'a' - 1,
-                            equip_slot_data.label);
+                            equip_slot_datum.label);
                     }
                     else
                     {
@@ -1969,7 +1969,7 @@ static void render(TCOD_console_t console)
                             panel_rect.console,
                             1,
                             y++ - current_panel_status->scroll,
-                            "%s:", equip_slot_data.label);
+                            "%s:", equip_slot_datum.label);
                     }
                 }
                 TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
@@ -2016,11 +2016,11 @@ static void render(TCOD_console_t console)
             TCOD_LIST_FOREACH(world->player->items)
             {
                 struct item *item = *iterator;
-                struct item_data item_data = item_datum[item->type];
+                struct item_datum item_datum = item_data[item->type];
                 TCOD_color_t color =
                     item == panel_inventory_get_selected()
                         ? TCOD_yellow
-                        : item_data.color;
+                        : item_datum.color;
                 TCOD_console_set_default_foreground(panel_rect.console, color);
                 if (current_panel_status->selection_mode)
                 {
@@ -2030,7 +2030,7 @@ static void render(TCOD_console_t console)
                         y - current_panel_status->scroll,
                         item->current_stack > 1 ? "%c) %s (%d)" : "%c) %s",
                         y - 1 + 'a' - current_panel_status->scroll,
-                        item_data.name,
+                        item_datum.name,
                         item->current_stack);
                 }
                 else
@@ -2040,7 +2040,7 @@ static void render(TCOD_console_t console)
                         1,
                         y - current_panel_status->scroll,
                         item->current_stack > 1 ? "%s (%d)" : "%s",
-                        item_data.name,
+                        item_datum.name,
                         item->current_stack);
                 }
                 TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
@@ -2062,7 +2062,7 @@ static void render(TCOD_console_t console)
             int y = 1;
             for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
             {
-                struct spell_data spell_data = spell_datum[spell_type];
+                struct spell_datum spell_datum = spell_data[spell_type];
                 TCOD_color_t color =
                     spell_type == panel_spellbook_get_selected()
                         ? TCOD_yellow
@@ -2074,7 +2074,7 @@ static void render(TCOD_console_t console)
                     y - current_panel_status->scroll,
                     "%c) %s",
                     y - 1 + 'a' - current_panel_status->scroll,
-                    spell_data.name);
+                    spell_datum.name);
                 TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
                 y++;
             }

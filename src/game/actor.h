@@ -66,13 +66,13 @@ struct actor_common
     float torch_intensity;
 };
 
-struct race_data
+struct race_datum
 {
     const char *name;
     unsigned char glyph;
 };
 
-struct class_data
+struct class_datum
 {
     const char *name;
     TCOD_color_t color;

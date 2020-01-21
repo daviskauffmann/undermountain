@@ -234,8 +234,8 @@ void actor_ai(struct actor *actor)
             struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
             if (weapon)
             {
-                struct item_data item_data = item_datum[weapon->type];
-                if (item_data.ranged)
+                struct item_datum item_datum = item_data[weapon->type];
+                if (item_datum.ranged)
                 {
                     // wielding a ranged weapon, but need to make sure I have ammo slotted
                     struct item *ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
@@ -448,7 +448,7 @@ bool actor_move(struct actor *actor, int x, int y)
 
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[x][y];
-    if (!tile_datum[tile->type].is_walkable)
+    if (!tile_data[tile->type].is_walkable)
     {
         return false;
     }
@@ -499,7 +499,7 @@ bool actor_move(struct actor *actor, int x, int y)
             break;
         }
 
-        if (!object_datum[tile->object->type].is_walkable)
+        if (!object_data[tile->object->type].is_walkable)
         {
             return false;
         }
@@ -513,7 +513,7 @@ bool actor_move(struct actor *actor, int x, int y)
         else
         {
             struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-            if (weapon && item_datum[weapon->type].ranged)
+            if (weapon && item_data[weapon->type].ranged)
             {
                 return actor_shoot(world->player, x, y, NULL, NULL);
             }
@@ -968,7 +968,7 @@ bool actor_grab(struct actor *actor, int x, int y)
         TCOD_white,
         "%s picks up %s.",
         actor->name,
-        item_datum[item->type].name);
+        item_data[item->type].name);
 
     return true;
 }
@@ -991,15 +991,15 @@ bool actor_drop(struct actor *actor, struct item *item)
         TCOD_white,
         "%s drops %s.",
         actor->name,
-        item_datum[item->type].name);
+        item_data[item->type].name);
 
     return true;
 }
 
 bool actor_equip(struct actor *actor, struct item *item)
 {
-    struct item_data item_data = item_datum[item->type];
-    enum equip_slot equip_slot = item_data.equip_slot;
+    struct item_datum item_datum = item_data[item->type];
+    enum equip_slot equip_slot = item_datum.equip_slot;
     if (equip_slot == EQUIP_SLOT_NONE)
     {
         world_log(
@@ -1009,7 +1009,7 @@ bool actor_equip(struct actor *actor, struct item *item)
             TCOD_white,
             "%s cannot equip %s.",
             actor->name,
-            item_data.name);
+            item_datum.name);
 
         return false;
     }
@@ -1018,7 +1018,7 @@ bool actor_equip(struct actor *actor, struct item *item)
     {
         actor_unequip(actor, equip_slot);
     }
-    if (item_data.two_handed)
+    if (item_datum.two_handed)
     {
         if (actor->equipment[EQUIP_SLOT_OFF_HAND])
         {
@@ -1028,7 +1028,7 @@ bool actor_equip(struct actor *actor, struct item *item)
     if (equip_slot == EQUIP_SLOT_OFF_HAND)
     {
         struct item *main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-        if (main_hand && item_datum[main_hand->type].two_handed)
+        if (main_hand && item_data[main_hand->type].two_handed)
         {
             actor_unequip(actor, EQUIP_SLOT_MAIN_HAND);
         }
@@ -1043,7 +1043,7 @@ bool actor_equip(struct actor *actor, struct item *item)
         TCOD_white,
         "%s equips %s.",
         actor->name,
-        item_data.name);
+        item_datum.name);
 
     return true;
 }
@@ -1060,7 +1060,7 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
             TCOD_white,
             "%s is not equipping anything their %s slot.",
             actor->name,
-            equip_slot_datum[equip_slot].name);
+            equip_slot_data[equip_slot].name);
 
         return false;
     }
@@ -1075,15 +1075,15 @@ bool actor_unequip(struct actor *actor, enum equip_slot equip_slot)
         TCOD_white,
         "%s unequips %s.",
         actor->name,
-        item_datum[equipment->type].name);
+        item_data[equipment->type].name);
 
     return true;
 }
 
 bool actor_quaff(struct actor *actor, struct item *item)
 {
-    struct item_data item_data = item_datum[item->type];
-    if (!item_data.quaffable)
+    struct item_datum item_datum = item_data[item->type];
+    if (!item_datum.quaffable)
     {
         world_log(
             actor->floor,
@@ -1092,7 +1092,7 @@ bool actor_quaff(struct actor *actor, struct item *item)
             TCOD_white,
             "%s cannot quaff %s.",
             actor->name,
-            item_data.name);
+            item_datum.name);
 
         return false;
     }
@@ -1114,7 +1114,7 @@ bool actor_quaff(struct actor *actor, struct item *item)
         TCOD_white,
         "%s quaffs %s.",
         actor->name,
-        item_data.name);
+        item_datum.name);
 
     item->current_stack--;
     if (item->current_stack <= 0)
@@ -1128,7 +1128,7 @@ bool actor_quaff(struct actor *actor, struct item *item)
 
 bool actor_bash(struct actor *actor, struct object *object)
 {
-    struct object_data object_data = object_datum[object->type];
+    struct object_datum object_datum = object_data[object->type];
     if (object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP)
     {
         world_log(
@@ -1138,7 +1138,7 @@ bool actor_bash(struct actor *actor, struct object *object)
             TCOD_white,
             "%s cannot destroy the %s.",
             actor->name,
-            object_data.name);
+            object_datum.name);
 
         return false;
     }
@@ -1156,7 +1156,7 @@ bool actor_bash(struct actor *actor, struct object *object)
         TCOD_white,
         "%s destroys the %s.",
         actor->name,
-        object_data.name);
+        object_datum.name);
 
     return true;
 }
@@ -1182,8 +1182,8 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         return false;
     }
 
-    struct item_data item_data = item_datum[weapon->type];
-    if (!item_datum[weapon->type].ranged)
+    struct item_datum item_datum = item_data[weapon->type];
+    if (!item_datum.ranged)
     {
         world_log(
             actor->floor,
@@ -1209,7 +1209,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
 
         return false;
     }
-    if (item_datum[ammunition->type].ammunition_type != item_data.ammunition_type)
+    if (item_data[ammunition->type].ammunition_type != item_datum.ammunition_type)
     {
         world_log(
             actor->floor,
@@ -1255,16 +1255,16 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
     if (weapon)
     {
-        struct item_data item_data = item_datum[weapon->type];
-        min_damage = item_data.min_damage;
-        max_damage = item_data.max_damage;
+        struct item_datum item_datum = item_data[weapon->type];
+        min_damage = item_datum.min_damage;
+        max_damage = item_datum.max_damage;
     }
     int damage = TCOD_random_get_int(world->random, min_damage, max_damage);
     struct item *armor = other->equipment[EQUIP_SLOT_ARMOR];
     if (armor)
     {
-        struct item_data item_data = item_datum[armor->type];
-        damage -= item_data.armor;
+        struct item_datum item_datum = item_data[armor->type];
+        damage -= item_datum.armor;
         if (damage < 0)
         {
             damage = 0;
@@ -1273,8 +1273,8 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     struct item *shield = other->equipment[EQUIP_SLOT_OFF_HAND];
     if (shield)
     {
-        struct item_data item_data = item_datum[shield->type];
-        if (TCOD_random_get_float(world->random, 0.0f, 1.0f) <= item_data.block_chance)
+        struct item_datum item_datum = item_data[shield->type];
+        if (TCOD_random_get_float(world->random, 0.0f, 1.0f) <= item_datum.block_chance)
         {
             damage = 0;
         }

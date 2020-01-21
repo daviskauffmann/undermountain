@@ -8,17 +8,17 @@
 #include "tile.h"
 
 extern struct tile_common tile_common;
-extern struct tile_data tile_datum[NUM_TILE_TYPES];
+extern struct tile_datum tile_data[NUM_TILE_TYPES];
 extern struct object_common object_common;
-extern struct object_data object_datum[NUM_OBJECT_TYPES];
+extern struct object_datum object_data[NUM_OBJECT_TYPES];
 extern struct actor_common actor_common;
-extern struct race_data race_datum[NUM_RACES];
-extern struct class_data class_datum[NUM_CLASSES];
+extern struct race_datum race_data[NUM_RACES];
+extern struct class_datum class_data[NUM_CLASSES];
 extern struct actor_prototype monster_prototypes[NUM_MONSTERS];
 extern struct item_common item_common;
-extern struct equip_slot_data equip_slot_datum[NUM_EQUIP_SLOTS];
-extern struct item_data item_datum[NUM_ITEM_TYPES];
-extern struct spell_data spell_datum[NUM_SPELL_TYPES];
+extern struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
+extern struct item_datum item_data[NUM_ITEM_TYPES];
+extern struct spell_datum spell_data[NUM_SPELL_TYPES];
 
 void assets_load(void);
 void assets_unload(void);

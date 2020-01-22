@@ -29,10 +29,6 @@
 
 // TODO: automoving needs to be slower and easy to cancel
 
-// TODO: better sanity checking for tooltip_rect data
-// right now, tooltip_rect data is contained in a module scope struct
-// need to define ways to make sure the struct is valid for the given tooltip_rect options
-
 // TODO: prompts
 
 /* Input variables */
@@ -485,9 +481,7 @@ static bool player_interact(TCOD_key_t key, int x, int y)
 static bool toolip_option_on_click_move(void)
 {
     automoving = true;
-
     struct tile *tile = &world->maps[world->player->floor].tiles[tooltip_data.x][tooltip_data.y];
-
     if (tile->actor && tile->actor->faction != world->player->faction && !tile->actor->dead)
     {
         automove_actor = tile->actor;
@@ -1646,7 +1640,7 @@ static void render(TCOD_console_t console)
                         if (tile->type == TILE_TYPE_WALL)
                         {
                             // select wall graphic
-                            int glyphs[] = {
+                            const int glyphs[] = {
                                 TCOD_CHAR_BLOCK3,  //  0 - none
                                 TCOD_CHAR_DVLINE,  //  1 - N
                                 TCOD_CHAR_DHLINE,  //  2 - E
@@ -1666,19 +1660,19 @@ static void render(TCOD_console_t console)
                             int index = 0;
                             if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
                             {
-                                index += 1;
+                                index |= 1 << 0;
                             }
                             if (x < MAP_WIDTH - 1 && map->tiles[x + 1][y].type == TILE_TYPE_WALL)
                             {
-                                index += 2;
+                                index |= 1 << 1;
                             }
                             if (y < MAP_HEIGHT - 1 && map->tiles[x][y + 1].type == TILE_TYPE_WALL)
                             {
-                                index += 4;
+                                index |= 1 << 2;
                             }
                             if (x > 0 && map->tiles[x - 1][y].type == TILE_TYPE_WALL)
                             {
-                                index += 8;
+                                index |= 1 << 3;
                             }
                             glyph = glyphs[index];
                         }

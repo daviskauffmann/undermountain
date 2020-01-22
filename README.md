@@ -2,9 +2,7 @@
 
 ## Getting Started
 
-I am on Windows using MinGW64, so that is the only development platform supported at this time.
-
-Install third party libraries.
+Download and install libtcod. I am on Windows using MinGW64, so that is the only development platform supported for building libtcod at this time. If the following commands don't work, you can go into `/deps/libtcod` and build it yourself for your platform. The Makefile paths will then most likely need to be updated in order to properly link the library and copy the dll to `/bin`.
 
 ```sh
 git submodule update --init

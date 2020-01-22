@@ -3,10 +3,9 @@ CFLAGS := -ggdb -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
 LDFLAGS :=
 
 SRC	:= src
-DEPS := deps
+EXTERN := extern
 BUILD := build
 BIN	:= bin
-EXE := undermountain
 
 SOURCES	:= \
 	$(SRC)/main.c \
@@ -27,12 +26,12 @@ SOURCES	:= \
 	$(SRC)/platform/scenes/scene_about.c \
 	$(SRC)/platform/scenes/scene_game.c \
 	$(SRC)/platform/scenes/scene_menu.c
-OBJECTS := $(patsubst $(SRC)/%,$(BUILD)/%,$(SOURCES:.c=.o))
-DEPENDENCIES := $(OBJECTS:.o=.d)
-INCLUDE := -I$(DEPS)/libtcod/src
-LIB := -L$(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
+OBJECTS := $(SOURCES:$(SRC)/%.c=$(BUILD)/%.o)
+DEPENDENCIES := $(OBJECTS:%.o=%.d)
+INCLUDE := -I$(EXTERN)/libtcod/src
+LIB := -L$(EXTERN)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
 LIBRARIES := -ltcod
-TARGET := $(BIN)/$(EXE)
+TARGET := $(BIN)/undermountain
 
 .PHONY: all
 all: $(TARGET)
@@ -40,7 +39,7 @@ all: $(TARGET)
 $(TARGET): $(OBJECTS)
 	mkdir -p $(@D)
 	$(CC) $^ -o $@ $(LDFLAGS) $(LIB) $(LIBRARIES)
-	cp $(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG/libtcod.dll $(BIN)
+	cp $(EXTERN)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG/libtcod.dll $(BIN)
 
 $(BUILD)/%.o: $(SRC)/%.c
 	mkdir -p $(@D)
@@ -50,7 +49,7 @@ $(BUILD)/%.o: $(SRC)/%.c
 
 .PHONY: setup
 setup:
-	cd $(DEPS)/libtcod/buildsys/scons && scons build TOOLSET=mingw ARCH=x86_64
+	cd $(EXTERN)/libtcod/buildsys/scons && scons build TOOLSET=mingw ARCH=x86_64
 
 .PHONY: run
 run: all
@@ -59,7 +58,7 @@ run: all
 .PHONY: clean
 clean:
 	rm -rf $(BIN) $(BUILD)
-	rm -rf $(DEPS)/libtcod/buildsys/scons/__pycache__
-	rm -rf $(DEPS)/libtcod/buildsys/scons/dependencies
-	rm -rf $(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
-	rm -rf $(DEPS)/libtcod/buildsys/scons/.sconsign.dblite
+	rm -rf $(EXTERN)/libtcod/buildsys/scons/__pycache__
+	rm -rf $(EXTERN)/libtcod/buildsys/scons/dependencies
+	rm -rf $(EXTERN)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
+	rm -rf $(EXTERN)/libtcod/buildsys/scons/.sconsign.dblite

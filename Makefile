@@ -1,5 +1,6 @@
 CC := gcc
 CFLAGS := -ggdb -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
+LDFLAGS :=
 
 SRC	:= src
 DEPS := deps
@@ -28,13 +29,9 @@ SOURCES	:= \
 	$(SRC)/platform/scenes/scene_menu.c
 OBJECTS := $(patsubst $(SRC)/%,$(BUILD)/%,$(SOURCES:.c=.o))
 DEPENDENCIES := $(OBJECTS:.o=.d)
-INCLUDE := \
-	-I$(DEPS)/libtcod/src \
-	-I$(DEPS)/libtcod/buildsys/scons/dependencies/mingw/SDL2-2.0.8/x86_64-w64-mingw32/include/SDL2
-LIB := \
-	-L$(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG \
-	-L$(DEPS)/libtcod/buildsys/scons/dependencies/mingw/SDL2-2.0.8/x86_64-w64-mingw32/lib
-LIBRARIES := -ltcod -lSDL2
+INCLUDE := -I$(DEPS)/libtcod/src
+LIB := -L$(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
+LIBRARIES := -ltcod
 TARGET := $(BIN)/$(EXE)
 
 .PHONY: all
@@ -42,8 +39,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	mkdir -p $(@D)
-	$(CC) $^ -o $@ $(LIB) $(LIBRARIES)
-	cp $(DEPS)/libtcod/buildsys/scons/dependencies/mingw/SDL2-2.0.8/x86_64-w64-mingw32/bin/SDL2.dll $(BIN)
+	$(CC) $^ -o $@ $(LDFLAGS) $(LIB) $(LIBRARIES)
 	cp $(DEPS)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG/libtcod.dll $(BIN)
 
 $(BUILD)/%.o: $(SRC)/%.c

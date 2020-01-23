@@ -47,10 +47,6 @@ $(BUILD)/%.o: $(SRC)/%.c
 
 -include $(DEPENDENCIES)
 
-.PHONY: setup
-setup:
-	cd $(EXTERN)/libtcod/buildsys/scons && scons build TOOLSET=mingw ARCH=x86_64
-
 .PHONY: run
 run: all
 	./$(TARGET)
@@ -58,6 +54,13 @@ run: all
 .PHONY: clean
 clean:
 	rm -rf $(BIN) $(BUILD)
+
+.PHONY: build_libtcod
+build_libtcod:
+	cd $(EXTERN)/libtcod/buildsys/scons && scons build TOOLSET=mingw ARCH=x86_64
+
+.PHONY: clean_libtcod
+clean_libtcod:
 	rm -rf $(EXTERN)/libtcod/buildsys/scons/__pycache__
 	rm -rf $(EXTERN)/libtcod/buildsys/scons/dependencies
 	rm -rf $(EXTERN)/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG

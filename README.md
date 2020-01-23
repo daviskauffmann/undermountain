@@ -2,31 +2,46 @@
 
 ## Getting Started
 
-Download and install libtcod. I am on Windows using MinGW64, so that is the only development platform supported for building libtcod at this time. If the following commands don't work, you can go into `/deps/libtcod` and build it yourself for your platform. The Makefile paths will then most likely need to be updated in order to properly link the library and copy the dll to `/bin`.
+### Download
 
 ```sh
+git clone https://github.com/daviskauffmann/undermountain.git
+cd undermountain
 git submodule update --init
-make setup
 ```
 
-Build the project.
+### Build `libtcod`
+
+```sh
+make build_libtcod
+```
+
+I am on Windows using MSYS2, so that is the only development platform supported for building libtcod at this time. If the above command doesn't work, you can go into `/deps/libtcod/` and build it yourself for your platform. The Makefile paths will then most likely need to be updated in order to properly link the library and copy the dll to `/bin/`.
+
+### Build
 
 ```sh
 make
 ```
 
-Build and run.
+### Build & Run
 
 ```sh
 make run
 ```
 
-Cleanup all build files and binaries.
+### Cleanup
 
 ```sh
 make clean
 ```
 
+### Cleanup `libtcod`
+
+```sh
+make clean_libtcod
+```
+
 ## Configuration
 
-Copy `config.txt` and rename to `config.local.txt` to make local changes to the configuration. This file is not source controlled.
+In `/data/`, copy `config.txt` and rename to `config.local.txt` to make local changes to the configuration. This file is not source controlled.

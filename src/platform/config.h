@@ -19,6 +19,5 @@ extern int font_layout_width;
 extern int font_layout_height;
 
 void config_load(void);
-void config_save(void);
 
 #endif

@@ -90,6 +90,7 @@ void world_quit(void)
         struct map *map = &world->maps[i];
         map_reset(map);
     }
+    TCOD_namegen_destroy();
     TCOD_random_delete(world->random);
     free(world);
     world = NULL;
@@ -100,7 +101,7 @@ void world_create(void)
 {
     world->seed = (unsigned int)time(0);
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, world->seed);
-    printf("World created with seed %d.\n", world->seed);
+    TCOD_namegen_parse("data/namegen.txt", world->random);
 
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -140,14 +141,6 @@ void world_create(void)
             TCOD_list_push(player->items, kite_shield);
             struct item *healing_potion = item_new(ITEM_TYPE_HEALING_POTION, floor, x, y, 10);
             TCOD_list_push(player->items, healing_potion);
-
-            world_log(
-                floor,
-                x,
-                y,
-                TCOD_white,
-                "Hail, %s!",
-                world->player->name);
         }
 
         // DEBUG: create pet
@@ -178,6 +171,16 @@ void world_create(void)
         struct actor *actor = *iterator;
         actor_calc_fov(actor);
     }
+
+    world_log(
+        world->player->floor,
+        world->player->x,
+        world->player->y,
+        TCOD_white,
+        "Hail, %s!",
+        world->player->name);
+
+    printf("World created with seed %d.\n", world->seed);
 }
 
 void world_save(const char *filename)
@@ -361,6 +364,7 @@ void world_save(const char *filename)
     TCOD_zip_put_int(zip, player_index);
     TCOD_zip_save_to_file(zip, filename);
     TCOD_zip_delete(zip);
+
     printf("World saved.\n");
 }
 
@@ -372,6 +376,7 @@ void world_load(const char *filename)
     world->seed = TCOD_zip_get_int(zip);
     // TODO: load random state
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, world->seed);
+    TCOD_namegen_parse("data/namegen.txt", world->random);
     world->turn = TCOD_zip_get_int(zip);
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -618,6 +623,15 @@ void world_load(const char *filename)
         struct actor *actor = *iterator;
         actor_calc_fov(actor);
     }
+
+    world_log(
+        world->player->floor,
+        world->player->x,
+        world->player->y,
+        TCOD_white,
+        "Welcome back, %s!",
+        world->player->name);
+
     printf("World loaded with seed %d.\n", world->seed);
 }
 

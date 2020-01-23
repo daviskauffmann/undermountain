@@ -21,6 +21,5 @@ extern struct item_datum item_data[NUM_ITEM_TYPES];
 extern struct spell_datum spell_data[NUM_SPELL_TYPES];
 
 void assets_load(void);
-void assets_unload(void);
 
 #endif

@@ -1,15 +1,13 @@
 #include "platform.h"
 
-#include <stdio.h>
-
 #include <libtcod.h>
-
-#include "config.h"
-#include "scene.h"
-#include "scenes/scene_menu.h"
+#include <stdio.h>
 
 #include "../game/assets.h"
 #include "../game/world.h"
+#include "config.h"
+#include "scene.h"
+#include "scenes/scene_menu.h"
 
 int platform_run(void)
 {
@@ -82,9 +80,6 @@ int platform_run(void)
 
     TCOD_console_delete(NULL);
     TCOD_quit();
-
-    assets_unload();
-    config_save();
 
     return 0;
 }

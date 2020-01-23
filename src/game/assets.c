@@ -2,8 +2,6 @@
 
 #include <libtcod.h>
 
-#include "util.h"
-
 struct tile_common tile_common;
 struct tile_datum tile_data[NUM_TILE_TYPES];
 struct object_common object_common;
@@ -37,14 +35,16 @@ struct spell_datum spell_data[NUM_SPELL_TYPES];
     object_data[_type].is_transparent = _is_transparent;                 \
     object_data[_type].is_walkable = _is_walkable;
 
-#define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _glow_intensity, _torch_radius, _torch_color, _torch_intensity) \
-    actor_common.turns_to_chase = _turns_to_chase;                                                                               \
-    actor_common.glow_radius = _glow_radius;                                                                                     \
-    actor_common.glow_color = _glow_color;                                                                                       \
-    actor_common.glow_intensity = _glow_intensity;                                                                               \
-    actor_common.torch_radius = _torch_radius;                                                                                   \
-    actor_common.torch_color = _torch_color;                                                                                     \
-    actor_common.torch_intensity = _torch_intensity;
+#define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _glow_intensity, _torch_radius, _torch_color, _torch_intensity, _corpse_glyph, _corpse_color) \
+    actor_common.turns_to_chase = _turns_to_chase;                                                                                                             \
+    actor_common.glow_radius = _glow_radius;                                                                                                                   \
+    actor_common.glow_color = _glow_color;                                                                                                                     \
+    actor_common.glow_intensity = _glow_intensity;                                                                                                             \
+    actor_common.torch_radius = _torch_radius;                                                                                                                 \
+    actor_common.torch_color = _torch_color;                                                                                                                   \
+    actor_common.torch_intensity = _torch_intensity;                                                                                                           \
+    actor_common.corpse_glyph = _corpse_glyph;                                                                                                                 \
+    actor_common.corpse_color = _corpse_color;
 
 #define RACE_DATA(_race, _name, _glyph) \
     race_data[_race].name = _name;      \
@@ -101,8 +101,6 @@ struct spell_datum spell_data[NUM_SPELL_TYPES];
 
 void assets_load(void)
 {
-    TCOD_namegen_parse("data/namegen.txt", NULL);
-
     // TODO: load from file
 
     TILE_COMMON(TCOD_color_RGB(16, 16, 32), 0.05f);
@@ -124,7 +122,7 @@ void assets_load(void)
     OBJECT_DATA(OBJECT_TYPE_THRONE, "Throne", '\\', true, false);
     OBJECT_DATA(OBJECT_TYPE_TRAP, "Trap", '^', true, true);
 
-    ACTOR_COMMON(10, 5, TCOD_white, 0.1f, 10, TCOD_light_amber, 0.25f);
+    ACTOR_COMMON(10, 5, TCOD_white, 0.1f, 10, TCOD_light_amber, 0.25f, '%', TCOD_dark_red);
 
     RACE_DATA(RACE_HUMAN, "Human", '@');
     RACE_DATA(RACE_DWARF, "Dwarf", '@');
@@ -166,9 +164,4 @@ void assets_load(void)
 
     SPELL_DATA(SPELL_TYPE_HEAL, "Heal", SPELL_RANGE_SELF);
     SPELL_DATA(SPELL_TYPE_LIGHTNING, "Lightning", SPELL_RANGE_TARGET);
-}
-
-void assets_unload(void)
-{
-    TCOD_namegen_destroy();
 }

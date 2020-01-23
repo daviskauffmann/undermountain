@@ -2,17 +2,11 @@
 
 #include <assert.h>
 #include <float.h>
+#include <libtcod.h>
 #include <malloc.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <libtcod.h>
-
-#include "scene_menu.h"
-#include "../config.h"
-#include "../scene.h"
-#include "../sys.h"
 
 #include "../../game/actor.h"
 #include "../../game/assets.h"
@@ -22,6 +16,10 @@
 #include "../../game/spell.h"
 #include "../../game/util.h"
 #include "../../game/world.h"
+#include "../config.h"
+#include "../scene.h"
+#include "../sys.h"
+#include "scene_menu.h"
 
 // TODO: better mouse controls
 // design a system where when selecting an action from the right-click menu, other actions are ignored as the actor paths to the location
@@ -195,118 +193,6 @@ static bool rect_is_inside(struct rect rect, int x, int y)
            y < rect.y + rect.height;
 }
 
-/* Message log */
-
-static struct rect message_log_rect;
-
-/* Side panel */
-
-enum panel
-{
-    PANEL_CHARACTER,
-    PANEL_EXAMINE,
-    PANEL_INVENTORY,
-    PANEL_SPELLBOOK,
-
-    NUM_PANELS
-};
-
-struct panel_state
-{
-    int scroll;
-    bool selection_mode;
-};
-
-static struct rect panel_rect;
-static struct panel_state panel_state[NUM_PANELS];
-static enum panel current_panel;
-
-static void panel_toggle(enum panel panel)
-{
-    if (panel_rect.visible)
-    {
-        if (current_panel == panel)
-        {
-            panel_rect.visible = false;
-        }
-        else
-        {
-            current_panel = panel;
-        }
-    }
-    else
-    {
-        current_panel = panel;
-        panel_rect.visible = true;
-    }
-}
-
-static void panel_show(enum panel panel)
-{
-    if (!panel_rect.visible || current_panel != panel)
-    {
-        panel_toggle(panel);
-    }
-}
-
-static enum equip_slot panel_character_get_selected(void)
-{
-    if (panel_rect.visible && current_panel == PANEL_CHARACTER)
-    {
-        int y = 7;
-        for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
-        {
-            if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + panel_rect.width &&
-                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
-            {
-                return equip_slot;
-            }
-            y++;
-        }
-    }
-    return -1;
-}
-
-static struct item *panel_inventory_get_selected(void)
-{
-    if (panel_rect.visible && current_panel == PANEL_INVENTORY)
-    {
-        int y = 1;
-        TCOD_LIST_FOREACH(world->player->items)
-        {
-            struct item *item = *iterator;
-            if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + panel_rect.width &&
-                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
-            {
-                return item;
-            }
-            y++;
-        }
-    }
-    return NULL;
-}
-
-static enum spell_type panel_spellbook_get_selected(void)
-{
-    if (panel_rect.visible && current_panel == PANEL_SPELLBOOK)
-    {
-        int y = 1;
-        for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
-        {
-            if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + panel_rect.width &&
-                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
-            {
-                return spell_type;
-            }
-            y++;
-        }
-    }
-    return -1;
-}
-
 /* Tooltips */
 
 struct tooltip_data
@@ -395,18 +281,130 @@ static struct tooltip_option *tooltip_get_selected(void)
     return NULL;
 }
 
+/* Message log */
+
+static struct rect message_log_rect;
+
+/* Side panel */
+
+enum panel
+{
+    PANEL_CHARACTER,
+    PANEL_EXAMINE,
+    PANEL_INVENTORY,
+    PANEL_SPELLBOOK,
+
+    NUM_PANELS
+};
+
+struct panel_state
+{
+    int scroll;
+    bool selection_mode;
+};
+
+static struct rect panel_rect;
+static struct panel_state panel_state[NUM_PANELS];
+static enum panel current_panel;
+
+static void panel_toggle(enum panel panel)
+{
+    if (panel_rect.visible)
+    {
+        if (current_panel == panel)
+        {
+            panel_rect.visible = false;
+        }
+        else
+        {
+            current_panel = panel;
+        }
+    }
+    else
+    {
+        current_panel = panel;
+        panel_rect.visible = true;
+    }
+}
+
+static void panel_show(enum panel panel)
+{
+    if (!panel_rect.visible || current_panel != panel)
+    {
+        panel_toggle(panel);
+    }
+}
+
+static enum equip_slot panel_character_get_selected(void)
+{
+    if (panel_rect.visible && current_panel == PANEL_CHARACTER && !tooltip_rect.visible)
+    {
+        int y = 7;
+        for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+        {
+            if (mouse_x > panel_rect.x &&
+                mouse_x < panel_rect.x + panel_rect.width &&
+                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
+            {
+                return equip_slot;
+            }
+            y++;
+        }
+    }
+    return -1;
+}
+
+static struct item *panel_inventory_get_selected(void)
+{
+    if (panel_rect.visible && current_panel == PANEL_INVENTORY && !tooltip_rect.visible)
+    {
+        int y = 1;
+        TCOD_LIST_FOREACH(world->player->items)
+        {
+            struct item *item = *iterator;
+            if (mouse_x > panel_rect.x &&
+                mouse_x < panel_rect.x + panel_rect.width &&
+                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
+            {
+                return item;
+            }
+            y++;
+        }
+    }
+    return NULL;
+}
+
+static enum spell_type panel_spellbook_get_selected(void)
+{
+    if (panel_rect.visible && current_panel == PANEL_SPELLBOOK && !tooltip_rect.visible)
+    {
+        int y = 1;
+        for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
+        {
+            if (mouse_x > panel_rect.x &&
+                mouse_x < panel_rect.x + panel_rect.width &&
+                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
+            {
+                return spell_type;
+            }
+            y++;
+        }
+    }
+    return -1;
+}
+
 static void init(struct scene *previous_scene)
 {
     took_turn = false;
+
+    tooltip_rect.console = TCOD_console_new(console_width, console_height);
+    tooltip_options = TCOD_list_new();
 
     message_log_rect.console = TCOD_console_new(console_width, console_height);
     message_log_rect.visible = true;
 
     panel_rect.console = TCOD_console_new(console_width, console_height);
     current_panel = PANEL_CHARACTER;
-
-    tooltip_rect.console = TCOD_console_new(console_width, console_height);
-    tooltip_options = TCOD_list_new();
 
     noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
 }
@@ -1707,12 +1705,12 @@ static void render(TCOD_console_t console)
                 console,
                 corpse->x - view_x,
                 corpse->y - view_y,
-                TCOD_dark_red);
+                actor_common.corpse_color);
             TCOD_console_set_char(
                 console,
                 corpse->x - view_x,
                 corpse->y - view_y,
-                '%');
+                actor_common.corpse_glyph);
         }
     }
     TCOD_LIST_FOREACH(map->objects)
@@ -1790,7 +1788,7 @@ static void render(TCOD_console_t console)
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
-        if (!actor->dead && TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y))
+        if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y))
         {
             TCOD_color_t color = class_data[actor->class].color;
             if (actor->flash_fade_coef > 0)
@@ -2173,7 +2171,7 @@ static void render(TCOD_console_t console)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        "%c) %s",
+                        world->player->readied_spell == spell_type ? "%c) %s (readied)" : "%c) %s",
                         y - 1 + 'a' - current_panel_status->scroll,
                         spell_datum.name);
                 }
@@ -2183,7 +2181,7 @@ static void render(TCOD_console_t console)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        world->player->readied_spell == spell_type ? "> %s" : "%s",
+                        world->player->readied_spell == spell_type ? "%s (readied)" : "%s",
                         spell_datum.name);
                 }
                 TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);

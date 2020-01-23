@@ -1,9 +1,8 @@
 #include "room.h"
 
 #include <assert.h>
-#include <malloc.h>
-
 #include <libtcod.h>
+#include <malloc.h>
 
 #include "world.h"
 

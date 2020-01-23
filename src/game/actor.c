@@ -1272,6 +1272,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     if (armor)
     {
         struct item_datum item_datum = item_data[armor->type];
+        // TODO: armor piercing weapons/ammunition
         damage -= item_datum.armor;
         if (damage < 0)
         {

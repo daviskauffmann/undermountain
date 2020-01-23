@@ -2,10 +2,10 @@
 
 #include <libtcod.h>
 
-#include "scene_menu.h"
-#include "scene_game.h"
 #include "../config.h"
 #include "../scene.h"
+#include "scene_menu.h"
+#include "scene_game.h"
 
 static void init(struct scene *previous_scene)
 {

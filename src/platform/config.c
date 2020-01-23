@@ -74,8 +74,3 @@ void config_load(void)
         font_layout_height = 16;
     }
 }
-
-void config_save(void)
-{
-    // TODO: save any variables that changed to the file?
-}

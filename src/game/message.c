@@ -2,8 +2,6 @@
 
 #include <assert.h>
 #include <malloc.h>
-#include <stdio.h>
-#include <string.h>
 
 struct message *message_new(char *text, TCOD_color_t color)
 {

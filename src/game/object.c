@@ -2,7 +2,6 @@
 
 #include <assert.h>
 #include <malloc.h>
-#include <stdio.h>
 
 #include "world.h"
 

@@ -360,6 +360,7 @@ void world_save(const char *filename)
         }
         // TODO: save projectiles?
     }
+    // TODO: save messages
     TCOD_zip_put_int(zip, player_map);
     TCOD_zip_put_int(zip, player_index);
     TCOD_zip_save_to_file(zip, filename);
@@ -602,7 +603,9 @@ void world_load(const char *filename)
             struct tile *tile = &map->tiles[x][y];
             TCOD_list_push(tile->items, item);
         }
+        // TODO: load projectiles?
     }
+    // TODO: load messages
     int player_map = TCOD_zip_get_int(zip);
     int player_index = TCOD_zip_get_int(zip);
     world->player = TCOD_list_get(world->maps[player_map].actors, player_index);

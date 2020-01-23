@@ -1,8 +1,6 @@
 #include "scene_menu.h"
 
 #include <libtcod.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "../../game/world.h"
 #include "../config.h"

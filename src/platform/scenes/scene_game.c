@@ -1542,8 +1542,8 @@ static void render(TCOD_console_t console)
     TCOD_console_set_default_background(
         console,
         TCOD_color_multiply_scalar(
-            tile_common.ambient_color,
-            tile_common.ambient_intensity));
+            tile_common.ambient_light_color,
+            tile_common.ambient_light_intensity));
     TCOD_console_set_default_foreground(console, TCOD_white);
 
     struct map *map = &world->maps[world->player->floor];
@@ -1564,12 +1564,12 @@ static void render(TCOD_console_t console)
                 {
                     struct tile *tile = &map->tiles[x][y];
                     struct tile_datum tile_datum = tile_data[tile->type];
-                    TCOD_color_t fg_color = TCOD_color_multiply(
-                        tile_common.ambient_color,
-                        tile_datum.color);
-                    TCOD_color_t bg_color = TCOD_color_multiply_scalar(
-                        fg_color,
-                        tile_common.ambient_intensity);
+                    float fg_r = tile_common.ambient_light_color.r;
+                    float fg_g = tile_common.ambient_light_color.g;
+                    float fg_b = tile_common.ambient_light_color.b;
+                    float bg_r = fg_r * tile_common.ambient_light_intensity;
+                    float bg_g = fg_g * tile_common.ambient_light_intensity;
+                    float bg_b = fg_b * tile_common.ambient_light_intensity;
                     if (TCOD_map_is_in_fov(world->player->fov, x, y))
                     {
                         tile->seen = true;
@@ -1583,23 +1583,16 @@ static void render(TCOD_console_t console)
                                 float distance_sq =
                                     powf((float)(x - object->x + (object->light_flicker ? dx : 0)), 2) +
                                     powf((float)(y - object->y + (object->light_flicker ? dy : 0)), 2);
-                                float coef = CLAMP(
+                                float attenuation = CLAMP(
                                     0.0f,
                                     1.0f,
                                     (radius_sq - distance_sq) / radius_sq + (object->light_flicker ? di : 0));
-                                fg_color = TCOD_color_lerp(
-                                    fg_color,
-                                    TCOD_color_lerp(
-                                        tile_datum.color,
-                                        object->light_color,
-                                        coef),
-                                    coef);
-                                bg_color = TCOD_color_lerp(
-                                    bg_color,
-                                    TCOD_color_multiply_scalar(
-                                        fg_color,
-                                        object->light_intensity),
-                                    coef);
+                                fg_r += object->light_color.r * attenuation;
+                                fg_g += object->light_color.g * attenuation;
+                                fg_b += object->light_color.b * attenuation;
+                                bg_r += fg_r * object->light_intensity * attenuation;
+                                bg_g += fg_g * object->light_intensity * attenuation;
+                                bg_b += fg_b * object->light_intensity * attenuation;
                             }
                         }
                         TCOD_LIST_FOREACH(map->actors)
@@ -1611,27 +1604,27 @@ static void render(TCOD_console_t console)
                                 float distance_sq =
                                     powf((float)(x - actor->x + (actor->light_flicker ? dx : 0)), 2) +
                                     powf((float)(y - actor->y + (actor->light_flicker ? dy : 0)), 2);
-                                float coef = CLAMP(
+                                float attenuation = CLAMP(
                                     0.0f,
                                     1.0f,
                                     (radius_sq - distance_sq) / radius_sq + (actor->light_flicker ? di : 0));
-                                fg_color = TCOD_color_lerp(
-                                    fg_color,
-                                    TCOD_color_lerp(
-                                        tile_datum.color,
-                                        actor->light_color,
-                                        coef),
-                                    coef);
-                                bg_color = TCOD_color_lerp(
-                                    bg_color,
-                                    TCOD_color_multiply_scalar(
-                                        fg_color,
-                                        actor->light_intensity),
-                                    coef);
+                                fg_r += actor->light_color.r * attenuation;
+                                fg_g += actor->light_color.g * attenuation;
+                                fg_b += actor->light_color.b * attenuation;
+                                bg_r += actor->light_color.r * actor->light_intensity * attenuation;
+                                bg_g += actor->light_color.g * actor->light_intensity * attenuation;
+                                bg_b += actor->light_color.b * actor->light_intensity * attenuation;
                             }
                         }
                     }
-
+                    float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
+                    float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
+                    TCOD_color_t fg_color = TCOD_color_RGB((uint8_t)(fg_r * fg_mult), (uint8_t)(fg_g * fg_mult), (uint8_t)(fg_b * fg_mult));
+                    fg_color = TCOD_color_multiply(fg_color, tile_datum.color);
+                    float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
+                    float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
+                    TCOD_color_t bg_color = TCOD_color_RGB((uint8_t)(bg_r * bg_mult), (uint8_t)(bg_g * bg_mult), (uint8_t)(bg_b * bg_mult));
+                    bg_color = TCOD_color_multiply(bg_color, tile_datum.color);
                     if (tile->seen)
                     {
                         int glyph = tile_datum.glyph;
@@ -1685,7 +1678,6 @@ static void render(TCOD_console_t console)
                             y - view_y,
                             glyph);
                     }
-
                     TCOD_console_set_char_background(
                         console,
                         x - view_x,

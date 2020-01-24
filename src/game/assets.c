@@ -15,9 +15,9 @@ struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
 struct item_datum item_data[NUM_ITEM_TYPES];
 struct spell_datum spell_data[NUM_SPELL_TYPES];
 
-#define TILE_COMMON(_ambient_color, _ambient_intensity) \
-    tile_common.ambient_color = _ambient_color;         \
-    tile_common.ambient_intensity = _ambient_intensity;
+#define TILE_COMMON(_ambient_light_color, _ambient_light_intensity) \
+    tile_common.ambient_light_color = _ambient_light_color;         \
+    tile_common.ambient_light_intensity = _ambient_light_intensity;
 
 #define TILE_DATA(_type, _name, _glyph, _color, _is_transparent, _is_walkable) \
     tile_data[_type].name = _name;                                             \

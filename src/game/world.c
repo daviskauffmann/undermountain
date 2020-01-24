@@ -277,7 +277,6 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, actor->last_seen_x);
             TCOD_zip_put_int(zip, actor->last_seen_y);
             TCOD_zip_put_int(zip, actor->turns_chased);
-            // TODO: save leader
             TCOD_zip_put_int(zip, actor->light_radius);
             TCOD_zip_put_color(zip, actor->light_color);
             TCOD_zip_put_float(zip, actor->light_intensity);
@@ -293,6 +292,28 @@ void world_save(const char *filename)
                 player_index = index;
             }
             index++;
+        }
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *actor = *iterator;
+            if (actor->leader)
+            {
+                int leader_index = 0;
+                TCOD_LIST_FOREACH(map->actors)
+                {
+                    struct actor *other = *iterator;
+                    if (other == actor->leader)
+                    {
+                        break;
+                    }
+                    leader_index++;
+                }
+                TCOD_zip_put_int(zip, leader_index);
+            }
+            else
+            {
+                TCOD_zip_put_int(zip, -1);
+            }
         }
         TCOD_zip_put_int(zip, TCOD_list_size(map->corpses));
         TCOD_LIST_FOREACH(map->corpses)
@@ -339,7 +360,6 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, corpse->last_seen_x);
             TCOD_zip_put_int(zip, corpse->last_seen_y);
             TCOD_zip_put_int(zip, corpse->turns_chased);
-            // TODO: save leader
             TCOD_zip_put_int(zip, corpse->light_radius);
             TCOD_zip_put_color(zip, corpse->light_color);
             TCOD_zip_put_float(zip, corpse->light_intensity);
@@ -473,7 +493,6 @@ void world_load(const char *filename)
             int last_seen_x = TCOD_zip_get_int(zip);
             int last_seen_y = TCOD_zip_get_int(zip);
             int turns_chased = TCOD_zip_get_int(zip);
-            // TODO: load leader
             int light_radius = TCOD_zip_get_int(zip);
             TCOD_color_t light_color = TCOD_zip_get_color(zip);
             float light_intensity = TCOD_zip_get_float(zip);
@@ -505,6 +524,15 @@ void world_load(const char *filename)
             TCOD_list_push(map->actors, actor);
             struct tile *tile = &map->tiles[x][y];
             tile->actor = actor;
+        }
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *actor = *iterator;
+            int leader_index = TCOD_zip_get_int(zip);
+            if (leader_index > -1)
+            {
+                actor->leader = TCOD_list_get(map->actors, leader_index);
+            }
         }
         int num_corpses = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_corpses; i++)
@@ -556,7 +584,6 @@ void world_load(const char *filename)
             int last_seen_x = TCOD_zip_get_int(zip);
             int last_seen_y = TCOD_zip_get_int(zip);
             int turns_chased = TCOD_zip_get_int(zip);
-            // TODO: load leader
             int light_radius = TCOD_zip_get_int(zip);
             TCOD_color_t light_color = TCOD_zip_get_color(zip);
             float light_intensity = TCOD_zip_get_float(zip);

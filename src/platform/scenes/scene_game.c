@@ -1976,34 +1976,71 @@ static void render(TCOD_console_t console)
             TCOD_console_printf(
                 panel_rect.console,
                 1,
-                y++ - current_panel_status->scroll,
-                "NAME : %s",
+                y - current_panel_status->scroll,
+                "Name");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
                 world->player->name);
+            y++;
             TCOD_console_printf(
                 panel_rect.console,
                 1,
-                y++ - current_panel_status->scroll,
-                "RACE : %s",
+                y - current_panel_status->scroll,
+                "Race");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
                 race_data[world->player->race].name);
+            y++;
             TCOD_console_printf(
                 panel_rect.console,
                 1,
-                y++ - current_panel_status->scroll,
-                "CLASS: %s",
+                y - current_panel_status->scroll,
+                "Class");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
                 class_data[world->player->class].name);
+            y++;
             TCOD_console_printf(
                 panel_rect.console,
                 1,
-                y++ - current_panel_status->scroll,
-                "LEVEL: %d",
+                y - current_panel_status->scroll,
+                "Level");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d",
                 world->player->level);
+            y++;
             TCOD_console_printf(
                 panel_rect.console,
                 1,
-                y++ - current_panel_status->scroll,
-                "EXP  : %d / %d",
+                y - current_panel_status->scroll,
+                "Experience");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d / %d",
                 world->player->experience,
                 actor_calc_experience_to_level(world->player->level + 1));
+            y++;
             y++;
             for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
@@ -2022,24 +2059,29 @@ static void render(TCOD_console_t console)
                         TCOD_console_printf(
                             panel_rect.console,
                             1,
-                            y++ - current_panel_status->scroll,
-                            equipment->current_stack > 1 ? "%c) %s: %s (%d)" : "%c) %s: %s",
+                            y - current_panel_status->scroll,
+                            "%c) %s",
                             equip_slot + 'a' - 1,
-                            equip_slot_datum.label,
-                            item_datum.name,
-                            equipment->current_stack);
+                            equip_slot_datum.name);
                     }
                     else
                     {
                         TCOD_console_printf(
                             panel_rect.console,
                             1,
-                            y++ - current_panel_status->scroll,
-                            equipment->current_stack > 1 ? "%s: %s (%d)" : "%s: %s",
-                            equip_slot_datum.label,
-                            item_datum.name,
-                            equipment->current_stack);
+                            y - current_panel_status->scroll,
+                            equip_slot_datum.name);
                     }
+                    TCOD_console_printf_ex(
+                        panel_rect.console,
+                        panel_rect.width - 2,
+                        y - current_panel_status->scroll,
+                        TCOD_BKGND_NONE,
+                        TCOD_RIGHT,
+                        equipment->current_stack > 1 ? "%s (%d)" : "%s",
+                        item_datum.name,
+                        equipment->current_stack);
+                    y++;
                 }
                 else
                 {
@@ -2048,18 +2090,20 @@ static void render(TCOD_console_t console)
                         TCOD_console_printf(
                             panel_rect.console,
                             1,
-                            y++ - current_panel_status->scroll,
-                            "%c) %s:", equip_slot + 'a' - 1,
-                            equip_slot_datum.label);
+                            y - current_panel_status->scroll,
+                            "%c) %s",
+                            equip_slot + 'a' - 1,
+                            equip_slot_datum.name);
                     }
                     else
                     {
                         TCOD_console_printf(
                             panel_rect.console,
                             1,
-                            y++ - current_panel_status->scroll,
-                            "%s:", equip_slot_datum.label);
+                            y - current_panel_status->scroll,
+                            equip_slot_datum.name);
                     }
+                    y++;
                 }
                 TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
             }
@@ -2067,11 +2111,17 @@ static void render(TCOD_console_t console)
             TCOD_console_printf(
                 panel_rect.console,
                 1,
-                y++ - current_panel_status->scroll,
-                "HP: %d / %d",
+                y - current_panel_status->scroll,
+                "HP");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d / %d",
                 world->player->current_hp,
                 world->player->max_hp);
-            y++;
 
             TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
             TCOD_console_printf_frame(

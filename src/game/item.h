@@ -22,7 +22,6 @@ enum equip_slot
 struct equip_slot_datum
 {
     char *name;
-    char *label; // TODO: not the biggest fan of this solution
 };
 
 enum ammunition_type

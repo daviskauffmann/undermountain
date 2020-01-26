@@ -67,9 +67,8 @@ struct spell_datum spell_data[NUM_SPELL_TYPES];
 #define ITEM_COMMON(_placeholder) \
     item_common.__placeholder = _placeholder;
 
-#define EQUIP_SLOT_DATA(_type, _name, _label) \
-    equip_slot_data[_type].name = _name;      \
-    equip_slot_data[_type].label = _label;
+#define EQUIP_SLOT_DATA(_type, _name) \
+    equip_slot_data[_type].name = _name;
 
 #define BASE_ITEM_DATA(_type, _glyph, _color, _equip_slot, _ranged, _two_handed) \
     base_item_data[_type].glyph = _glyph;                                        \
@@ -147,10 +146,11 @@ void assets_load(void)
 
     ITEM_COMMON(0);
 
-    EQUIP_SLOT_DATA(EQUIP_SLOT_AMMUNITION, "Ammunition", "Ammunition");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_ARMOR, "Armor", "Armor     ");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand", "Main Hand ");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand", "Off Hand  ");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_NONE, "None");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_AMMUNITION, "Ammunition");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_ARMOR, "Armor");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand");
+    EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand");
 
     ITEM_DATA(ITEM_TYPE_BODKIN_ARROW, "Bodkin Arrow", "Arrow designed for penetrating armor.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_ARROW);
     ITEM_DATA(ITEM_TYPE_BOLT, "Bolt", "Standard ammunition for a crossbow.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_BOLT);

@@ -10,6 +10,7 @@
 
 enum world_state
 {
+    WORLD_STATE_AWAKE,
     WORLD_STATE_PLAY,
     WORLD_STATE_WAIT,
     WORLD_STATE_LOSE

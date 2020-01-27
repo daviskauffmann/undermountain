@@ -65,7 +65,7 @@ void world_init(void)
 {
     world = malloc(sizeof(struct world));
     assert(world);
-    world->state = WORLD_STATE_PLAY;
+    world->state = WORLD_STATE_AWAKE;
     world->seed = 0;
     world->random = NULL;
     world->turn = 0;
@@ -156,23 +156,6 @@ void world_create(void)
         }
     }
 
-    struct map *map = &world->maps[world->player->floor];
-    TCOD_LIST_FOREACH(map->objects)
-    {
-        struct object *object = *iterator;
-        object_calc_light(object);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_light(actor);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_fov(actor);
-    }
-
     world_log(
         world->player->floor,
         world->player->x,
@@ -187,7 +170,6 @@ void world_create(void)
 void world_save(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
-    TCOD_zip_put_int(zip, world->state);
     TCOD_zip_put_int(zip, world->seed);
     size_t random_size = sizeof(*world->random);
     TCOD_zip_put_int(zip, random_size);
@@ -396,7 +378,6 @@ void world_load(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
     TCOD_zip_load_from_file(zip, filename);
-    world->state = TCOD_zip_get_int(zip);
     world->seed = TCOD_zip_get_int(zip);
     size_t random_size = TCOD_zip_get_int(zip);
     world->random = malloc(random_size);
@@ -641,22 +622,6 @@ void world_load(const char *filename)
     int player_index = TCOD_zip_get_int(zip);
     world->player = TCOD_list_get(world->maps[player_map].actors, player_index);
     TCOD_zip_delete(zip);
-    struct map *map = &world->maps[world->player->floor];
-    TCOD_LIST_FOREACH(map->objects)
-    {
-        struct object *object = *iterator;
-        object_calc_light(object);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_light(actor);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_fov(actor);
-    }
 
     world_log(
         world->player->floor,
@@ -671,9 +636,29 @@ void world_load(const char *filename)
 
 void world_update(float delta_time)
 {
+    struct map *map = &world->maps[world->player->floor];
+
+    if (world->state == WORLD_STATE_AWAKE)
+    {
+        struct map *map = &world->maps[world->player->floor];
+        TCOD_LIST_FOREACH(map->objects)
+        {
+            struct object *object = *iterator;
+            object_calc_light(object);
+        }
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *actor = *iterator;
+            actor_calc_light(actor);
+        }
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *actor = *iterator;
+            actor_calc_fov(actor);
+        }
+    }
     world->state = world->player->dead ? WORLD_STATE_LOSE : WORLD_STATE_PLAY;
 
-    struct map *map = &world->maps[world->player->floor];
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;

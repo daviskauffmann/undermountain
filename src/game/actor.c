@@ -814,6 +814,8 @@ bool actor_pray(struct actor *actor, int x, int y)
     struct tile *tile = &map->tiles[x][y];
     if (tile->object && tile->object->type == OBJECT_TYPE_ALTAR)
     {
+        tile->object->destroyed = true;
+
         world_log(
             actor->floor,
             actor->x,
@@ -847,12 +849,18 @@ bool actor_drink(struct actor *actor, int x, int y)
     struct tile *tile = &map->tiles[x][y];
     if (tile->object && tile->object->type == OBJECT_TYPE_FOUNTAIN)
     {
+        if (actor->current_hp == actor->max_hp)
+        {
+            return false;
+        }
         int hp = actor->max_hp - actor->current_hp;
         actor->current_hp += hp;
         if (actor->current_hp > actor->max_hp)
         {
             actor->current_hp = actor->max_hp;
         }
+
+        tile->object->destroyed = true;
 
         world_log(
             actor->floor,
@@ -888,6 +896,8 @@ bool actor_sit(struct actor *actor, int x, int y)
     struct tile *tile = &map->tiles[x][y];
     if (tile->object && tile->object->type == OBJECT_TYPE_THRONE)
     {
+        tile->object->destroyed = true;
+
         world_log(
             actor->floor,
             actor->x,

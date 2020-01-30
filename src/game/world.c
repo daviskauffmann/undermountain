@@ -68,6 +68,7 @@ void world_init(void)
     world->state = WORLD_STATE_AWAKE;
     world->seed = 0;
     world->random = NULL;
+    world->should_turn = false;
     world->turn = 0;
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -174,6 +175,7 @@ void world_save(const char *filename)
     size_t random_size = sizeof(*world->random);
     TCOD_zip_put_int(zip, random_size);
     TCOD_zip_put_data(zip, random_size, world->random);
+    TCOD_zip_put_int(zip, world->should_turn);
     TCOD_zip_put_int(zip, world->turn);
     int player_map = -1;
     int player_index = -1;
@@ -363,7 +365,33 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, item->current_durability);
             TCOD_zip_put_int(zip, item->current_stack);
         }
-        // TODO: save projectiles?
+        TCOD_zip_put_int(zip, TCOD_list_size(map->projectiles));
+        TCOD_LIST_FOREACH(map->projectiles)
+        {
+            struct projectile *projectile = *iterator;
+            TCOD_zip_put_char(zip, projectile->glyph);
+            TCOD_zip_put_int(zip, projectile->floor);
+            TCOD_zip_put_float(zip, projectile->x);
+            TCOD_zip_put_float(zip, projectile->y);
+            TCOD_zip_put_float(zip, projectile->dx);
+            TCOD_zip_put_float(zip, projectile->dy);
+            TCOD_zip_put_int(zip, projectile->destroyed);
+        }
+        TCOD_LIST_FOREACH(map->projectiles)
+        {
+            struct projectile *projectile = *iterator;
+            int shooter_index = 0;
+            TCOD_LIST_FOREACH(map->actors)
+            {
+                struct actor *actor = *iterator;
+                if (actor == projectile->shooter)
+                {
+                    break;
+                }
+                shooter_index++;
+            }
+            TCOD_zip_put_int(zip, shooter_index);
+        }
     }
     // TODO: save messages
     TCOD_zip_put_int(zip, player_map);
@@ -383,6 +411,7 @@ void world_load(const char *filename)
     world->random = malloc(random_size);
     TCOD_zip_get_data(zip, random_size, world->random);
     TCOD_namegen_parse("data/namegen.txt", world->random);
+    world->should_turn = TCOD_zip_get_int(zip);
     world->turn = TCOD_zip_get_int(zip);
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -615,7 +644,31 @@ void world_load(const char *filename)
             struct tile *tile = &map->tiles[x][y];
             TCOD_list_push(tile->items, item);
         }
-        // TODO: load projectiles?
+        int num_projectiles = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_projectiles; i++)
+        {
+            unsigned char glyph = TCOD_zip_get_char(zip);
+            int floor = TCOD_zip_get_int(zip);
+            float x = TCOD_zip_get_float(zip);
+            float y = TCOD_zip_get_float(zip);
+            float dx = TCOD_zip_get_float(zip);
+            float dy = TCOD_zip_get_float(zip);
+            bool destroyed = TCOD_zip_get_int(zip);
+            struct projectile *projectile = projectile_new(glyph, floor, 0, 0, 0, 0, NULL, NULL);
+            projectile->x = x;
+            projectile->y = y;
+            projectile->dx = dx;
+            projectile->dy = dy;
+            projectile->destroyed = destroyed;
+            TCOD_list_push(map->projectiles, projectile);
+        }
+        TCOD_LIST_FOREACH(map->projectiles)
+        {
+            struct projectile *projectile = *iterator;
+            int shooter_index = TCOD_zip_get_int(zip);
+            projectile->shooter = TCOD_list_get(map->actors, shooter_index);
+            projectile->ammunition = projectile->shooter->equipment[EQUIP_SLOT_AMMUNITION];
+        }
     }
     // TODO: load messages
     int player_map = TCOD_zip_get_int(zip);
@@ -659,9 +712,23 @@ void world_update(float delta_time)
     }
     world->state = world->player->dead ? WORLD_STATE_LOSE : WORLD_STATE_PLAY;
 
+    TCOD_LIST_FOREACH(map->objects)
+    {
+        struct object *object = *iterator;
+        object_calc_light(object);
+        if (object->destroyed)
+        {
+            struct tile *tile = &map->tiles[object->x][object->y];
+            tile->object = NULL;
+            iterator = TCOD_list_remove_iterator(map->objects, iterator);
+            object_delete(object);
+        }
+    }
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
+        actor_update_flash(actor, delta_time);
+        actor_calc_light(actor);
         if (actor->dead)
         {
             actor->current_hp = 0;
@@ -698,9 +765,7 @@ void world_update(float delta_time)
                 // let the player see whats going on while they're dead
                 actor_calc_fov(actor);
             }
-            continue;
         }
-        actor_update_flash(actor, delta_time);
     }
     TCOD_LIST_FOREACH(map->projectiles)
     {
@@ -710,50 +775,55 @@ void world_update(float delta_time)
         {
             iterator = TCOD_list_remove_iterator(map->projectiles, iterator);
             projectile_delete(projectile);
-            continue;
         }
     }
-}
 
-void world_turn(void)
-{
-    world->turn++;
+    // TODO:
+    // current_actor = actors[0]
+    // while current_actor NOT NULL
+    //   increment energy
+    //   if enough energy to take turn
+    //     calc fov
+    //     get pending action
+    //       NOTE: for player, the action will come from input and be stored in a variable
+    //         this means the action can be null if the player hasn't entered any input
+    //         additionally, an action is something that strictly takes a turn to do
+    //         this means that clicking through UI or moving a targeting cursor around are NOT actions
+    //       NOTE: for non-players, the action will come from an AI function
+    //         the function will ALWAYS return something as it doesn't make sense for an AI to not pick an action
+    //         that would cause this loop to be permanently be stuck on the actor
+    //     if pending action
+    //       perform action
+    //         TODO: what if the action fails?
+    //       decrement energy
+    //     else
+    //       break, leaving current_actor on the player for the next iteration
+    //
+    // if current_actor IS NULL (this means the while loop finished and has gone though all the actors)
+    //   increment world time
 
-    struct map *map = &world->maps[world->player->floor];
-    TCOD_LIST_FOREACH(map->objects)
+    if (world->should_turn)
     {
-        struct object *object = *iterator;
-        if (object->destroyed)
+        world->should_turn = false;
+        world->turn++;
+
+        TCOD_LIST_FOREACH(map->actors)
         {
-            struct tile *tile = &map->tiles[object->x][object->y];
-            tile->object = NULL;
-            iterator = TCOD_list_remove_iterator(map->objects, iterator);
-            object_delete(object);
-            continue;
-        }
-        object_calc_light(object);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_light(actor);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        if (!actor->dead)
-        {
-            actor_calc_fov(actor);
-            if (actor != world->player)
+            struct actor *actor = *iterator;
+            if (!actor->dead)
             {
-                actor_ai(actor);
+                actor_calc_fov(actor);
+                if (actor != world->player)
+                {
+                    actor_ai(actor);
+                }
             }
         }
-    }
-    if (world->player->dead)
-    {
-        // let the player see whats going on while they're dead
-        actor_calc_fov(world->player);
+        if (world->player->dead)
+        {
+            // let the player see whats going on while they're dead
+            actor_calc_fov(world->player);
+        }
     }
 }
 

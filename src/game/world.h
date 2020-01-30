@@ -21,6 +21,7 @@ struct world
     enum world_state state;
     unsigned int seed;
     TCOD_random_t random;
+    bool should_turn;
     unsigned int turn;
     struct map maps[NUM_MAPS];
     TCOD_list_t messages;
@@ -35,7 +36,6 @@ void world_create(void);
 void world_save(const char *filename);
 void world_load(const char *filename);
 void world_update(float delta_time);
-void world_turn(void);
 void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...);
 
 #endif

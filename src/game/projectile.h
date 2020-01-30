@@ -13,12 +13,10 @@ struct projectile
     float dy;
     struct actor *shooter;
     struct item *ammunition;
-    void (*on_hit)(void *on_hit_params);
-    void *on_hit_params;
     bool destroyed;
 };
 
-struct projectile *projectile_new(unsigned char glyph, int floor, int x1, int y1, int x2, int y2, struct actor *shooter, struct item *ammunition, void (*on_hit)(void *on_hit_params), void *on_hit_params);
+struct projectile *projectile_new(unsigned char glyph, int floor, int x1, int y1, int x2, int y2, struct actor *shooter, struct item *ammunition);
 void projectile_delete(struct projectile *projectile);
 void projectile_update(struct projectile *projectile);
 

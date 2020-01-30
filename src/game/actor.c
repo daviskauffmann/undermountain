@@ -248,7 +248,7 @@ void actor_ai(struct actor *actor)
             }
             if (ranged)
             {
-                if (actor_shoot(actor, target->x, target->y, NULL, NULL))
+                if (actor_shoot(actor, target->x, target->y))
                 {
                     goto done;
                 }
@@ -506,7 +506,7 @@ bool actor_move(struct actor *actor, int x, int y)
             struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
             if (weapon && item_data[weapon->type].ranged)
             {
-                return actor_shoot(world->player, x, y, NULL, NULL);
+                return actor_shoot(world->player, x, y);
             }
             else
             {
@@ -1177,7 +1177,7 @@ bool actor_bash(struct actor *actor, struct object *object)
     return true;
 }
 
-bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_params), void *on_hit_params)
+bool actor_shoot(struct actor *actor, int x, int y)
 {
     if (x == actor->x && y == actor->y)
     {
@@ -1255,9 +1255,7 @@ bool actor_shoot(struct actor *actor, int x, int y, void (*on_hit)(void *on_hit_
         x,
         y,
         actor,
-        ammunition,
-        on_hit,
-        on_hit_params);
+        ammunition);
     struct map *map = &world->maps[actor->floor];
     TCOD_list_push(map->projectiles, projectile);
 

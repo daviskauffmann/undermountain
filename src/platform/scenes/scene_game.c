@@ -41,8 +41,6 @@ static int automove_x;
 static int automove_y;
 static struct actor *automove_actor;
 
-static bool took_turn;
-
 /* Directional actions */
 
 enum directional_action
@@ -395,8 +393,6 @@ static enum spell_type panel_spellbook_get_selected(void)
 
 static void init(struct scene *previous_scene)
 {
-    took_turn = false;
-
     tooltip_rect.console = TCOD_console_new(console_width, console_height);
     tooltip_options = TCOD_list_new();
 
@@ -407,11 +403,6 @@ static void init(struct scene *previous_scene)
     current_panel = PANEL_CHARACTER;
 
     noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
-}
-
-static void projectile_on_hit_set_took_turn(void *on_hit_params)
-{
-    took_turn = true;
 }
 
 static bool player_interact(TCOD_key_t key, int x, int y)
@@ -427,7 +418,7 @@ static bool player_interact(TCOD_key_t key, int x, int y)
                 {
                     if (item_data[weapon->type].ranged)
                     {
-                        actor_shoot(world->player, x, y, &projectile_on_hit_set_took_turn, NULL);
+                        actor_shoot(world->player, x, y);
                         return false;
                     }
                 }
@@ -588,7 +579,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x - 1;
                 int y = world->player->y + 1;
-                took_turn = player_interact(key, x, y);
+                world->should_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -603,7 +594,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x;
                 int y = world->player->y + 1;
-                took_turn = player_interact(key, x, y);
+                world->should_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -618,7 +609,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x + 1;
                 int y = world->player->y + 1;
-                took_turn = player_interact(key, x, y);
+                world->should_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -633,7 +624,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x - 1;
                 int y = world->player->y;
-                took_turn = player_interact(key, x, y);
+                world->should_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -641,7 +632,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         {
             if (world->state != WORLD_STATE_WAIT)
             {
-                took_turn = true;
+                world->should_turn = true;
             }
         }
         break;
@@ -656,7 +647,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x + 1;
                 int y = world->player->y;
-                took_turn = player_interact(key, x, y);
+                world->should_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -671,7 +662,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x - 1;
                 int y = world->player->y - 1;
-                took_turn = player_interact(key, x, y);
+                world->should_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -686,7 +677,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x;
                 int y = world->player->y - 1;
-                took_turn = player_interact(key, x, y);
+                world->should_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -701,7 +692,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 int x = world->player->x + 1;
                 int y = world->player->y - 1;
-                took_turn = player_interact(key, x, y);
+                world->should_turn = player_interact(key, x, y);
             }
         }
         break;
@@ -718,7 +709,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                     if (world->state == WORLD_STATE_PLAY)
                     {
-                        took_turn = actor_equip(world->player, item);
+                        world->should_turn = actor_equip(world->player, item);
                     }
                 }
                 break;
@@ -732,7 +723,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                     if (world->state == WORLD_STATE_PLAY)
                     {
-                        took_turn = actor_drop(world->player, item);
+                        world->should_turn = actor_drop(world->player, item);
                     }
                 }
                 break;
@@ -740,7 +731,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                     if (world->state == WORLD_STATE_PLAY)
                     {
-                        took_turn = actor_quaff(world->player, item);
+                        world->should_turn = actor_quaff(world->player, item);
                     }
                 }
                 break;
@@ -769,7 +760,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                     if (world->state == WORLD_STATE_PLAY)
                     {
-                        took_turn = actor_unequip(world->player, equip_slot);
+                        world->should_turn = actor_unequip(world->player, equip_slot);
                     }
                 }
                 break;
@@ -828,7 +819,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    took_turn = actor_ascend(world->player, false, NULL);
+                    world->should_turn = actor_ascend(world->player, false, NULL);
                 }
             }
             break;
@@ -836,7 +827,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    took_turn = actor_descend(world->player, false, NULL);
+                    world->should_turn = actor_descend(world->player, false, NULL);
                 }
             }
             break;
@@ -920,7 +911,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                     if (targeting == TARGETING_SHOOT)
                     {
-                        actor_shoot(world->player, target_x, target_y, &projectile_on_hit_set_took_turn, NULL);
+                        actor_shoot(world->player, target_x, target_y);
                         targeting = TARGETING_NONE;
                     }
                     else
@@ -954,7 +945,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (world->state == WORLD_STATE_PLAY)
                 {
-                    took_turn = actor_grab(world->player, world->player->x, world->player->y);
+                    world->should_turn = actor_grab(world->player, world->player->x, world->player->y);
                 }
             }
             break;
@@ -1075,7 +1066,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->light_intensity = actor_common.glow_intensity;
                         world->player->light_flicker = false;
                     }
-                    took_turn = true;
+                    world->should_turn = true;
                 }
             }
             break;
@@ -1094,7 +1085,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         world->player->light_intensity = actor_common.torch_intensity;
                         world->player->light_flicker = true;
                     }
-                    took_turn = true;
+                    world->should_turn = true;
                 }
             }
             break;
@@ -1184,13 +1175,13 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     enum spell_range spell_range = spell_data[world->player->readied_spell].range;
                     if (spell_range == SPELL_RANGE_SELF)
                     {
-                        took_turn = actor_cast_spell(world->player, world->player->x, world->player->y);
+                        world->should_turn = actor_cast_spell(world->player, world->player->x, world->player->y);
                     }
                     else if (spell_range == SPELL_RANGE_TARGET)
                     {
                         if (targeting == TARGETING_SPELL)
                         {
-                            took_turn = actor_cast_spell(world->player, target_x, target_y);
+                            world->should_turn = actor_cast_spell(world->player, target_x, target_y);
                             targeting = TARGETING_NONE;
                         }
                         else
@@ -1228,7 +1219,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     {
                         if (tooltip_option->on_click)
                         {
-                            took_turn = tooltip_option->on_click();
+                            world->should_turn = tooltip_option->on_click();
                         }
 
                         tooltip_hide();
@@ -1266,7 +1257,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         {
                             if (world->state == WORLD_STATE_PLAY)
                             {
-                                took_turn = actor_equip(world->player, item);
+                                world->should_turn = actor_equip(world->player, item);
                             }
                         }
                         break;
@@ -1274,7 +1265,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         {
                             if (world->state == WORLD_STATE_PLAY)
                             {
-                                took_turn = actor_drop(world->player, item);
+                                world->should_turn = actor_drop(world->player, item);
                             }
                         }
                         break;
@@ -1297,7 +1288,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         {
                             if (world->state == WORLD_STATE_PLAY)
                             {
-                                took_turn = actor_unequip(world->player, equip_slot);
+                                world->should_turn = actor_unequip(world->player, equip_slot);
                             }
                         }
                         break;
@@ -1467,8 +1458,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         // we need to implement custom behavior depending on what the player is doing
         // for example, if the player selects the interact option on a tooltip_rect for an object far away,
         //      the player should navigate there but not interact/attack anything along the way
-        took_turn = actor_path_towards(world->player, automove_x, automove_y);
-        automoving = took_turn;
+        world->should_turn = actor_path_towards(world->player, automove_x, automove_y);
+        automoving = world->should_turn;
     }
     else
     {
@@ -1524,11 +1515,6 @@ static struct scene *update(float delta_time)
     }
 
     world_update(delta_time);
-    if (took_turn)
-    {
-        world_turn();
-        took_turn = false;
-    }
     if (world->state == WORLD_STATE_LOSE && file_exists(SAVE_PATH))
     {
         remove(SAVE_PATH);

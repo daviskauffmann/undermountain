@@ -23,14 +23,12 @@ SRC	:= \
 	src/platform/scenes/scene_about.c \
 	src/platform/scenes/scene_game.c \
 	src/platform/scenes/scene_menu.c
-OBJ := $(SRC:src/%.c=build/%.o)
-DEP := $(OBJ:%.o=%.d)
-TGT := bin/undermountain
+TARGET := bin/undermountain
 
 .PHONY: all
-all: $(TGT)
+all: $(TARGET)
 
-$(TGT): $(OBJ)
+$(TARGET): $(SRC:src/%.c=build/%.o)
 	mkdir -p $(@D)
 	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 	cp extern/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG/libtcod.dll bin
@@ -39,11 +37,11 @@ build/%.o: src/%.c
 	mkdir -p $(@D)
 	$(CC) -c $< -o $@ -MMD -MF $(@:.o=.d) $(CFLAGS) $(CPPFLAGS)
 
--include $(DEP)
+-include $(SRC:src/%.c=build/%.d)
 
 .PHONY: run
 run: all
-	./$(TGT)
+	./$(TARGET)
 
 .PHONY: clean
 clean:

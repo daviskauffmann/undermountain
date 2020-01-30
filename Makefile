@@ -1,5 +1,6 @@
 CC := gcc
 CFLAGS := -ggdb -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
+CPPFLAGS :=
 LDFLAGS :=
 
 SRC	:= src
@@ -43,7 +44,7 @@ $(TARGET): $(OBJECTS)
 
 $(BUILD)/%.o: $(SRC)/%.c
 	mkdir -p $(@D)
-	$(CC) -c $< -o $@ -MMD -MF $(@:.o=.d) $(CFLAGS) $(INCLUDE)
+	$(CC) -c $< -o $@ -MMD -MF $(@:.o=.d) $(CFLAGS) $(CPPFLAGS) $(INCLUDE)
 
 -include $(DEPENDENCIES)
 

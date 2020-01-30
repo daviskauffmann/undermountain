@@ -1,7 +1,7 @@
 CC := gcc
 CFLAGS := -ggdb -Iextern/libtcod/src -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
 CPPFLAGS :=
-LDFLAGS :=  -Lextern/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
+LDFLAGS := -Lextern/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
 LDLIBS := -ltcod
 
 SRC	:= \

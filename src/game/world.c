@@ -820,6 +820,7 @@ void world_update(float delta_time)
                 actor->energy -= 1.0f;
                 if (actor->energy >= 1.0f)
                 {
+                    actor->took_turn = false;
                     break;
                 }
             }

@@ -66,10 +66,7 @@ void projectile_update(struct projectile *projectile)
     }
     else
     {
-        if (projectile->shooter == world->player)
-        {
-            world->should_turn = true;
-        }
+        projectile->shooter->took_turn = true;
         projectile->destroyed = true;
     }
 }

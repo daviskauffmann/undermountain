@@ -107,6 +107,9 @@ struct actor
     int x;
     int y;
     TCOD_map_t fov;
+    bool took_turn;
+    float energy;
+    float energy_per_turn;
     int last_seen_x;
     int last_seen_y;
     int turns_chased;

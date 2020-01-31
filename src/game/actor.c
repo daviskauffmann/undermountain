@@ -36,6 +36,9 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->x = x;
     actor->y = y;
     actor->fov = NULL;
+    actor->took_turn = false;
+    actor->energy = 1.0f;
+    actor->energy_per_turn = TCOD_random_get_float(world->random, 0.5f, 2.0f);
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
     actor->turns_chased = 0;
@@ -250,7 +253,7 @@ void actor_ai(struct actor *actor)
             {
                 if (actor_shoot(actor, target->x, target->y))
                 {
-                    goto done;
+                    return;
                 }
             }
             else
@@ -350,6 +353,7 @@ void actor_ai(struct actor *actor)
         goto done;
     }
 done:;
+    actor->took_turn = true;
 }
 
 void actor_give_experience(struct actor *actor, int experience)

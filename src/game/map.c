@@ -646,7 +646,7 @@ void map_generate(struct map *map)
         {
             struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
             actor->equipment[EQUIP_SLOT_MAIN_HAND] = longbow;
-            struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, map->floor, x, y, 1);
+            struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, map->floor, x, y, 5);
             actor->equipment[EQUIP_SLOT_AMMUNITION] = bodkin_arrow;
         }
     }

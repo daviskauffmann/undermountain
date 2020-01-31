@@ -27,9 +27,10 @@ struct world
     TCOD_random_t random;
     unsigned int time;
     int current_actor_index;
+    struct actor *player;
     struct map maps[NUM_MAPS];
     TCOD_list_t messages;
-    struct actor *player;
+    struct actor *hero;
 };
 
 extern struct world *world;

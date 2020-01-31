@@ -31,11 +31,11 @@ void projectile_delete(struct projectile *projectile)
     free(projectile);
 }
 
-void projectile_update(struct projectile *projectile)
+void projectile_update(struct projectile *projectile, float delta_time)
 {
     bool should_move = true;
-    float next_x = projectile->x + projectile->dx;
-    float next_y = projectile->y + projectile->dy;
+    float next_x = projectile->x + projectile->dx * 50.0f * delta_time;
+    float next_y = projectile->y + projectile->dy * 50.0f * delta_time;
     int x = (int)roundf(next_x);
     int y = (int)roundf(next_y);
     if (!map_is_inside(x, y))
@@ -62,7 +62,6 @@ void projectile_update(struct projectile *projectile)
     {
         projectile->x = next_x;
         projectile->y = next_y;
-        world->state = WORLD_STATE_WAIT;
     }
     else
     {

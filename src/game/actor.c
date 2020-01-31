@@ -57,6 +57,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     }
     actor->flash_color = TCOD_white;
     actor->flash_fade_coef = 0.0f;
+    actor->controllable = false;
     actor->dead = false;
     return actor;
 }
@@ -93,8 +94,6 @@ void actor_update_flash(struct actor *actor, float delta_time)
         // TODO: slower/faster fade depending on circumstances
         // TODO: different fade functions such as sin
         actor->flash_fade_coef -= 4.0f * delta_time;
-
-        // world->state == WORLD_STATE_WAIT;
     }
     else
     {
@@ -1431,7 +1430,7 @@ void actor_die(struct actor *actor, struct actor *killer)
         actor_give_experience(killer, experience);
     }
 
-    if (actor == world->player)
+    if (actor == world->hero)
     {
         world_log(
             actor->floor,

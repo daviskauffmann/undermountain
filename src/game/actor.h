@@ -121,6 +121,7 @@ struct actor
     TCOD_map_t light_fov;
     TCOD_color_t flash_color;
     float flash_fade_coef;
+    bool controllable;
     bool dead;
 };
 

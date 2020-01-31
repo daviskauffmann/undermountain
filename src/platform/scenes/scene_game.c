@@ -496,10 +496,18 @@ static bool toolip_option_on_click_unequip(void)
 
 static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
 {
+    if (!world->player)
+    {
+        return &game_scene;
+    }
+
     mouse_x = mouse.cx;
     mouse_y = mouse.cy;
     mouse_tile_x = mouse.cx + view_x;
     mouse_tile_y = mouse.cy + view_y;
+
+    struct map *map = &world->maps[world->player->floor];
+    bool can_take_turn = world->state == WORLD_STATE_PLAY && world->player == TCOD_list_get(map->actors, world->current_actor_index);
 
     switch (ev)
     {
@@ -575,7 +583,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 target_x--;
                 target_y++;
             }
-            else if (world->state == WORLD_STATE_PLAY)
+            else if (can_take_turn)
             {
                 int x = world->player->x - 1;
                 int y = world->player->y + 1;
@@ -590,7 +598,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 target_y++;
             }
-            else if (world->state == WORLD_STATE_PLAY)
+            else if (can_take_turn)
             {
                 int x = world->player->x;
                 int y = world->player->y + 1;
@@ -605,7 +613,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 target_x++;
                 target_y++;
             }
-            else if (world->state == WORLD_STATE_PLAY)
+            else if (can_take_turn)
             {
                 int x = world->player->x + 1;
                 int y = world->player->y + 1;
@@ -620,7 +628,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 target_x--;
             }
-            else if (world->state == WORLD_STATE_PLAY)
+            else if (can_take_turn)
             {
                 int x = world->player->x - 1;
                 int y = world->player->y;
@@ -643,7 +651,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 target_x++;
             }
-            else if (world->state == WORLD_STATE_PLAY)
+            else if (can_take_turn)
             {
                 int x = world->player->x + 1;
                 int y = world->player->y;
@@ -658,7 +666,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 target_x--;
                 target_y--;
             }
-            else if (world->state == WORLD_STATE_PLAY)
+            else if (can_take_turn)
             {
                 int x = world->player->x - 1;
                 int y = world->player->y - 1;
@@ -673,7 +681,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 target_y--;
             }
-            else if (world->state == WORLD_STATE_PLAY)
+            else if (can_take_turn)
             {
                 int x = world->player->x;
                 int y = world->player->y - 1;
@@ -688,7 +696,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 target_x++;
                 target_y--;
             }
-            else if (world->state == WORLD_STATE_PLAY)
+            else if (can_take_turn)
             {
                 int x = world->player->x + 1;
                 int y = world->player->y - 1;
@@ -707,7 +715,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                 case INVENTORY_ACTION_EQUIP:
                 {
-                    if (world->state == WORLD_STATE_PLAY)
+                    if (can_take_turn)
                     {
                         world->player->took_turn = actor_equip(world->player, item);
                     }
@@ -721,7 +729,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case INVENTORY_ACTION_DROP:
                 {
-                    if (world->state == WORLD_STATE_PLAY)
+                    if (can_take_turn)
                     {
                         world->player->took_turn = actor_drop(world->player, item);
                     }
@@ -729,7 +737,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case INVENTORY_ACTION_QUAFF:
                 {
-                    if (world->state == WORLD_STATE_PLAY)
+                    if (can_take_turn)
                     {
                         world->player->took_turn = actor_quaff(world->player, item);
                     }
@@ -758,7 +766,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case CHARACTER_ACTION_UNEQUIP:
                 {
-                    if (world->state == WORLD_STATE_PLAY)
+                    if (can_take_turn)
                     {
                         world->player->took_turn = actor_unequip(world->player, equip_slot);
                     }
@@ -817,7 +825,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
             case '<':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     world->player->took_turn = actor_ascend(world->player, false, NULL);
                 }
@@ -825,7 +833,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case '>':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     world->player->took_turn = actor_descend(world->player, false, NULL);
                 }
@@ -843,7 +851,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'c':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
@@ -858,7 +866,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'D':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     directional_action = DIRECTIONAL_ACTION_DRINK;
 
@@ -873,7 +881,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'd':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     panel_show(PANEL_INVENTORY);
                     inventory_action = INVENTORY_ACTION_DROP;
@@ -890,7 +898,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'e':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     panel_show(PANEL_INVENTORY);
                     inventory_action = INVENTORY_ACTION_EQUIP;
@@ -907,7 +915,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'f':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     if (targeting == TARGETING_SHOOT)
                     {
@@ -943,7 +951,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'g':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     world->player->took_turn = actor_grab(world->player, world->player->x, world->player->y);
                 }
@@ -975,7 +983,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'O':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     directional_action = DIRECTIONAL_ACTION_OPEN_CHEST;
 
@@ -990,7 +998,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'o':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
 
@@ -1005,7 +1013,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'p':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     directional_action = DIRECTIONAL_ACTION_PRAY;
 
@@ -1020,7 +1028,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'q':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     panel_show(PANEL_INVENTORY);
 
@@ -1038,7 +1046,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 's':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     directional_action = DIRECTIONAL_ACTION_SIT;
 
@@ -1053,7 +1061,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'T':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     if (world->player->light_radius >= 0 && TCOD_color_equals(world->player->light_color, actor_common.glow_color))
                     {
@@ -1072,7 +1080,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 't':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     if (world->player->light_radius >= 0 && TCOD_color_equals(world->player->light_color, actor_common.torch_color))
                     {
@@ -1091,7 +1099,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'u':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     panel_show(PANEL_CHARACTER);
                     character_action = CHARACTER_ACTION_UNEQUIP;
@@ -1153,7 +1161,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'Z':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     panel_show(PANEL_SPELLBOOK);
                     spellbook_action = SPELLBOOK_ACTION_SELECT;
@@ -1170,7 +1178,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'z':
             {
-                if (world->state == WORLD_STATE_PLAY)
+                if (can_take_turn)
                 {
                     enum spell_range spell_range = spell_data[world->player->readied_spell].range;
                     if (spell_range == SPELL_RANGE_SELF)
@@ -1255,7 +1263,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         {
                         case INVENTORY_ACTION_EQUIP:
                         {
-                            if (world->state == WORLD_STATE_PLAY)
+                            if (can_take_turn)
                             {
                                 world->player->took_turn = actor_equip(world->player, item);
                             }
@@ -1263,7 +1271,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         break;
                         case INVENTORY_ACTION_DROP:
                         {
-                            if (world->state == WORLD_STATE_PLAY)
+                            if (can_take_turn)
                             {
                                 world->player->took_turn = actor_drop(world->player, item);
                             }
@@ -1286,7 +1294,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         {
                         case CHARACTER_ACTION_UNEQUIP:
                         {
-                            if (world->state == WORLD_STATE_PLAY)
+                            if (can_take_turn)
                             {
                                 world->player->took_turn = actor_unequip(world->player, equip_slot);
                             }
@@ -1446,7 +1454,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         break;
     }
 
-    if (automoving && world->state == WORLD_STATE_PLAY)
+    if (automoving && can_take_turn)
     {
         if (automove_actor)
         {
@@ -1495,8 +1503,8 @@ static struct scene *update(float delta_time)
 
     view_width = console_width - (panel_rect.visible ? panel_rect.width : 0);
     view_height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);
-    view_x = world->player->x - view_width / 2;
-    view_y = world->player->y - view_height / 2;
+    view_x = world->player ? world->player->x - view_width / 2 : MAP_WIDTH / 2;
+    view_y = world->player ? world->player->y - view_height / 2 : MAP_HEIGHT / 2;
     if (view_x + view_width > MAP_WIDTH)
     {
         view_x = MAP_WIDTH - view_width;
@@ -1525,6 +1533,11 @@ static struct scene *update(float delta_time)
 
 static void render(TCOD_console_t console)
 {
+    if (!world->player)
+    {
+        return;
+    }
+
     TCOD_console_set_default_background(
         console,
         TCOD_color_multiply_scalar(
@@ -2307,6 +2320,13 @@ static void render(TCOD_console_t console)
         }
 
         TCOD_console_set_char_background(console, x - view_x, y - view_y, TCOD_red, TCOD_BKGND_SET);
+    }
+
+    bool can_take_turn = world->state == WORLD_STATE_PLAY && world->player == TCOD_list_get(map->actors, world->current_actor_index);
+    if (!can_take_turn)
+    {
+        TCOD_console_printf(console, 0, 0, "%c", (char)31);
+        TCOD_console_printf(console, 0, 1, "%c", (char)30);
     }
 }
 

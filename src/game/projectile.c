@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <malloc.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "actor.h"
 #include "assets.h"
@@ -56,7 +57,7 @@ void projectile_update(struct projectile *projectile, float delta_time)
     {
     case PROJECTILE_TYPE_ARROW:
     {
-        if (tile->actor && tile->actor != projectile->shooter && !tile->actor->dead)
+        if (tile->actor && tile->actor != projectile->shooter)
         {
             actor_attack(projectile->shooter, tile->actor, projectile->ammunition);
             should_move = false;
@@ -70,7 +71,25 @@ void projectile_update(struct projectile *projectile, float delta_time)
     break;
     case PROJECTILE_TYPE_FIREBALL:
     {
-        // TODO
+        if (tile->actor && tile->actor != projectile->shooter)
+        {
+            should_move = false;
+        }
+        if (tile->object && !object_data[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
+        {
+            should_move = false;
+        }
+        if (!should_move)
+        {
+            TCOD_LIST_FOREACH(map->actors)
+            {
+                struct actor *actor = *iterator;
+                if (distance_between(x, y, actor->x, actor->y) < 10.0f)
+                {
+                    actor_take_damage(actor, projectile->shooter, 5);
+                }
+            }
+        }
     }
     break;
     default:

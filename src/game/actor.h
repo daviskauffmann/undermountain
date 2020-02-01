@@ -155,6 +155,7 @@ bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(struct actor *actor, int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition);
 bool actor_cast_spell(struct actor *actor, int x, int y);
+void actor_take_damage(struct actor *actor, struct actor *attacker, int damage);
 void actor_die(struct actor *actor, struct actor *killer);
 
 #endif

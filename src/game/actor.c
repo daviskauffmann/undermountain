@@ -1308,13 +1308,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
         other->name,
         damage);
 
-    other->current_hp -= damage;
-    other->flash_color = TCOD_red;
-    other->flash_fade_coef = 1.0f;
-    if (other->current_hp <= 0)
-    {
-        actor_die(other, actor);
-    }
+    actor_take_damage(other, actor, damage);
 
     return true;
 }
@@ -1402,6 +1396,11 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
     break;
     case SPELL_TYPE_FIREBALL:
     {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
         struct projectile *projectile = projectile_new(
             PROJECTILE_TYPE_FIREBALL,
             actor->floor,
@@ -1420,6 +1419,17 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
     }
 
     return true;
+}
+
+void actor_take_damage(struct actor *actor, struct actor *attacker, int damage)
+{
+    actor->current_hp -= damage;
+    actor->flash_color = TCOD_red;
+    actor->flash_fade_coef = 1.0f;
+    if (actor->current_hp <= 0)
+    {
+        actor_die(actor, attacker);
+    }
 }
 
 void actor_die(struct actor *actor, struct actor *killer)

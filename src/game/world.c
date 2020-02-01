@@ -20,6 +20,8 @@
 // pack them into a light struct?
 
 // TODO: resurrect corpses
+// i don't even know if having corpses just be actors in a different array is a good idea
+// seems like a waste of space, since corpses don't need nearly all the properties an actor has (even if they are to be resurrected, like why carry around an FOV handle?)
 
 // TODO: optimize
 // pathfinding takes a while
@@ -59,14 +61,28 @@
 // if we have a small number of maps, this might not be a problem
 // might interfere with the above todo
 
-// TODO: allow multiple controllable actors
-// put "controllable" bool on actor
-// there still needs to be a concept of a main character for game state purposes, maybe world->hero
-// but the idea of world->player will change
-// that will now represent the currently controlled actor
-// when the main update loop reaches a controllable actor, it will break from the loop, allowing input to be processed
-// it will also set world->player to be the current actor before breaking
-// the input system will control world->player and the rendering system will render based on world->player
+// TODO: recursively propogating actions
+// first, actors should separate deciding what to do on their turn from actually doing it,
+// by using "action" objects that encapsulate what should be done
+// this isn't terribly useful in its own right, but the main sell is allowing actions that can trigger other actions
+// example: actor_shoot is instead a shoot action
+// a successfull shoot action will spawn a projectile which moves through the map
+// this projectile could hit an explosive barrel, which triggers an explosion as well as some more projectiles (shrapnel)
+// the explosion and shrapnel can damage actors and maybe set off more explosive barrels
+// all of this stuff should be done in the context of the actor who shot the projectile originally and in the same turn
+// no other actor can take their turn until all the actions have resolved
+// so that's the high level, but what about the implementation?
+
+// BUG: when the player kills someone, they end up with one extra `energy_per_turn` on their next turn
+// ???
+// other actions the player takes does not cause this, even attacking
+// it is specifically when they kill another actor
+// it applies to melee, ranged, and spell attacks
+// it also applies when bumping and swinging
+// i suspect it has something to do with how actors are removed from the array when killed
+// however, this bug doesn't affect other actors
+// upon further investigaton, it seems that every time an actor dies in the map, the player gets extra energy
+// even more ???
 
 struct world *world;
 
@@ -74,19 +90,18 @@ void world_init(void)
 {
     world = malloc(sizeof(struct world));
     assert(world);
-    world->state = WORLD_STATE_AWAKE;
     world->seed = 0;
     world->random = NULL;
     world->time = 0;
-    world->current_actor_index = 0;
-    world->player = NULL;
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
         map_init(map, floor);
     }
-    world->messages = TCOD_list_new();
+    world->current_actor_index = 0;
+    world->player = NULL;
     world->hero = NULL;
+    world->messages = TCOD_list_new();
 }
 
 void world_quit(void)
@@ -130,9 +145,9 @@ void world_create(void)
         {
             int x = map->stair_up_x;
             int y = map->stair_up_y;
-            struct actor *hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
+            struct actor *hero = world->hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
+            hero->energy_per_turn = 1.0f;
             hero->controllable = true;
-            world->hero = hero;
             TCOD_list_push(map->actors, hero);
             struct tile *tile = &map->tiles[x][y];
             tile->actor = hero;
@@ -177,20 +192,37 @@ void world_create(void)
         world->hero->name);
 
     printf("World created with seed %d.\n", world->seed);
+
+    struct map *map = &world->maps[world->hero->floor];
+    TCOD_LIST_FOREACH(map->objects)
+    {
+        struct object *object = *iterator;
+        object_calc_light(object);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_light(actor);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_fov(actor);
+    }
 }
 
 void world_save(const char *filename)
 {
-    return;
     TCOD_zip_t zip = TCOD_zip_new();
     TCOD_zip_put_int(zip, world->seed);
     size_t random_size = sizeof(*world->random);
     TCOD_zip_put_int(zip, random_size);
     TCOD_zip_put_data(zip, random_size, world->random);
     TCOD_zip_put_int(zip, world->time);
-    TCOD_zip_put_int(zip, world->current_actor_index);
     int player_map = -1;
     int player_index = -1;
+    int hero_map = -1;
+    int hero_index = -1;
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
@@ -285,13 +317,17 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, actor->light_flicker);
             TCOD_zip_put_color(zip, actor->flash_color);
             TCOD_zip_put_float(zip, actor->flash_fade_coef);
+            TCOD_zip_put_int(zip, actor->controllable);
             TCOD_zip_put_int(zip, actor->dead);
-
-            // remember where the player is in the array
             if (actor == world->player)
             {
                 player_map = floor;
                 player_index = index;
+            }
+            if (actor == world->hero)
+            {
+                hero_map = floor;
+                hero_index = index;
             }
             index++;
         }
@@ -371,6 +407,7 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, corpse->light_flicker);
             TCOD_zip_put_color(zip, corpse->flash_color);
             TCOD_zip_put_float(zip, corpse->flash_fade_coef);
+            TCOD_zip_put_int(zip, corpse->controllable);
             TCOD_zip_put_int(zip, corpse->dead);
         }
         TCOD_zip_put_int(zip, TCOD_list_size(map->items));
@@ -411,9 +448,12 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, shooter_index);
         }
     }
-    // TODO: save messages
+    TCOD_zip_put_int(zip, world->current_actor_index);
     TCOD_zip_put_int(zip, player_map);
     TCOD_zip_put_int(zip, player_index);
+    TCOD_zip_put_int(zip, hero_map);
+    TCOD_zip_put_int(zip, hero_index);
+    // TODO: save messages
     TCOD_zip_save_to_file(zip, filename);
     TCOD_zip_delete(zip);
 
@@ -430,7 +470,6 @@ void world_load(const char *filename)
     TCOD_zip_get_data(zip, random_size, world->random);
     TCOD_namegen_parse("data/namegen.txt", world->random);
     world->time = TCOD_zip_get_int(zip);
-    world->current_actor_index = TCOD_zip_get_int(zip);
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
@@ -534,6 +573,7 @@ void world_load(const char *filename)
             int light_flicker = TCOD_zip_get_int(zip);
             TCOD_color_t flash_color = TCOD_zip_get_color(zip);
             float flash_fade_coef = TCOD_zip_get_float(zip);
+            bool controllable = TCOD_zip_get_int(zip);
             bool dead = TCOD_zip_get_int(zip);
             struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y);
             actor->experience = experience;
@@ -558,6 +598,7 @@ void world_load(const char *filename)
             actor->light_flicker = light_flicker;
             actor->flash_color = flash_color;
             actor->flash_fade_coef = flash_fade_coef;
+            actor->controllable = controllable;
             actor->dead = dead;
             TCOD_list_push(map->actors, actor);
             struct tile *tile = &map->tiles[x][y];
@@ -631,6 +672,7 @@ void world_load(const char *filename)
             int light_flicker = TCOD_zip_get_int(zip);
             TCOD_color_t flash_color = TCOD_zip_get_color(zip);
             float flash_fade_coef = TCOD_zip_get_float(zip);
+            bool controllable = TCOD_zip_get_int(zip);
             bool dead = TCOD_zip_get_int(zip);
             struct actor *corpse = actor_new(name, race, class, faction, level, floor, x, y);
             corpse->experience = experience;
@@ -655,6 +697,7 @@ void world_load(const char *filename)
             corpse->light_flicker = light_flicker;
             corpse->flash_color = flash_color;
             corpse->flash_fade_coef = flash_fade_coef;
+            corpse->controllable = controllable;
             corpse->dead = dead;
             TCOD_list_push(map->corpses, corpse);
             struct tile *tile = &map->tiles[x][y];
@@ -700,50 +743,51 @@ void world_load(const char *filename)
             projectile->ammunition = projectile->shooter->equipment[EQUIP_SLOT_AMMUNITION];
         }
     }
-    // TODO: load messages
+    world->current_actor_index = TCOD_zip_get_int(zip);
     int player_map = TCOD_zip_get_int(zip);
     int player_index = TCOD_zip_get_int(zip);
     world->player = TCOD_list_get(world->maps[player_map].actors, player_index);
+    int hero_map = TCOD_zip_get_int(zip);
+    int hero_index = TCOD_zip_get_int(zip);
+    world->hero = TCOD_list_get(world->maps[hero_map].actors, hero_index);
+    // TODO: load messages
     TCOD_zip_delete(zip);
 
     world_log(
-        world->player->floor,
-        world->player->x,
-        world->player->y,
+        world->hero->floor,
+        world->hero->x,
+        world->hero->y,
         TCOD_white,
         "Welcome back, %s!",
-        world->player->name);
+        world->hero->name);
 
     printf("World loaded with seed %d.\n", world->seed);
+
+    struct map *map = &world->maps[world->hero->floor];
+    TCOD_LIST_FOREACH(map->objects)
+    {
+        struct object *object = *iterator;
+        object_calc_light(object);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_light(actor);
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_fov(actor);
+    }
 }
 
 void world_update(float delta_time)
 {
     struct map *map = &world->maps[world->hero->floor];
 
-    if (world->state == WORLD_STATE_AWAKE)
-    {
-        TCOD_LIST_FOREACH(map->objects)
-        {
-            struct object *object = *iterator;
-            object_calc_light(object);
-        }
-        TCOD_LIST_FOREACH(map->actors)
-        {
-            struct actor *actor = *iterator;
-            actor_calc_light(actor);
-        }
-        TCOD_LIST_FOREACH(map->actors)
-        {
-            struct actor *actor = *iterator;
-            actor_calc_fov(actor);
-        }
-    }
-
     TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
-        object_calc_light(object);
         if (object->destroyed)
         {
             struct tile *tile = &map->tiles[object->x][object->y];
@@ -751,12 +795,14 @@ void world_update(float delta_time)
             iterator = TCOD_list_remove_iterator(map->objects, iterator);
             object_delete(object);
         }
+        else
+        {
+            object_calc_light(object);
+        }
     }
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
-        actor_update_flash(actor, delta_time);
-        actor_calc_light(actor);
         if (actor->dead)
         {
             actor->current_hp = 0;
@@ -783,11 +829,20 @@ void world_update(float delta_time)
                 {
                     struct item *item = *iterator;
                     struct map *map = &world->maps[item->floor];
-                    struct tile *tile = &map->tiles[item->x][item->y];
+                    struct tile *tile = &map->tiles[actor->x][actor->y];
+                    item->floor = actor->floor;
+                    item->x = actor->x;
+                    item->y = actor->y;
                     TCOD_list_push(tile->items, item);
+                    TCOD_list_push(map->items, item);
                     iterator = TCOD_list_remove_iterator(actor->items, iterator);
                 }
             }
+        }
+        else
+        {
+            actor_update_flash(actor, delta_time);
+            actor_calc_light(actor);
         }
     }
     TCOD_LIST_FOREACH(map->projectiles)
@@ -801,13 +856,9 @@ void world_update(float delta_time)
         }
     }
 
-    while (world->state != WORLD_STATE_LOSE)
+    while (!world->hero->dead && TCOD_list_size(map->projectiles) == 0)
     {
-        world->state = world->hero->dead ? WORLD_STATE_LOSE : WORLD_STATE_PLAY;
-        if (TCOD_list_size(map->projectiles) > 0)
-        {
-            world->state = WORLD_STATE_WAIT;
-        }
+        // TODO: need to recalculate lighting and cleanup dead/destroyed stuff
 
         if (world->current_actor_index >= TCOD_list_size(map->actors))
         {
@@ -822,7 +873,7 @@ void world_update(float delta_time)
         }
 
         struct actor *actor = TCOD_list_get(map->actors, world->current_actor_index);
-        if (!actor->dead && actor->energy >= 1.0f)
+        if (actor->energy >= 1.0f)
         {
             actor_calc_fov(actor);
             if (actor->controllable)
@@ -831,19 +882,15 @@ void world_update(float delta_time)
             }
             else
             {
-                if (world->state != WORLD_STATE_WAIT)
-                {
-                    // uncomment this to simulate ai making a decision over multiple frames
-                    // static float timer = 0.0f;
-                    // timer += delta_time;
-                    // if (timer < 0.25f)
-                    // {
-                    //     break;
-                    // }
-                    // timer = 0.0f;
-
-                    actor_ai(actor);
-                }
+                // uncomment this to simulate ai making a decision over multiple frames
+                // static float timer = 0.0f;
+                // timer += delta_time;
+                // if (timer < 0.25f)
+                // {
+                //     break;
+                // }
+                // timer = 0.0f;
+                actor_ai(actor);
             }
         }
         else
@@ -862,6 +909,8 @@ void world_update(float delta_time)
         }
         else
         {
+            // only player controlled actors should get here, and this means that they haven't done anything this frame
+            // so return control so the current frame can be rendered
             break;
         }
         world->current_actor_index++;

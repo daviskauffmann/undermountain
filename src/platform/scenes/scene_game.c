@@ -507,7 +507,10 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     mouse_tile_y = mouse.cy + view_y;
 
     struct map *map = &world->maps[world->player->floor];
-    bool can_take_turn = world->state == WORLD_STATE_PLAY && world->player == TCOD_list_get(map->actors, world->current_actor_index);
+    bool can_take_turn =
+        !world->hero->dead &&
+        world->player == TCOD_list_get(map->actors, world->current_actor_index) &&
+        TCOD_list_size(map->projectiles) == 0;
 
     switch (ev)
     {
@@ -638,7 +641,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         break;
         case TCODK_KP5:
         {
-            if (world->state != WORLD_STATE_WAIT)
+            if (can_take_turn)
             {
                 world->player->took_turn = true;
             }
@@ -1523,7 +1526,7 @@ static struct scene *update(float delta_time)
     }
 
     world_update(delta_time);
-    if (world->state == WORLD_STATE_LOSE && file_exists(SAVE_PATH))
+    if (world->hero->dead && file_exists(SAVE_PATH))
     {
         remove(SAVE_PATH);
     }
@@ -2322,17 +2325,20 @@ static void render(TCOD_console_t console)
         TCOD_console_set_char_background(console, x - view_x, y - view_y, TCOD_red, TCOD_BKGND_SET);
     }
 
-    bool can_take_turn = world->state == WORLD_STATE_PLAY && world->player == TCOD_list_get(map->actors, world->current_actor_index);
-    if (!can_take_turn)
+    if (!world->hero->dead)
     {
-        TCOD_console_printf(console, 0, 0, "%c", (char)31);
-        TCOD_console_printf(console, 0, 1, "%c", (char)30);
+        if (world->player != TCOD_list_get(map->actors, world->current_actor_index) ||
+            TCOD_list_size(map->projectiles) > 0)
+        {
+            TCOD_console_printf(console, 0, 0, "%c", (char)31);
+            TCOD_console_printf(console, 0, 1, "%c", (char)30);
+        }
     }
 }
 
 static void quit(void)
 {
-    if (world->state != WORLD_STATE_LOSE)
+    if (!world->hero->dead)
     {
         world_save(SAVE_PATH);
     }

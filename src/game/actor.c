@@ -1262,7 +1262,6 @@ bool actor_shoot(struct actor *actor, int x, int y)
     struct map *map = &world->maps[actor->floor];
     TCOD_list_push(map->projectiles, projectile);
 
-    // TODO: this shouldn't be here
     actor->energy -= 1.0f;
 
     return true;

@@ -8,29 +8,16 @@
 
 #define NUM_MAPS 60
 
-enum world_state
-{
-    // The first frame of the world.
-    WORLD_STATE_AWAKE,
-    // It is the player's move.
-    WORLD_STATE_PLAY,
-    // Waiting for animations to finish. Actors cannot take their turns in this state.
-    WORLD_STATE_WAIT,
-    // Player is dead.
-    WORLD_STATE_LOSE
-};
-
 struct world
 {
-    enum world_state state;
     unsigned int seed;
     TCOD_random_t random;
     unsigned int time;
+    struct map maps[NUM_MAPS];
     int current_actor_index;
     struct actor *player;
-    struct map maps[NUM_MAPS];
-    TCOD_list_t messages;
     struct actor *hero;
+    TCOD_list_t messages;
 };
 
 extern struct world *world;

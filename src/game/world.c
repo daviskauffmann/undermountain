@@ -146,7 +146,6 @@ void world_create(void)
             int x = map->stair_up_x;
             int y = map->stair_up_y;
             struct actor *hero = world->hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
-            hero->energy_per_turn = 1.0f;
             hero->controllable = true;
             TCOD_list_push(map->actors, hero);
             struct tile *tile = &map->tiles[x][y];
@@ -424,8 +423,10 @@ void world_save(const char *filename)
         TCOD_LIST_FOREACH(map->projectiles)
         {
             struct projectile *projectile = *iterator;
-            TCOD_zip_put_char(zip, projectile->glyph);
+            TCOD_zip_put_int(zip, projectile->type);
             TCOD_zip_put_int(zip, projectile->floor);
+            TCOD_zip_put_float(zip, projectile->distance);
+            TCOD_zip_put_float(zip, projectile->angle);
             TCOD_zip_put_float(zip, projectile->x);
             TCOD_zip_put_float(zip, projectile->y);
             TCOD_zip_put_float(zip, projectile->dx);
@@ -720,14 +721,18 @@ void world_load(const char *filename)
         int num_projectiles = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_projectiles; i++)
         {
-            unsigned char glyph = TCOD_zip_get_char(zip);
+            enum projectile_type type = TCOD_zip_get_int(zip);
             int floor = TCOD_zip_get_int(zip);
+            float distance = TCOD_zip_get_float(zip);
+            float angle = TCOD_zip_get_float(zip);
             float x = TCOD_zip_get_float(zip);
             float y = TCOD_zip_get_float(zip);
             float dx = TCOD_zip_get_float(zip);
             float dy = TCOD_zip_get_float(zip);
             bool destroyed = TCOD_zip_get_int(zip);
-            struct projectile *projectile = projectile_new(glyph, floor, 0, 0, 0, 0, NULL, NULL);
+            struct projectile *projectile = projectile_new(type, floor, 0, 0, 0, 0, NULL, NULL);
+            projectile->distance = distance;
+            projectile->angle = angle;
             projectile->x = x;
             projectile->y = y;
             projectile->dx = dx;
@@ -740,7 +745,10 @@ void world_load(const char *filename)
             struct projectile *projectile = *iterator;
             int shooter_index = TCOD_zip_get_int(zip);
             projectile->shooter = TCOD_list_get(map->actors, shooter_index);
-            projectile->ammunition = projectile->shooter->equipment[EQUIP_SLOT_AMMUNITION];
+            if (projectile->type == PROJECTILE_TYPE_ARROW)
+            {
+                projectile->ammunition = projectile->shooter->equipment[EQUIP_SLOT_AMMUNITION];
+            }
         }
     }
     world->current_actor_index = TCOD_zip_get_int(zip);
@@ -864,11 +872,20 @@ void world_update(float delta_time)
         {
             world->time++;
             world->current_actor_index = 0;
+            bool controllable_exists = false;
             TCOD_LIST_FOREACH(map->actors)
             {
                 struct actor *actor = *iterator;
                 actor->took_turn = false;
                 actor->energy += actor->energy_per_turn;
+                if (actor->controllable)
+                {
+                    controllable_exists = true;
+                }
+            }
+            if (!controllable_exists)
+            {
+                break;
             }
         }
 
@@ -909,8 +926,6 @@ void world_update(float delta_time)
         }
         else
         {
-            // only player controlled actors should get here, and this means that they haven't done anything this frame
-            // so return control so the current frame can be rendered
             break;
         }
         world->current_actor_index++;

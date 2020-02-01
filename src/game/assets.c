@@ -14,6 +14,7 @@ struct item_common item_common;
 struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
 struct item_datum item_data[NUM_ITEM_TYPES];
 struct spell_datum spell_data[NUM_SPELL_TYPES];
+struct projectile_datum projectile_data[NUM_PROJECTILE_TYPES];
 
 #define TILE_COMMON(_ambient_light_color, _ambient_light_intensity) \
     tile_common.ambient_light_color = _ambient_light_color;         \
@@ -98,6 +99,11 @@ struct spell_datum spell_data[NUM_SPELL_TYPES];
     spell_data[_type].name = _name;      \
     spell_data[_type].range = _range;
 
+#define PROJECTILE_DATA(_type, _glyph, _color, _speed) \
+    projectile_data[_type].glyph = _glyph;             \
+    projectile_data[_type].color = _color;             \
+    projectile_data[_type].speed = _speed;
+
 void assets_load(void)
 {
     // TODO: load from file
@@ -164,4 +170,8 @@ void assets_load(void)
 
     SPELL_DATA(SPELL_TYPE_HEAL, "Heal", SPELL_RANGE_SELF);
     SPELL_DATA(SPELL_TYPE_LIGHTNING, "Lightning", SPELL_RANGE_TARGET);
+    SPELL_DATA(SPELL_TYPE_FIREBALL, "Fireball", SPELL_RANGE_TARGET);
+
+    PROJECTILE_DATA(PROJECTILE_TYPE_ARROW, '`', TCOD_white, 50.0f);
+    PROJECTILE_DATA(PROJECTILE_TYPE_FIREBALL, '*', TCOD_flame, 30.0f);
 }

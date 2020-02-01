@@ -4,6 +4,7 @@
 #include "actor.h"
 #include "item.h"
 #include "object.h"
+#include "projectile.h"
 #include "spell.h"
 #include "tile.h"
 
@@ -19,6 +20,7 @@ extern struct item_common item_common;
 extern struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
 extern struct item_datum item_data[NUM_ITEM_TYPES];
 extern struct spell_datum spell_data[NUM_SPELL_TYPES];
+extern struct projectile_datum projectile_data[NUM_PROJECTILE_TYPES];
 
 void assets_load(void);
 

@@ -498,7 +498,11 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
 {
     if (!world->player)
     {
-        return &game_scene;
+        world->player = world->hero;
+        if (!world->player)
+        {
+            return &game_scene;
+        }
     }
 
     mouse_x = mouse.cx;
@@ -854,101 +858,89 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'c':
             {
-                if (can_take_turn)
-                {
-                    directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
+                directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
             case 'D':
             {
-                if (can_take_turn)
-                {
-                    directional_action = DIRECTIONAL_ACTION_DRINK;
+                directional_action = DIRECTIONAL_ACTION_DRINK;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
             case 'd':
             {
-                if (can_take_turn)
-                {
-                    panel_show(PANEL_INVENTORY);
-                    inventory_action = INVENTORY_ACTION_DROP;
-                    panel_state[PANEL_INVENTORY].selection_mode = true;
+                panel_show(PANEL_INVENTORY);
+                inventory_action = INVENTORY_ACTION_DROP;
+                panel_state[PANEL_INVENTORY].selection_mode = true;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose an item to drop. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose an item to drop. Press 'ESC' to cancel.");
             }
             break;
             case 'e':
             {
-                if (can_take_turn)
-                {
-                    panel_show(PANEL_INVENTORY);
-                    inventory_action = INVENTORY_ACTION_EQUIP;
-                    panel_state[PANEL_INVENTORY].selection_mode = true;
+                panel_show(PANEL_INVENTORY);
+                inventory_action = INVENTORY_ACTION_EQUIP;
+                panel_state[PANEL_INVENTORY].selection_mode = true;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose an item to equip. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose an item to equip. Press 'ESC' to cancel.");
             }
             break;
             case 'f':
             {
-                if (can_take_turn)
+                if (targeting == TARGETING_SHOOT)
                 {
-                    if (targeting == TARGETING_SHOOT)
+                    if (can_take_turn)
                     {
                         actor_shoot(world->player, target_x, target_y);
                         targeting = TARGETING_NONE;
                     }
-                    else
+                }
+                else
+                {
+                    targeting = TARGETING_SHOOT;
+                    struct actor *target = world->player;
+                    struct map *map = &world->maps[world->player->floor];
+                    float min_distance = FLT_MAX;
+                    TCOD_LIST_FOREACH(map->actors)
                     {
-                        targeting = TARGETING_SHOOT;
-                        struct actor *target = world->player;
-                        struct map *map = &world->maps[world->player->floor];
-                        float min_distance = FLT_MAX;
-                        TCOD_LIST_FOREACH(map->actors)
+                        struct actor *actor = *iterator;
+                        if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y) &&
+                            actor->faction != world->player->faction &&
+                            !actor->dead)
                         {
-                            struct actor *actor = *iterator;
-                            if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y) &&
-                                actor->faction != world->player->faction &&
-                                !actor->dead)
+                            float distance = distance_between_sq(world->player->x, world->player->y, actor->x, actor->y);
+                            if (distance < min_distance)
                             {
-                                float distance = distance_between_sq(world->player->x, world->player->y, actor->x, actor->y);
-                                if (distance < min_distance)
-                                {
-                                    target = actor;
-                                    min_distance = distance;
-                                }
+                                target = actor;
+                                min_distance = distance;
                             }
                         }
-                        target_x = target->x;
-                        target_y = target->y;
                     }
+                    target_x = target->x;
+                    target_y = target->y;
                 }
             }
             break;
@@ -986,80 +978,65 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'O':
             {
-                if (can_take_turn)
-                {
-                    directional_action = DIRECTIONAL_ACTION_OPEN_CHEST;
+                directional_action = DIRECTIONAL_ACTION_OPEN_CHEST;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
             case 'o':
             {
-                if (can_take_turn)
-                {
-                    directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
+                directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
             case 'p':
             {
-                if (can_take_turn)
-                {
-                    directional_action = DIRECTIONAL_ACTION_PRAY;
+                directional_action = DIRECTIONAL_ACTION_PRAY;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
             case 'q':
             {
-                if (can_take_turn)
-                {
-                    panel_show(PANEL_INVENTORY);
+                panel_show(PANEL_INVENTORY);
 
-                    inventory_action = INVENTORY_ACTION_QUAFF;
-                    panel_state[PANEL_INVENTORY].selection_mode = true;
+                inventory_action = INVENTORY_ACTION_QUAFF;
+                panel_state[PANEL_INVENTORY].selection_mode = true;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose an item to quaff. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose an item to quaff. Press 'ESC' to cancel.");
             }
             break;
             case 's':
             {
-                if (can_take_turn)
-                {
-                    directional_action = DIRECTIONAL_ACTION_SIT;
+                directional_action = DIRECTIONAL_ACTION_SIT;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
             case 'T':
@@ -1102,19 +1079,16 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'u':
             {
-                if (can_take_turn)
-                {
-                    panel_show(PANEL_CHARACTER);
-                    character_action = CHARACTER_ACTION_UNEQUIP;
-                    panel_state[PANEL_CHARACTER].selection_mode = true;
+                panel_show(PANEL_CHARACTER);
+                character_action = CHARACTER_ACTION_UNEQUIP;
+                panel_state[PANEL_CHARACTER].selection_mode = true;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose an item to unequip. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose an item to unequip. Press 'ESC' to cancel.");
             }
             break;
             case 'X':
@@ -1164,44 +1138,51 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'Z':
             {
-                if (can_take_turn)
-                {
-                    panel_show(PANEL_SPELLBOOK);
-                    spellbook_action = SPELLBOOK_ACTION_SELECT;
-                    panel_state[PANEL_SPELLBOOK].selection_mode = true;
+                panel_show(PANEL_SPELLBOOK);
+                spellbook_action = SPELLBOOK_ACTION_SELECT;
+                panel_state[PANEL_SPELLBOOK].selection_mode = true;
 
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_yellow,
-                        "Choose a spell. Press 'ESC' to cancel.");
-                }
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose a spell. Press 'ESC' to cancel.");
             }
             break;
             case 'z':
             {
-                if (can_take_turn)
+                enum spell_range spell_range = spell_data[world->player->readied_spell].range;
+                switch (spell_range)
                 {
-                    enum spell_range spell_range = spell_data[world->player->readied_spell].range;
-                    if (spell_range == SPELL_RANGE_SELF)
+                case SPELL_RANGE_SELF:
+                {
+                    if (can_take_turn)
                     {
                         world->player->took_turn = actor_cast_spell(world->player, world->player->x, world->player->y);
                     }
-                    else if (spell_range == SPELL_RANGE_TARGET)
+                }
+                break;
+                case SPELL_RANGE_TARGET:
+                {
+                    if (targeting == TARGETING_SPELL)
                     {
-                        if (targeting == TARGETING_SPELL)
+                        if (can_take_turn)
                         {
                             world->player->took_turn = actor_cast_spell(world->player, target_x, target_y);
                             targeting = TARGETING_NONE;
                         }
-                        else
-                        {
-                            targeting = TARGETING_SPELL;
-                            target_x = world->player->x;
-                            target_y = world->player->y;
-                        }
                     }
+                    else
+                    {
+                        targeting = TARGETING_SPELL;
+                        target_x = world->player->x;
+                        target_y = world->player->y;
+                    }
+                    break;
+                }
+                default:
+                    break;
                 }
             }
             break;
@@ -1482,6 +1463,15 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
 
 static struct scene *update(float delta_time)
 {
+    if (!world->player)
+    {
+        world->player = world->hero;
+        if (!world->player)
+        {
+            return &game_scene;
+        }
+    }
+
     message_log_rect.x = 0;
     message_log_rect.height = console_height / 4;
     message_log_rect.y = console_height - message_log_rect.height;
@@ -1538,7 +1528,11 @@ static void render(TCOD_console_t console)
 {
     if (!world->player)
     {
-        return;
+        world->player = world->hero;
+        if (!world->player)
+        {
+            return;
+        }
     }
 
     TCOD_console_set_default_background(
@@ -1749,16 +1743,57 @@ static void render(TCOD_console_t console)
         int y = (int)projectile->y;
         if (TCOD_map_is_in_fov(world->player->fov, x, y))
         {
+            char glyph = projectile_data[projectile->type].glyph;
+            if (projectile->type == PROJECTILE_TYPE_ARROW)
+            {
+                float angle = projectile->angle;
+                if ((angle > 11 * PI / 6 && angle <= 2 * PI) || (angle >= 0 && angle < PI / 6))
+                {
+                    glyph = '-';
+                }
+                else if (angle >= PI / 6 && angle <= PI / 3)
+                {
+                    glyph = '/';
+                }
+                else if (angle > PI / 3 && angle < 2 * PI / 3)
+                {
+                    glyph = '|';
+                }
+                else if (angle >= 2 * PI / 3 && angle <= 5 * PI / 6)
+                {
+                    glyph = '\\';
+                }
+                else if (angle > 5 * PI / 6 && angle < 7 * PI / 6)
+                {
+                    glyph = '-';
+                }
+                else if (angle >= 7 * PI / 6 && angle <= 4 * PI / 3)
+                {
+                    glyph = '/';
+                }
+                else if (angle > 4 * PI / 3 && angle < 5 * PI / 3)
+                {
+                    glyph = '|';
+                }
+                else if (angle >= 5 * PI / 3 && angle <= 11 * PI / 6)
+                {
+                    glyph = '\\';
+                }
+                else
+                {
+                    glyph = '`';
+                }
+            }
             TCOD_console_set_char_foreground(
                 console,
                 x - view_x,
                 y - view_y,
-                TCOD_white);
+                projectile_data[projectile->type].color);
             TCOD_console_set_char(
                 console,
                 x - view_x,
                 y - view_y,
-                projectile->glyph);
+                glyph);
         }
     }
     TCOD_LIST_FOREACH(map->objects)

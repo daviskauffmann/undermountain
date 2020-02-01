@@ -1248,10 +1248,8 @@ bool actor_shoot(struct actor *actor, int x, int y)
         item_delete(ammunition);
     }
 
-    // float angle = angle_between(actor->x, actor->y, x, y);
-    unsigned char glyph = '`'; // TODO: select glyph based on angle
     struct projectile *projectile = projectile_new(
-        glyph,
+        PROJECTILE_TYPE_ARROW,
         actor->floor,
         actor->x,
         actor->y,
@@ -1330,8 +1328,6 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
 
     // TODO: mana and/or some other kind of spell limiter
 
-    // TODO: spell projectiles
-
     world_log(
         actor->floor,
         actor->x,
@@ -1402,6 +1398,21 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
 
             return false;
         }
+    }
+    break;
+    case SPELL_TYPE_FIREBALL:
+    {
+        struct projectile *projectile = projectile_new(
+            PROJECTILE_TYPE_FIREBALL,
+            actor->floor,
+            actor->x,
+            actor->y,
+            x,
+            y,
+            actor,
+            NULL);
+        struct map *map = &world->maps[actor->floor];
+        TCOD_list_push(map->projectiles, projectile);
     }
     break;
     default:

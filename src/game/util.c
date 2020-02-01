@@ -16,7 +16,12 @@ float distance_between(int x1, int y1, int x2, int y2)
 
 float angle_between(int x1, int y1, int x2, int y2)
 {
-    float dx = (float)(x1 - x2);
+    float dx = (float)(x2 - x1);
     float dy = (float)(y1 - y2);
-    return atan2f(dy, dx);
+    float angle = atan2f(dy, dx);
+    if (angle < 0.0f)
+    {
+        angle += PI * 2;
+    }
+    return angle;
 }

@@ -5,6 +5,7 @@ enum spell_type
 {
     SPELL_TYPE_HEAL,
     SPELL_TYPE_LIGHTNING,
+    SPELL_TYPE_FIREBALL,
 
     NUM_SPELL_TYPES
 };

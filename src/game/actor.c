@@ -1412,6 +1412,10 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
             NULL);
         struct map *map = &world->maps[actor->floor];
         TCOD_list_push(map->projectiles, projectile);
+
+        actor->energy -= 1.0f;
+
+        return false;
     }
     break;
     default:

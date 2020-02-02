@@ -434,10 +434,11 @@ static bool player_interact(TCOD_key_t key, int x, int y)
                         return true;
                     }
                 }
-                if (tile->object)
+                struct object *object = map_get_object_at(map, x, y);
+                if (object)
                 {
                     hit = true;
-                    if (actor_bash(world->player, tile->object))
+                    if (actor_bash(world->player, object))
                     {
                         return true;
                     }
@@ -1320,16 +1321,17 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 struct map *map = &world->maps[world->player->floor];
                 struct tile *tile = &map->tiles[mouse_tile_x][mouse_tile_y];
+                struct object *object = map_get_object_at(map, mouse_tile_x, mouse_tile_y);
                 tooltip_show();
                 tooltip_options_add("Move", &toolip_option_on_click_move);
                 tooltip_data.x = mouse_tile_x;
                 tooltip_data.y = mouse_tile_y;
-                if (tile->object)
+                if (object)
                 {
                     tooltip_options_add("Examine Object", NULL);
                     tooltip_options_add("Interact", NULL);
                     tooltip_options_add("Bash", NULL);
-                    tooltip_data.object = tile->object;
+                    tooltip_data.object = object;
                 }
                 if (tile->actor)
                 {
@@ -1570,9 +1572,9 @@ static void render(TCOD_console_t console)
                     {
                         tile->seen = true;
 
-                        TCOD_LIST_FOREACH(map->objects)
+                        for (int i = 0; i < map->num_objects; i++)
                         {
-                            struct object *object = *iterator;
+                            struct object *object = &map->objects[i];
                             if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                             {
                                 float radius_sq = powf((float)object->light_radius, 2);
@@ -1701,9 +1703,9 @@ static void render(TCOD_console_t console)
                 actor_common.corpse_glyph);
         }
     }
-    TCOD_LIST_FOREACH(map->objects)
+    for (int i = 0; i < map->num_objects; i++)
     {
-        struct object *object = *iterator;
+        struct object *object = &map->objects[i];
         if (TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
         {
             TCOD_console_set_char_foreground(
@@ -1796,9 +1798,9 @@ static void render(TCOD_console_t console)
                 glyph);
         }
     }
-    TCOD_LIST_FOREACH(map->objects)
+    for (int i = 0; i < map->num_objects; i++)
     {
-        struct object *object = *iterator;
+        struct object *object = &map->objects[i];
         if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) &&
             TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
         {
@@ -1910,7 +1912,8 @@ static void render(TCOD_console_t console)
 
                     goto done;
                 }
-                if (tile->object)
+                struct object *object = map_get_object_at(map, target_x, target_y);
+                if (object)
                 {
                     TCOD_console_printf_ex(
                         console,
@@ -1918,7 +1921,7 @@ static void render(TCOD_console_t console)
                         view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
-                        object_data[tile->object->type].name);
+                        object_data[object->type].name);
 
                     goto done;
                 }

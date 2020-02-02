@@ -6,7 +6,7 @@
 #include "map.h"
 #include "spell.h"
 
-#define NUM_MAPS 60
+#define NUM_MAPS 1
 
 struct world
 {

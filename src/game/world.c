@@ -193,9 +193,10 @@ void world_create(void)
     printf("World created with seed %d.\n", world->seed);
 
     struct map *map = &world->maps[world->hero->floor];
-    for (int i = 0; i < map->num_objects; i++)
+    TCOD_LIST_FOREACH(map->objects)
     {
-        object_calc_light(&map->objects[i]);
+        struct object *object = *iterator;
+        object_calc_light(object);
     }
     TCOD_LIST_FOREACH(map->actors)
     {
@@ -237,19 +238,19 @@ void world_save(const char *filename)
                 TCOD_zip_put_int(zip, tile->seen);
             }
         }
-        TCOD_zip_put_int(zip, map->num_rooms);
-        for (int i = 0; i < map->num_rooms; i++)
+        TCOD_zip_put_int(zip, TCOD_list_size(map->rooms));
+        TCOD_LIST_FOREACH(map->rooms)
         {
-            struct room *room = &map->rooms[i];
+            struct room *room = *iterator;
             TCOD_zip_put_int(zip, room->x);
             TCOD_zip_put_int(zip, room->y);
             TCOD_zip_put_int(zip, room->w);
             TCOD_zip_put_int(zip, room->h);
         }
-        TCOD_zip_put_int(zip, map->num_objects);
-        for (int i = 0; i < map->num_objects; i++)
+        TCOD_zip_put_int(zip, TCOD_list_size(map->objects));
+        TCOD_LIST_FOREACH(map->objects)
         {
-            struct object *object = &map->objects[i];
+            struct object *object = *iterator;
             TCOD_zip_put_int(zip, object->type);
             TCOD_zip_put_int(zip, object->x);
             TCOD_zip_put_int(zip, object->y);
@@ -486,21 +487,19 @@ void world_load(const char *filename)
                 tile->seen = TCOD_zip_get_int(zip);
             }
         }
-        map->num_rooms = TCOD_zip_get_int(zip);
-        map->rooms = malloc(sizeof(struct room) * map->num_rooms);
-        for (int i = 0; i < map->num_rooms; i++)
+        int num_rooms = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_rooms; i++)
         {
             int x = TCOD_zip_get_int(zip);
             int y = TCOD_zip_get_int(zip);
             int w = TCOD_zip_get_int(zip);
             int h = TCOD_zip_get_int(zip);
-            room_init(&map->rooms[i], x, y, w, h);
+            struct room *room = room_new(x, y, w, h);
+            TCOD_list_push(map->rooms, room);
         }
-        map->num_objects = TCOD_zip_get_int(zip);
-        map->objects = malloc(sizeof(struct object) * map->num_objects);
-        for (int i = 0; i < map->num_objects; i++)
+        int num_objects = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_objects; i++)
         {
-            struct object *object = &map->objects[i];
             enum object_type type = TCOD_zip_get_int(zip);
             int x = TCOD_zip_get_int(zip);
             int y = TCOD_zip_get_int(zip);
@@ -510,8 +509,11 @@ void world_load(const char *filename)
             float light_intensity = TCOD_zip_get_float(zip);
             bool light_flicker = TCOD_zip_get_int(zip);
             bool destroyed = TCOD_zip_get_int(zip);
-            object_init(object, type, floor, x, y, color, light_radius, light_color, light_intensity, light_flicker);
+            struct object *object = object_new(type, floor, x, y, color, light_radius, light_color, light_intensity, light_flicker);
             object->destroyed = destroyed;
+            TCOD_list_push(map->objects, object);
+            struct tile *tile = &map->tiles[x][y];
+            tile->object = object;
         }
         int num_actors = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_actors; i++)
@@ -770,9 +772,10 @@ void world_load(const char *filename)
     printf("World loaded with seed %d.\n", world->seed);
 
     struct map *map = &world->maps[world->hero->floor];
-    for (int i = 0; i < map->num_objects; i++)
+    TCOD_LIST_FOREACH(map->objects)
     {
-        object_calc_light(&map->objects[i]);
+        struct object *object = *iterator;
+        object_calc_light(object);
     }
     TCOD_LIST_FOREACH(map->actors)
     {
@@ -790,13 +793,15 @@ void world_update(float delta_time)
 {
     struct map *map = &world->maps[world->hero->floor];
 
-    for (int i = 0; i < map->num_objects; i++)
+    TCOD_LIST_FOREACH(map->objects)
     {
-        struct object *object = &map->objects[i];
+        struct object *object = *iterator;
         if (object->destroyed)
         {
-            object_reset(object);
-            map->objects[i] = map->objects[--map->num_objects];
+            struct tile *tile = &map->tiles[object->x][object->y];
+            tile->object = NULL;
+            iterator = TCOD_list_remove_iterator(map->objects, iterator);
+            object_delete(object);
         }
         else
         {

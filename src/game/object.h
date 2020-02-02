@@ -47,8 +47,8 @@ struct object
     bool destroyed;
 };
 
-void object_init(struct object *object, enum object_type type, int floor, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, float light_intensity, bool light_flicker);
-void object_reset(struct object *object);
+struct object *object_new(enum object_type type, int floor, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, float light_intensity, bool light_flicker);
+void object_delete(struct object *object);
 void object_calc_light(struct object *object);
 
 #endif

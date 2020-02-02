@@ -4,6 +4,7 @@ void tile_init(struct tile *tile, enum tile_type type, bool seen)
 {
     tile->type = type;
     tile->seen = seen;
+    tile->object = NULL;
     tile->actor = NULL;
     tile->corpses = TCOD_list_new();
     tile->items = TCOD_list_new();

@@ -258,7 +258,6 @@ void world_save(const char *filename)
             TCOD_zip_put_color(zip, object->light_color);
             TCOD_zip_put_float(zip, object->light_intensity);
             TCOD_zip_put_int(zip, object->light_flicker);
-            TCOD_zip_put_int(zip, object->destroyed);
         }
         TCOD_zip_put_int(zip, TCOD_list_size(map->actors));
         int index = 0;
@@ -500,7 +499,6 @@ void world_load(const char *filename)
         map->objects = malloc(sizeof(struct object) * map->num_objects);
         for (int i = 0; i < map->num_objects; i++)
         {
-            struct object *object = &map->objects[i];
             enum object_type type = TCOD_zip_get_int(zip);
             int x = TCOD_zip_get_int(zip);
             int y = TCOD_zip_get_int(zip);
@@ -509,9 +507,7 @@ void world_load(const char *filename)
             TCOD_color_t light_color = TCOD_zip_get_color(zip);
             float light_intensity = TCOD_zip_get_float(zip);
             bool light_flicker = TCOD_zip_get_int(zip);
-            bool destroyed = TCOD_zip_get_int(zip);
-            object_init(object, type, floor, x, y, color, light_radius, light_color, light_intensity, light_flicker);
-            object->destroyed = destroyed;
+            object_init(&map->objects[i], type, floor, x, y, color, light_radius, light_color, light_intensity, light_flicker);
         }
         int num_actors = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_actors; i++)
@@ -793,15 +789,7 @@ void world_update(float delta_time)
     for (int i = 0; i < map->num_objects; i++)
     {
         struct object *object = &map->objects[i];
-        if (object->destroyed)
-        {
-            object_reset(object);
-            map->objects[i] = map->objects[--map->num_objects];
-        }
-        else
-        {
-            object_calc_light(object);
-        }
+        object_calc_light(object);
     }
     TCOD_LIST_FOREACH(map->actors)
     {

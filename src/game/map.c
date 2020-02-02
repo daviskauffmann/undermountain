@@ -681,6 +681,18 @@ struct room *map_get_random_room(struct map *map)
     return &map->rooms[TCOD_random_get_int(world->random, 0, map->num_rooms - 1)];
 }
 
+int map_get_object_index(struct map *map, struct object *object)
+{
+    for (int i = 0; i < map->num_objects; i++)
+    {
+        if (&map->objects[i] == object)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 struct object *map_get_object_at(struct map *map, int x, int y)
 {
     for (int i = 0; i < map->num_objects; i++)

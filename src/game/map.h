@@ -31,6 +31,7 @@ void map_reset(struct map *map);
 void map_generate(struct map *map);
 bool map_is_inside(int x, int y);
 struct room *map_get_random_room(struct map *map);
+int map_get_object_index(struct map *map, struct object *object);
 struct object *map_get_object_at(struct map *map, int x, int y);
 bool map_is_transparent(struct map *map, int x, int y);
 bool map_is_walkable(struct map *map, int x, int y);

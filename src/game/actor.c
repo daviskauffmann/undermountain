@@ -479,7 +479,8 @@ bool actor_move(struct actor *actor, int x, int y)
         case OBJECT_TYPE_TRAP:
         {
             // TODO: trap effects
-            object->destroyed = true;
+            object_reset(object);
+            map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
 
             world_log(
                 actor->floor,
@@ -785,7 +786,8 @@ bool actor_open_chest(struct actor *actor, int x, int y)
     if (object && object->type == OBJECT_TYPE_CHEST)
     {
         // TODO: give item
-        object->destroyed = true;
+        object_reset(object);
+        map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
 
         world_log(
             actor->floor,
@@ -820,7 +822,8 @@ bool actor_pray(struct actor *actor, int x, int y)
     struct object *object = map_get_object_at(map, x, y);
     if (object && object->type == OBJECT_TYPE_ALTAR)
     {
-        object->destroyed = true;
+        object_reset(object);
+        map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
 
         world_log(
             actor->floor,
@@ -866,7 +869,8 @@ bool actor_drink(struct actor *actor, int x, int y)
             actor->current_hp = actor->max_hp;
         }
 
-        object->destroyed = true;
+        object_reset(object);
+        map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
 
         world_log(
             actor->floor,
@@ -902,7 +906,8 @@ bool actor_sit(struct actor *actor, int x, int y)
     struct object *object = map_get_object_at(map, x, y);
     if (object && object->type == OBJECT_TYPE_THRONE)
     {
-        object->destroyed = true;
+        object_reset(object);
+        map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
 
         world_log(
             actor->floor,
@@ -1169,7 +1174,9 @@ bool actor_bash(struct actor *actor, struct object *object)
     // this means objects should have health
     // move damage calculation in actor_attack to a function and call it here as well
 
-    object->destroyed = true;
+    object_reset(object);
+    struct map *map = &world->maps[actor->floor];
+    map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
 
     world_log(
         actor->floor,

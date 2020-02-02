@@ -17,7 +17,6 @@ void object_init(struct object *object, enum object_type type, int floor, int x,
     object->light_intensity = light_intensity;
     object->light_flicker = light_flicker;
     object->light_fov = NULL;
-    object->destroyed = false;
 }
 
 void object_reset(struct object *object)

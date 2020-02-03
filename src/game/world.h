@@ -14,7 +14,6 @@ struct world
     TCOD_random_t random;
     unsigned int time;
     struct map maps[NUM_MAPS];
-    int current_actor_index;
     struct actor *player;
     struct actor *hero;
     bool hero_dead;

@@ -22,6 +22,7 @@ struct map
     TCOD_list_t corpses;
     TCOD_list_t items;
     TCOD_list_t projectiles;
+    int current_actor_index;
 };
 
 void map_init(struct map *map, unsigned int floor);

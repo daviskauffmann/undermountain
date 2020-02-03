@@ -50,6 +50,7 @@ void map_init(struct map *map, unsigned int floor)
     map->corpses = TCOD_list_new();
     map->items = TCOD_list_new();
     map->projectiles = TCOD_list_new();
+    map->current_actor_index = 0;
 }
 
 void map_reset(struct map *map)

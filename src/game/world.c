@@ -96,9 +96,9 @@ void world_init(void)
         struct map *map = &world->maps[floor];
         map_init(map, floor);
     }
-    world->current_actor_index = 0;
     world->player = NULL;
     world->hero = NULL;
+    world->hero_dead = false;
     world->messages = TCOD_list_new();
 }
 
@@ -379,8 +379,8 @@ void world_save(const char *filename)
             }
             TCOD_zip_put_int(zip, shooter_index);
         }
+        TCOD_zip_put_int(zip, map->current_actor_index);
     }
-    TCOD_zip_put_int(zip, world->current_actor_index);
     TCOD_zip_put_int(zip, player_map);
     TCOD_zip_put_int(zip, player_index);
     TCOD_zip_put_int(zip, hero_map);
@@ -597,8 +597,8 @@ void world_load(const char *filename)
                 projectile->ammunition = projectile->shooter->equipment[EQUIP_SLOT_AMMUNITION];
             }
         }
+        map->current_actor_index = TCOD_zip_get_int(zip);
     }
-    world->current_actor_index = TCOD_zip_get_int(zip);
     int player_map = TCOD_zip_get_int(zip);
     int player_index = TCOD_zip_get_int(zip);
     world->player = TCOD_list_get(world->maps[player_map].actors, player_index);
@@ -657,10 +657,10 @@ void world_update(float delta_time)
             actor_calc_light(actor);
         }
 
-        if (world->current_actor_index >= TCOD_list_size(map->actors))
+        if (map->current_actor_index >= TCOD_list_size(map->actors))
         {
             world->time++;
-            world->current_actor_index = 0;
+            map->current_actor_index = 0;
             bool controllable_exists = false;
             TCOD_LIST_FOREACH(map->actors)
             {
@@ -678,7 +678,7 @@ void world_update(float delta_time)
             }
         }
 
-        struct actor *actor = TCOD_list_get(map->actors, world->current_actor_index);
+        struct actor *actor = TCOD_list_get(map->actors, map->current_actor_index);
         if (actor->energy >= 1.0f)
         {
             actor_calc_fov(actor);
@@ -701,7 +701,7 @@ void world_update(float delta_time)
         }
         else
         {
-            world->current_actor_index++;
+            map->current_actor_index++;
             continue;
         }
         if (actor->took_turn)
@@ -717,7 +717,7 @@ void world_update(float delta_time)
         {
             break;
         }
-        world->current_actor_index++;
+        map->current_actor_index++;
     }
 }
 

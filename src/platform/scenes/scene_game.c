@@ -513,7 +513,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     struct map *map = &world->maps[world->player->floor];
     bool can_take_turn =
         !world->hero_dead &&
-        world->player == TCOD_list_get(map->actors, world->current_actor_index) &&
+        world->player == TCOD_list_get(map->actors, map->current_actor_index) &&
         TCOD_list_size(map->projectiles) == 0;
 
     switch (ev)
@@ -2361,7 +2361,7 @@ static void render(TCOD_console_t console)
 
     if (!world->hero_dead)
     {
-        if (world->player != TCOD_list_get(map->actors, world->current_actor_index) ||
+        if (world->player != TCOD_list_get(map->actors, map->current_actor_index) ||
             TCOD_list_size(map->projectiles) > 0)
         {
             TCOD_console_printf(console, 0, 0, "%c", (char)31);

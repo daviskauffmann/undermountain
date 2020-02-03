@@ -27,7 +27,6 @@ struct projectile *projectile_new(enum projectile_type type, int floor, int x1, 
     projectile->dy = ((float)y2 - (float)y1) / projectile->distance;
     projectile->shooter = shooter;
     projectile->ammunition = ammunition;
-    projectile->destroyed = false;
     return projectile;
 }
 
@@ -36,7 +35,7 @@ void projectile_delete(struct projectile *projectile)
     free(projectile);
 }
 
-void projectile_update(struct projectile *projectile, float delta_time)
+bool projectile_move(struct projectile *projectile, float delta_time)
 {
     bool should_move = true;
     float next_x = projectile->x + projectile->dx * projectile_data[projectile->type].speed * delta_time;
@@ -103,6 +102,6 @@ void projectile_update(struct projectile *projectile, float delta_time)
     else
     {
         projectile->shooter->took_turn = true;
-        projectile->destroyed = true;
     }
+    return should_move;
 }

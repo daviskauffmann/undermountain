@@ -58,7 +58,6 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->flash_color = TCOD_white;
     actor->flash_fade_coef = 0.0f;
     actor->controllable = false;
-    actor->dead = false;
     return actor;
 }
 
@@ -477,7 +476,9 @@ bool actor_move(struct actor *actor, int x, int y)
         case OBJECT_TYPE_TRAP:
         {
             // TODO: trap effects
-            tile->object->destroyed = true;
+            TCOD_list_remove(map->objects, tile->object);
+            object_delete(tile->object);
+            tile->object = NULL;
 
             world_log(
                 actor->floor,
@@ -781,7 +782,10 @@ bool actor_open_chest(struct actor *actor, int x, int y)
     if (tile->object && tile->object->type == OBJECT_TYPE_CHEST)
     {
         // TODO: give item
-        tile->object->destroyed = true;
+
+        TCOD_list_remove(map->objects, tile->object);
+        object_delete(tile->object);
+        tile->object = NULL;
 
         world_log(
             actor->floor,
@@ -816,7 +820,9 @@ bool actor_pray(struct actor *actor, int x, int y)
     struct tile *tile = &map->tiles[x][y];
     if (tile->object && tile->object->type == OBJECT_TYPE_ALTAR)
     {
-        tile->object->destroyed = true;
+        TCOD_list_remove(map->objects, tile->object);
+        object_delete(tile->object);
+        tile->object = NULL;
 
         world_log(
             actor->floor,
@@ -870,7 +876,9 @@ bool actor_drink(struct actor *actor, int x, int y)
             actor->current_hp = actor->max_hp;
         }
 
-        tile->object->destroyed = true;
+        TCOD_list_remove(map->objects, tile->object);
+        object_delete(tile->object);
+        tile->object = NULL;
 
         world_log(
             actor->floor,
@@ -906,7 +914,9 @@ bool actor_sit(struct actor *actor, int x, int y)
     struct tile *tile = &map->tiles[x][y];
     if (tile->object && tile->object->type == OBJECT_TYPE_THRONE)
     {
-        tile->object->destroyed = true;
+        TCOD_list_remove(map->objects, tile->object);
+        object_delete(tile->object);
+        tile->object = NULL;
 
         world_log(
             actor->floor,
@@ -1173,7 +1183,11 @@ bool actor_bash(struct actor *actor, struct object *object)
     // this means objects should have health
     // move damage calculation in actor_attack to a function and call it here as well
 
-    object->destroyed = true;
+    struct map *map = &world->maps[actor->floor];
+    struct tile *tile = &map->tiles[object->x][object->y];
+    TCOD_list_remove(map->objects, object);
+    object_delete(object);
+    tile->object = NULL;
 
     world_log(
         actor->floor,
@@ -1446,12 +1460,14 @@ void actor_take_damage(struct actor *actor, struct actor *attacker, int damage)
 
 void actor_die(struct actor *actor, struct actor *killer)
 {
-    actor->dead = true;
+    // remove from map
+    struct map *map = &world->maps[actor->floor];
+    TCOD_list_remove(map->actors, actor);
+    struct tile *tile = &map->tiles[actor->x][actor->y];
+    tile->actor = NULL;
     // create a corpse
     struct corpse *corpse = corpse_new(actor->name, actor->level, actor->floor, actor->x, actor->y);
-    struct map *map = &world->maps[actor->floor];
     TCOD_list_push(map->corpses, corpse);
-    struct tile *tile = &map->tiles[actor->x][actor->y];
     TCOD_list_push(tile->corpses, corpse);
     if (actor != world->player)
     {
@@ -1496,11 +1512,17 @@ void actor_die(struct actor *actor, struct actor *killer)
 
     if (actor == world->hero)
     {
+        world->hero_dead = true;
+
         world_log(
             actor->floor,
             actor->x,
             actor->y,
             TCOD_green,
             "Game over! Press 'ESC' to return to the menu.");
+    }
+    else
+    {
+        actor_delete(actor);
     }
 }

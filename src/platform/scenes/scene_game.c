@@ -471,7 +471,7 @@ static bool toolip_option_on_click_move(void)
 {
     automoving = true;
     struct tile *tile = &world->maps[world->player->floor].tiles[tooltip_data.x][tooltip_data.y];
-    if (tile->actor && tile->actor->faction != world->player->faction && !tile->actor->dead)
+    if (tile->actor && tile->actor->faction != world->player->faction)
     {
         automove_actor = tile->actor;
     }
@@ -512,7 +512,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
 
     struct map *map = &world->maps[world->player->floor];
     bool can_take_turn =
-        !world->hero->dead &&
+        !world->hero_dead &&
         world->player == TCOD_list_get(map->actors, world->current_actor_index) &&
         TCOD_list_size(map->projectiles) == 0;
 
@@ -928,8 +928,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     {
                         struct actor *actor = *iterator;
                         if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y) &&
-                            actor->faction != world->player->faction &&
-                            !actor->dead)
+                            actor->faction != world->player->faction)
                         {
                             float distance = distance_between_sq(world->player->x, world->player->y, actor->x, actor->y);
                             if (distance < min_distance)
@@ -1226,7 +1225,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 automoving = true;
                 struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
-                if (tile->actor && tile->actor->faction != world->player->faction && !tile->actor->dead)
+                if (tile->actor && tile->actor->faction != world->player->faction)
                 {
                     automove_actor = tile->actor;
                 }
@@ -1516,7 +1515,7 @@ static struct scene *update(float delta_time)
     }
 
     world_update(delta_time);
-    if (world->hero->dead && file_exists(SAVE_PATH))
+    if (world->hero_dead && file_exists(SAVE_PATH))
     {
         remove(SAVE_PATH);
     }
@@ -2360,7 +2359,7 @@ static void render(TCOD_console_t console)
         TCOD_console_set_char_background(console, x - view_x, y - view_y, TCOD_red, TCOD_BKGND_SET);
     }
 
-    if (!world->hero->dead)
+    if (!world->hero_dead)
     {
         if (world->player != TCOD_list_get(map->actors, world->current_actor_index) ||
             TCOD_list_size(map->projectiles) > 0)
@@ -2373,7 +2372,7 @@ static void render(TCOD_console_t console)
 
 static void quit(void)
 {
-    if (!world->hero->dead)
+    if (!world->hero_dead)
     {
         world_save(SAVE_PATH);
     }

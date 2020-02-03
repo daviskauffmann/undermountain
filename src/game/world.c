@@ -73,7 +73,6 @@
 // so that's the high level, but what about the implementation?
 
 // BUG: when the player kills someone, they end up with one extra `energy_per_turn` on their next turn
-// ???
 // other actions the player takes does not cause this, even attacking
 // it is specifically when they kill another actor
 // it applies to melee, ranged, and spell attacks
@@ -81,7 +80,7 @@
 // i suspect it has something to do with how actors are removed from the array when killed
 // however, this bug doesn't affect other actors
 // upon further investigaton, it seems that every time an actor dies in the map, the player gets extra energy
-// even more ???
+// this only happens sometimes?
 
 struct world *world;
 
@@ -145,6 +144,7 @@ void world_create(void)
             int x = map->stair_up_x;
             int y = map->stair_up_y;
             struct actor *hero = world->hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
+            hero->energy_per_turn = 1.0f;
             hero->controllable = true;
             TCOD_list_push(map->actors, hero);
             struct tile *tile = &map->tiles[x][y];
@@ -190,23 +190,6 @@ void world_create(void)
         world->hero->name);
 
     printf("World created with seed %d.\n", world->seed);
-
-    struct map *map = &world->maps[world->hero->floor];
-    TCOD_LIST_FOREACH(map->objects)
-    {
-        struct object *object = *iterator;
-        object_calc_light(object);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_light(actor);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_fov(actor);
-    }
 }
 
 void world_save(const char *filename)
@@ -258,7 +241,6 @@ void world_save(const char *filename)
             TCOD_zip_put_color(zip, object->light_color);
             TCOD_zip_put_float(zip, object->light_intensity);
             TCOD_zip_put_int(zip, object->light_flicker);
-            TCOD_zip_put_int(zip, object->destroyed);
         }
         TCOD_zip_put_int(zip, TCOD_list_size(map->actors));
         int index = 0;
@@ -316,7 +298,6 @@ void world_save(const char *filename)
             TCOD_zip_put_color(zip, actor->flash_color);
             TCOD_zip_put_float(zip, actor->flash_fade_coef);
             TCOD_zip_put_int(zip, actor->controllable);
-            TCOD_zip_put_int(zip, actor->dead);
             if (actor == world->player)
             {
                 player_map = floor;
@@ -382,7 +363,6 @@ void world_save(const char *filename)
             TCOD_zip_put_float(zip, projectile->y);
             TCOD_zip_put_float(zip, projectile->dx);
             TCOD_zip_put_float(zip, projectile->dy);
-            TCOD_zip_put_int(zip, projectile->destroyed);
         }
         TCOD_LIST_FOREACH(map->projectiles)
         {
@@ -459,9 +439,7 @@ void world_load(const char *filename)
             TCOD_color_t light_color = TCOD_zip_get_color(zip);
             float light_intensity = TCOD_zip_get_float(zip);
             bool light_flicker = TCOD_zip_get_int(zip);
-            bool destroyed = TCOD_zip_get_int(zip);
             struct object *object = object_new(type, floor, x, y, color, light_radius, light_color, light_intensity, light_flicker);
-            object->destroyed = destroyed;
             TCOD_list_push(map->objects, object);
             struct tile *tile = &map->tiles[x][y];
             tile->object = object;
@@ -526,7 +504,6 @@ void world_load(const char *filename)
             TCOD_color_t flash_color = TCOD_zip_get_color(zip);
             float flash_fade_coef = TCOD_zip_get_float(zip);
             bool controllable = TCOD_zip_get_int(zip);
-            bool dead = TCOD_zip_get_int(zip);
             struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y);
             actor->experience = experience;
             actor->max_hp = max_hp;
@@ -551,7 +528,6 @@ void world_load(const char *filename)
             actor->flash_color = flash_color;
             actor->flash_fade_coef = flash_fade_coef;
             actor->controllable = controllable;
-            actor->dead = dead;
             TCOD_list_push(map->actors, actor);
             struct tile *tile = &map->tiles[x][y];
             tile->actor = actor;
@@ -602,7 +578,6 @@ void world_load(const char *filename)
             float y = TCOD_zip_get_float(zip);
             float dx = TCOD_zip_get_float(zip);
             float dy = TCOD_zip_get_float(zip);
-            bool destroyed = TCOD_zip_get_int(zip);
             struct projectile *projectile = projectile_new(type, floor, 0, 0, 0, 0, NULL, NULL);
             projectile->distance = distance;
             projectile->angle = angle;
@@ -610,7 +585,6 @@ void world_load(const char *filename)
             projectile->y = y;
             projectile->dx = dx;
             projectile->dy = dy;
-            projectile->destroyed = destroyed;
             TCOD_list_push(map->projectiles, projectile);
         }
         TCOD_LIST_FOREACH(map->projectiles)
@@ -643,23 +617,6 @@ void world_load(const char *filename)
         world->hero->name);
 
     printf("World loaded with seed %d.\n", world->seed);
-
-    struct map *map = &world->maps[world->hero->floor];
-    TCOD_LIST_FOREACH(map->objects)
-    {
-        struct object *object = *iterator;
-        object_calc_light(object);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_light(actor);
-    }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_fov(actor);
-    }
 }
 
 void world_update(float delta_time)
@@ -669,50 +626,37 @@ void world_update(float delta_time)
     TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
-        if (object->destroyed)
-        {
-            struct tile *tile = &map->tiles[object->x][object->y];
-            tile->object = NULL;
-            iterator = TCOD_list_remove_iterator_fast(map->objects, iterator);
-            object_delete(object);
-        }
-        else
-        {
-            object_calc_light(object);
-        }
+        object_calc_light(object);
     }
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
-        if (actor->dead)
-        {
-            struct tile *tile = &map->tiles[actor->x][actor->y];
-            tile->actor = NULL;
-            iterator = TCOD_list_remove_iterator_fast(map->actors, iterator);
-            if (actor != world->hero)
-            {
-                actor_delete(actor);
-            }
-        }
-        else
-        {
-            actor_update_flash(actor, delta_time);
-            actor_calc_light(actor);
-        }
+        actor_update_flash(actor, delta_time);
+        actor_calc_light(actor);
     }
     TCOD_LIST_FOREACH(map->projectiles)
     {
         struct projectile *projectile = *iterator;
-        projectile_update(projectile, delta_time);
-        if (projectile->destroyed)
+        if (!projectile_move(projectile, delta_time))
         {
             iterator = TCOD_list_remove_iterator_fast(map->projectiles, iterator);
             projectile_delete(projectile);
         }
     }
 
-    while (!world->hero->dead && TCOD_list_size(map->projectiles) == 0)
+    while (!world->hero_dead && TCOD_list_size(map->projectiles) == 0)
     {
+        TCOD_LIST_FOREACH(map->objects)
+        {
+            struct object *object = *iterator;
+            object_calc_light(object);
+        }
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *actor = *iterator;
+            actor_calc_light(actor);
+        }
+
         if (world->current_actor_index >= TCOD_list_size(map->actors))
         {
             world->time++;

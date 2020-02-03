@@ -17,6 +17,7 @@ struct world
     int current_actor_index;
     struct actor *player;
     struct actor *hero;
+    bool hero_dead;
     TCOD_list_t messages;
 };
 

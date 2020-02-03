@@ -19,7 +19,6 @@ struct object *object_new(enum object_type type, int floor, int x, int y, TCOD_c
     object->light_intensity = light_intensity;
     object->light_flicker = light_flicker;
     object->light_fov = NULL;
-    object->destroyed = false;
     return object;
 }
 

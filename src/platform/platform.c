@@ -69,13 +69,9 @@ int platform_run(void)
         TCOD_console_flush();
     }
 
-    if (world)
+    if (scene)
     {
-        if (!world->hero_dead)
-        {
-            world_save(SAVE_PATH);
-        }
-        world_quit();
+        scene->quit();
     }
 
     TCOD_console_delete(NULL);

@@ -49,7 +49,7 @@ static struct scene *select_option(enum option option)
     {
     case OPTION_START:
     {
-        world_init();
+        world_setup();
         if (file_exists(SAVE_PATH))
         {
             // TODO: prompt whether the player wants to overwrite the save with a new character

@@ -33,7 +33,7 @@
 #define SPAWN_MONSTERS 5
 #define SPAWN_ITEMS 5
 
-void map_init(struct map *map, unsigned int floor)
+void map_setup(struct map *map, unsigned int floor)
 {
     map->floor = floor;
     for (int x = 0; x < MAP_WIDTH; x++)
@@ -41,7 +41,7 @@ void map_init(struct map *map, unsigned int floor)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             struct tile *tile = &map->tiles[x][y];
-            tile_init(tile, TILE_TYPE_EMPTY, false);
+            tile_setup(tile, TILE_TYPE_EMPTY, false);
         }
     }
     map->rooms = TCOD_list_new();
@@ -53,7 +53,7 @@ void map_init(struct map *map, unsigned int floor)
     map->current_actor_index = 0;
 }
 
-void map_reset(struct map *map)
+void map_cleanup(struct map *map)
 {
     TCOD_LIST_FOREACH(map->projectiles)
     {
@@ -96,7 +96,7 @@ void map_reset(struct map *map)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             struct tile *tile = &map->tiles[x][y];
-            tile_reset(tile);
+            tile_cleanup(tile);
         }
     }
 }

@@ -2376,7 +2376,7 @@ static void quit(void)
     {
         world_save(SAVE_PATH);
     }
-    world_quit();
+    world_cleanup();
 
     TCOD_LIST_FOREACH(tooltip_options)
     {

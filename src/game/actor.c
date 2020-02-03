@@ -446,7 +446,8 @@ bool actor_move(struct actor *actor, int x, int y)
     }
     if (tile->object)
     {
-        switch (tile->object->type)
+        enum object_type object_type = tile->object->type;
+        switch (object_type)
         {
         case OBJECT_TYPE_ALTAR:
         {
@@ -493,7 +494,7 @@ bool actor_move(struct actor *actor, int x, int y)
             break;
         }
 
-        if (!object_data[tile->object->type].is_walkable)
+        if (!object_data[object_type].is_walkable)
         {
             return false;
         }

@@ -84,7 +84,7 @@
 
 struct world *world;
 
-void world_init(void)
+void world_setup(void)
 {
     world = malloc(sizeof(struct world));
     assert(world);
@@ -94,7 +94,7 @@ void world_init(void)
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
-        map_init(map, floor);
+        map_setup(map, floor);
     }
     world->player = NULL;
     world->hero = NULL;
@@ -102,7 +102,7 @@ void world_init(void)
     world->messages = TCOD_list_new();
 }
 
-void world_quit(void)
+void world_cleanup(void)
 {
     TCOD_LIST_FOREACH(world->messages)
     {
@@ -113,7 +113,7 @@ void world_quit(void)
     for (int i = 0; i < NUM_MAPS; i++)
     {
         struct map *map = &world->maps[i];
-        map_reset(map);
+        map_cleanup(map);
     }
     TCOD_namegen_destroy();
     TCOD_random_delete(world->random);
@@ -144,7 +144,6 @@ void world_create(void)
             int x = map->stair_up_x;
             int y = map->stair_up_y;
             struct actor *hero = world->hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
-            hero->energy_per_turn = 1.0f;
             hero->controllable = true;
             TCOD_list_push(map->actors, hero);
             struct tile *tile = &map->tiles[x][y];

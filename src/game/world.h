@@ -22,8 +22,8 @@ struct world
 
 extern struct world *world;
 
-void world_init(void);
-void world_quit(void);
+void world_setup(void);
+void world_cleanup(void);
 void world_create(void);
 void world_save(const char *filename);
 void world_load(const char *filename);

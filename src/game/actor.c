@@ -205,8 +205,7 @@ void actor_ai(struct actor *actor)
         TCOD_LIST_FOREACH(map->actors)
         {
             struct actor *other = *iterator;
-            if (!other->dead &&
-                TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
+            if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
                 other->faction != actor->faction)
             {
                 float distance = distance_between_sq(actor->x, actor->y, other->x, other->y);
@@ -634,7 +633,7 @@ bool actor_close_door(struct actor *actor, int x, int y)
 
 bool actor_descend(struct actor *actor, bool with_leader, void ***iterator)
 {
-    if (actor->floor >= NUM_MAPS)
+    if (actor->floor >= NUM_MAPS - 1)
     {
         world_log(
             actor->floor,
@@ -860,6 +859,14 @@ bool actor_drink(struct actor *actor, int x, int y)
     {
         if (actor->current_hp == actor->max_hp)
         {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s is at full HP.",
+                actor->name);
+
             return false;
         }
         int hp = actor->max_hp - actor->current_hp;
@@ -1442,6 +1449,7 @@ void actor_take_damage(struct actor *actor, struct actor *attacker, int damage)
     actor->flash_fade_coef = 1.0f;
     if (actor->current_hp <= 0)
     {
+        actor->current_hp = 0;
         actor_die(actor, attacker);
     }
 }
@@ -1449,6 +1457,39 @@ void actor_take_damage(struct actor *actor, struct actor *attacker, int damage)
 void actor_die(struct actor *actor, struct actor *killer)
 {
     actor->dead = true;
+    // create a corpse
+    struct corpse *corpse = corpse_new(actor->name, actor->level, actor->floor, actor->x, actor->y);
+    struct map *map = &world->maps[actor->floor];
+    TCOD_list_push(map->corpses, corpse);
+    struct tile *tile = &map->tiles[actor->x][actor->y];
+    TCOD_list_push(tile->corpses, corpse);
+    tile->actor = NULL;
+    if (actor != world->player)
+    {
+        // move equipment to inventory
+        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+        {
+            struct item *equipment = actor->equipment[i];
+            if (equipment)
+            {
+                TCOD_list_push(actor->items, equipment);
+                actor->equipment[i] = NULL;
+            }
+        }
+        // move inventory to ground
+        TCOD_LIST_FOREACH(actor->items)
+        {
+            struct item *item = *iterator;
+            struct map *map = &world->maps[item->floor];
+            struct tile *tile = &map->tiles[actor->x][actor->y];
+            item->floor = actor->floor;
+            item->x = actor->x;
+            item->y = actor->y;
+            TCOD_list_push(tile->items, item);
+            TCOD_list_push(map->items, item);
+            iterator = TCOD_list_remove_iterator(actor->items, iterator);
+        }
+    }
 
     world_log(
         actor->floor,
@@ -1462,15 +1503,5 @@ void actor_die(struct actor *actor, struct actor *killer)
     {
         int experience = TCOD_random_get_int(world->random, 50, 100) * actor->level;
         actor_give_experience(killer, experience);
-    }
-
-    if (actor == world->hero)
-    {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            TCOD_green,
-            "Game over! Press 'ESC' to return to the menu.");
     }
 }

@@ -2,6 +2,7 @@
 #define GAME_ASSETS_H
 
 #include "actor.h"
+#include "corpse.h"
 #include "item.h"
 #include "object.h"
 #include "projectile.h"
@@ -16,6 +17,7 @@ extern struct actor_common actor_common;
 extern struct race_datum race_data[NUM_RACES];
 extern struct class_datum class_data[NUM_CLASSES];
 extern struct actor_prototype monster_prototypes[NUM_MONSTERS];
+extern struct corpse_common corpse_common;
 extern struct item_common item_common;
 extern struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
 extern struct item_datum item_data[NUM_ITEM_TYPES];

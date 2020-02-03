@@ -65,8 +65,6 @@ struct actor_common
     int torch_radius;
     TCOD_color_t torch_color;
     float torch_intensity;
-    unsigned char corpse_glyph;
-    TCOD_color_t corpse_color;
 };
 
 struct race_datum

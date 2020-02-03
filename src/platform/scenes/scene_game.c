@@ -1688,19 +1688,19 @@ static void render(TCOD_console_t console)
     }
     TCOD_LIST_FOREACH(map->corpses)
     {
-        struct actor *corpse = *iterator;
+        struct corpse *corpse = *iterator;
         if (TCOD_map_is_in_fov(world->player->fov, corpse->x, corpse->y))
         {
             TCOD_console_set_char_foreground(
                 console,
                 corpse->x - view_x,
                 corpse->y - view_y,
-                actor_common.corpse_color);
+                corpse_common.corpse_color);
             TCOD_console_set_char(
                 console,
                 corpse->x - view_x,
                 corpse->y - view_y,
-                actor_common.corpse_glyph);
+                corpse_common.corpse_glyph);
         }
     }
     for (int i = 0; i < map->num_objects; i++)
@@ -1884,7 +1884,7 @@ static void render(TCOD_console_t console)
 
                     goto done;
                 }
-                struct actor *corpse = TCOD_list_peek(tile->corpses);
+                struct corpse *corpse = TCOD_list_peek(tile->corpses);
                 if (corpse)
                 {
                     TCOD_console_printf_ex(

@@ -71,7 +71,7 @@ int platform_run(void)
 
     if (world)
     {
-        if (!world->player->dead)
+        if (!world->hero->dead)
         {
             world_save(SAVE_PATH);
         }

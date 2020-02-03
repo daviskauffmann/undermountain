@@ -70,8 +70,8 @@ void map_reset(struct map *map)
     TCOD_list_delete(map->items);
     TCOD_LIST_FOREACH(map->corpses)
     {
-        struct actor *corpse = *iterator;
-        actor_delete(corpse);
+        struct corpse *corpse = *iterator;
+        corpse_delete(corpse);
     }
     TCOD_list_delete(map->corpses);
     TCOD_LIST_FOREACH(map->actors)

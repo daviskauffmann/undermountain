@@ -8,6 +8,7 @@ SRC	:= \
 	src/main.c \
 	src/game/actor.c \
 	src/game/assets.c \
+	src/game/corpse.c \
 	src/game/item.c \
 	src/game/map.c \
 	src/game/message.c \

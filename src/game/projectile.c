@@ -62,10 +62,9 @@ void projectile_update(struct projectile *projectile, float delta_time)
             actor_attack(projectile->shooter, tile->actor, projectile->ammunition);
             should_move = false;
         }
-        struct object *object = map_get_object_at(map, x, y);
-        if (object && !object_data[object->type].is_walkable && object->type != OBJECT_TYPE_DOOR_OPEN)
+        if (tile->object && !object_data[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
         {
-            actor_bash(projectile->shooter, object);
+            actor_bash(projectile->shooter, tile->object);
             should_move = false;
         }
     }
@@ -76,8 +75,7 @@ void projectile_update(struct projectile *projectile, float delta_time)
         {
             should_move = false;
         }
-        struct object *object = map_get_object_at(map, x, y);
-        if (object && !object_data[object->type].is_walkable && object->type != OBJECT_TYPE_DOOR_OPEN)
+        if (tile->object && !object_data[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
         {
             should_move = false;
         }

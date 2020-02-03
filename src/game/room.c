@@ -6,16 +6,20 @@
 
 #include "world.h"
 
-void room_init(struct room *room, int x, int y, int w, int h)
+struct room *room_new(int x, int y, int w, int h)
 {
+    struct room *room = malloc(sizeof(struct room));
+    assert(room);
     room->x = x;
     room->y = y;
     room->w = w;
     room->h = h;
+    return room;
 }
 
-void room_reset(struct room *room)
+void room_delete(struct room *room)
 {
+    free(room);
 }
 
 void room_get_random_pos(struct room *room, int *x, int *y)

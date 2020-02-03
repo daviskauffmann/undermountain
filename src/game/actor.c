@@ -133,9 +133,9 @@ void actor_calc_fov(struct actor *actor)
             if (!TCOD_map_is_in_fov(actor->fov, x, y) &&
                 TCOD_map_is_in_fov(los_map, x, y))
             {
-                for (int i = 0; i < map->num_objects; i++)
+                TCOD_LIST_FOREACH(map->objects)
                 {
-                    struct object *object = &map->objects[i];
+                    struct object *object = *iterator;
                     if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
@@ -165,9 +165,9 @@ void actor_ai(struct actor *actor)
     {
         struct object *target = NULL;
         float min_distance = FLT_MAX;
-        for (int i = 0; i < map->num_objects; i++)
+        TCOD_LIST_FOREACH(map->objects)
         {
-            struct object *object = &map->objects[i];
+            struct object *object = *iterator;
             if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
                 object->type == OBJECT_TYPE_FOUNTAIN)
             {
@@ -305,9 +305,9 @@ void actor_ai(struct actor *actor)
     }
 
     // TODO: move between floors (deferred until processing of inactive maps is figured out)
-    // if (object)
+    // if (tile->object)
     // {
-    //     switch (object->type)
+    //     switch (tile->object->type)
     //     {
     //     case OBJECT_TYPE_STAIR_DOWN:
     //     {
@@ -445,10 +445,9 @@ bool actor_move(struct actor *actor, int x, int y)
     {
         return false;
     }
-    struct object *object = map_get_object_at(map, x, y);
-    if (object)
+    if (tile->object)
     {
-        switch (object->type)
+        switch (tile->object->type)
         {
         case OBJECT_TYPE_ALTAR:
         {
@@ -478,8 +477,7 @@ bool actor_move(struct actor *actor, int x, int y)
         case OBJECT_TYPE_TRAP:
         {
             // TODO: trap effects
-            object_reset(object);
-            map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
+            tile->object->destroyed = true;
 
             world_log(
                 actor->floor,
@@ -494,7 +492,7 @@ bool actor_move(struct actor *actor, int x, int y)
             break;
         }
 
-        if (!object_data[object->type].is_walkable)
+        if (!object_data[tile->object->type].is_walkable)
         {
             return false;
         }
@@ -569,10 +567,10 @@ bool actor_open_door(struct actor *actor, int x, int y)
     }
 
     struct map *map = &world->maps[actor->floor];
-    struct object *object = map_get_object_at(map, x, y);
-    if (object && object->type == OBJECT_TYPE_DOOR_CLOSED)
+    struct tile *tile = &map->tiles[x][y];
+    if (tile->object && tile->object->type == OBJECT_TYPE_DOOR_CLOSED)
     {
-        object->type = OBJECT_TYPE_DOOR_OPEN;
+        tile->object->type = OBJECT_TYPE_DOOR_OPEN;
 
         world_log(
             actor->floor,
@@ -604,10 +602,10 @@ bool actor_close_door(struct actor *actor, int x, int y)
     }
 
     struct map *map = &world->maps[actor->floor];
-    struct object *object = map_get_object_at(map, x, y);
-    if (object && object->type == OBJECT_TYPE_DOOR_OPEN)
+    struct tile *tile = &map->tiles[x][y];
+    if (tile->object && tile->object->type == OBJECT_TYPE_DOOR_OPEN)
     {
-        object->type = OBJECT_TYPE_DOOR_CLOSED;
+        tile->object->type = OBJECT_TYPE_DOOR_CLOSED;
 
         world_log(
             actor->floor,
@@ -648,8 +646,7 @@ bool actor_descend(struct actor *actor, bool with_leader, void ***iterator)
 
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[actor->x][actor->y];
-    struct object *object = map_get_object_at(map, actor->x, actor->y);
-    if (!with_leader && (!object || object->type != OBJECT_TYPE_STAIR_DOWN))
+    if (!with_leader && (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_DOWN))
     {
         world_log(
             actor->floor,
@@ -666,7 +663,7 @@ bool actor_descend(struct actor *actor, bool with_leader, void ***iterator)
     struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
     if (iterator)
     {
-        *iterator = TCOD_list_remove_iterator(map->actors, *iterator);
+        *iterator = TCOD_list_remove_iterator_fast(map->actors, *iterator);
     }
     else
     {
@@ -719,8 +716,7 @@ bool actor_ascend(struct actor *actor, bool with_leader, void ***iterator)
 
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[actor->x][actor->y];
-    struct object *object = map_get_object_at(map, actor->x, actor->y);
-    if (!with_leader && (!object || object->type != OBJECT_TYPE_STAIR_UP))
+    if (!with_leader && (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_UP))
     {
         world_log(
             actor->floor,
@@ -737,7 +733,7 @@ bool actor_ascend(struct actor *actor, bool with_leader, void ***iterator)
     struct tile *next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
     if (iterator)
     {
-        *iterator = TCOD_list_remove_iterator(map->actors, *iterator);
+        *iterator = TCOD_list_remove_iterator_fast(map->actors, *iterator);
     }
     else
     {
@@ -781,12 +777,11 @@ bool actor_open_chest(struct actor *actor, int x, int y)
     }
 
     struct map *map = &world->maps[actor->floor];
-    struct object *object = map_get_object_at(map, x, y);
-    if (object && object->type == OBJECT_TYPE_CHEST)
+    struct tile *tile = &map->tiles[x][y];
+    if (tile->object && tile->object->type == OBJECT_TYPE_CHEST)
     {
         // TODO: give item
-        object_reset(object);
-        map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
+        tile->object->destroyed = true;
 
         world_log(
             actor->floor,
@@ -818,11 +813,10 @@ bool actor_pray(struct actor *actor, int x, int y)
     }
 
     struct map *map = &world->maps[actor->floor];
-    struct object *object = map_get_object_at(map, x, y);
-    if (object && object->type == OBJECT_TYPE_ALTAR)
+    struct tile *tile = &map->tiles[x][y];
+    if (tile->object && tile->object->type == OBJECT_TYPE_ALTAR)
     {
-        object_reset(object);
-        map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
+        tile->object->destroyed = true;
 
         world_log(
             actor->floor,
@@ -854,8 +848,8 @@ bool actor_drink(struct actor *actor, int x, int y)
     }
 
     struct map *map = &world->maps[actor->floor];
-    struct object *object = map_get_object_at(map, x, y);
-    if (object && object->type == OBJECT_TYPE_FOUNTAIN)
+    struct tile *tile = &map->tiles[x][y];
+    if (tile->object && tile->object->type == OBJECT_TYPE_FOUNTAIN)
     {
         if (actor->current_hp == actor->max_hp)
         {
@@ -876,8 +870,7 @@ bool actor_drink(struct actor *actor, int x, int y)
             actor->current_hp = actor->max_hp;
         }
 
-        object_reset(object);
-        map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
+        tile->object->destroyed = true;
 
         world_log(
             actor->floor,
@@ -910,11 +903,10 @@ bool actor_sit(struct actor *actor, int x, int y)
     }
 
     struct map *map = &world->maps[actor->floor];
-    struct object *object = map_get_object_at(map, x, y);
-    if (object && object->type == OBJECT_TYPE_THRONE)
+    struct tile *tile = &map->tiles[x][y];
+    if (tile->object && tile->object->type == OBJECT_TYPE_THRONE)
     {
-        object_reset(object);
-        map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
+        tile->object->destroyed = true;
 
         world_log(
             actor->floor,
@@ -1181,9 +1173,7 @@ bool actor_bash(struct actor *actor, struct object *object)
     // this means objects should have health
     // move damage calculation in actor_attack to a function and call it here as well
 
-    object_reset(object);
-    struct map *map = &world->maps[actor->floor];
-    map->objects[map_get_object_index(map, object)] = map->objects[--map->num_objects];
+    object->destroyed = true;
 
     world_log(
         actor->floor,
@@ -1463,7 +1453,6 @@ void actor_die(struct actor *actor, struct actor *killer)
     TCOD_list_push(map->corpses, corpse);
     struct tile *tile = &map->tiles[actor->x][actor->y];
     TCOD_list_push(tile->corpses, corpse);
-    tile->actor = NULL;
     if (actor != world->player)
     {
         // move equipment to inventory
@@ -1487,7 +1476,7 @@ void actor_die(struct actor *actor, struct actor *killer)
             item->y = actor->y;
             TCOD_list_push(tile->items, item);
             TCOD_list_push(map->items, item);
-            iterator = TCOD_list_remove_iterator(actor->items, iterator);
+            iterator = TCOD_list_remove_iterator_fast(actor->items, iterator);
         }
     }
 
@@ -1503,5 +1492,15 @@ void actor_die(struct actor *actor, struct actor *killer)
     {
         int experience = TCOD_random_get_int(world->random, 50, 100) * actor->level;
         actor_give_experience(killer, experience);
+    }
+
+    if (actor == world->hero)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_green,
+            "Game over! Press 'ESC' to return to the menu.");
     }
 }

@@ -72,6 +72,9 @@
 // no other actor can take their turn until all the actions have resolved
 // so that's the high level, but what about the implementation?
 
+// TODO: save game at certain intervals for crash protection
+// maybe when the player changes maps?
+
 // BUG: when the player kills someone, they end up with one extra `energy_per_turn` on their next turn
 // other actions the player takes does not cause this, even attacking
 // it is specifically when they kill another actor

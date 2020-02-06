@@ -72,6 +72,9 @@
 // no other actor can take their turn until all the actions have resolved
 // so that's the high level, but what about the implementation?
 
+// TODO: save game at certain intervals for crash protection
+// maybe when the player changes maps?
+
 struct world *world;
 
 void world_setup(void)

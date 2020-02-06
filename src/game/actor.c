@@ -12,8 +12,6 @@
 #include "util.h"
 #include "world.h"
 
-// TODO: actors should ascend/descend with their leader
-
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
 {
     struct actor *actor = malloc(sizeof(struct actor));
@@ -91,7 +89,7 @@ void actor_update_flash(struct actor *actor, float delta_time)
     if (actor->flash_fade_coef > 0)
     {
         // TODO: slower/faster fade depending on circumstances
-        // TODO: different fade functions such as sin
+        // TODO: different fade functions such as sin()
         actor->flash_fade_coef -= 4.0f * delta_time;
     }
     else

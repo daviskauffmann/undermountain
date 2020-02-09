@@ -1492,6 +1492,22 @@ static struct scene *update(float delta_time)
         }
     }
     tooltip_rect.height = TCOD_list_size(tooltip_options) + 2;
+    if (tooltip_rect.x + tooltip_rect.width > console_width)
+    {
+        tooltip_rect.x = console_width - tooltip_rect.width;
+    }
+    if (tooltip_rect.x < 0)
+    {
+        tooltip_rect.x = 0;
+    }
+    if (tooltip_rect.y + tooltip_rect.height > console_height)
+    {
+        tooltip_rect.y = console_height - tooltip_rect.height;
+    }
+    if (tooltip_rect.y < 0)
+    {
+        tooltip_rect.y = 0;
+    }
 
     view_width = console_width - (panel_rect.visible ? panel_rect.width : 0);
     view_height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);

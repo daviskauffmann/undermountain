@@ -1627,6 +1627,28 @@ static void render(TCOD_console_t console)
                                 bg_b += actor->light_color.b * actor->light_intensity * attenuation;
                             }
                         }
+                        TCOD_LIST_FOREACH(map->projectiles)
+                        {
+                            struct projectile *projectile = *iterator;
+                            struct projectile_datum projectile_datum = projectile_data[projectile->type];
+                            if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
+                            {
+                                float radius_sq = powf(projectile_datum.light_radius, 2);
+                                float distance_sq =
+                                    powf((float)(x - projectile->x + (projectile_datum.light_flicker ? dx : 0)), 2) +
+                                    powf((float)(y - projectile->y + (projectile_datum.light_flicker ? dy : 0)), 2);
+                                float attenuation = CLAMP(
+                                    0.0f,
+                                    1.0f,
+                                    (radius_sq - distance_sq) / radius_sq + (projectile_datum.light_flicker ? di : 0));
+                                fg_r += projectile_datum.light_color.r * attenuation;
+                                fg_g += projectile_datum.light_color.g * attenuation;
+                                fg_b += projectile_datum.light_color.b * attenuation;
+                                bg_r += projectile_datum.light_color.r * projectile_datum.light_intensity * attenuation;
+                                bg_g += projectile_datum.light_color.g * projectile_datum.light_intensity * attenuation;
+                                bg_b += projectile_datum.light_color.b * projectile_datum.light_intensity * attenuation;
+                            }
+                        }
                     }
                     float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
                     float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;

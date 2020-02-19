@@ -629,11 +629,20 @@ void world_update(float delta_time)
     TCOD_LIST_FOREACH(map->projectiles)
     {
         struct projectile *projectile = *iterator;
-        if (!projectile_move(projectile, delta_time))
+        if (projectile_move(projectile, delta_time))
+        {
+            projectile_calc_light(projectile);
+        }
+        else
         {
             iterator = TCOD_list_remove_iterator_fast(map->projectiles, iterator);
             projectile_delete(projectile);
         }
+    }
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_calc_fov(actor);
     }
 
     while (!world->hero_dead && TCOD_list_size(map->projectiles) == 0)
@@ -647,6 +656,11 @@ void world_update(float delta_time)
         {
             struct actor *actor = *iterator;
             actor_calc_light(actor);
+        }
+        TCOD_LIST_FOREACH(map->actors)
+        {
+            struct actor *actor = *iterator;
+            actor_calc_fov(actor);
         }
 
         if (map->current_actor_index >= TCOD_list_size(map->actors))
@@ -673,7 +687,6 @@ void world_update(float delta_time)
         struct actor *actor = TCOD_list_get(map->actors, map->current_actor_index);
         if (actor->energy >= 1.0f)
         {
-            actor_calc_fov(actor);
             if (actor->controllable)
             {
                 world->player = actor;

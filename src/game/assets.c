@@ -97,9 +97,13 @@ struct projectile_datum projectile_data[NUM_PROJECTILE_TYPES];
     spell_data[_type].name = _name;      \
     spell_data[_type].range = _range;
 
-#define PROJECTILE_DATA(_type, _glyph, _color, _speed) \
-    projectile_data[_type].glyph = _glyph;             \
-    projectile_data[_type].color = _color;             \
+#define PROJECTILE_DATA(_type, _glyph, _color, _light_radius, _light_color, _light_intensity, _light_flicker, _speed) \
+    projectile_data[_type].glyph = _glyph;                                                                            \
+    projectile_data[_type].color = _color;                                                                            \
+    projectile_data[_type].light_radius = _light_radius;                                                              \
+    projectile_data[_type].light_color = _light_color;                                                                \
+    projectile_data[_type].light_intensity = _light_intensity;                                                        \
+    projectile_data[_type].light_flicker = _light_flicker;                                                            \
     projectile_data[_type].speed = _speed;
 
 void assets_load(void)
@@ -172,6 +176,6 @@ void assets_load(void)
     SPELL_DATA(SPELL_TYPE_LIGHTNING, "Lightning", SPELL_RANGE_TARGET);
     SPELL_DATA(SPELL_TYPE_FIREBALL, "Fireball", SPELL_RANGE_TARGET);
 
-    PROJECTILE_DATA(PROJECTILE_TYPE_ARROW, '`', TCOD_white, 50.0f);
-    PROJECTILE_DATA(PROJECTILE_TYPE_FIREBALL, '*', TCOD_flame, 30.0f);
+    PROJECTILE_DATA(PROJECTILE_TYPE_ARROW, '`', TCOD_white, -1, TCOD_white, 0.0f, false, 50.0f);
+    PROJECTILE_DATA(PROJECTILE_TYPE_FIREBALL, '*', TCOD_flame, 5, TCOD_flame, 0.1f, true, 30.0f);
 }

@@ -146,6 +146,14 @@ void actor_calc_fov(struct actor *actor)
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
                     }
                 }
+                TCOD_LIST_FOREACH(map->projectiles)
+                {
+                    struct projectile *projectile = *iterator;
+                    if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
+                    {
+                        TCOD_map_set_in_fov(actor->fov, x, y, true);
+                    }
+                }
             }
         }
     }

@@ -27,11 +27,16 @@ struct projectile *projectile_new(enum projectile_type type, int floor, int x1, 
     projectile->dy = ((float)y2 - (float)y1) / projectile->distance;
     projectile->shooter = shooter;
     projectile->ammunition = ammunition;
+    projectile->light_fov = NULL;
     return projectile;
 }
 
 void projectile_delete(struct projectile *projectile)
 {
+    if (projectile->light_fov)
+    {
+        TCOD_map_delete(projectile->light_fov);
+    }
     free(projectile);
 }
 
@@ -72,6 +77,7 @@ bool projectile_move(struct projectile *projectile, float delta_time)
     {
         if (tile->actor && tile->actor != projectile->shooter)
         {
+            actor_take_damage(tile->actor, projectile->shooter, 5);
             should_move = false;
         }
         if (tile->object && !object_data[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
@@ -80,14 +86,15 @@ bool projectile_move(struct projectile *projectile, float delta_time)
         }
         if (!should_move)
         {
-            TCOD_LIST_FOREACH(map->actors)
-            {
-                struct actor *actor = *iterator;
-                if (distance_between(x, y, actor->x, actor->y) < 10.0f)
-                {
-                    actor_take_damage(actor, projectile->shooter, 5);
-                }
-            }
+            // TODO: aoe damage
+            // TCOD_LIST_FOREACH(map->actors)
+            // {
+            //     struct actor *actor = *iterator;
+            //     if (distance_between(x, y, actor->x, actor->y) < 10.0f)
+            //     {
+            //         actor_take_damage(actor, projectile->shooter, 5);
+            //     }
+            // }
         }
     }
     break;
@@ -104,4 +111,19 @@ bool projectile_move(struct projectile *projectile, float delta_time)
         projectile->shooter->took_turn = true;
     }
     return should_move;
+}
+
+void projectile_calc_light(struct projectile *projectile)
+{
+    if (projectile->light_fov)
+    {
+        TCOD_map_delete(projectile->light_fov);
+    }
+
+    struct projectile_datum projectile_datum = projectile_data[projectile->type];
+    if (projectile_datum.light_radius >= 0)
+    {
+        struct map *map = &world->maps[projectile->floor];
+        projectile->light_fov = map_to_fov_map(map, projectile->x, projectile->y, projectile_datum.light_radius);
+    }
 }

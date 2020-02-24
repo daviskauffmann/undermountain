@@ -29,16 +29,16 @@ TARGET := bin/undermountain
 .PHONY: all
 all: $(TARGET)
 
-$(TARGET): $(SRC:src/%.c=build/%.o)
-	mkdir -p $(@D)
+$(TARGET): $(SRC:src/%.c=obj/%.o)
+	mkdir -p bin
 	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 	cp extern/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG/libtcod.dll bin
 
-build/%.o: src/%.c
+obj/%.o: src/%.c
 	mkdir -p $(@D)
-	$(CC) -c $< -o $@ -MMD -MF $(@:.o=.d) $(CFLAGS) $(CPPFLAGS)
+	$(CC) -c $< -o $@ -MMD -MF $(@:obj/%.o=obj/%.d) $(CFLAGS) $(CPPFLAGS)
 
--include $(SRC:src/%.c=build/%.d)
+-include $(SRC:src/%.c=obj/%.d)
 
 .PHONY: run
 run: all
@@ -46,7 +46,7 @@ run: all
 
 .PHONY: clean
 clean:
-	rm -rf bin build
+	rm -rf bin obj
 
 .PHONY: build_libtcod
 build_libtcod:

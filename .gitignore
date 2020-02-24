@@ -1,7 +1,7 @@
 .vscode
 
 bin
-build
+obj
 
 config.local.txt
 

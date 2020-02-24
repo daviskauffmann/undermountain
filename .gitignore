@@ -2,6 +2,7 @@
 
 bin
 obj
+dep
 
 config.local.txt
 

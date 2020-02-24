@@ -36,7 +36,7 @@ $(TARGET): $(SRC:src/%.c=obj/%.o)
 
 obj/%.o: src/%.c
 	mkdir -p $(@D)
-	$(CC) -c $< -o $@ -MMD -MF $(@:obj/%.o=obj/%.d) $(CFLAGS) $(CPPFLAGS)
+	$(CC) -c $< -o $@ -MMD -MF $(@:.o=.d) $(CFLAGS) $(CPPFLAGS)
 
 -include $(SRC:src/%.c=obj/%.d)
 

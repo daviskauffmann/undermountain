@@ -30,7 +30,7 @@ TARGET := bin/undermountain
 all: $(TARGET)
 
 $(TARGET): $(SRC:src/%.c=obj/%.o)
-	mkdir -p bin
+	mkdir -p $(@D)
 	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 	cp extern/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG/libtcod.dll bin
 

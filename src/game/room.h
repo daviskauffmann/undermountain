@@ -1,5 +1,5 @@
-#ifndef GAME_ROOM_H
-#define GAME_ROOM_H
+#ifndef ROOM_H
+#define ROOM_H
 
 struct room
 {

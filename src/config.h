@@ -1,5 +1,5 @@
-#ifndef PLATFORM_CONFIG_H
-#define PLATFORM_CONFIG_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
 #include <libtcod.h>
 

@@ -1,5 +1,5 @@
-#ifndef GAME_QUEST_H
-#define GAME_QUEST_H
+#ifndef QUEST_H
+#define QUEST_H
 
 // ideas:
 // instead of having dedicated questgivers that wait for the player to accept a quest, npcs should define their own goals and objectives

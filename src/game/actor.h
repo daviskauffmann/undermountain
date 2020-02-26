@@ -1,5 +1,5 @@
-#ifndef GAME_ACTOR_H
-#define GAME_ACTOR_H
+#ifndef ACTOR_H
+#define ACTOR_H
 
 #include <libtcod.h>
 

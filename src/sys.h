@@ -1,5 +1,5 @@
-#ifndef PLATFORM_SYS_H
-#define PLATFORM_SYS_H
+#ifndef SYS_H
+#define SYS_H
 
 #include <stdbool.h>
 

@@ -1,5 +1,5 @@
-#ifndef GAME_TILE_H
-#define GAME_TILE_H
+#ifndef TILE_H
+#define TILE_H
 
 #include <libtcod.h>
 

@@ -1,5 +1,5 @@
-#ifndef PLATFORM_SCENE_MENU_H
-#define PLATFORM_SCENE_MENU_H
+#ifndef SCENE_MENU_H
+#define SCENE_MENU_H
 
 extern struct scene menu_scene;
 

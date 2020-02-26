@@ -1,5 +1,5 @@
-#ifndef GAME_SPELL_H
-#define GAME_SPELL_H
+#ifndef SPELL_H
+#define SPELL_H
 
 enum spell_type
 {

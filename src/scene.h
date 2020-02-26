@@ -1,5 +1,5 @@
-#ifndef PLATFORM_SCENE_H
-#define PLATFORM_SCENE_H
+#ifndef SCENE_H
+#define SCENE_H
 
 #include <libtcod.h>
 

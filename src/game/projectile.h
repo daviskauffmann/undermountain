@@ -1,5 +1,5 @@
-#ifndef GAME_PROJECTILE_H
-#define GAME_PROJECTILE_H
+#ifndef PROJECTILE_H
+#define PROJECTILE_H
 
 #include <libtcod.h>
 

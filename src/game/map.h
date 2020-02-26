@@ -1,5 +1,5 @@
-#ifndef GAME_MAP_H
-#define GAME_MAP_H
+#ifndef MAP_H
+#define MAP_H
 
 #include <libtcod.h>
 

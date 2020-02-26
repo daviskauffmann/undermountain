@@ -1,5 +1,5 @@
-#ifndef GAME_ITEM_H
-#define GAME_ITEM_H
+#ifndef ITEM_H
+#define ITEM_H
 
 #include <libtcod.h>
 

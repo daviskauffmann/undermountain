@@ -1,5 +1,5 @@
-#ifndef GAME_ASSETS_H
-#define GAME_ASSETS_H
+#ifndef ASSETS_H
+#define ASSETS_H
 
 #include "actor.h"
 #include "corpse.h"

@@ -5,7 +5,9 @@ LDFLAGS := -Lextern/libtcod/buildsys/scons/libtcod-1.15.1-x86_64-mingw-DEBUG
 LDLIBS := -ltcod
 
 SRC	:= \
+	src/config.c \
 	src/main.c \
+	src/sys.c \
 	src/game/actor.c \
 	src/game/assets.c \
 	src/game/corpse.c \
@@ -18,12 +20,9 @@ SRC	:= \
 	src/game/tile.c \
 	src/game/util.c \
 	src/game/world.c \
-	src/platform/config.c \
-	src/platform/platform.c \
-	src/platform/sys.c \
-	src/platform/scenes/scene_about.c \
-	src/platform/scenes/scene_game.c \
-	src/platform/scenes/scene_menu.c
+	src/scenes/scene_about.c \
+	src/scenes/scene_game.c \
+	src/scenes/scene_menu.c
 TARGET := bin/undermountain
 
 .PHONY: all

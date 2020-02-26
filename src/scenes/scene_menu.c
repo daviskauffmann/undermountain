@@ -2,12 +2,12 @@
 
 #include <libtcod.h>
 
-#include "../../game/world.h"
+#include "scene_about.h"
+#include "scene_game.h"
 #include "../config.h"
 #include "../scene.h"
 #include "../sys.h"
-#include "scene_about.h"
-#include "scene_game.h"
+#include "../game/world.h"
 
 enum option
 {

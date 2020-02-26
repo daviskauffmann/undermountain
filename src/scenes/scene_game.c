@@ -8,18 +8,18 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../../game/actor.h"
-#include "../../game/assets.h"
-#include "../../game/item.h"
-#include "../../game/message.h"
-#include "../../game/projectile.h"
-#include "../../game/spell.h"
-#include "../../game/util.h"
-#include "../../game/world.h"
+#include "scene_menu.h"
 #include "../config.h"
 #include "../scene.h"
 #include "../sys.h"
-#include "scene_menu.h"
+#include "../game/actor.h"
+#include "../game/assets.h"
+#include "../game/item.h"
+#include "../game/message.h"
+#include "../game/projectile.h"
+#include "../game/spell.h"
+#include "../game/util.h"
+#include "../game/world.h"
 
 // TODO: better mouse controls
 // design a system where when selecting an action from the right-click menu, other actions are ignored as the actor paths to the location

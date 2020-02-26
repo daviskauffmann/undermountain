@@ -7,7 +7,6 @@
 
 #include "actor.h"
 #include "assets.h"
-#include "assets.h"
 #include "world.h"
 #include "util.h"
 

@@ -1,7 +1,6 @@
 #include "world.h"
 
 #include <assert.h>
-#include <libtcod/libtcod_int.h>
 #include <malloc.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -188,9 +187,7 @@ void world_save(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
     TCOD_zip_put_int(zip, world->seed);
-    size_t random_size = sizeof(*world->random);
-    TCOD_zip_put_int(zip, random_size);
-    TCOD_zip_put_data(zip, random_size, world->random);
+    TCOD_zip_put_random(zip, world->random);
     TCOD_zip_put_int(zip, world->time);
     int player_map = -1;
     int player_index = -1;
@@ -389,9 +386,7 @@ void world_load(const char *filename)
     TCOD_zip_t zip = TCOD_zip_new();
     TCOD_zip_load_from_file(zip, filename);
     world->seed = TCOD_zip_get_int(zip);
-    size_t random_size = TCOD_zip_get_int(zip);
-    world->random = malloc(random_size);
-    TCOD_zip_get_data(zip, random_size, world->random);
+    world->random = TCOD_zip_get_random(zip);
     TCOD_namegen_parse("data/namegen.txt", world->random);
     world->time = TCOD_zip_get_int(zip);
     for (int floor = 0; floor < NUM_MAPS; floor++)

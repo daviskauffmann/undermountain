@@ -131,6 +131,14 @@ void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
+
+// TODO: move all these functions into action objects
+// replace with actor_get_action()
+// for ai, this will run normal ai which returns an action
+// for player, this will return selected_action
+// the ui should set selected_action based on input
+// then, in the game loop, just call actor_get_action() and then action_perform() if not null
+// if null, then the loop needs to wait for the actor to decide an action, so just return control back to the ui and wait for next frame
 bool actor_path_towards(struct actor *actor, int x, int y);
 bool actor_move_towards(struct actor *actor, int x, int y);
 bool actor_move(struct actor *actor, int x, int y);
@@ -152,6 +160,7 @@ bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(struct actor *actor, int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition);
 bool actor_cast_spell(struct actor *actor, int x, int y);
+
 void actor_take_damage(struct actor *actor, struct actor *attacker, int damage);
 void actor_die(struct actor *actor, struct actor *killer);
 

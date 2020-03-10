@@ -64,12 +64,11 @@
 // by using "action" objects that encapsulate what should be done
 // this isn't terribly useful in its own right, but the main sell is allowing actions that can trigger other actions
 // example: actor_shoot is instead a shoot action
-// a successfull shoot action will spawn a projectile which moves through the map
+// a successful shoot action will spawn a projectile which moves through the map
 // this projectile could hit an explosive barrel, which triggers an explosion as well as some more projectiles (shrapnel)
 // the explosion and shrapnel can damage actors and maybe set off more explosive barrels
 // all of this stuff should be done in the context of the actor who shot the projectile originally and in the same turn
-// no other actor can take their turn until all the actions have resolved
-// so that's the high level, but what about the implementation?
+// no other actor can take their turn until all the reactions have resolved
 
 // TODO: save game at certain intervals for crash protection
 // maybe when the player changes maps?
@@ -80,7 +79,6 @@ void world_setup(void)
 {
     world = malloc(sizeof(struct world));
     assert(world);
-    world->seed = 0;
     world->random = NULL;
     world->time = 0;
     for (int floor = 0; floor < NUM_MAPS; floor++)
@@ -116,8 +114,7 @@ void world_cleanup(void)
 // TODO: this should accept an actor which will become the player, presumably passed from a character creation menu
 void world_create(void)
 {
-    world->seed = (unsigned int)time(0);
-    world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, world->seed);
+    world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, (unsigned int)time(0));
     TCOD_namegen_parse("data/namegen.txt", world->random);
 
     for (int floor = 0; floor < NUM_MAPS; floor++)
@@ -180,13 +177,12 @@ void world_create(void)
         "Hail, %s!",
         world->hero->name);
 
-    printf("World created with seed %d.\n", world->seed);
+    printf("World created.\n");
 }
 
 void world_save(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
-    TCOD_zip_put_int(zip, world->seed);
     TCOD_zip_put_random(zip, world->random);
     TCOD_zip_put_int(zip, world->time);
     int player_map = -1;
@@ -385,7 +381,6 @@ void world_load(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
     TCOD_zip_load_from_file(zip, filename);
-    world->seed = TCOD_zip_get_int(zip);
     world->random = TCOD_zip_get_random(zip);
     TCOD_namegen_parse("data/namegen.txt", world->random);
     world->time = TCOD_zip_get_int(zip);
@@ -603,7 +598,7 @@ void world_load(const char *filename)
         "Welcome back, %s!",
         world->hero->name);
 
-    printf("World loaded with seed %d.\n", world->seed);
+    printf("World loaded.\n");
 }
 
 void world_update(float delta_time)

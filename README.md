@@ -10,7 +10,7 @@ cd undermountain
 git submodule update --init
 ```
 
-### Build `libtcod`
+### Build libtcod
 
 ```sh
 make build_libtcod
@@ -36,7 +36,7 @@ make run
 make clean
 ```
 
-### Cleanup `libtcod`
+### Cleanup libtcod
 
 ```sh
 make clean_libtcod

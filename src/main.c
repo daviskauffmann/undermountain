@@ -1,5 +1,6 @@
 #include <libtcod.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "config.h"
@@ -23,6 +24,22 @@ int main(int argc, char *argv[])
         if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0)
         {
             printf("%s %s\n", TITLE, VERSION);
+        }
+        if (strcmp(argv[i], "--width") == 0)
+        {
+            console_width = atoi(argv[i + 1]);
+        }
+        if (strcmp(argv[i], "--height") == 0)
+        {
+            console_height = atoi(argv[i + 1]);
+        }
+        if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--fullscreen") == 0)
+        {
+            fullscreen = true;
+        }
+        if (strcmp(argv[i], "-w") == 0 || strcmp(argv[i], "--windowed") == 0)
+        {
+            fullscreen = false;
         }
     }
 
@@ -52,8 +69,7 @@ int main(int argc, char *argv[])
             {
                 if (key.lalt)
                 {
-                    fullscreen = !fullscreen;
-                    TCOD_console_set_fullscreen(fullscreen);
+                    TCOD_console_set_fullscreen((fullscreen = !fullscreen));
                 }
             }
             break;

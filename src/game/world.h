@@ -10,7 +10,6 @@
 
 struct world
 {
-    unsigned int seed;
     TCOD_random_t random;
     unsigned int time;
     struct map maps[NUM_MAPS];

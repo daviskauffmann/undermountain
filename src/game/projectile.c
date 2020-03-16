@@ -42,20 +42,24 @@ void projectile_delete(struct projectile *projectile)
 bool projectile_move(struct projectile *projectile, float delta_time)
 {
     bool should_move = true;
+
     float next_x = projectile->x + projectile->dx * projectile_data[projectile->type].speed * delta_time;
     float next_y = projectile->y + projectile->dy * projectile_data[projectile->type].speed * delta_time;
     int x = (int)roundf(next_x);
     int y = (int)roundf(next_y);
+
     if (!map_is_inside(x, y))
     {
         should_move = false;
     }
+
     struct map *map = &world->maps[projectile->floor];
     struct tile *tile = &map->tiles[x][y];
     if (!tile_data[tile->type].is_walkable)
     {
         should_move = false;
     }
+
     switch (projectile->type)
     {
     case PROJECTILE_TYPE_ARROW:
@@ -97,9 +101,12 @@ bool projectile_move(struct projectile *projectile, float delta_time)
         }
     }
     break;
-    default:
-        break;
+    case NUM_PROJECTILE_TYPES:
+    {
     }
+    break;
+    }
+
     if (should_move)
     {
         projectile->x = next_x;
@@ -109,6 +116,7 @@ bool projectile_move(struct projectile *projectile, float delta_time)
     {
         projectile->shooter->took_turn = true;
     }
+
     return should_move;
 }
 

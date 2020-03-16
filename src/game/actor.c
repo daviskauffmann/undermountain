@@ -460,6 +460,10 @@ bool actor_move(struct actor *actor, int x, int y)
             return actor_pray(actor, x, y);
         }
         break;
+        case OBJECT_TYPE_BRAZIER:
+        {
+        }
+        break;
         case OBJECT_TYPE_CHEST:
         {
             return actor_open_chest(actor, x, y);
@@ -470,9 +474,21 @@ bool actor_move(struct actor *actor, int x, int y)
             return actor_open_door(actor, x, y);
         }
         break;
+        case OBJECT_TYPE_DOOR_OPEN:
+        {
+        }
+        break;
         case OBJECT_TYPE_FOUNTAIN:
         {
             return actor_drink(actor, x, y);
+        }
+        break;
+        case OBJECT_TYPE_STAIR_DOWN:
+        {
+        }
+        break;
+        case OBJECT_TYPE_STAIR_UP:
+        {
         }
         break;
         case OBJECT_TYPE_THRONE:
@@ -496,8 +512,10 @@ bool actor_move(struct actor *actor, int x, int y)
                 actor->name);
         }
         break;
-        default:
-            break;
+        case NUM_OBJECT_TYPES:
+        {
+        }
+        break;
         }
 
         if (!object_data[object_type].is_walkable)
@@ -1134,9 +1152,7 @@ bool actor_quaff(struct actor *actor, struct item *item)
         actor->name,
         item_datum.name);
 
-    switch (item->type)
-    {
-    case ITEM_TYPE_HEALING_POTION:
+    if (item->type == ITEM_TYPE_HEALING_POTION)
     {
         int hp = actor->max_hp - actor->current_hp;
         actor->current_hp += hp;
@@ -1153,10 +1169,6 @@ bool actor_quaff(struct actor *actor, struct item *item)
             "%s heals for %d.",
             actor->name,
             hp);
-    }
-    break;
-    default:
-        break;
     }
 
     item->current_stack--;
@@ -1446,8 +1458,10 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
         return false;
     }
     break;
-    default:
-        break;
+    case NUM_SPELL_TYPES:
+    {
+    }
+    break;
     }
 
     return true;

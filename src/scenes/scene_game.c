@@ -62,6 +62,10 @@ static bool do_directional_action(struct actor *player, int x, int y)
 
     switch (directional_action)
     {
+    case DIRECTIONAL_ACTION_NONE:
+    {
+    }
+    break;
     case DIRECTIONAL_ACTION_CLOSE_DOOR:
     {
         success = actor_close_door(player, x, y);
@@ -92,8 +96,6 @@ static bool do_directional_action(struct actor *player, int x, int y)
         success = actor_sit(player, x, y);
     }
     break;
-    default:
-        break;
     }
 
     directional_action = DIRECTIONAL_ACTION_NONE;
@@ -720,6 +722,18 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 struct item *item = TCOD_list_get(world->player->items, alpha);
                 switch (inventory_action)
                 {
+                case INVENTORY_ACTION_NONE:
+                {
+                }
+                break;
+                case INVENTORY_ACTION_DROP:
+                {
+                    if (can_take_turn)
+                    {
+                        world->player->took_turn = actor_drop(world->player, item);
+                    }
+                }
+                break;
                 case INVENTORY_ACTION_EQUIP:
                 {
                     if (can_take_turn)
@@ -734,14 +748,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     panel_show(PANEL_EXAMINE);
                 }
                 break;
-                case INVENTORY_ACTION_DROP:
-                {
-                    if (can_take_turn)
-                    {
-                        world->player->took_turn = actor_drop(world->player, item);
-                    }
-                }
-                break;
                 case INVENTORY_ACTION_QUAFF:
                 {
                     if (can_take_turn)
@@ -750,8 +756,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     }
                 }
                 break;
-                default:
-                    break;
                 }
 
                 inventory_action = INVENTORY_ACTION_NONE;
@@ -764,6 +768,10 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 enum equip_slot equip_slot = (enum equip_slot)(alpha + 1);
                 switch (character_action)
                 {
+                case CHARACTER_ACTION_NONE:
+                {
+                }
+                break;
                 case CHARACTER_ACTION_EXAMINE:
                 {
                     // TODO: send examine target to ui
@@ -779,8 +787,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     }
                 }
                 break;
-                default:
-                    break;
                 }
 
                 character_action = CHARACTER_ACTION_NONE;
@@ -793,6 +799,10 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 enum spell_type spell_type = (enum spell_type)alpha;
                 switch (spellbook_action)
                 {
+                case SPELLBOOK_ACTION_NONE:
+                {
+                }
+                break;
                 case SPELLBOOK_ACTION_SELECT:
                 {
                     world->player->readied_spell = spell_type;
@@ -806,8 +816,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         spell_data[world->player->readied_spell].name);
                 }
                 break;
-                default:
-                    break;
                 }
 
                 spellbook_action = SPELLBOOK_ACTION_NONE;
@@ -1180,18 +1188,20 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     }
                     break;
                 }
-                default:
-                    break;
                 }
             }
             break;
             default:
-                break;
+            {
+            }
+            break;
             }
         }
         break;
         default:
-            break;
+        {
+        }
+        break;
         }
     }
     break;
@@ -1244,12 +1254,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     {
                         switch (inventory_action)
                         {
-                        case INVENTORY_ACTION_EQUIP:
+                        case INVENTORY_ACTION_NONE:
                         {
-                            if (can_take_turn)
-                            {
-                                world->player->took_turn = actor_equip(world->player, item);
-                            }
                         }
                         break;
                         case INVENTORY_ACTION_DROP:
@@ -1260,8 +1266,22 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                             }
                         }
                         break;
-                        default:
-                            break;
+                        case INVENTORY_ACTION_EQUIP:
+                        {
+                            if (can_take_turn)
+                            {
+                                world->player->took_turn = actor_equip(world->player, item);
+                            }
+                        }
+                        break;
+                        case INVENTORY_ACTION_EXAMINE:
+                        {
+                        }
+                        break;
+                        case INVENTORY_ACTION_QUAFF:
+                        {
+                        }
+                        break;
                         }
 
                         inventory_action = INVENTORY_ACTION_NONE;
@@ -1275,6 +1295,14 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     {
                         switch (character_action)
                         {
+                        case CHARACTER_ACTION_NONE:
+                        {
+                        }
+                        break;
+                        case CHARACTER_ACTION_EXAMINE:
+                        {
+                        }
+                        break;
                         case CHARACTER_ACTION_UNEQUIP:
                         {
                             if (can_take_turn)
@@ -1283,8 +1311,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                             }
                         }
                         break;
-                        default:
-                            break;
                         }
                     }
 
@@ -1298,13 +1324,15 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     {
                         switch (spellbook_action)
                         {
+                        case SPELLBOOK_ACTION_NONE:
+                        {
+                        }
+                        break;
                         case SPELLBOOK_ACTION_SELECT:
                         {
                             world->player->readied_spell = spell_type;
                         }
                         break;
-                        default:
-                            break;
                         }
                     }
 
@@ -1354,6 +1382,26 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 switch (current_panel)
                 {
+                case PANEL_CHARACTER:
+                {
+                    enum equip_slot equip_slot = panel_character_get_selected();
+                    if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
+                    {
+                        struct item *equipment = world->player->equipment[equip_slot];
+                        if (equipment)
+                        {
+                            tooltip_show();
+                            tooltip_options_add("Unequip", &toolip_option_on_click_unequip);
+                            tooltip_data.equip_slot = equip_slot;
+                            tooltip_options_add("Cancel", NULL);
+                        }
+                    }
+                }
+                break;
+                case PANEL_EXAMINE:
+                {
+                }
+                break;
                 case PANEL_INVENTORY:
                 {
                     struct item *item = panel_inventory_get_selected();
@@ -1377,22 +1425,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     break;
                 }
                 break;
-                case PANEL_CHARACTER:
-                {
-                    enum equip_slot equip_slot = panel_character_get_selected();
-                    if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
-                    {
-                        struct item *equipment = world->player->equipment[equip_slot];
-                        if (equipment)
-                        {
-                            tooltip_show();
-                            tooltip_options_add("Unequip", &toolip_option_on_click_unequip);
-                            tooltip_data.equip_slot = equip_slot;
-                            tooltip_options_add("Cancel", NULL);
-                        }
-                    }
-                }
-                break;
                 case PANEL_SPELLBOOK:
                 {
                     enum spell_type spell_type = panel_spellbook_get_selected();
@@ -1412,8 +1444,10 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     }
                 }
                 break;
-                default:
-                    break;
+                case NUM_PANELS:
+                {
+                }
+                break;
                 }
             }
         }
@@ -1434,7 +1468,9 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     }
     break;
     default:
-        break;
+    {
+    }
+    break;
     }
 
     if (automoving && can_take_turn)
@@ -2319,8 +2355,10 @@ static void render(TCOD_console_t console)
                 "Spellbook");
         }
         break;
-        default:
-            break;
+        case NUM_PANELS:
+        {
+        }
+        break;
         }
 
         TCOD_console_blit(

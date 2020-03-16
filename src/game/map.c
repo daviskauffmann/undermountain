@@ -550,8 +550,6 @@ void map_generate(struct map *map)
             type = OBJECT_TYPE_TRAP;
         }
         break;
-        default:
-            break;
         }
         struct object *object = object_new(
             type,

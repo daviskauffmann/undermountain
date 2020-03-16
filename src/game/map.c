@@ -4,6 +4,7 @@
 
 #include "actor.h"
 #include "assets.h"
+#include "explosion.h"
 #include "object.h"
 #include "projectile.h"
 #include "room.h"
@@ -50,11 +51,18 @@ void map_setup(struct map *map, unsigned int floor)
     map->corpses = TCOD_list_new();
     map->items = TCOD_list_new();
     map->projectiles = TCOD_list_new();
+    map->explosions = TCOD_list_new();
     map->current_actor_index = 0;
 }
 
 void map_cleanup(struct map *map)
 {
+    TCOD_LIST_FOREACH(map->explosions)
+    {
+        struct explosion *explosion = *iterator;
+        explosion_delete(explosion);
+    }
+    TCOD_list_delete(map->explosions);
     TCOD_LIST_FOREACH(map->projectiles)
     {
         struct projectile *projectile = *iterator;

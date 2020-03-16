@@ -14,6 +14,7 @@
 #include "../sys.h"
 #include "../game/actor.h"
 #include "../game/assets.h"
+#include "../game/explosion.h"
 #include "../game/item.h"
 #include "../game/message.h"
 #include "../game/projectile.h"
@@ -516,7 +517,8 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     bool can_take_turn =
         !world->hero_dead &&
         world->player == TCOD_list_get(map->actors, map->current_actor_index) &&
-        TCOD_list_size(map->projectiles) == 0;
+        TCOD_list_size(map->projectiles) == 0 &&
+        TCOD_list_size(map->explosions) == 0;
 
     switch (ev)
     {
@@ -1887,6 +1889,23 @@ static void render(TCOD_console_t console)
                 object_data[object->type].glyph);
         }
     }
+    TCOD_LIST_FOREACH(map->explosions)
+    {
+        struct explosion *explosion = *iterator;
+        if (TCOD_map_is_in_fov(world->player->fov, explosion->x, explosion->y))
+        {
+            TCOD_console_set_char_foreground(
+                console,
+                explosion->x - view_x,
+                explosion->y - view_y,
+                TCOD_flame);
+            TCOD_console_set_char(
+                console,
+                explosion->x - view_x,
+                explosion->y - view_y,
+                '*');
+        }
+    }
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
@@ -2438,7 +2457,8 @@ static void render(TCOD_console_t console)
     if (!world->hero_dead)
     {
         if (world->player != TCOD_list_get(map->actors, map->current_actor_index) ||
-            TCOD_list_size(map->projectiles) > 0)
+            TCOD_list_size(map->projectiles) > 0 ||
+            TCOD_list_size(map->explosions) > 0)
         {
             TCOD_console_printf(console, 0, 0, "%c", (char)31);
             TCOD_console_printf(console, 0, 1, "%c", (char)30);

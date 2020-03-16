@@ -10,6 +10,7 @@
 
 #include "actor.h"
 #include "corpse.h"
+#include "explosion.h"
 #include "message.h"
 #include "object.h"
 #include "projectile.h"
@@ -58,17 +59,6 @@
 // TODO: not storing all maps in memory?
 // if we have a small number of maps, this might not be a problem
 // might interfere with the above todo
-
-// TODO: recursively propogating actions
-// first, actors should separate deciding what to do on their turn from actually doing it,
-// by using "action" objects that encapsulate what should be done
-// this isn't terribly useful in its own right, but the main sell is allowing actions that can trigger other actions
-// example: actor_shoot is instead a shoot action
-// a successful shoot action will spawn a projectile which moves through the map
-// this projectile could hit an explosive barrel, which triggers an explosion as well as some more projectiles (shrapnel)
-// the explosion and shrapnel can damage actors and maybe set off more explosive barrels
-// all of this stuff should be done in the context of the actor who shot the projectile originally and in the same turn
-// no other actor can take their turn until all the reactions have resolved
 
 // TODO: save game at certain intervals for crash protection
 // maybe when the player changes maps?
@@ -629,13 +619,30 @@ void world_update(float delta_time)
             projectile_delete(projectile);
         }
     }
+    TCOD_LIST_FOREACH(map->explosions)
+    {
+        struct explosion *explosion = *iterator;
+        if (explosion_update(explosion, delta_time))
+        {
+            // TODO: calc light
+            // this light should work a bit differently
+            // rather than a single light on (explosion->x, explosion->y), each flame particle of the explosion should emit light as they expand
+        }
+        else
+        {
+            iterator = TCOD_list_remove_iterator_fast(map->explosions, iterator);
+            explosion_delete(explosion);
+        }
+    }
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
         actor_calc_fov(actor);
     }
 
-    while (!world->hero_dead && TCOD_list_size(map->projectiles) == 0)
+    while (!world->hero_dead &&
+           TCOD_list_size(map->projectiles) == 0 &&
+           TCOD_list_size(map->explosions) == 0)
     {
         TCOD_LIST_FOREACH(map->objects)
         {

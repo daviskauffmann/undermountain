@@ -1316,7 +1316,9 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
         min_damage = item_datum.min_damage;
         max_damage = item_datum.max_damage;
     }
+
     int damage = TCOD_random_get_int(world->random, min_damage, max_damage);
+
     struct item *armor = other->equipment[EQUIP_SLOT_ARMOR];
     if (armor)
     {
@@ -1328,6 +1330,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
             damage = 0;
         }
     }
+
     struct item *shield = other->equipment[EQUIP_SLOT_OFF_HAND];
     if (shield)
     {

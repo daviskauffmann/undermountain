@@ -7,6 +7,7 @@
 
 #include "actor.h"
 #include "assets.h"
+#include "explosion.h"
 #include "world.h"
 #include "util.h"
 
@@ -51,6 +52,7 @@ bool projectile_move(struct projectile *projectile, float delta_time)
     if (!map_is_inside(x, y))
     {
         should_move = false;
+        goto done;
     }
 
     struct map *map = &world->maps[projectile->floor];
@@ -80,7 +82,6 @@ bool projectile_move(struct projectile *projectile, float delta_time)
     {
         if (tile->actor && tile->actor != projectile->shooter)
         {
-            actor_take_damage(tile->actor, projectile->shooter, 5);
             should_move = false;
         }
         if (tile->object && !object_data[tile->object->type].is_walkable && tile->object->type != OBJECT_TYPE_DOOR_OPEN)
@@ -89,15 +90,9 @@ bool projectile_move(struct projectile *projectile, float delta_time)
         }
         if (!should_move)
         {
-            // TODO: aoe damage
-            // TCOD_LIST_FOREACH(map->actors)
-            // {
-            //     struct actor *actor = *iterator;
-            //     if (distance_between(x, y, actor->x, actor->y) < 10.0f)
-            //     {
-            //         actor_take_damage(actor, projectile->shooter, 5);
-            //     }
-            // }
+            struct explosion *explosion = explosion_new(projectile->floor, x, y, 10, projectile->shooter);
+            struct map *map = &world->maps[projectile->floor];
+            TCOD_list_push(map->explosions, explosion);
         }
     }
     break;
@@ -107,6 +102,7 @@ bool projectile_move(struct projectile *projectile, float delta_time)
     break;
     }
 
+done:
     if (should_move)
     {
         projectile->x = next_x;

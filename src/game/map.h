@@ -22,6 +22,7 @@ struct map
     TCOD_list_t corpses;
     TCOD_list_t items;
     TCOD_list_t projectiles;
+    TCOD_list_t explosions;
     int current_actor_index;
 };
 

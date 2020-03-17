@@ -622,13 +622,7 @@ void world_update(float delta_time)
     TCOD_LIST_FOREACH(map->explosions)
     {
         struct explosion *explosion = *iterator;
-        if (explosion_update(explosion, delta_time))
-        {
-            // TODO: calc light
-            // this light should work a bit differently
-            // rather than a single light on (explosion->x, explosion->y), each flame particle of the explosion should emit light as they expand
-        }
-        else
+        if (!explosion_update(explosion, delta_time))
         {
             iterator = TCOD_list_remove_iterator_fast(map->explosions, iterator);
             explosion_delete(explosion);

@@ -1687,6 +1687,31 @@ static void render(TCOD_console_t console)
                                 bg_b += projectile_datum.light_color.b * projectile_datum.light_intensity * attenuation;
                             }
                         }
+                        TCOD_LIST_FOREACH(map->explosions)
+                        {
+                            struct explosion *explosion = *iterator;
+                            if (explosion->light_fov && TCOD_map_is_in_fov(explosion->light_fov, x, y))
+                            {
+                                float radius_sq = powf(explosion->max_radius, 2);
+                                float distance_sq =
+                                    powf((float)(x - explosion->x), 2) +
+                                    powf((float)(y - explosion->y), 2);
+                                float attenuation = CLAMP(
+                                    0.0f,
+                                    1.0f,
+                                    (radius_sq - distance_sq) / radius_sq);
+                                TCOD_color_t random_color = TCOD_color_RGB(
+                                    TCOD_random_get_int(world->random, 200, 255),
+                                    TCOD_random_get_int(world->random, 100, 207),
+                                    TCOD_random_get_int(world->random, 0, 63));
+                                fg_r += random_color.r * attenuation;
+                                fg_g += random_color.g * attenuation;
+                                fg_b += random_color.b * attenuation;
+                                bg_r += random_color.r * 0.5f * attenuation;
+                                bg_g += random_color.g * 0.5f * attenuation;
+                                bg_b += random_color.b * 0.5f * attenuation;
+                            }
+                        }
                     }
                     float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
                     float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
@@ -1887,23 +1912,6 @@ static void render(TCOD_console_t console)
                 object->x - view_x,
                 object->y - view_y,
                 object_data[object->type].glyph);
-        }
-    }
-    TCOD_LIST_FOREACH(map->explosions)
-    {
-        struct explosion *explosion = *iterator;
-        if (TCOD_map_is_in_fov(world->player->fov, explosion->x, explosion->y))
-        {
-            TCOD_console_set_char_foreground(
-                console,
-                explosion->x - view_x,
-                explosion->y - view_y,
-                TCOD_flame);
-            TCOD_console_set_char(
-                console,
-                explosion->x - view_x,
-                explosion->y - view_y,
-                '*');
         }
     }
     TCOD_LIST_FOREACH(map->actors)

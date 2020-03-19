@@ -17,7 +17,7 @@ struct explosion *explosion_new(int floor, int x, int y, int max_radius, struct 
     explosion->max_radius = max_radius;
     explosion->current_radius = 0.0f;
     explosion->initiator = initiator;
-    explosion->visitedTiles = TCOD_list_new();
+    explosion->visited_tiles = TCOD_list_new();
     explosion->light_fov = NULL;
     return explosion;
 }
@@ -47,13 +47,13 @@ bool explosion_update(struct explosion *explosion, float delta_time)
         }
 
         long long hash = (x + y) * (x + y + 1) / 2 + x;
-        if (TCOD_list_contains(explosion->visitedTiles, (void *)hash))
+        if (TCOD_list_contains(explosion->visited_tiles, (void *)hash))
         {
             continue;
         }
         else
         {
-            TCOD_list_push(explosion->visitedTiles, (void *)hash);
+            TCOD_list_push(explosion->visited_tiles, (void *)hash);
         }
 
         struct tile *tile = &map->tiles[x][y];
@@ -72,6 +72,6 @@ void explosion_delete(struct explosion *explosion)
     {
         TCOD_map_delete(explosion->light_fov);
     }
-    TCOD_list_delete(explosion->visitedTiles);
+    TCOD_list_delete(explosion->visited_tiles);
     free(explosion);
 }

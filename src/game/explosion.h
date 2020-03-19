@@ -11,7 +11,7 @@ struct explosion
     int max_radius;
     float current_radius;
     struct actor *initiator;
-    TCOD_list_t visitedTiles;
+    TCOD_list_t visited_tiles;
     TCOD_map_t light_fov;
 };
 

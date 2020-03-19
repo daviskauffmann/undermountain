@@ -331,7 +331,6 @@ void world_save(const char *filename)
         {
             struct projectile *projectile = *iterator;
             TCOD_zip_put_int(zip, projectile->type);
-            TCOD_zip_put_int(zip, projectile->floor);
             TCOD_zip_put_float(zip, projectile->distance);
             TCOD_zip_put_float(zip, projectile->angle);
             TCOD_zip_put_float(zip, projectile->x);
@@ -353,6 +352,36 @@ void world_save(const char *filename)
                 shooter_index++;
             }
             TCOD_zip_put_int(zip, shooter_index);
+        }
+        TCOD_zip_put_int(zip, TCOD_list_size(map->explosions));
+        TCOD_LIST_FOREACH(map->explosions)
+        {
+            struct explosion *explosion = *iterator;
+            TCOD_zip_put_int(zip, explosion->x);
+            TCOD_zip_put_int(zip, explosion->y);
+            TCOD_zip_put_int(zip, explosion->max_radius);
+            TCOD_zip_put_float(zip, explosion->current_radius);
+            TCOD_zip_put_int(zip, TCOD_list_size(explosion->visited_tiles));
+            TCOD_LIST_FOREACH(explosion->visited_tiles)
+            {
+                long long hash = (long long)*iterator;
+                TCOD_zip_put_int(zip, hash);
+            }
+        }
+        TCOD_LIST_FOREACH(map->explosions)
+        {
+            struct explosion *explosion = *iterator;
+            int initiator_index = 0;
+            TCOD_LIST_FOREACH(map->actors)
+            {
+                struct actor *actor = *iterator;
+                if (actor == explosion->initiator)
+                {
+                    break;
+                }
+                initiator_index++;
+            }
+            TCOD_zip_put_int(zip, initiator_index);
         }
         TCOD_zip_put_int(zip, map->current_actor_index);
     }
@@ -543,7 +572,6 @@ void world_load(const char *filename)
         for (int i = 0; i < num_projectiles; i++)
         {
             enum projectile_type type = TCOD_zip_get_int(zip);
-            int floor = TCOD_zip_get_int(zip);
             float distance = TCOD_zip_get_float(zip);
             float angle = TCOD_zip_get_float(zip);
             float x = TCOD_zip_get_float(zip);
@@ -568,6 +596,29 @@ void world_load(const char *filename)
             {
                 projectile->ammunition = projectile->shooter->equipment[EQUIP_SLOT_AMMUNITION];
             }
+        }
+        int num_explosions = TCOD_zip_get_int(zip);
+        for (int i = 0; i < num_explosions; i++)
+        {
+            int x = TCOD_zip_get_int(zip);
+            int y = TCOD_zip_get_int(zip);
+            int max_radius = TCOD_zip_get_int(zip);
+            float current_radius = TCOD_zip_get_float(zip);
+            int num_visited_tiles = TCOD_zip_get_int(zip);
+            struct explosion *explosion = explosion_new(floor, x, y, max_radius, NULL);
+            explosion->current_radius = current_radius;
+            for (int j = 0; j < num_visited_tiles; j++)
+            {
+                long long hash = TCOD_zip_get_int(zip);
+                TCOD_list_push(explosion->visited_tiles, (void *)hash);
+            }
+            TCOD_list_push(map->explosions, explosion);
+        }
+        TCOD_LIST_FOREACH(map->explosions)
+        {
+            struct explosion *explosion = *iterator;
+            int initiator_index = TCOD_zip_get_int(zip);
+            explosion->initiator = TCOD_list_get(map->actors, initiator_index);
         }
         map->current_actor_index = TCOD_zip_get_int(zip);
     }

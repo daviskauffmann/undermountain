@@ -700,7 +700,14 @@ void world_update(float delta_time)
                 if (actor->energy >= 1.0f)
                 {
                     actor->took_turn = false;
-                    continue;
+                    if (actor == world->player)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
             }
             else

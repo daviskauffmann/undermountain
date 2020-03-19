@@ -1692,7 +1692,7 @@ static void render(TCOD_console_t console)
                             struct explosion *explosion = *iterator;
                             if (explosion->light_fov && TCOD_map_is_in_fov(explosion->light_fov, x, y))
                             {
-                                float radius_sq = powf(explosion->max_radius, 2);
+                                float radius_sq = powf(explosion->current_radius, 2);
                                 float distance_sq =
                                     powf((float)(x - explosion->x), 2) +
                                     powf((float)(y - explosion->y), 2);
@@ -1707,9 +1707,9 @@ static void render(TCOD_console_t console)
                                 fg_r += random_color.r * attenuation;
                                 fg_g += random_color.g * attenuation;
                                 fg_b += random_color.b * attenuation;
-                                bg_r += random_color.r * 0.5f * attenuation;
-                                bg_g += random_color.g * 0.5f * attenuation;
-                                bg_b += random_color.b * 0.5f * attenuation;
+                                bg_r += random_color.r * 0.5f * attenuation * (explosion->current_radius / explosion->max_radius);
+                                bg_g += random_color.g * 0.5f * attenuation * (explosion->current_radius / explosion->max_radius);
+                                bg_b += random_color.b * 0.5f * attenuation * (explosion->current_radius / explosion->max_radius);
                             }
                         }
                     }

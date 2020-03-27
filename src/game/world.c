@@ -35,6 +35,12 @@
 
 // TODO: wands and staves?
 
+// TODO: rarity
+// map generation should take into account rarity of different things, such as items
+// monster types and objects should also be included in rarity
+// rarity should also be more than just randomness, because certain things might only start appearing after certain floors
+// so those things should have a 0% chance above that floor
+
 // TODO: sound and sound propogation
 // play "sounds" in the game such as footsteps and monster noises
 // calculate whether the player can hear and identify the sound and put it in the log if so

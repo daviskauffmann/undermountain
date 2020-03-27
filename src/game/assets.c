@@ -69,29 +69,24 @@ struct projectile_datum projectile_data[NUM_PROJECTILE_TYPES];
 #define EQUIP_SLOT_DATA(_type, _name) \
     equip_slot_data[_type].name = _name;
 
-#define BASE_ITEM_DATA(_type, _glyph, _color, _equip_slot, _ranged, _two_handed) \
-    base_item_data[_type].glyph = _glyph;                                        \
-    base_item_data[_type].color = _color;                                        \
-    base_item_data[_type].equip_slot = _equip_slot;                              \
-    base_item_data[_type].ranged = _ranged;                                      \
-    base_item_data[_type].two_handed = _two_handed;
-
-#define ITEM_DATA(_type, _name, _description, _glyph, _color, _equip_slot, _two_handed, _armor, _block_chance, _min_damage, _max_damage, _ranged, _max_durability, _quaffable, _max_stack, _ammunition_type) \
-    item_data[_type].name = _name;                                                                                                                                                                           \
-    item_data[_type].description = _description;                                                                                                                                                             \
-    item_data[_type].glyph = _glyph;                                                                                                                                                                         \
-    item_data[_type].color = _color;                                                                                                                                                                         \
-    item_data[_type].equip_slot = _equip_slot;                                                                                                                                                               \
-    item_data[_type].two_handed = _two_handed;                                                                                                                                                               \
-    item_data[_type].armor = _armor;                                                                                                                                                                         \
-    item_data[_type].block_chance = _block_chance;                                                                                                                                                           \
-    item_data[_type].min_damage = _min_damage;                                                                                                                                                               \
-    item_data[_type].max_damage = _max_damage;                                                                                                                                                               \
-    item_data[_type].ranged = _ranged;                                                                                                                                                                       \
-    item_data[_type].max_durability = _max_durability;                                                                                                                                                       \
-    item_data[_type].quaffable = _quaffable;                                                                                                                                                                 \
-    item_data[_type].max_stack = _max_stack;                                                                                                                                                                 \
-    item_data[_type].ammunition_type = _ammunition_type;
+#define ITEM_DATA(_type, _name, _description, _glyph, _color, _equip_slot, _two_handed, _armor, _block_chance, _min_damage, _max_damage, _ranged, _max_durability, _quaffable, _max_stack, _ammunition_type, _unique) \
+    item_data[_type].name = _name;                                                                                                                                                                                    \
+    item_data[_type].description = _description;                                                                                                                                                                      \
+    item_data[_type].glyph = _glyph;                                                                                                                                                                                  \
+    item_data[_type].color = _color;                                                                                                                                                                                  \
+    item_data[_type].equip_slot = _equip_slot;                                                                                                                                                                        \
+    item_data[_type].two_handed = _two_handed;                                                                                                                                                                        \
+    item_data[_type].armor = _armor;                                                                                                                                                                                  \
+    item_data[_type].block_chance = _block_chance;                                                                                                                                                                    \
+    item_data[_type].min_damage = _min_damage;                                                                                                                                                                        \
+    item_data[_type].max_damage = _max_damage;                                                                                                                                                                        \
+    item_data[_type].ranged = _ranged;                                                                                                                                                                                \
+    item_data[_type].max_durability = _max_durability;                                                                                                                                                                \
+    item_data[_type].quaffable = _quaffable;                                                                                                                                                                          \
+    item_data[_type].max_stack = _max_stack;                                                                                                                                                                          \
+    item_data[_type].ammunition_type = _ammunition_type;                                                                                                                                                              \
+    item_data[_type].unique = _unique;                                                                                                                                                                                \
+    item_data[_type].spawned = false;
 
 #define SPELL_DATA(_type, _name, _range) \
     spell_data[_type].name = _name;      \
@@ -162,15 +157,15 @@ void assets_load(void)
     EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand");
     EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand");
 
-    ITEM_DATA(ITEM_TYPE_BODKIN_ARROW, "Bodkin Arrow", "Arrow designed for penetrating armor.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_ARROW);
-    ITEM_DATA(ITEM_TYPE_BOLT, "Bolt", "Standard ammunition for a crossbow.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_BOLT);
-    ITEM_DATA(ITEM_TYPE_CROSSBOW, "Crossbow", "A powerful ranged weapon.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, true, 100, false, 1, AMMUNITION_TYPE_BOLT);
-    ITEM_DATA(ITEM_TYPE_IRON_ARMOR, "Iron Armor", "A set of iron armor.", '[', TCOD_white, EQUIP_SLOT_ARMOR, false, 3, 0, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE);
-    ITEM_DATA(ITEM_TYPE_GREATSWORD, "Greatsword", "A two-handed straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, false, 100, false, 1, AMMUNITION_TYPE_NONE);
-    ITEM_DATA(ITEM_TYPE_LONGSWORD, "Longsword", "A straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE);
-    ITEM_DATA(ITEM_TYPE_LONGBOW, "Longbow", "A tall war bow.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 1, 8, true, 100, false, 1, AMMUNITION_TYPE_ARROW);
-    ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", '|', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE);
-    ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, 10, AMMUNITION_TYPE_NONE);
+    ITEM_DATA(ITEM_TYPE_BODKIN_ARROW, "Bodkin Arrow", "Arrow designed for penetrating armor.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_ARROW, false);
+    ITEM_DATA(ITEM_TYPE_BOLT, "Bolt", "Standard ammunition for a crossbow.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_BOLT, false);
+    ITEM_DATA(ITEM_TYPE_CROSSBOW, "Crossbow", "A powerful ranged weapon.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, true, 100, false, 1, AMMUNITION_TYPE_BOLT, false);
+    ITEM_DATA(ITEM_TYPE_IRON_ARMOR, "Iron Armor", "A set of iron armor.", '[', TCOD_white, EQUIP_SLOT_ARMOR, false, 3, 0, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_GREATSWORD, "Greatsword", "A two-handed straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_LONGSWORD, "Longsword", "A straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_LONGBOW, "Longbow", "A tall war bow.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 1, 8, true, 100, false, 1, AMMUNITION_TYPE_ARROW, false);
+    ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", '|', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, 10, AMMUNITION_TYPE_NONE, false);
 
     SPELL_DATA(SPELL_TYPE_HEAL, "Heal", SPELL_RANGE_SELF);
     SPELL_DATA(SPELL_TYPE_LIGHTNING, "Lightning", SPELL_RANGE_TARGET);

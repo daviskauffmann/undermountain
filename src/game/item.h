@@ -63,6 +63,8 @@ struct item_datum
     bool quaffable;
     int max_stack;
     enum ammunition_type ammunition_type;
+    bool unique;
+    bool spawned;
 };
 
 struct item

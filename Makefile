@@ -1,8 +1,8 @@
 CC := gcc
-CFLAGS := -ggdb -Iextern/libtcod/src -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
+CFLAGS := -ggdb -Iextern/libtcod/src -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter `pkg-config --cflags libtcod`
 CPPFLAGS :=
-LDFLAGS := -Lextern/libtcod/buildsys/scons/libtcod-1.16.0-alpha.5-x86_64-mingw-DEBUG
-LDLIBS := -ltcod
+LDFLAGS := `pkg-config --libs libtcod`
+LDLIBS :=
 
 SRC	:= \
 	src/config.c \
@@ -32,7 +32,6 @@ all: $(TARGET)
 $(TARGET): $(SRC:src/%.c=obj/%.o)
 	@mkdir -p $(@D)
 	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
-	cp extern/libtcod/buildsys/scons/libtcod-1.16.0-alpha.5-x86_64-mingw-DEBUG/libtcod.dll bin
 
 obj/%.o: src/%.c
 	@mkdir -p $(@D)
@@ -48,14 +47,3 @@ run: all
 .PHONY: clean
 clean:
 	rm -rf bin obj dep
-
-.PHONY: build_libtcod
-build_libtcod:
-	cd extern/libtcod/buildsys/scons && scons build TOOLSET=mingw ARCH=x86_64
-
-.PHONY: clean_libtcod
-clean_libtcod:
-	rm -rf extern/libtcod/buildsys/scons/__pycache__
-	rm -rf extern/libtcod/buildsys/scons/dependencies
-	rm -rf extern/libtcod/buildsys/scons/libtcod-1.16.0-alpha.5-x86_64-mingw-DEBUG
-	rm -rf extern/libtcod/buildsys/scons/.sconsign.dblite

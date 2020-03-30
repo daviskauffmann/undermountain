@@ -1,10 +1,10 @@
-CC := gcc
-CFLAGS := -ggdb -Iextern/libtcod/src -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
-CPPFLAGS :=
-LDFLAGS := -Lextern/libtcod/buildsys/scons/libtcod-1.16.0-alpha.5-x86_64-mingw-DEBUG
-LDLIBS := -ltcod
+CC = gcc
+CFLAGS = -ggdb -Iextern/libtcod/src -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
+CPPFLAGS =
+LDFLAGS = -Lextern/libtcod/buildsys/scons/libtcod-1.16.0-alpha.5-x86_64-mingw-DEBUG
+LDLIBS = -ltcod
 
-SRC	:= \
+SRC	= \
 	src/config.c \
 	src/main.c \
 	src/sys.c \
@@ -24,7 +24,7 @@ SRC	:= \
 	src/scenes/scene_about.c \
 	src/scenes/scene_game.c \
 	src/scenes/scene_menu.c
-TARGET := bin/undermountain
+TARGET = bin/undermountain
 
 .PHONY: all
 all: $(TARGET)

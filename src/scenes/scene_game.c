@@ -1489,6 +1489,20 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         //      the player should navigate there but not interact/attack anything along the way
         world->player->took_turn = actor_path_towards(world->player, automove_x, automove_y);
         automoving = world->player->took_turn;
+
+        // stop automoving if there is an enemy in FOV
+        if (automoving)
+        {
+            TCOD_LIST_FOREACH(map->actors)
+            {
+                struct actor *actor = *iterator;
+                if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y) &&
+                    actor->faction != world->player->faction)
+                {
+                    automoving = false;
+                }
+            }
+        }
     }
     else
     {

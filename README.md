@@ -16,7 +16,9 @@ git submodule update --init
 make build_libtcod
 ```
 
-I am on Windows using MSYS2, so that is the only development platform supported for building libtcod at this time. If the above command doesn't work, you can go into `extern/libtcod` and build it yourself for your platform. The Makefile paths will then most likely need to be updated in order to properly link the library and copy the dll to `bin`.
+I am on Windows using MSYS2, so that is the only development platform supported for building libtcod for this project at this time. If the above command doesn't work, you can go into `extern/libtcod` and build it yourself for your platform. The Makefile paths will then most likely need to be updated in order to properly link the library and copy the dll to `bin`.
+
+If you're on Linux, you could build and install libtcod from source and it will most likely work, but this is untested.
 
 ### Build
 

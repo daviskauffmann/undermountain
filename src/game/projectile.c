@@ -90,7 +90,7 @@ bool projectile_move(struct projectile *projectile, float delta_time)
         }
         if (!should_move)
         {
-            struct explosion *explosion = explosion_new(projectile->floor, x, y, 10, projectile->shooter);
+            struct explosion *explosion = explosion_new(projectile->floor, x, y, 10, projectile_data[projectile->type].color, projectile->shooter);
             struct map *map = &world->maps[projectile->floor];
             TCOD_list_push(map->explosions, explosion);
         }

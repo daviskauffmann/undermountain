@@ -57,7 +57,7 @@ enum directional_action
 
 static enum directional_action directional_action;
 
-static bool do_directional_action(struct actor *player, int x, int y)
+static bool do_directional_action(int x, int y)
 {
     bool success = false;
 
@@ -69,32 +69,32 @@ static bool do_directional_action(struct actor *player, int x, int y)
     break;
     case DIRECTIONAL_ACTION_CLOSE_DOOR:
     {
-        success = actor_close_door(player, x, y);
+        success = actor_close_door(world->player, x, y);
     }
     break;
     case DIRECTIONAL_ACTION_DRINK:
     {
-        success = actor_drink(player, x, y);
+        success = actor_drink(world->player, x, y);
     }
     break;
     case DIRECTIONAL_ACTION_OPEN_CHEST:
     {
-        success = actor_open_chest(player, x, y);
+        success = actor_open_chest(world->player, x, y);
     }
     break;
     case DIRECTIONAL_ACTION_OPEN_DOOR:
     {
-        success = actor_open_door(player, x, y);
+        success = actor_open_door(world->player, x, y);
     }
     break;
     case DIRECTIONAL_ACTION_PRAY:
     {
-        success = actor_pray(player, x, y);
+        success = actor_pray(world->player, x, y);
     }
     break;
     case DIRECTIONAL_ACTION_SIT:
     {
-        success = actor_sit(player, x, y);
+        success = actor_sit(world->player, x, y);
     }
     break;
     }
@@ -408,6 +408,11 @@ static void init(struct scene *previous_scene)
     noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
 }
 
+static bool player_swing(int x, int y)
+{
+    return false;
+}
+
 static bool player_interact(TCOD_key_t key, int x, int y)
 {
     if (directional_action == DIRECTIONAL_ACTION_NONE)
@@ -464,7 +469,7 @@ static bool player_interact(TCOD_key_t key, int x, int y)
     }
     else
     {
-        return do_directional_action(world->player, x, y);
+        return do_directional_action(x, y);
     }
 
     return false;
@@ -1235,16 +1240,50 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (view_is_inside(mouse_x, mouse_y))
             {
-                automoving = true;
-                struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
-                if (tile->actor && tile->actor->faction != world->player->faction)
+                bool ranged = false;
+                struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
+                if (weapon)
                 {
-                    automove_actor = tile->actor;
+                    struct item_datum item_datum = item_data[weapon->type];
+                    if (item_datum.ranged)
+                    {
+                        ranged = true;
+                    }
+                }
+
+                if (key.lctrl)
+                {
+                    if (ranged)
+                    {
+                        actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
+                    }
+                    else
+                    {
+                        // TODO: make an actor_swing function
+                        // world->player->took_turn = actor_swing();
+                    }
                 }
                 else
                 {
-                    automove_x = mouse_tile_x;
-                    automove_y = mouse_tile_y;
+                    struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
+                    if (tile->actor && tile->actor->faction != world->player->faction)
+                    {
+                        if (ranged)
+                        {
+                            actor_shoot(world->player, tile->actor->x, tile->actor->y);
+                        }
+                        else
+                        {
+                            automoving = true;
+                            automove_actor = tile->actor;
+                        }
+                    }
+                    else
+                    {
+                        automoving = true;
+                        automove_x = mouse_tile_x;
+                        automove_y = mouse_tile_y;
+                    }
                 }
             }
             else if (rect_is_inside(panel_rect, mouse_x, mouse_y))
@@ -1351,6 +1390,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 struct tile *tile = &map->tiles[mouse_tile_x][mouse_tile_y];
                 tooltip_show();
                 tooltip_options_add("Move", &toolip_option_on_click_move);
+                tooltip_options_add("Shoot", NULL); // TODO: only if ranged weapon equipped
                 tooltip_data.x = mouse_tile_x;
                 tooltip_data.y = mouse_tile_y;
                 if (tile->object)
@@ -1583,6 +1623,7 @@ static struct scene *update(float delta_time)
     }
 
     world_update(delta_time);
+
     if (world->hero_dead && file_exists(SAVE_PATH))
     {
         remove(SAVE_PATH);
@@ -1611,7 +1652,9 @@ static void render(TCOD_console_t console)
 
     struct map *map = &world->maps[world->player->floor];
 
+    // draw tiles
     {
+        // calculate random noise coefficients
         noise_x += 0.2f;
         float noise_dx = noise_x + 20.0f;
         float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
@@ -1627,16 +1670,21 @@ static void render(TCOD_console_t console)
                 {
                     struct tile *tile = &map->tiles[x][y];
                     struct tile_datum tile_datum = tile_data[tile->type];
+
+                    // ambient lighting
                     float fg_r = tile_common.ambient_light_color.r;
                     float fg_g = tile_common.ambient_light_color.g;
                     float fg_b = tile_common.ambient_light_color.b;
                     float bg_r = fg_r * tile_common.ambient_light_intensity;
                     float bg_g = fg_g * tile_common.ambient_light_intensity;
                     float bg_b = fg_b * tile_common.ambient_light_intensity;
+
                     if (TCOD_map_is_in_fov(world->player->fov, x, y))
                     {
+                        // mark this tile as seen
                         tile->seen = true;
 
+                        // calculate entity lighting
                         TCOD_LIST_FOREACH(map->objects)
                         {
                             struct object *object = *iterator;
@@ -1704,29 +1752,27 @@ static void render(TCOD_console_t console)
                         TCOD_LIST_FOREACH(map->explosions)
                         {
                             struct explosion *explosion = *iterator;
-                            if (explosion->light_fov && TCOD_map_is_in_fov(explosion->light_fov, x, y))
+                            if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
                             {
-                                float radius_sq = powf(explosion->current_radius, 2);
+                                float radius_sq = powf(explosion->radius, 2);
                                 float distance_sq =
-                                    powf((float)(x - explosion->x), 2) +
-                                    powf((float)(y - explosion->y), 2);
+                                    powf((float)(x - explosion->x + dx * 2), 2) +
+                                    powf((float)(y - explosion->y + dy * 2), 2);
                                 float attenuation = CLAMP(
                                     0.0f,
                                     1.0f,
-                                    (radius_sq - distance_sq) / radius_sq);
-                                TCOD_color_t random_color = TCOD_color_RGB(
-                                    TCOD_random_get_int(world->random, 200, 255),
-                                    TCOD_random_get_int(world->random, 100, 207),
-                                    TCOD_random_get_int(world->random, 0, 63));
-                                fg_r += random_color.r * attenuation;
-                                fg_g += random_color.g * attenuation;
-                                fg_b += random_color.b * attenuation;
-                                bg_r += random_color.r * 0.5f * attenuation * (explosion->current_radius / explosion->max_radius);
-                                bg_g += random_color.g * 0.5f * attenuation * (explosion->current_radius / explosion->max_radius);
-                                bg_b += random_color.b * 0.5f * attenuation * (explosion->current_radius / explosion->max_radius);
+                                    (radius_sq - distance_sq) / radius_sq + di * 2);
+                                fg_r += explosion->color.r * attenuation;
+                                fg_g += explosion->color.g * attenuation;
+                                fg_b += explosion->color.b * attenuation;
+                                bg_r += explosion->color.r * 0.5f * attenuation;
+                                bg_g += explosion->color.g * 0.5f * attenuation;
+                                bg_b += explosion->color.b * 0.5f * attenuation;
                             }
                         }
                     }
+
+                    // apply tonemapping
                     float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
                     float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
                     TCOD_color_t fg_color = TCOD_color_RGB((uint8_t)(fg_r * fg_mult), (uint8_t)(fg_g * fg_mult), (uint8_t)(fg_b * fg_mult));
@@ -1735,12 +1781,14 @@ static void render(TCOD_console_t console)
                     float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
                     TCOD_color_t bg_color = TCOD_color_RGB((uint8_t)(bg_r * bg_mult), (uint8_t)(bg_g * bg_mult), (uint8_t)(bg_b * bg_mult));
                     bg_color = TCOD_color_multiply(bg_color, tile_datum.color);
+
                     if (tile->seen)
                     {
                         int glyph = tile_datum.glyph;
+
+                        // select appropriate wall graphic
                         if (tile->type == TILE_TYPE_WALL)
                         {
-                            // select wall graphic
                             const int glyphs[] = {
                                 TCOD_CHAR_BLOCK3,  //  0 - none
                                 TCOD_CHAR_DVLINE,  //  1 - N
@@ -1777,6 +1825,7 @@ static void render(TCOD_console_t console)
                             }
                             glyph = glyphs[index];
                         }
+
                         TCOD_console_set_char_foreground(
                             console,
                             x - view_x,
@@ -1788,6 +1837,7 @@ static void render(TCOD_console_t console)
                             y - view_y,
                             glyph);
                     }
+
                     TCOD_console_set_char_background(
                         console,
                         x - view_x,
@@ -1798,6 +1848,8 @@ static void render(TCOD_console_t console)
             }
         }
     }
+
+    // draw corpses
     TCOD_LIST_FOREACH(map->corpses)
     {
         struct corpse *corpse = *iterator;
@@ -1815,10 +1867,13 @@ static void render(TCOD_console_t console)
                 corpse_common.corpse_glyph);
         }
     }
+
+    // draw objects (except stairs, they are drawn later)
     TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
-        if (TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
+        if (object->type != OBJECT_TYPE_STAIR_DOWN && object->type != OBJECT_TYPE_STAIR_UP &&
+            TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
         {
             TCOD_console_set_char_foreground(
                 console,
@@ -1832,6 +1887,8 @@ static void render(TCOD_console_t console)
                 object_data[object->type].glyph);
         }
     }
+
+    // draw items
     TCOD_LIST_FOREACH(map->items)
     {
         struct item *item = *iterator;
@@ -1850,6 +1907,8 @@ static void render(TCOD_console_t console)
                 item_datum.glyph);
         }
     }
+
+    // draw projectiles
     TCOD_LIST_FOREACH(map->projectiles)
     {
         struct projectile *projectile = *iterator;
@@ -1910,6 +1969,8 @@ static void render(TCOD_console_t console)
                 glyph);
         }
     }
+
+    // draw stairs (to make sure they are drawn on top of other entities)
     TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
@@ -1928,6 +1989,8 @@ static void render(TCOD_console_t console)
                 object_data[object->type].glyph);
         }
     }
+
+    // draw actors
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
@@ -1951,6 +2014,7 @@ static void render(TCOD_console_t console)
         }
     }
 
+    // draw targeting reticle
     if (targeting != TARGETING_NONE)
     {
         TCOD_console_set_char_foreground(
@@ -1974,6 +2038,7 @@ static void render(TCOD_console_t console)
             target_y - view_y,
             ']');
 
+        // descriptive text of target
         if (map_is_inside(target_x, target_y))
         {
             struct tile *tile = &map->tiles[target_x][target_y];
@@ -2447,7 +2512,8 @@ static void render(TCOD_console_t console)
             tooltip_rect.height,
             false,
             TCOD_BKGND_SET,
-            NULL);
+            "%s",
+            "");
 
         TCOD_console_blit(
             tooltip_rect.console,
@@ -2476,15 +2542,13 @@ static void render(TCOD_console_t console)
         TCOD_console_set_char_background(console, x - view_x, y - view_y, TCOD_red, TCOD_BKGND_SET);
     }
 
-    if (!world->hero_dead)
+    if (!world->hero_dead &&
+        (world->player != TCOD_list_get(map->actors, map->current_actor_index) ||
+         TCOD_list_size(map->projectiles) > 0 ||
+         TCOD_list_size(map->explosions) > 0))
     {
-        if (world->player != TCOD_list_get(map->actors, map->current_actor_index) ||
-            TCOD_list_size(map->projectiles) > 0 ||
-            TCOD_list_size(map->explosions) > 0)
-        {
-            TCOD_console_printf(console, 0, 0, "%c", (char)31);
-            TCOD_console_printf(console, 0, 1, "%c", (char)30);
-        }
+        TCOD_console_printf(console, 0, 0, "%c", (char)31);
+        TCOD_console_printf(console, 0, 1, "%c", (char)30);
     }
 }
 

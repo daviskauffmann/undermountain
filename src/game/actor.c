@@ -158,7 +158,7 @@ void actor_calc_fov(struct actor *actor)
                 TCOD_LIST_FOREACH(map->explosions)
                 {
                     struct explosion *explosion = *iterator;
-                    if (explosion->light_fov && TCOD_map_is_in_fov(explosion->light_fov, x, y))
+                    if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
                     }

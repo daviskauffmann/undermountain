@@ -365,29 +365,9 @@ void world_save(const char *filename)
             struct explosion *explosion = *iterator;
             TCOD_zip_put_int(zip, explosion->x);
             TCOD_zip_put_int(zip, explosion->y);
-            TCOD_zip_put_int(zip, explosion->max_radius);
-            TCOD_zip_put_float(zip, explosion->current_radius);
-            TCOD_zip_put_int(zip, TCOD_list_size(explosion->visited_tiles));
-            TCOD_LIST_FOREACH(explosion->visited_tiles)
-            {
-                long long hash = (long long)*iterator;
-                TCOD_zip_put_int(zip, hash);
-            }
-        }
-        TCOD_LIST_FOREACH(map->explosions)
-        {
-            struct explosion *explosion = *iterator;
-            int initiator_index = 0;
-            TCOD_LIST_FOREACH(map->actors)
-            {
-                struct actor *actor = *iterator;
-                if (actor == explosion->initiator)
-                {
-                    break;
-                }
-                initiator_index++;
-            }
-            TCOD_zip_put_int(zip, initiator_index);
+            TCOD_zip_put_int(zip, explosion->radius);
+            TCOD_zip_put_color(zip, explosion->color);
+            TCOD_zip_put_float(zip, explosion->lifetime);
         }
         TCOD_zip_put_int(zip, map->current_actor_index);
     }
@@ -608,23 +588,12 @@ void world_load(const char *filename)
         {
             int x = TCOD_zip_get_int(zip);
             int y = TCOD_zip_get_int(zip);
-            int max_radius = TCOD_zip_get_int(zip);
-            float current_radius = TCOD_zip_get_float(zip);
-            int num_visited_tiles = TCOD_zip_get_int(zip);
-            struct explosion *explosion = explosion_new(floor, x, y, max_radius, NULL);
-            explosion->current_radius = current_radius;
-            for (int j = 0; j < num_visited_tiles; j++)
-            {
-                long long hash = TCOD_zip_get_int(zip);
-                TCOD_list_push(explosion->visited_tiles, (void *)hash);
-            }
+            int radius = TCOD_zip_get_int(zip);
+            TCOD_color_t color = TCOD_zip_get_color(zip);
+            float lifetime = TCOD_zip_get_float(zip);
+            struct explosion *explosion = explosion_new(floor, x, y, radius, color, NULL);
+            explosion->lifetime = lifetime;
             TCOD_list_push(map->explosions, explosion);
-        }
-        TCOD_LIST_FOREACH(map->explosions)
-        {
-            struct explosion *explosion = *iterator;
-            int initiator_index = TCOD_zip_get_int(zip);
-            explosion->initiator = TCOD_list_get(map->actors, initiator_index);
         }
         map->current_actor_index = TCOD_zip_get_int(zip);
     }
@@ -652,6 +621,7 @@ void world_update(float delta_time)
 {
     struct map *map = &world->maps[world->hero->floor];
 
+    // update things that should update every frame, regardless of whether a turn has passed
     TCOD_LIST_FOREACH(map->objects)
     {
         struct object *object = *iterator;
@@ -691,10 +661,12 @@ void world_update(float delta_time)
         actor_calc_fov(actor);
     }
 
+    // process actor turns as long as the hero is alive and no animations are playing
     while (!world->hero_dead &&
            TCOD_list_size(map->projectiles) == 0 &&
            TCOD_list_size(map->explosions) == 0)
     {
+        // update things that should be updated per-turn
         TCOD_LIST_FOREACH(map->objects)
         {
             struct object *object = *iterator;
@@ -741,14 +713,15 @@ void world_update(float delta_time)
             }
             else
             {
-                // uncomment this to simulate ai making a decision over multiple frames
-                // static float timer = 0.0f;
-                // timer += delta_time;
-                // if (timer < 0.25f)
-                // {
-                //     break;
-                // }
-                // timer = 0.0f;
+#if 0 // enable to simulate ai making a decision over multiple frames
+                static float timer = 0.0f;
+                timer += delta_time;
+                if (timer < 0.25f)
+                {
+                    break;
+                }
+                timer = 0.0f;
+#endif
                 actor_ai(actor);
             }
             if (actor->took_turn)

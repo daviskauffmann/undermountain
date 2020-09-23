@@ -1876,7 +1876,7 @@ static void render(TCOD_console_t console)
                         // select appropriate wall graphic
                         if (tile->type == TILE_TYPE_WALL)
                         {
-                            const char glyphs[] = {
+                            const unsigned char glyphs[] = {
                                 TCOD_CHAR_BLOCK3,  //  0 - none
                                 TCOD_CHAR_DVLINE,  //  1 - N
                                 TCOD_CHAR_DHLINE,  //  2 - E
@@ -2006,7 +2006,7 @@ static void render(TCOD_console_t console)
             char glyph = projectile_data[projectile->type].glyph;
             if (projectile->type == PROJECTILE_TYPE_ARROW)
             {
-                const char glyphs[] = {
+                const unsigned char glyphs[] = {
                     '|',   // N
                     '/',   // NE
                     '-',   // E
@@ -2015,7 +2015,8 @@ static void render(TCOD_console_t console)
                     '/',   // SW
                     '-',   // W
                     '\\'}; // NW
-                enum direction direction = get_direction_from_angle(projectile->angle);
+                float angle = angle_between(projectile->origin_x, projectile->origin_y, projectile->target_x, projectile->target_y);
+                enum direction direction = get_direction_from_angle(angle);
                 glyph = glyphs[direction];
             }
             TCOD_console_set_char_foreground(

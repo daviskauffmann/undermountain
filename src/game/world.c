@@ -337,12 +337,12 @@ void world_save(const char *filename)
         {
             struct projectile *projectile = *iterator;
             TCOD_zip_put_int(zip, projectile->type);
-            TCOD_zip_put_float(zip, projectile->distance);
-            TCOD_zip_put_float(zip, projectile->angle);
+            TCOD_zip_put_int(zip, projectile->origin_x);
+            TCOD_zip_put_int(zip, projectile->origin_y);
+            TCOD_zip_put_int(zip, projectile->target_x);
+            TCOD_zip_put_int(zip, projectile->target_x);
             TCOD_zip_put_float(zip, projectile->x);
             TCOD_zip_put_float(zip, projectile->y);
-            TCOD_zip_put_float(zip, projectile->dx);
-            TCOD_zip_put_float(zip, projectile->dy);
         }
         TCOD_LIST_FOREACH(map->projectiles)
         {
@@ -558,19 +558,15 @@ void world_load(const char *filename)
         for (int i = 0; i < num_projectiles; i++)
         {
             enum projectile_type type = TCOD_zip_get_int(zip);
-            float distance = TCOD_zip_get_float(zip);
-            float angle = TCOD_zip_get_float(zip);
+            int origin_x = TCOD_zip_get_int(zip);
+            int origin_y = TCOD_zip_get_int(zip);
+            int target_x = TCOD_zip_get_int(zip);
+            int target_y = TCOD_zip_get_int(zip);
             float x = TCOD_zip_get_float(zip);
             float y = TCOD_zip_get_float(zip);
-            float dx = TCOD_zip_get_float(zip);
-            float dy = TCOD_zip_get_float(zip);
-            struct projectile *projectile = projectile_new(type, floor, 0, 0, 0, 0, NULL, NULL);
-            projectile->distance = distance;
-            projectile->angle = angle;
+            struct projectile *projectile = projectile_new(type, floor, origin_x, origin_y, target_x, target_y, NULL, NULL);
             projectile->x = x;
             projectile->y = y;
-            projectile->dx = dx;
-            projectile->dy = dy;
             TCOD_list_push(map->projectiles, projectile);
         }
         TCOD_LIST_FOREACH(map->projectiles)

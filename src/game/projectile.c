@@ -13,18 +13,18 @@
 
 // TODO: scale damage over distance?
 
-struct projectile *projectile_new(enum projectile_type type, int floor, int x1, int y1, int x2, int y2, struct actor *shooter, struct item *ammunition)
+struct projectile *projectile_new(enum projectile_type type, int floor, int origin_x, int origin_y, int target_x, int target_y, struct actor *shooter, struct item *ammunition)
 {
     struct projectile *projectile = malloc(sizeof(*projectile));
     assert(projectile);
     projectile->type = type;
     projectile->floor = floor;
-    projectile->angle = angle_between(x1, y1, x2, y2);
-    projectile->distance = distance_between(x1, y1, x2, y2);
-    projectile->x = (float)x1;
-    projectile->y = (float)y1;
-    projectile->dx = ((float)x2 - (float)x1) / projectile->distance;
-    projectile->dy = ((float)y2 - (float)y1) / projectile->distance;
+    projectile->origin_x = origin_x;
+    projectile->origin_y = origin_y;
+    projectile->target_x = target_x;
+    projectile->target_y = target_y;
+    projectile->x = (float)origin_x;
+    projectile->y = (float)origin_y;
     projectile->shooter = shooter;
     projectile->ammunition = ammunition;
     projectile->light_fov = NULL;
@@ -44,8 +44,11 @@ bool projectile_move(struct projectile *projectile, float delta_time)
 {
     bool should_move = true;
 
-    float next_x = projectile->x + projectile->dx * projectile_data[projectile->type].speed * delta_time;
-    float next_y = projectile->y + projectile->dy * projectile_data[projectile->type].speed * delta_time;
+    float distance = distance_between(projectile->origin_x, projectile->origin_y, projectile->target_x, projectile->target_y);
+    float dx = ((float)projectile->target_x - (float)projectile->origin_x) / distance;
+    float dy = ((float)projectile->target_y - (float)projectile->origin_y) / distance;
+    float next_x = projectile->x + dx * projectile_data[projectile->type].speed * delta_time;
+    float next_y = projectile->y + dy * projectile_data[projectile->type].speed * delta_time;
     int x = (int)roundf(next_x);
     int y = (int)roundf(next_y);
 

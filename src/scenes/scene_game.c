@@ -42,6 +42,95 @@ static int automove_x;
 static int automove_y;
 static struct actor *automove_actor;
 
+/* Cardianl directions */
+
+enum direction
+{
+    DIRECTION_N,
+    DIRECTION_NE,
+    DIRECTION_E,
+    DIRECTION_SE,
+    DIRECTION_S,
+    DIRECTION_SW,
+    DIRECTION_W,
+    DIRECTION_NW,
+};
+
+enum direction get_direction_from_angle(float angle)
+{
+    if ((angle > 11 * PI / 6 && angle <= 2 * PI) || (angle >= 0 && angle < PI / 6))
+    {
+        return DIRECTION_E;
+    }
+    else if (angle >= PI / 6 && angle <= PI / 3)
+    {
+        return DIRECTION_NE;
+    }
+    else if (angle > PI / 3 && angle < 2 * PI / 3)
+    {
+        return DIRECTION_N;
+    }
+    else if (angle >= 2 * PI / 3 && angle <= 5 * PI / 6)
+    {
+        return DIRECTION_NW;
+    }
+    else if (angle > 5 * PI / 6 && angle < 7 * PI / 6)
+    {
+        return DIRECTION_W;
+    }
+    else if (angle >= 7 * PI / 6 && angle <= 4 * PI / 3)
+    {
+        return DIRECTION_SW;
+    }
+    else if (angle > 4 * PI / 3 && angle < 5 * PI / 3)
+    {
+        return DIRECTION_S;
+    }
+    else if (angle >= 5 * PI / 3 && angle <= 11 * PI / 6)
+    {
+        return DIRECTION_SE;
+    }
+    assert(false);
+    return -1;
+}
+
+void get_neighbor_by_direction(int x, int y, enum direction direction, int *nx, int *ny)
+{
+    *nx = x;
+    *ny = y;
+    switch (direction)
+    {
+    case DIRECTION_N:
+        (*ny)--;
+        break;
+    case DIRECTION_NE:
+        (*ny)--;
+        (*nx)++;
+        break;
+    case DIRECTION_E:
+        (*nx)++;
+        break;
+    case DIRECTION_SE:
+        (*nx)++;
+        (*ny)++;
+        break;
+    case DIRECTION_S:
+        (*ny)++;
+        break;
+    case DIRECTION_SW:
+        (*nx)--;
+        (*ny)++;
+        break;
+    case DIRECTION_W:
+        (*nx)--;
+        break;
+    case DIRECTION_NW:
+        (*nx)--;
+        (*ny)--;
+        break;
+    }
+}
+
 /* Directional actions */
 
 enum directional_action
@@ -57,9 +146,13 @@ enum directional_action
 
 static enum directional_action directional_action;
 
-static bool do_directional_action(int x, int y)
+static bool do_directional_action(enum direction direction)
 {
     bool success = false;
+
+    int x;
+    int y;
+    get_neighbor_by_direction(world->player->x, world->player->y, direction, &x, &y);
 
     switch (directional_action)
     {
@@ -219,7 +312,7 @@ static struct tooltip_data tooltip_data;
 
 struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
 {
-    struct tooltip_option *tooltip_option = malloc(sizeof(struct tooltip_option));
+    struct tooltip_option *tooltip_option = malloc(sizeof(*tooltip_option));
     assert(tooltip_option);
     tooltip_option->text = TCOD_strdup(text);
     tooltip_option->on_click = on_click;
@@ -408,68 +501,77 @@ static void init(struct scene *previous_scene)
     noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
 }
 
-static bool player_swing(int x, int y)
+static bool player_swing(enum direction direction)
 {
+    int x;
+    int y;
+    get_neighbor_by_direction(world->player->x, world->player->y, direction, &x, &y);
+
+    if (map_is_inside(x, y))
+    {
+        struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
+        if (weapon)
+        {
+            if (item_data[weapon->type].ranged)
+            {
+                actor_shoot(world->player, x, y);
+                return false;
+            }
+        }
+
+        bool hit = false;
+        struct map *map = &world->maps[world->player->floor];
+        struct tile *tile = &map->tiles[x][y];
+        if (tile->actor && tile->actor != world->player)
+        {
+            hit = true;
+            if (actor_attack(world->player, tile->actor, NULL))
+            {
+                return true;
+            }
+        }
+        if (tile->object)
+        {
+            hit = true;
+            if (actor_bash(world->player, tile->object))
+            {
+                return true;
+            }
+        }
+        if (!hit)
+        {
+            world_log(
+                world->player->floor,
+                world->player->x,
+                world->player->y,
+                TCOD_white,
+                "%s swings at the air!",
+                world->player->name);
+        }
+    }
+
     return false;
 }
 
-static bool player_interact(TCOD_key_t key, int x, int y)
+static bool player_interact(TCOD_key_t key, enum direction direction)
 {
     if (directional_action == DIRECTIONAL_ACTION_NONE)
     {
         if (key.lctrl)
         {
-            if (map_is_inside(x, y))
-            {
-                struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
-                if (weapon)
-                {
-                    if (item_data[weapon->type].ranged)
-                    {
-                        actor_shoot(world->player, x, y);
-                        return false;
-                    }
-                }
-
-                bool hit = false;
-                struct map *map = &world->maps[world->player->floor];
-                struct tile *tile = &map->tiles[x][y];
-                if (tile->actor && tile->actor != world->player)
-                {
-                    hit = true;
-                    if (actor_attack(world->player, tile->actor, NULL))
-                    {
-                        return true;
-                    }
-                }
-                if (tile->object)
-                {
-                    hit = true;
-                    if (actor_bash(world->player, tile->object))
-                    {
-                        return true;
-                    }
-                }
-                if (!hit)
-                {
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        TCOD_white,
-                        "%s swings at the air!",
-                        world->player->name);
-                }
-            }
+            return player_swing(direction);
         }
         else
         {
+            int x;
+            int y;
+            get_neighbor_by_direction(world->player->x, world->player->y, direction, &x, &y);
             return actor_move(world->player, x, y);
         }
     }
     else
     {
-        return do_directional_action(x, y);
+        return do_directional_action(direction);
     }
 
     return false;
@@ -601,9 +703,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (can_take_turn)
             {
-                int x = world->player->x - 1;
-                int y = world->player->y + 1;
-                world->player->took_turn = player_interact(key, x, y);
+                world->player->took_turn = player_interact(key, DIRECTION_SW);
             }
         }
         break;
@@ -616,9 +716,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (can_take_turn)
             {
-                int x = world->player->x;
-                int y = world->player->y + 1;
-                world->player->took_turn = player_interact(key, x, y);
+                world->player->took_turn = player_interact(key, DIRECTION_S);
             }
         }
         break;
@@ -631,9 +729,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (can_take_turn)
             {
-                int x = world->player->x + 1;
-                int y = world->player->y + 1;
-                world->player->took_turn = player_interact(key, x, y);
+                world->player->took_turn = player_interact(key, DIRECTION_SE);
             }
         }
         break;
@@ -646,9 +742,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (can_take_turn)
             {
-                int x = world->player->x - 1;
-                int y = world->player->y;
-                world->player->took_turn = player_interact(key, x, y);
+                world->player->took_turn = player_interact(key, DIRECTION_W);
             }
         }
         break;
@@ -669,9 +763,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (can_take_turn)
             {
-                int x = world->player->x + 1;
-                int y = world->player->y;
-                world->player->took_turn = player_interact(key, x, y);
+                world->player->took_turn = player_interact(key, DIRECTION_E);
             }
         }
         break;
@@ -684,9 +776,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (can_take_turn)
             {
-                int x = world->player->x - 1;
-                int y = world->player->y - 1;
-                world->player->took_turn = player_interact(key, x, y);
+                world->player->took_turn = player_interact(key, DIRECTION_NW);
             }
         }
         break;
@@ -699,9 +789,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (can_take_turn)
             {
-                int x = world->player->x;
-                int y = world->player->y - 1;
-                world->player->took_turn = player_interact(key, x, y);
+                world->player->took_turn = player_interact(key, DIRECTION_N);
             }
         }
         break;
@@ -714,9 +802,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (can_take_turn)
             {
-                int x = world->player->x + 1;
-                int y = world->player->y - 1;
-                world->player->took_turn = player_interact(key, x, y);
+                world->player->took_turn = player_interact(key, DIRECTION_NE);
             }
         }
         break;
@@ -1259,8 +1345,9 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     }
                     else
                     {
-                        // TODO: make an actor_swing function
-                        // world->player->took_turn = actor_swing();
+                        float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
+                        enum direction direction = get_direction_from_angle(angle);
+                        world->player->took_turn = player_swing(direction);
                     }
                 }
                 else
@@ -1789,7 +1876,7 @@ static void render(TCOD_console_t console)
                         // select appropriate wall graphic
                         if (tile->type == TILE_TYPE_WALL)
                         {
-                            const int glyphs[] = {
+                            const char glyphs[] = {
                                 TCOD_CHAR_BLOCK3,  //  0 - none
                                 TCOD_CHAR_DVLINE,  //  1 - N
                                 TCOD_CHAR_DHLINE,  //  2 - E
@@ -1919,43 +2006,17 @@ static void render(TCOD_console_t console)
             char glyph = projectile_data[projectile->type].glyph;
             if (projectile->type == PROJECTILE_TYPE_ARROW)
             {
-                float angle = projectile->angle;
-                if ((angle > 11 * PI / 6 && angle <= 2 * PI) || (angle >= 0 && angle < PI / 6))
-                {
-                    glyph = '-';
-                }
-                else if (angle >= PI / 6 && angle <= PI / 3)
-                {
-                    glyph = '/';
-                }
-                else if (angle > PI / 3 && angle < 2 * PI / 3)
-                {
-                    glyph = '|';
-                }
-                else if (angle >= 2 * PI / 3 && angle <= 5 * PI / 6)
-                {
-                    glyph = '\\';
-                }
-                else if (angle > 5 * PI / 6 && angle < 7 * PI / 6)
-                {
-                    glyph = '-';
-                }
-                else if (angle >= 7 * PI / 6 && angle <= 4 * PI / 3)
-                {
-                    glyph = '/';
-                }
-                else if (angle > 4 * PI / 3 && angle < 5 * PI / 3)
-                {
-                    glyph = '|';
-                }
-                else if (angle >= 5 * PI / 3 && angle <= 11 * PI / 6)
-                {
-                    glyph = '\\';
-                }
-                else
-                {
-                    glyph = '`';
-                }
+                const char glyphs[] = {
+                    '|',   // N
+                    '/',   // NE
+                    '-',   // E
+                    '\\',  // SE
+                    '|',   // S
+                    '/',   // SW
+                    '-',   // W
+                    '\\'}; // NW
+                enum direction direction = get_direction_from_angle(projectile->angle);
+                glyph = glyphs[direction];
             }
             TCOD_console_set_char_foreground(
                 console,

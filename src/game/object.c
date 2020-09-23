@@ -7,7 +7,7 @@
 
 struct object *object_new(enum object_type type, int floor, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, float light_intensity, bool light_flicker)
 {
-    struct object *object = malloc(sizeof(struct object));
+    struct object *object = malloc(sizeof(*object));
     assert(object);
     object->type = type;
     object->floor = floor;

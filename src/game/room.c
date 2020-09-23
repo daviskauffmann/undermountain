@@ -8,7 +8,7 @@
 
 struct room *room_new(int x, int y, int w, int h)
 {
-    struct room *room = malloc(sizeof(struct room));
+    struct room *room = malloc(sizeof(*room));
     assert(room);
     room->x = x;
     room->y = y;

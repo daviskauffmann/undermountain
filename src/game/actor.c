@@ -15,7 +15,7 @@
 
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
 {
-    struct actor *actor = malloc(sizeof(struct actor));
+    struct actor *actor = malloc(sizeof(*actor));
     assert(actor);
     actor->name = TCOD_strdup(name);
     actor->race = race;
@@ -1374,6 +1374,8 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
 
     // TODO: mana and/or some other kind of spell limiter
 
+    struct spell_datum spell_datum = spell_data[actor->readied_spell];
+
     world_log(
         actor->floor,
         actor->x,
@@ -1381,7 +1383,7 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
         TCOD_white,
         "%s casts %s.",
         actor->name,
-        spell_data[actor->readied_spell].name);
+        spell_datum.name);
 
     switch (actor->readied_spell)
     {
@@ -1440,7 +1442,7 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
                 TCOD_white,
                 "%s cannot cast %s here.",
                 actor->name,
-                spell_data[actor->readied_spell].name);
+                spell_datum.name);
 
             return false;
         }

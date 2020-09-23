@@ -5,7 +5,7 @@
 
 struct corpse *corpse_new(const char *name, int level, int floor, int x, int y)
 {
-    struct corpse *corpse = malloc(sizeof(struct corpse));
+    struct corpse *corpse = malloc(sizeof(*corpse));
     assert(corpse);
     corpse->name = TCOD_strdup(name);
     corpse->level = level;

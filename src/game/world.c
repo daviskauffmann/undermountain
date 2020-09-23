@@ -73,7 +73,7 @@ struct world *world;
 
 void world_setup(void)
 {
-    world = malloc(sizeof(struct world));
+    world = malloc(sizeof(*world));
     assert(world);
     world->random = NULL;
     world->time = 0;
@@ -655,11 +655,9 @@ void world_update(float delta_time)
             explosion_delete(explosion);
         }
     }
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_calc_fov(actor);
-    }
+
+    // calculate player fov every frame because of moving lights (like projectiles) that can reveal things in between turns
+    actor_calc_fov(world->player);
 
     // process actor turns as long as the hero is alive and no animations are playing
     while (!world->hero_dead &&
@@ -683,10 +681,16 @@ void world_update(float delta_time)
             actor_calc_fov(actor);
         }
 
+        // check if the last actor in the map has been reached
         if (map->current_actor_index >= TCOD_list_size(map->actors))
         {
-            world->time++;
+            // move the pointer to the first actor
             map->current_actor_index = 0;
+
+            // update world state
+            world->time++;
+
+            // if there is a controllable actor, return control back to the UI
             bool controllable_exists = false;
             TCOD_LIST_FOREACH(map->actors)
             {
@@ -704,15 +708,19 @@ void world_update(float delta_time)
             }
         }
 
+        // get the current actor and figure out their turn(s), as long as they have energy
         struct actor *actor = TCOD_list_get(map->actors, map->current_actor_index);
         if (actor->energy >= 1.0f)
         {
+            // have we reached an actor that requires player input?
             if (actor->controllable)
             {
+                // if so, this is the actor that the UI should affect
                 world->player = actor;
             }
             else
             {
+                // if not, then run the actor's AI
 #if 0 // enable to simulate ai making a decision over multiple frames
                 static float timer = 0.0f;
                 timer += delta_time;
@@ -724,36 +732,53 @@ void world_update(float delta_time)
 #endif
                 actor_ai(actor);
             }
+
+            // for a controllable actor, the UI is responsible for setting took_turn to true
+            // for non-controllable actors, took_turn will always be set to true after running their AI
             if (actor->took_turn)
             {
+                // decrease energy
                 actor->energy -= 1.0f;
+
+                // check if the actor still has energy
                 if (actor->energy >= 1.0f)
                 {
+                    // reset took_turn status
                     actor->took_turn = false;
+
+                    // is this actor the player?
                     if (actor == world->player)
                     {
+                        // if so, return control to the UI because the player needs to see the newly rendered state as well as make another move
                         break;
                     }
                     else
                     {
+                        // if not, do not return control to the UI, but restart this loop and do not increment current_actor_index
+                        // non-player actors obviously don't need the UI to render in order to make another move
                         continue;
                     }
                 }
             }
             else
             {
+                // return control to the UI so the frame can be rendered
+                // controllable actors will reach this part if they did not make a move this frame
+                // non-controllable actors will reach here if for some reason their AI has been deferred to another frame
                 break;
             }
         }
+
+        // move the pointer to the next actor, now that the current one has been resolved
         map->current_actor_index++;
     }
 }
 
-// TODO: we should proably redo the logging system
+// TODO: logging system overhaul
 // instead of logging messages directly, the world should store all the events that have happened
 // the renderer can read the last few events to generate a message (using assets as template strings)
-// this allows us to read the entire history of the world and do anything with it
-// also, we'd need to store whether the event was initially seen by the player
+// this gives the ability to read the entire history of the world and do anything with it
+// also, need to store whether the event was initially seen by the player
 void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
     // if (!world->player ||
@@ -766,12 +791,13 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-    size_t size = vsnprintf(NULL, 0, fmt, args);
-    char *buffer = malloc(size + 1);
-    assert(buffer);
-    vsprintf(buffer, fmt, args);
+    size_t length = vsnprintf(NULL, 0, fmt, args);
+    char *string = malloc(length + 1);
+    assert(string);
+    vsprintf(string, fmt, args);
     va_end(args);
-    char *line_begin = buffer;
+
+    char *line_begin = string;
     char *line_end;
     do
     {
@@ -792,5 +818,6 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
         TCOD_list_push(world->messages, message);
         line_begin = line_end + 1;
     } while (line_end);
-    free(buffer);
+
+    free(string);
 }

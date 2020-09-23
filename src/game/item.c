@@ -7,7 +7,7 @@
 
 struct item *item_new(enum item_type type, int floor, int x, int y, int stack)
 {
-    struct item *item = malloc(sizeof(struct item));
+    struct item *item = malloc(sizeof(*item));
     assert(item);
     item->type = type;
     item->floor = floor;

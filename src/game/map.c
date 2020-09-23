@@ -1,7 +1,5 @@
 #include "map.h"
 
-#include <malloc.h>
-
 #include "actor.h"
 #include "assets.h"
 #include "explosion.h"

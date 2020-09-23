@@ -22,6 +22,7 @@ SRC	= \
 	src/game/util.c \
 	src/game/world.c \
 	src/scenes/scene_about.c \
+	src/scenes/scene_create.c \
 	src/scenes/scene_game.c \
 	src/scenes/scene_menu.c
 TARGET = bin/undermountain

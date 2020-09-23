@@ -3,6 +3,7 @@
 #include <libtcod.h>
 
 #include "scene_about.h"
+#include "scene_create.h"
 #include "scene_game.h"
 #include "../config.h"
 #include "../scene.h"
@@ -49,22 +50,23 @@ static struct scene *select_option(enum option option)
     {
     case OPTION_START:
     {
-        world_setup();
         if (file_exists(SAVE_PATH))
         {
             // TODO: prompt whether the player wants to overwrite the save with a new character
             // if so, go to character creation
+            world_setup();
             world_load(SAVE_PATH);
+
+            menu_scene.quit();
+            game_scene.init(&menu_scene);
+            return &game_scene;
         }
         else
         {
-            // TODO: go to character creation and pass the result to world_create()
-            world_create();
+            menu_scene.quit();
+            create_scene.init(&menu_scene);
+            return &create_scene;
         }
-
-        menu_scene.quit();
-        game_scene.init(&menu_scene);
-        return &game_scene;
     }
     break;
     case OPTION_ABOUT:

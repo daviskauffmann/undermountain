@@ -73,7 +73,7 @@ struct world *world;
 
 void world_setup(void)
 {
-    world = malloc(sizeof(*world));
+    world = malloc(sizeof *world);
     assert(world);
     world->random = NULL;
     world->time = 0;
@@ -129,6 +129,7 @@ void world_create(void)
             int x = map->stair_up_x;
             int y = map->stair_up_y;
             struct actor *hero = world->hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
+            hero->energy_per_turn = 1.0f;
             hero->controllable = true;
             TCOD_list_push(map->actors, hero);
             struct tile *tile = &map->tiles[x][y];

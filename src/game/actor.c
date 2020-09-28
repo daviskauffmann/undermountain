@@ -15,7 +15,7 @@
 
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
 {
-    struct actor *actor = malloc(sizeof(*actor));
+    struct actor *actor = malloc(sizeof *actor);
     assert(actor);
     actor->name = TCOD_strdup(name);
     actor->race = race;

@@ -9,7 +9,7 @@
 
 struct explosion *explosion_new(int floor, int x, int y, int radius, TCOD_color_t color, struct actor *initiator)
 {
-    struct explosion *explosion = malloc(sizeof(*explosion));
+    struct explosion *explosion = malloc(sizeof *explosion);
     assert(explosion);
     explosion->floor = floor;
     explosion->x = x;

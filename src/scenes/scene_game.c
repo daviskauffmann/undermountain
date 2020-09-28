@@ -312,7 +312,7 @@ static struct tooltip_data tooltip_data;
 
 struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
 {
-    struct tooltip_option *tooltip_option = malloc(sizeof(*tooltip_option));
+    struct tooltip_option *tooltip_option = malloc(sizeof *tooltip_option);
     assert(tooltip_option);
     tooltip_option->text = TCOD_strdup(text);
     tooltip_option->on_click = on_click;
@@ -355,7 +355,7 @@ static void tooltip_hide(void)
     tooltip_rect.visible = false;
 }
 
-static struct tooltip_option *tooltip_get_selected(void)
+static struct tooltip_option *tooltip_option_mouseover(void)
 {
     if (tooltip_rect.visible)
     {
@@ -429,7 +429,7 @@ static void panel_show(enum panel panel)
     }
 }
 
-static enum equip_slot panel_character_get_selected(void)
+static enum equip_slot panel_character_equip_slot_mouseover(void)
 {
     if (panel_rect.visible && current_panel == PANEL_CHARACTER && !tooltip_rect.visible)
     {
@@ -448,7 +448,7 @@ static enum equip_slot panel_character_get_selected(void)
     return -1;
 }
 
-static struct item *panel_inventory_get_selected(void)
+static struct item *panel_inventory_item_mouseover(void)
 {
     if (panel_rect.visible && current_panel == PANEL_INVENTORY && !tooltip_rect.visible)
     {
@@ -468,7 +468,7 @@ static struct item *panel_inventory_get_selected(void)
     return NULL;
 }
 
-static enum spell_type panel_spellbook_get_selected(void)
+static enum spell_type panel_spellbook_spell_type_mouseover(void)
 {
     if (panel_rect.visible && current_panel == PANEL_SPELLBOOK && !tooltip_rect.visible)
     {
@@ -1308,7 +1308,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (rect_is_inside(tooltip_rect, mouse_x, mouse_y))
                 {
-                    struct tooltip_option *tooltip_option = tooltip_get_selected();
+                    struct tooltip_option *tooltip_option = tooltip_option_mouseover();
                     if (tooltip_option)
                     {
                         if (tooltip_option->on_click)
@@ -1326,50 +1326,54 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (view_is_inside(mouse_x, mouse_y))
             {
-                bool ranged = false;
-                struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
-                if (weapon)
+                if (can_take_turn)
                 {
-                    struct item_datum item_datum = item_data[weapon->type];
-                    if (item_datum.ranged)
-                    {
-                        ranged = true;
-                    }
-                }
 
-                if (key.lctrl)
-                {
-                    if (ranged)
+                    bool ranged = false;
+                    struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
+                    if (weapon)
                     {
-                        actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
+                        struct item_datum item_datum = item_data[weapon->type];
+                        if (item_datum.ranged)
+                        {
+                            ranged = true;
+                        }
                     }
-                    else
-                    {
-                        float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
-                        enum direction direction = get_direction_from_angle(angle);
-                        world->player->took_turn = player_swing(direction);
-                    }
-                }
-                else
-                {
-                    struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
-                    if (tile->actor && tile->actor->faction != world->player->faction)
+
+                    if (key.lctrl)
                     {
                         if (ranged)
                         {
-                            actor_shoot(world->player, tile->actor->x, tile->actor->y);
+                            actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
+                        }
+                        else
+                        {
+                            float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
+                            enum direction direction = get_direction_from_angle(angle);
+                            world->player->took_turn = player_swing(direction);
+                        }
+                    }
+                    else
+                    {
+                        struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
+                        if (tile->actor && tile->actor->faction != world->player->faction)
+                        {
+                            if (ranged)
+                            {
+                                actor_shoot(world->player, tile->actor->x, tile->actor->y);
+                            }
+                            else
+                            {
+                                automoving = true;
+                                automove_actor = tile->actor;
+                            }
                         }
                         else
                         {
                             automoving = true;
-                            automove_actor = tile->actor;
+                            automove_x = mouse_tile_x;
+                            automove_y = mouse_tile_y;
                         }
-                    }
-                    else
-                    {
-                        automoving = true;
-                        automove_x = mouse_tile_x;
-                        automove_y = mouse_tile_y;
                     }
                 }
             }
@@ -1377,7 +1381,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (inventory_action != INVENTORY_ACTION_NONE)
                 {
-                    struct item *item = panel_inventory_get_selected();
+                    struct item *item = panel_inventory_item_mouseover();
                     if (item)
                     {
                         switch (inventory_action)
@@ -1418,7 +1422,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
                 else if (character_action != CHARACTER_ACTION_NONE)
                 {
-                    enum equip_slot equip_slot = panel_character_get_selected();
+                    enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
                     if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                     {
                         switch (character_action)
@@ -1447,7 +1451,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
                 else if (spellbook_action != SPELLBOOK_ACTION_NONE)
                 {
-                    enum spell_type spell_type = panel_spellbook_get_selected();
+                    enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
                     if (spell_type >= 0 && spell_type < NUM_SPELL_TYPES)
                     {
                         switch (spellbook_action)
@@ -1493,6 +1497,12 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     tooltip_options_add("Talk", NULL);
                     tooltip_options_add("Swap", NULL);
                     tooltip_options_add("Attack", NULL);
+                    if (tile->actor == world->player)
+                    {
+                        tooltip_options_add("Character Sheet", NULL);
+                        tooltip_options_add("Inventory", NULL);
+                        tooltip_options_add("Spellbook", NULL);
+                    }
                     tooltip_data.actor = tile->actor;
                 }
                 if (TCOD_list_peek(tile->items))
@@ -1513,7 +1523,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 {
                 case PANEL_CHARACTER:
                 {
-                    enum equip_slot equip_slot = panel_character_get_selected();
+                    enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
                     if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
                     {
                         struct item *equipment = world->player->equipment[equip_slot];
@@ -1533,7 +1543,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case PANEL_INVENTORY:
                 {
-                    struct item *item = panel_inventory_get_selected();
+                    struct item *item = panel_inventory_item_mouseover();
                     if (item)
                     {
                         tooltip_show();
@@ -1556,7 +1566,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case PANEL_SPELLBOOK:
                 {
-                    enum spell_type spell_type = panel_spellbook_get_selected();
+                    enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
                     if (spell_type >= 0 && spell_type < NUM_SPELL_TYPES)
                     {
                         tooltip_show();
@@ -1650,65 +1660,6 @@ static struct scene *update(float delta_time)
         }
     }
 
-    message_log_rect.x = 0;
-    message_log_rect.height = console_height / 4;
-    message_log_rect.y = console_height - message_log_rect.height;
-    message_log_rect.width = console_width;
-
-    panel_rect.width = console_width / 2;
-    panel_rect.x = console_width - panel_rect.width;
-    panel_rect.y = 0;
-    panel_rect.height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);
-
-    tooltip_rect.width = 0;
-    TCOD_LIST_FOREACH(tooltip_options)
-    {
-        struct tooltip_option *option = *iterator;
-        int len = (int)strlen(option->text) + 2;
-        if (len > tooltip_rect.width)
-        {
-            tooltip_rect.width = len;
-        }
-    }
-    tooltip_rect.height = TCOD_list_size(tooltip_options) + 2;
-    if (tooltip_rect.x + tooltip_rect.width > console_width)
-    {
-        tooltip_rect.x = console_width - tooltip_rect.width;
-    }
-    if (tooltip_rect.x < 0)
-    {
-        tooltip_rect.x = 0;
-    }
-    if (tooltip_rect.y + tooltip_rect.height > console_height)
-    {
-        tooltip_rect.y = console_height - tooltip_rect.height;
-    }
-    if (tooltip_rect.y < 0)
-    {
-        tooltip_rect.y = 0;
-    }
-
-    view_width = console_width - (panel_rect.visible ? panel_rect.width : 0);
-    view_height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);
-    view_x = world->player ? world->player->x - view_width / 2 : MAP_WIDTH / 2;
-    view_y = world->player ? world->player->y - view_height / 2 : MAP_HEIGHT / 2;
-    if (view_x + view_width > MAP_WIDTH)
-    {
-        view_x = MAP_WIDTH - view_width;
-    }
-    if (view_x < 0)
-    {
-        view_x = 0;
-    }
-    if (view_y + view_height > MAP_HEIGHT)
-    {
-        view_y = MAP_HEIGHT - view_height;
-    }
-    if (view_y < 0)
-    {
-        view_y = 0;
-    }
-
     world_update(delta_time);
 
     if (world->hero_dead && file_exists(SAVE_PATH))
@@ -1730,6 +1681,86 @@ static void render(TCOD_console_t console)
         }
     }
 
+    // calculate ui sizes
+    if (message_log_rect.visible)
+    {
+        // message log should take up the bottom 4th of the window
+        message_log_rect.x = 0;
+        message_log_rect.height = console_height / 4;
+        message_log_rect.y = console_height - message_log_rect.height;
+        message_log_rect.width = console_width;
+    }
+
+    if (panel_rect.visible)
+    {
+        // panel should take up the right half of the window
+        panel_rect.width = console_width / 2;
+        panel_rect.x = console_width - panel_rect.width;
+        panel_rect.y = 0;
+        panel_rect.height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);
+    }
+
+    if (tooltip_rect.visible)
+    {
+        // tooltip should be as wide as the longest option, plus 2 for borders
+        tooltip_rect.width = 0;
+        TCOD_LIST_FOREACH(tooltip_options)
+        {
+            struct tooltip_option *option = *iterator;
+            int len = (int)strlen(option->text) + 2;
+            if (len > tooltip_rect.width)
+            {
+                tooltip_rect.width = len;
+            }
+        }
+
+        // tooltip should be as tall as the number of options, plus 2 for borders
+        // TODO: multi-line options?
+        tooltip_rect.height = TCOD_list_size(tooltip_options) + 2;
+
+        // make sure the tooltip does not go off screen
+        if (tooltip_rect.x + tooltip_rect.width > console_width)
+        {
+            tooltip_rect.x = console_width - tooltip_rect.width;
+        }
+        if (tooltip_rect.x < 0)
+        {
+            tooltip_rect.x = 0;
+        }
+        if (tooltip_rect.y + tooltip_rect.height > console_height)
+        {
+            tooltip_rect.y = console_height - tooltip_rect.height;
+        }
+        if (tooltip_rect.y < 0)
+        {
+            tooltip_rect.y = 0;
+        }
+    }
+
+    // determine size of the game area
+    // it should be centered on the player, unless the player gets close to a map edge in which case it will stop
+    view_width = console_width - (panel_rect.visible ? panel_rect.width : 0);
+    view_height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);
+    view_x = world->player ? world->player->x - view_width / 2 : MAP_WIDTH / 2;
+    view_y = world->player ? world->player->y - view_height / 2 : MAP_HEIGHT / 2;
+    if (view_x + view_width > MAP_WIDTH)
+    {
+        view_x = MAP_WIDTH - view_width;
+    }
+    if (view_x < 0)
+    {
+        view_x = 0;
+    }
+    if (view_y + view_height > MAP_HEIGHT)
+    {
+        view_y = MAP_HEIGHT - view_height;
+    }
+    if (view_y < 0)
+    {
+        view_y = 0;
+    }
+
+    // set default colors
     TCOD_console_set_default_background(
         console,
         TCOD_color_multiply_scalar(
@@ -1737,201 +1768,198 @@ static void render(TCOD_console_t console)
             tile_common.ambient_light_intensity));
     TCOD_console_set_default_foreground(console, TCOD_white);
 
-    struct map *map = &world->maps[world->player->floor];
+    // calculate random noise coefficients
+    noise_x += 0.2f;
+    float noise_dx = noise_x + 20.0f;
+    float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+    noise_dx += 30.0f;
+    float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+    float di = 0.2f * TCOD_noise_get(noise, &noise_x);
 
     // draw tiles
+    struct map *map = &world->maps[world->player->floor];
+    for (int x = view_x; x < view_x + view_width; x++)
     {
-        // calculate random noise coefficients
-        noise_x += 0.2f;
-        float noise_dx = noise_x + 20.0f;
-        float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-        noise_dx += 30.0f;
-        float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-        float di = 0.2f * TCOD_noise_get(noise, &noise_x);
-
-        for (int x = view_x; x < view_x + view_width; x++)
+        for (int y = view_y; y < view_y + view_height; y++)
         {
-            for (int y = view_y; y < view_y + view_height; y++)
+            if (map_is_inside(x, y))
             {
-                if (map_is_inside(x, y))
+                struct tile *tile = &map->tiles[x][y];
+                struct tile_datum tile_datum = tile_data[tile->type];
+
+                // ambient lighting
+                float fg_r = tile_common.ambient_light_color.r;
+                float fg_g = tile_common.ambient_light_color.g;
+                float fg_b = tile_common.ambient_light_color.b;
+                float bg_r = fg_r * tile_common.ambient_light_intensity;
+                float bg_g = fg_g * tile_common.ambient_light_intensity;
+                float bg_b = fg_b * tile_common.ambient_light_intensity;
+
+                if (TCOD_map_is_in_fov(world->player->fov, x, y))
                 {
-                    struct tile *tile = &map->tiles[x][y];
-                    struct tile_datum tile_datum = tile_data[tile->type];
+                    // mark this tile as seen
+                    tile->seen = true;
 
-                    // ambient lighting
-                    float fg_r = tile_common.ambient_light_color.r;
-                    float fg_g = tile_common.ambient_light_color.g;
-                    float fg_b = tile_common.ambient_light_color.b;
-                    float bg_r = fg_r * tile_common.ambient_light_intensity;
-                    float bg_g = fg_g * tile_common.ambient_light_intensity;
-                    float bg_b = fg_b * tile_common.ambient_light_intensity;
-
-                    if (TCOD_map_is_in_fov(world->player->fov, x, y))
+                    // calculate entity lighting
+                    TCOD_LIST_FOREACH(map->objects)
                     {
-                        // mark this tile as seen
-                        tile->seen = true;
-
-                        // calculate entity lighting
-                        TCOD_LIST_FOREACH(map->objects)
+                        struct object *object = *iterator;
+                        if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                         {
-                            struct object *object = *iterator;
-                            if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
-                            {
-                                float radius_sq = powf((float)object->light_radius, 2);
-                                float distance_sq =
-                                    powf((float)(x - object->x + (object->light_flicker ? dx : 0)), 2) +
-                                    powf((float)(y - object->y + (object->light_flicker ? dy : 0)), 2);
-                                float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (object->light_flicker ? di : 0));
-                                fg_r += object->light_color.r * attenuation;
-                                fg_g += object->light_color.g * attenuation;
-                                fg_b += object->light_color.b * attenuation;
-                                bg_r += fg_r * object->light_intensity * attenuation;
-                                bg_g += fg_g * object->light_intensity * attenuation;
-                                bg_b += fg_b * object->light_intensity * attenuation;
-                            }
-                        }
-                        TCOD_LIST_FOREACH(map->actors)
-                        {
-                            struct actor *actor = *iterator;
-                            if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
-                            {
-                                float radius_sq = powf(actor->light_radius, 2);
-                                float distance_sq =
-                                    powf((float)(x - actor->x + (actor->light_flicker ? dx : 0)), 2) +
-                                    powf((float)(y - actor->y + (actor->light_flicker ? dy : 0)), 2);
-                                float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (actor->light_flicker ? di : 0));
-                                fg_r += actor->light_color.r * attenuation;
-                                fg_g += actor->light_color.g * attenuation;
-                                fg_b += actor->light_color.b * attenuation;
-                                bg_r += actor->light_color.r * actor->light_intensity * attenuation;
-                                bg_g += actor->light_color.g * actor->light_intensity * attenuation;
-                                bg_b += actor->light_color.b * actor->light_intensity * attenuation;
-                            }
-                        }
-                        TCOD_LIST_FOREACH(map->projectiles)
-                        {
-                            struct projectile *projectile = *iterator;
-                            struct projectile_datum projectile_datum = projectile_data[projectile->type];
-                            if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
-                            {
-                                float radius_sq = powf(projectile_datum.light_radius, 2);
-                                float distance_sq =
-                                    powf((float)(x - projectile->x + (projectile_datum.light_flicker ? dx : 0)), 2) +
-                                    powf((float)(y - projectile->y + (projectile_datum.light_flicker ? dy : 0)), 2);
-                                float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (projectile_datum.light_flicker ? di : 0));
-                                fg_r += projectile_datum.light_color.r * attenuation;
-                                fg_g += projectile_datum.light_color.g * attenuation;
-                                fg_b += projectile_datum.light_color.b * attenuation;
-                                bg_r += projectile_datum.light_color.r * projectile_datum.light_intensity * attenuation;
-                                bg_g += projectile_datum.light_color.g * projectile_datum.light_intensity * attenuation;
-                                bg_b += projectile_datum.light_color.b * projectile_datum.light_intensity * attenuation;
-                            }
-                        }
-                        TCOD_LIST_FOREACH(map->explosions)
-                        {
-                            struct explosion *explosion = *iterator;
-                            if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
-                            {
-                                float radius_sq = powf(explosion->radius, 2);
-                                float distance_sq =
-                                    powf((float)(x - explosion->x + dx * 2), 2) +
-                                    powf((float)(y - explosion->y + dy * 2), 2);
-                                float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + di * 2);
-                                fg_r += explosion->color.r * attenuation;
-                                fg_g += explosion->color.g * attenuation;
-                                fg_b += explosion->color.b * attenuation;
-                                bg_r += explosion->color.r * 0.5f * attenuation;
-                                bg_g += explosion->color.g * 0.5f * attenuation;
-                                bg_b += explosion->color.b * 0.5f * attenuation;
-                            }
+                            float radius_sq = powf((float)object->light_radius, 2);
+                            float distance_sq =
+                                powf((float)(x - object->x + (object->light_flicker ? dx : 0)), 2) +
+                                powf((float)(y - object->y + (object->light_flicker ? dy : 0)), 2);
+                            float attenuation = CLAMP(
+                                0.0f,
+                                1.0f,
+                                (radius_sq - distance_sq) / radius_sq + (object->light_flicker ? di : 0));
+                            fg_r += object->light_color.r * attenuation;
+                            fg_g += object->light_color.g * attenuation;
+                            fg_b += object->light_color.b * attenuation;
+                            bg_r += fg_r * object->light_intensity * attenuation;
+                            bg_g += fg_g * object->light_intensity * attenuation;
+                            bg_b += fg_b * object->light_intensity * attenuation;
                         }
                     }
-
-                    // apply tonemapping
-                    float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
-                    float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
-                    TCOD_color_t fg_color = TCOD_color_RGB((uint8_t)(fg_r * fg_mult), (uint8_t)(fg_g * fg_mult), (uint8_t)(fg_b * fg_mult));
-                    fg_color = TCOD_color_multiply(fg_color, tile_datum.color);
-                    float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
-                    float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
-                    TCOD_color_t bg_color = TCOD_color_RGB((uint8_t)(bg_r * bg_mult), (uint8_t)(bg_g * bg_mult), (uint8_t)(bg_b * bg_mult));
-                    bg_color = TCOD_color_multiply(bg_color, tile_datum.color);
-
-                    if (tile->seen)
+                    TCOD_LIST_FOREACH(map->actors)
                     {
-                        int glyph = tile_datum.glyph;
-
-                        // select appropriate wall graphic
-                        if (tile->type == TILE_TYPE_WALL)
+                        struct actor *actor = *iterator;
+                        if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
                         {
-                            const unsigned char glyphs[] = {
-                                TCOD_CHAR_BLOCK3,  //  0 - none
-                                TCOD_CHAR_DVLINE,  //  1 - N
-                                TCOD_CHAR_DHLINE,  //  2 - E
-                                TCOD_CHAR_DSW,     //  3 - NE
-                                TCOD_CHAR_DVLINE,  //  4 - S
-                                TCOD_CHAR_DVLINE,  //  5 - NS
-                                TCOD_CHAR_DNW,     //  6 - SE
-                                TCOD_CHAR_DTEEE,   //  7 - NES
-                                TCOD_CHAR_DHLINE,  //  8 - W
-                                TCOD_CHAR_DSE,     //  9 - NW
-                                TCOD_CHAR_DHLINE,  // 10 - EW
-                                TCOD_CHAR_DTEEN,   // 11 - NEW
-                                TCOD_CHAR_DNE,     // 12 - SW
-                                TCOD_CHAR_DTEEW,   // 13 - NSW
-                                TCOD_CHAR_DTEES,   // 14 - ESW
-                                TCOD_CHAR_DCROSS}; // 15 - NESW
-                            int index = 0;
-                            if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 0;
-                            }
-                            if (x < MAP_WIDTH - 1 && map->tiles[x + 1][y].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 1;
-                            }
-                            if (y < MAP_HEIGHT - 1 && map->tiles[x][y + 1].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 2;
-                            }
-                            if (x > 0 && map->tiles[x - 1][y].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 3;
-                            }
-                            glyph = glyphs[index];
+                            float radius_sq = powf(actor->light_radius, 2);
+                            float distance_sq =
+                                powf((float)(x - actor->x + (actor->light_flicker ? dx : 0)), 2) +
+                                powf((float)(y - actor->y + (actor->light_flicker ? dy : 0)), 2);
+                            float attenuation = CLAMP(
+                                0.0f,
+                                1.0f,
+                                (radius_sq - distance_sq) / radius_sq + (actor->light_flicker ? di : 0));
+                            fg_r += actor->light_color.r * attenuation;
+                            fg_g += actor->light_color.g * attenuation;
+                            fg_b += actor->light_color.b * attenuation;
+                            bg_r += actor->light_color.r * actor->light_intensity * attenuation;
+                            bg_g += actor->light_color.g * actor->light_intensity * attenuation;
+                            bg_b += actor->light_color.b * actor->light_intensity * attenuation;
                         }
+                    }
+                    TCOD_LIST_FOREACH(map->projectiles)
+                    {
+                        struct projectile *projectile = *iterator;
+                        struct projectile_datum projectile_datum = projectile_data[projectile->type];
+                        if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
+                        {
+                            float radius_sq = powf(projectile_datum.light_radius, 2);
+                            float distance_sq =
+                                powf((float)(x - projectile->x + (projectile_datum.light_flicker ? dx : 0)), 2) +
+                                powf((float)(y - projectile->y + (projectile_datum.light_flicker ? dy : 0)), 2);
+                            float attenuation = CLAMP(
+                                0.0f,
+                                1.0f,
+                                (radius_sq - distance_sq) / radius_sq + (projectile_datum.light_flicker ? di : 0));
+                            fg_r += projectile_datum.light_color.r * attenuation;
+                            fg_g += projectile_datum.light_color.g * attenuation;
+                            fg_b += projectile_datum.light_color.b * attenuation;
+                            bg_r += projectile_datum.light_color.r * projectile_datum.light_intensity * attenuation;
+                            bg_g += projectile_datum.light_color.g * projectile_datum.light_intensity * attenuation;
+                            bg_b += projectile_datum.light_color.b * projectile_datum.light_intensity * attenuation;
+                        }
+                    }
+                    TCOD_LIST_FOREACH(map->explosions)
+                    {
+                        struct explosion *explosion = *iterator;
+                        if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
+                        {
+                            float radius_sq = powf(explosion->radius, 2);
+                            float distance_sq =
+                                powf((float)(x - explosion->x + dx * 2), 2) +
+                                powf((float)(y - explosion->y + dy * 2), 2);
+                            float attenuation = CLAMP(
+                                0.0f,
+                                1.0f,
+                                (radius_sq - distance_sq) / radius_sq + di * 2);
+                            fg_r += explosion->color.r * attenuation;
+                            fg_g += explosion->color.g * attenuation;
+                            fg_b += explosion->color.b * attenuation;
+                            bg_r += explosion->color.r * 0.5f * attenuation;
+                            bg_g += explosion->color.g * 0.5f * attenuation;
+                            bg_b += explosion->color.b * 0.5f * attenuation;
+                        }
+                    }
+                }
 
-                        TCOD_console_set_char_foreground(
-                            console,
-                            x - view_x,
-                            y - view_y,
-                            fg_color);
-                        TCOD_console_set_char(
-                            console,
-                            x - view_x,
-                            y - view_y,
-                            glyph);
+                // apply tonemapping
+                float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
+                float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
+                TCOD_color_t fg_color = TCOD_color_RGB((uint8_t)(fg_r * fg_mult), (uint8_t)(fg_g * fg_mult), (uint8_t)(fg_b * fg_mult));
+                fg_color = TCOD_color_multiply(fg_color, tile_datum.color);
+                float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
+                float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
+                TCOD_color_t bg_color = TCOD_color_RGB((uint8_t)(bg_r * bg_mult), (uint8_t)(bg_g * bg_mult), (uint8_t)(bg_b * bg_mult));
+                bg_color = TCOD_color_multiply(bg_color, tile_datum.color);
+
+                if (tile->seen)
+                {
+                    int glyph = tile_datum.glyph;
+
+                    // select appropriate wall graphic
+                    if (tile->type == TILE_TYPE_WALL)
+                    {
+                        const unsigned char glyphs[] = {
+                            TCOD_CHAR_BLOCK3,  //  0 - none
+                            TCOD_CHAR_DVLINE,  //  1 - N
+                            TCOD_CHAR_DHLINE,  //  2 - E
+                            TCOD_CHAR_DSW,     //  3 - NE
+                            TCOD_CHAR_DVLINE,  //  4 - S
+                            TCOD_CHAR_DVLINE,  //  5 - NS
+                            TCOD_CHAR_DNW,     //  6 - SE
+                            TCOD_CHAR_DTEEE,   //  7 - NES
+                            TCOD_CHAR_DHLINE,  //  8 - W
+                            TCOD_CHAR_DSE,     //  9 - NW
+                            TCOD_CHAR_DHLINE,  // 10 - EW
+                            TCOD_CHAR_DTEEN,   // 11 - NEW
+                            TCOD_CHAR_DNE,     // 12 - SW
+                            TCOD_CHAR_DTEEW,   // 13 - NSW
+                            TCOD_CHAR_DTEES,   // 14 - ESW
+                            TCOD_CHAR_DCROSS}; // 15 - NESW
+                        int index = 0;
+                        if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
+                        {
+                            index |= 1 << 0;
+                        }
+                        if (x < MAP_WIDTH - 1 && map->tiles[x + 1][y].type == TILE_TYPE_WALL)
+                        {
+                            index |= 1 << 1;
+                        }
+                        if (y < MAP_HEIGHT - 1 && map->tiles[x][y + 1].type == TILE_TYPE_WALL)
+                        {
+                            index |= 1 << 2;
+                        }
+                        if (x > 0 && map->tiles[x - 1][y].type == TILE_TYPE_WALL)
+                        {
+                            index |= 1 << 3;
+                        }
+                        glyph = glyphs[index];
                     }
 
-                    TCOD_console_set_char_background(
+                    TCOD_console_set_char_foreground(
                         console,
                         x - view_x,
                         y - view_y,
-                        bg_color,
-                        TCOD_BKGND_SET);
+                        fg_color);
+                    TCOD_console_set_char(
+                        console,
+                        x - view_x,
+                        y - view_y,
+                        glyph);
                 }
+
+                TCOD_console_set_char_background(
+                    console,
+                    x - view_x,
+                    y - view_y,
+                    bg_color,
+                    TCOD_BKGND_SET);
             }
         }
     }
@@ -2114,12 +2142,9 @@ static void render(TCOD_console_t console)
                         view_height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
-                        "Lv.%d %s (%s) (%f +%f)",
+                        "Lv.%d %s",
                         tile->actor->level,
-                        tile->actor->name,
-                        tile->actor->energy_per_turn < 0.75f ? "Slow" : tile->actor->energy_per_turn > 1.5f ? "Fast" : "Normal",
-                        tile->actor->energy,
-                        tile->actor->energy_per_turn);
+                        tile->actor->name);
 
                     goto done;
                 }
@@ -2326,7 +2351,7 @@ static void render(TCOD_console_t console)
             for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
                 TCOD_color_t color =
-                    equip_slot == panel_character_get_selected()
+                    equip_slot == panel_character_equip_slot_mouseover()
                         ? TCOD_yellow
                         : TCOD_white;
                 TCOD_console_set_default_foreground(panel_rect.console, color);
@@ -2432,13 +2457,14 @@ static void render(TCOD_console_t console)
         break;
         case PANEL_INVENTORY:
         {
+            struct item *mouseover_item = panel_inventory_item_mouseover();
             int y = 1;
             TCOD_LIST_FOREACH(world->player->items)
             {
                 struct item *item = *iterator;
                 struct item_datum item_datum = item_data[item->type];
                 TCOD_color_t color =
-                    item == panel_inventory_get_selected()
+                    item == mouseover_item
                         ? TCOD_yellow
                         : item_datum.color;
                 TCOD_console_set_default_foreground(panel_rect.console, color);
@@ -2479,12 +2505,13 @@ static void render(TCOD_console_t console)
         break;
         case PANEL_SPELLBOOK:
         {
+            enum spell_type mouseover_spell_type = panel_spellbook_spell_type_mouseover();
             int y = 1;
             for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
             {
                 struct spell_datum spell_datum = spell_data[spell_type];
                 TCOD_color_t color =
-                    spell_type == panel_spellbook_get_selected()
+                    spell_type == mouseover_spell_type
                         ? TCOD_yellow
                         : TCOD_white;
                 TCOD_console_set_default_foreground(panel_rect.console, color);
@@ -2548,12 +2575,13 @@ static void render(TCOD_console_t console)
         TCOD_console_set_default_foreground(tooltip_rect.console, TCOD_white);
         TCOD_console_clear(tooltip_rect.console);
 
+        struct tooltip_option *mouseover_tooltip_option = tooltip_option_mouseover();
         int y = 1;
         TCOD_LIST_FOREACH(tooltip_options)
         {
             struct tooltip_option *option = *iterator;
             TCOD_color_t color =
-                option == tooltip_get_selected()
+                option == mouseover_tooltip_option
                     ? TCOD_yellow
                     : TCOD_white;
             TCOD_console_set_default_foreground(tooltip_rect.console, color);

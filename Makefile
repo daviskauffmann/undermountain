@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -ggdb -Iextern/libtcod/src -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter
+CFLAGS = -ggdb -Iextern/libtcod/src -std=c99 -Wall -Wextra -Wpedantic -Wno-unused-parameter -Wno-unknown-pragmas
 CPPFLAGS =
 LDFLAGS = -Lextern/libtcod/buildsys/scons/libtcod-1.16.0-alpha.12-x86_64-mingw-DEBUG
 LDLIBS = -ltcod

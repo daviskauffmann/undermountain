@@ -46,7 +46,16 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     break;
     case TCOD_EVENT_MOUSE_PRESS:
     {
-        if (mouse.rbutton)
+        if (mouse.lbutton)
+        {
+            world_setup();
+            world_create();
+
+            create_scene.quit();
+            game_scene.init(&create_scene);
+            return &game_scene;
+        }
+        else if (mouse.rbutton)
         {
             create_scene.quit();
             menu_scene.init(&create_scene);
@@ -77,7 +86,14 @@ static void render(TCOD_console_t console)
         y++,
         console_width - 2,
         console_height - 2,
-        "TODO: character creation. Press ENTER to start.");
+        "TODO: character creation.");
+    TCOD_console_printf_rect(
+        NULL,
+        1,
+        y++,
+        console_width - 2,
+        console_height - 2,
+        "Press ENTER or L-Mouse to start.");
     TCOD_console_printf_rect(
         NULL,
         1,

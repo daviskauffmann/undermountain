@@ -312,7 +312,7 @@ static struct tooltip_data tooltip_data;
 
 struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
 {
-    struct tooltip_option *tooltip_option = malloc(sizeof *tooltip_option);
+    struct tooltip_option *tooltip_option = malloc(sizeof(*tooltip_option));
     assert(tooltip_option);
     tooltip_option->text = TCOD_strdup(text);
     tooltip_option->on_click = on_click;

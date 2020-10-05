@@ -15,7 +15,7 @@
 
 struct projectile *projectile_new(enum projectile_type type, int floor, int origin_x, int origin_y, int target_x, int target_y, struct actor *shooter, struct item *ammunition)
 {
-    struct projectile *projectile = malloc(sizeof *projectile);
+    struct projectile *projectile = malloc(sizeof(*projectile));
     assert(projectile);
     projectile->type = type;
     projectile->floor = floor;

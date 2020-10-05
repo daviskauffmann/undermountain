@@ -73,7 +73,7 @@ struct world *world;
 
 void world_setup(void)
 {
-    world = malloc(sizeof *world);
+    world = malloc(sizeof(*world));
     assert(world);
     world->random = NULL;
     world->time = 0;

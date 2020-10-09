@@ -55,48 +55,6 @@ void map_setup(struct map *map, unsigned int floor)
 
 void map_cleanup(struct map *map)
 {
-    TCOD_LIST_FOREACH(map->explosions)
-    {
-        struct explosion *explosion = *iterator;
-        explosion_delete(explosion);
-    }
-    TCOD_list_delete(map->explosions);
-    TCOD_LIST_FOREACH(map->projectiles)
-    {
-        struct projectile *projectile = *iterator;
-        projectile_delete(projectile);
-    }
-    TCOD_list_delete(map->projectiles);
-    TCOD_LIST_FOREACH(map->items)
-    {
-        struct item *item = *iterator;
-        item_delete(item);
-    }
-    TCOD_list_delete(map->items);
-    TCOD_LIST_FOREACH(map->corpses)
-    {
-        struct corpse *corpse = *iterator;
-        corpse_delete(corpse);
-    }
-    TCOD_list_delete(map->corpses);
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_delete(actor);
-    }
-    TCOD_list_delete(map->actors);
-    TCOD_LIST_FOREACH(map->objects)
-    {
-        struct object *object = *iterator;
-        object_delete(object);
-    }
-    TCOD_list_delete(map->objects);
-    TCOD_LIST_FOREACH(map->rooms)
-    {
-        struct room *room = *iterator;
-        room_delete(room);
-    }
-    TCOD_list_delete(map->rooms);
     for (int x = 0; x < MAP_WIDTH; x++)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
@@ -105,6 +63,48 @@ void map_cleanup(struct map *map)
             tile_cleanup(tile);
         }
     }
+    TCOD_LIST_FOREACH(map->rooms)
+    {
+        struct room *room = *iterator;
+        room_delete(room);
+    }
+    TCOD_list_delete(map->rooms);
+    TCOD_LIST_FOREACH(map->objects)
+    {
+        struct object *object = *iterator;
+        object_delete(object);
+    }
+    TCOD_list_delete(map->objects);
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_delete(actor);
+    }
+    TCOD_list_delete(map->actors);
+    TCOD_LIST_FOREACH(map->corpses)
+    {
+        struct corpse *corpse = *iterator;
+        corpse_delete(corpse);
+    }
+    TCOD_list_delete(map->corpses);
+    TCOD_LIST_FOREACH(map->items)
+    {
+        struct item *item = *iterator;
+        item_delete(item);
+    }
+    TCOD_list_delete(map->items);
+    TCOD_LIST_FOREACH(map->projectiles)
+    {
+        struct projectile *projectile = *iterator;
+        projectile_delete(projectile);
+    }
+    TCOD_list_delete(map->projectiles);
+    TCOD_LIST_FOREACH(map->explosions)
+    {
+        struct explosion *explosion = *iterator;
+        explosion_delete(explosion);
+    }
+    TCOD_list_delete(map->explosions);
 }
 
 static void hline(struct map *map, int x1, int y, int x2)

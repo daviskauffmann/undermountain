@@ -90,19 +90,19 @@ void world_setup(void)
 
 void world_cleanup(void)
 {
+    TCOD_random_delete(world->random);
+    TCOD_namegen_destroy();
+    for (int i = 0; i < NUM_MAPS; i++)
+    {
+        struct map *map = &world->maps[i];
+        map_cleanup(map);
+    }
     TCOD_LIST_FOREACH(world->messages)
     {
         struct message *message = *iterator;
         message_delete(message);
     }
     TCOD_list_delete(world->messages);
-    for (int i = 0; i < NUM_MAPS; i++)
-    {
-        struct map *map = &world->maps[i];
-        map_cleanup(map);
-    }
-    TCOD_namegen_destroy();
-    TCOD_random_delete(world->random);
     free(world);
     world = NULL;
 }

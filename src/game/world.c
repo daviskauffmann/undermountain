@@ -185,6 +185,7 @@ void world_create(void)
 
 void world_save(const char *filename)
 {
+    // TODO: stop using TCOD_zip functions (deprecated)
     TCOD_zip_t zip = TCOD_zip_new();
     TCOD_zip_put_random(zip, world->random);
     TCOD_zip_put_int(zip, world->time);

@@ -138,6 +138,8 @@ void world_create(void)
             TCOD_list_push(hero->items, bodkin_arrow);
             struct item *bolt = item_new(ITEM_TYPE_BOLT, floor, x, y, 50);
             TCOD_list_push(hero->items, bolt);
+            struct item *cold_iron_blade = item_new(ITEM_TYPE_COLD_IRON_BLADE, floor, x, y, 1);
+            TCOD_list_push(hero->items, cold_iron_blade);
             struct item *crossbow = item_new(ITEM_TYPE_CROSSBOW, floor, x, y, 1);
             TCOD_list_push(hero->items, crossbow);
             struct item *iron_armor = item_new(ITEM_TYPE_IRON_ARMOR, floor, x, y, 1);
@@ -152,6 +154,10 @@ void world_create(void)
             TCOD_list_push(hero->items, kite_shield);
             struct item *healing_potion = item_new(ITEM_TYPE_HEALING_POTION, floor, x, y, 10);
             TCOD_list_push(hero->items, healing_potion);
+            struct item *scepter_of_unity = item_new(ITEM_TYPE_SCEPTER_OF_UNITY, floor, x, y, 1);
+            TCOD_list_push(hero->items, scepter_of_unity);
+            struct item *spiked_shield = item_new(ITEM_TYPE_SPIKED_SHIELD, floor, x, y, 1);
+            TCOD_list_push(hero->items, spiked_shield);
         }
 
         // DEBUG: create pet

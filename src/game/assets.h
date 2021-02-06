@@ -3,6 +3,7 @@
 
 #include "actor.h"
 #include "corpse.h"
+#include "faction.h"
 #include "item.h"
 #include "object.h"
 #include "projectile.h"
@@ -13,6 +14,7 @@ extern struct tile_common tile_common;
 extern struct tile_datum tile_data[NUM_TILE_TYPES];
 extern struct object_common object_common;
 extern struct object_datum object_data[NUM_OBJECT_TYPES];
+extern struct faction_datum faction_data[NUM_FACTIONS];
 extern struct actor_common actor_common;
 extern struct race_datum race_data[NUM_RACES];
 extern struct class_datum class_data[NUM_CLASSES];

@@ -1360,7 +1360,61 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
         other->name,
         damage);
 
-    actor_take_damage(other, actor, damage);
+    bool killed = actor_take_damage(other, actor, damage);
+    if (!killed)
+    {
+        if (weapon)
+        {
+            if (weapon->type == ITEM_TYPE_COLD_IRON_BLADE)
+            {
+                other->energy -= 1.0f;
+
+                world_log(
+                    actor->floor,
+                    actor->x,
+                    actor->y,
+                    TCOD_white,
+                    "%s has been slowed!",
+                    other->name);
+            }
+
+            if (weapon->type == ITEM_TYPE_SCEPTER_OF_UNITY)
+            {
+                other->faction = actor->faction;
+
+                world_log(
+                    actor->floor,
+                    actor->x,
+                    actor->y,
+                    TCOD_white,
+                    "%s has joined the %s faction!",
+                    other->name,
+                    faction_data[other->faction].name);
+            }
+        }
+
+        if (shield)
+        {
+            struct item_datum item_datum = item_data[shield->type];
+
+            if (shield->type == ITEM_TYPE_SPIKED_SHIELD && !ammunition)
+            {
+                int spike_damage = TCOD_random_get_int(world->random, item_datum.min_damage, item_datum.max_damage);
+
+                world_log(
+                    actor->floor,
+                    actor->x,
+                    actor->y,
+                    TCOD_white,
+                    "%s's shield spike hits %s for %d.",
+                    other->name,
+                    actor->name,
+                    spike_damage);
+
+                actor_take_damage(actor, other, spike_damage);
+            }
+        }
+    }
 
     return true;
 }
@@ -1481,7 +1535,7 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
     return true;
 }
 
-void actor_take_damage(struct actor *actor, struct actor *attacker, int damage)
+bool actor_take_damage(struct actor *actor, struct actor *attacker, int damage)
 {
     actor->current_hp -= damage;
     actor->flash_color = TCOD_red;
@@ -1490,7 +1544,9 @@ void actor_take_damage(struct actor *actor, struct actor *attacker, int damage)
     {
         actor->current_hp = 0;
         actor_die(actor, attacker);
+        return true;
     }
+    return false;
 }
 
 void actor_die(struct actor *actor, struct actor *killer)

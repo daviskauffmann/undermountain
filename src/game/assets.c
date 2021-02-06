@@ -6,6 +6,7 @@ struct tile_common tile_common;
 struct tile_datum tile_data[NUM_TILE_TYPES];
 struct object_common object_common;
 struct object_datum object_data[NUM_OBJECT_TYPES];
+struct faction_datum faction_data[NUM_FACTIONS];
 struct actor_common actor_common;
 struct race_datum race_data[NUM_RACES];
 struct class_datum class_data[NUM_CLASSES];
@@ -36,6 +37,9 @@ struct projectile_datum projectile_data[NUM_PROJECTILE_TYPES];
     object_data[_type].glyph = _glyph;                                   \
     object_data[_type].is_transparent = _is_transparent;                 \
     object_data[_type].is_walkable = _is_walkable;
+
+#define FACTION_DATA(_type, _name) \
+    faction_data[_type].name = _name;
 
 #define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _glow_intensity, _torch_radius, _torch_color, _torch_intensity) \
     actor_common.turns_to_chase = _turns_to_chase;                                                                               \
@@ -124,6 +128,9 @@ void assets_load(void)
     OBJECT_DATA(OBJECT_TYPE_THRONE, "Throne", '\\', true, false);
     OBJECT_DATA(OBJECT_TYPE_TRAP, "Trap", '^', true, true);
 
+    FACTION_DATA(FACTION_GOOD, "Good");
+    FACTION_DATA(FACTION_EVIL, "Evil");
+
     ACTOR_COMMON(10, 5, TCOD_white, 0.1f, 10, TCOD_light_amber, 0.25f);
 
     RACE_DATA(RACE_HUMAN, "Human", '@');
@@ -159,13 +166,16 @@ void assets_load(void)
 
     ITEM_DATA(ITEM_TYPE_BODKIN_ARROW, "Bodkin Arrow", "Arrow designed for penetrating armor.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_ARROW, false);
     ITEM_DATA(ITEM_TYPE_BOLT, "Bolt", "Standard ammunition for a crossbow.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_BOLT, false);
+    ITEM_DATA(ITEM_TYPE_COLD_IRON_BLADE, "Cold Iron Blade", "A magical sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
     ITEM_DATA(ITEM_TYPE_CROSSBOW, "Crossbow", "A powerful ranged weapon.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, true, 100, false, 1, AMMUNITION_TYPE_BOLT, false);
     ITEM_DATA(ITEM_TYPE_IRON_ARMOR, "Iron Armor", "A set of iron armor.", '[', TCOD_white, EQUIP_SLOT_ARMOR, false, 3, 0, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_GREATSWORD, "Greatsword", "A two-handed straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_LONGSWORD, "Longsword", "A straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_LONGBOW, "Longbow", "A tall war bow.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 1, 8, true, 100, false, 1, AMMUNITION_TYPE_ARROW, false);
-    ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", '|', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", ')', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, 10, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_SCEPTER_OF_UNITY, "Scepter of Unity", "A magical scepter.", '!', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
+    ITEM_DATA(ITEM_TYPE_SPIKED_SHIELD, "Spiked Shield", "A spiked shield.", ')', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 4, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
 
     SPELL_DATA(SPELL_TYPE_HEAL, "Heal", SPELL_RANGE_SELF);
     SPELL_DATA(SPELL_TYPE_LIGHTNING, "Lightning", SPELL_RANGE_TARGET);

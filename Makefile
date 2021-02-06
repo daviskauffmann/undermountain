@@ -12,6 +12,7 @@ SRC	= \
 	src/game/assets.c \
 	src/game/corpse.c \
 	src/game/explosion.c \
+	src/game/faction.c \
 	src/game/item.c \
 	src/game/map.c \
 	src/game/message.c \

@@ -3,6 +3,7 @@
 
 #include <libtcod.h>
 
+#include "faction.h"
 #include "item.h"
 #include "spell.h"
 
@@ -46,14 +47,6 @@ enum monster
     MONSTER_SLIME,
 
     NUM_MONSTERS
-};
-
-enum faction
-{
-    FACTION_GOOD,
-    FACTION_EVIL,
-
-    NUM_FACTIONS
 };
 
 struct actor_common
@@ -152,7 +145,7 @@ bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(struct actor *actor, int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition);
 bool actor_cast_spell(struct actor *actor, int x, int y);
-void actor_take_damage(struct actor *actor, struct actor *attacker, int damage);
+bool actor_take_damage(struct actor *actor, struct actor *attacker, int damage);
 void actor_die(struct actor *actor, struct actor *killer);
 
 #endif

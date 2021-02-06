@@ -2322,6 +2322,19 @@ static void render(TCOD_console_t console)
                 panel_rect.console,
                 1,
                 y - current_panel_status->scroll,
+                "Faction");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                faction_data[world->player->faction].name);
+            y++;
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
                 "Level");
             TCOD_console_printf_ex(
                 panel_rect.console,

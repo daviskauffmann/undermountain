@@ -664,7 +664,11 @@ void map_generate(struct map *map)
         {
             room_get_random_pos(room, &x, &y);
         } while (map->tiles[x][y].object != NULL);
-        enum item_type type = TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1);
+        enum item_type type;
+        do
+        {
+            type = TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1);
+        } while (item_data[type].unique ? !item_data[type].spawned : false);
         struct item *item = item_new(
             type,
             map->floor,

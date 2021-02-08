@@ -903,6 +903,7 @@ bool actor_drink(struct actor *actor, int x, int y)
 
             return false;
         }
+
         int hp = actor->max_hp - actor->current_hp;
         actor->current_hp += hp;
         if (actor->current_hp > actor->max_hp)

@@ -164,16 +164,18 @@ void assets_load(void)
     EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand");
     EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand");
 
+    ITEM_DATA(ITEM_TYPE_556, "5.56x45mm", "Some kind of small pointy metal?", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 200, AMMUNITION_TYPE_556, false);
     ITEM_DATA(ITEM_TYPE_BODKIN_ARROW, "Bodkin Arrow", "Arrow designed for penetrating armor.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_ARROW, false);
     ITEM_DATA(ITEM_TYPE_BOLT, "Bolt", "Standard ammunition for a crossbow.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_BOLT, false);
     ITEM_DATA(ITEM_TYPE_COLD_IRON_BLADE, "Cold Iron Blade", "A magical sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
     ITEM_DATA(ITEM_TYPE_CROSSBOW, "Crossbow", "A powerful ranged weapon.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, true, 100, false, 1, AMMUNITION_TYPE_BOLT, false);
-    ITEM_DATA(ITEM_TYPE_IRON_ARMOR, "Iron Armor", "A set of iron armor.", '[', TCOD_white, EQUIP_SLOT_ARMOR, false, 3, 0, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_GREATSWORD, "Greatsword", "A two-handed straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
-    ITEM_DATA(ITEM_TYPE_LONGSWORD, "Longsword", "A straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
-    ITEM_DATA(ITEM_TYPE_LONGBOW, "Longbow", "A tall war bow.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 1, 8, true, 100, false, 1, AMMUNITION_TYPE_ARROW, false);
-    ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", ')', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, 10, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_IRON_ARMOR, "Iron Armor", "A set of iron armor.", '[', TCOD_white, EQUIP_SLOT_ARMOR, false, 3, 0, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", ')', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_LONGBOW, "Longbow", "A tall war bow.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 1, 8, true, 100, false, 1, AMMUNITION_TYPE_ARROW, false);
+    ITEM_DATA(ITEM_TYPE_LONGSWORD, "Longsword", "A straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
+    ITEM_DATA(ITEM_TYPE_M4_CARBINE, "M4 Carbine", "Some kind of metal crossbow?", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 20, 40, true, 100, false, 1, AMMUNITION_TYPE_556, true);
     ITEM_DATA(ITEM_TYPE_SCEPTER_OF_UNITY, "Scepter of Unity", "A magical scepter.", '!', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
     ITEM_DATA(ITEM_TYPE_SPIKED_SHIELD, "Spiked Shield", "A spiked shield.", ')', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 4, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
 

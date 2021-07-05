@@ -9,6 +9,7 @@
 #include <time.h>
 
 #include "actor.h"
+#include "assets.h"
 #include "corpse.h"
 #include "explosion.h"
 #include "message.h"
@@ -77,6 +78,10 @@ void world_setup(void)
     assert(world);
     world->random = NULL;
     world->time = 0;
+    for (enum item_type item_type = 0; item_type < NUM_ITEM_TYPES; item_type++)
+    {
+        item_data[item_type].spawned = false;
+    }
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
@@ -116,7 +121,7 @@ void world_create(void)
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
-        map_generate(map);
+        map_generate(map, TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
     }
 
     // DEBUG: spawn stuff

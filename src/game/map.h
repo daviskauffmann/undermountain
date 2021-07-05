@@ -8,6 +8,15 @@
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
 
+enum map_type
+{
+    MAP_TYPE_LARGE_DUNGEON,
+    MAP_TYPE_SMALL_DUNGEON,
+    MAP_TYPE_CAVES,
+
+    NUM_MAP_TYPES,
+};
+
 struct map
 {
     unsigned int floor;
@@ -28,7 +37,7 @@ struct map
 
 void map_setup(struct map *map, unsigned int floor);
 void map_cleanup(struct map *map);
-void map_generate(struct map *map);
+void map_generate(struct map *map, enum map_type map_type);
 bool map_is_inside(int x, int y);
 struct room *map_get_random_room(struct map *map);
 bool map_is_transparent(struct map *map, int x, int y);

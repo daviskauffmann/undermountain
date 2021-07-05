@@ -9,23 +9,6 @@
 #include "util.h"
 #include "world.h"
 
-#define MAP_ALGORITHM_DEFAULT 0
-#define MAP_ALGORITHM_BSP 1
-#define MAP_ALGORITHM MAP_ALGORITHM_DEFAULT
-
-#if MAP_ALGORITHM == MAP_ALGORITHM_DEFAULT
-#define DEFAULT_NUM_ROOM_ATTEMPTS 20
-#define DEFAULT_MIN_ROOM_SIZE 5
-#define DEFAULT_MAX_ROOM_SIZE 15
-#define DEFAULT_ROOM_BUFFER 3
-#define DEFAULT_PREVENT_OVERLAP_CHANCE 0.5f
-#elif MAP_ALGORITHM == MAP_ALGORITHM_BSP
-#define BSP_MIN_ROOM_SIZE 4
-#define BSP_DEPTH 8
-#define BSP_RANDOM_ROOMS 0
-#define BSP_ROOM_WALLS 1
-#endif
-
 #define DOOR_CHANCE 0.5f
 #define SPAWN_OBJECTS 5
 #define SPAWN_ADVENTURERS 1
@@ -174,9 +157,21 @@ static void vline_down(struct map *map, int x, int y)
     }
 }
 
+struct traverse_node_data
+{
+    struct map *map;
+    int min_room_size;
+    bool room_walls;
+    bool random_rooms;
+};
+
 static bool traverse_node(TCOD_bsp_t *node, void *data)
 {
-    struct map *map = (struct map *)data;
+    struct traverse_node_data *traverse_node_data = (struct traverse_node_data *)data;
+    struct map *map = traverse_node_data->map;
+    int min_room_size = traverse_node_data->min_room_size;
+    bool room_walls = traverse_node_data->room_walls;
+    bool random_rooms = traverse_node_data->random_rooms;
 
     if (TCOD_bsp_is_leaf(node))
     {
@@ -184,16 +179,19 @@ static bool traverse_node(TCOD_bsp_t *node, void *data)
         int maxx = node->x + node->w - 1;
         int miny = node->y + 1;
         int maxy = node->y + node->h - 1;
-#if !BSP_ROOM_WALLS
-        if (minx > 1)
+
+        if (!room_walls)
         {
-            minx--;
+            if (minx > 1)
+            {
+                minx--;
+            }
+            if (miny > 1)
+            {
+                miny--;
+            }
         }
-        if (miny > 1)
-        {
-            miny--;
-        }
-#endif
+
         if (maxx == MAP_WIDTH - 1)
         {
             maxx--;
@@ -202,12 +200,15 @@ static bool traverse_node(TCOD_bsp_t *node, void *data)
         {
             maxy--;
         }
-#if BSP_RANDOM_ROOMS
-        minx = TCOD_random_get_int(world->random, minx, maxx - BSP_MIN_ROOM_SIZE + 1);
-        miny = TCOD_random_get_int(world->random, miny, maxy - BSP_MIN_ROOM_SIZE + 1);
-        maxx = TCOD_random_get_int(world->random, minx + BSP_MIN_ROOM_SIZE - 1, maxx);
-        maxy = TCOD_random_get_int(world->random, miny + BSP_MIN_ROOM_SIZE - 1, maxy);
-#endif
+
+        if (random_rooms)
+        {
+            minx = TCOD_random_get_int(world->random, minx, maxx - min_room_size + 1);
+            miny = TCOD_random_get_int(world->random, miny, maxy - min_room_size + 1);
+            maxx = TCOD_random_get_int(world->random, minx + min_room_size - 1, maxx);
+            maxy = TCOD_random_get_int(world->random, miny + min_room_size - 1, maxy);
+        }
+
         node->x = minx;
         node->y = miny;
         node->w = maxx - minx + 1;
@@ -275,128 +276,177 @@ static bool traverse_node(TCOD_bsp_t *node, void *data)
 }
 #endif
 
-void map_generate(struct map *map)
+void map_generate(struct map *map, enum map_type map_type)
 {
+    // setup default tile state
     for (int x = 0; x < MAP_WIDTH; x++)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             struct tile *tile = &map->tiles[x][y];
-#if MAP_ALGORITHM == MAP_ALGORITHM_DEFAULT
-            tile->type = TILE_TYPE_EMPTY;
-#elif MAP_ALGORITHM == MAP_ALGORITHM_BSP
-            tile->type = TILE_TYPE_WALL;
-#endif
+            switch (map_type)
+            {
+            case MAP_TYPE_LARGE_DUNGEON:
+                tile->type = TILE_TYPE_EMPTY;
+                break;
+            case MAP_TYPE_SMALL_DUNGEON:
+                tile->type = TILE_TYPE_WALL;
+                break;
+            case MAP_TYPE_CAVES:
+                tile->type = TILE_TYPE_EMPTY;
+                break;
+            default:
+                tile->type = TILE_TYPE_EMPTY;
+                break;
+            }
         }
     }
 
-#if MAP_ALGORITHM == MAP_ALGORITHM_DEFAULT
-    for (int i = 0; i < DEFAULT_NUM_ROOM_ATTEMPTS; i++)
+    // create rooms
+    switch (map_type)
     {
-        int room_x = TCOD_random_get_int(world->random, 0, MAP_WIDTH);
-        int room_y = TCOD_random_get_int(world->random, 0, MAP_HEIGHT);
-        int room_w = TCOD_random_get_int(world->random, DEFAULT_MIN_ROOM_SIZE, DEFAULT_MAX_ROOM_SIZE);
-        int room_h = TCOD_random_get_int(world->random, DEFAULT_MIN_ROOM_SIZE, DEFAULT_MAX_ROOM_SIZE);
-        if (room_x < DEFAULT_ROOM_BUFFER ||
-            room_x + room_w > MAP_WIDTH - DEFAULT_ROOM_BUFFER ||
-            room_y < DEFAULT_ROOM_BUFFER ||
-            room_y + room_h > MAP_HEIGHT - DEFAULT_ROOM_BUFFER)
-        {
-            continue;
-        }
+    case MAP_TYPE_LARGE_DUNGEON:
+    {
+        int num_room_attempts = 20;
+        int min_room_size = 5;
+        int max_room_size = 15;
+        int room_buffer = 3;
+        float prevent_overlap_chance = 0.5f;
 
-        if (TCOD_random_get_float(world->random, 0, 1) < DEFAULT_PREVENT_OVERLAP_CHANCE)
+        for (int i = 0; i < num_room_attempts; i++)
         {
-            bool overlap = false;
-            for (int x = room_x - DEFAULT_ROOM_BUFFER; x < room_x + room_w + DEFAULT_ROOM_BUFFER; x++)
-            {
-                for (int y = room_y - DEFAULT_ROOM_BUFFER; y < room_y + room_h + DEFAULT_ROOM_BUFFER; y++)
-                {
-                    struct tile *tile = &map->tiles[x][y];
-                    if (tile->type == TILE_TYPE_FLOOR)
-                    {
-                        overlap = true;
-                    }
-                }
-            }
-            if (overlap)
+            int room_x = TCOD_random_get_int(world->random, 0, MAP_WIDTH);
+            int room_y = TCOD_random_get_int(world->random, 0, MAP_HEIGHT);
+            int room_w = TCOD_random_get_int(world->random, min_room_size, max_room_size);
+            int room_h = TCOD_random_get_int(world->random, min_room_size, max_room_size);
+            if (room_x < room_buffer ||
+                room_x + room_w > MAP_WIDTH - room_buffer ||
+                room_y < room_buffer ||
+                room_y + room_h > MAP_HEIGHT - room_buffer)
             {
                 continue;
             }
+
+            if (TCOD_random_get_float(world->random, 0, 1) < prevent_overlap_chance)
+            {
+                bool overlap = false;
+                for (int x = room_x - room_buffer; x < room_x + room_w + room_buffer; x++)
+                {
+                    for (int y = room_y - room_buffer; y < room_y + room_h + room_buffer; y++)
+                    {
+                        struct tile *tile = &map->tiles[x][y];
+                        if (tile->type == TILE_TYPE_FLOOR)
+                        {
+                            overlap = true;
+                        }
+                    }
+                }
+                if (overlap)
+                {
+                    continue;
+                }
+            }
+
+            for (int x = room_x; x < room_x + room_w; x++)
+            {
+                for (int y = room_y; y < room_y + room_h; y++)
+                {
+                    struct tile *tile = &map->tiles[x][y];
+                    tile->type = TILE_TYPE_FLOOR;
+                }
+            }
+            struct room *room = room_new(room_x, room_y, room_w, room_h);
+            TCOD_list_push(map->rooms, room);
         }
 
-        for (int x = room_x; x < room_x + room_w; x++)
+        for (int i = 0; i < TCOD_list_size(map->rooms) - 1; i++)
         {
-            for (int y = room_y; y < room_y + room_h; y++)
+            struct room *room = TCOD_list_get(map->rooms, i);
+            int x1, y1, x2, y2;
+            struct room *next_room = TCOD_list_get(map->rooms, i + 1);
+            room_get_random_pos(room, &x1, &y1);
+            room_get_random_pos(next_room, &x2, &y2);
+            if (TCOD_random_get_int(world->random, 0, 1) == 0)
             {
-                struct tile *tile = &map->tiles[x][y];
-                tile->type = TILE_TYPE_FLOOR;
+                vline(map, x1, y1, y2);
+                hline(map, x1, y2, x2);
+            }
+            else
+            {
+                hline(map, x1, y1, x2);
+                vline(map, x2, y1, y2);
             }
         }
-        struct room *room = room_new(room_x, room_y, room_w, room_h);
-        TCOD_list_push(map->rooms, room);
-    }
 
-    for (int i = 0; i < TCOD_list_size(map->rooms) - 1; i++)
-    {
-        struct room *room = TCOD_list_get(map->rooms, i);
-        int x1, y1, x2, y2;
-        struct room *next_room = TCOD_list_get(map->rooms, i + 1);
-        room_get_random_pos(room, &x1, &y1);
-        room_get_random_pos(next_room, &x2, &y2);
-        if (TCOD_random_get_int(world->random, 0, 1) == 0)
+        for (int x = 1; x < MAP_WIDTH - 1; x++)
         {
-            vline(map, x1, y1, y2);
-            hline(map, x1, y2, x2);
-        }
-        else
-        {
-            hline(map, x1, y1, x2);
-            vline(map, x2, y1, y2);
-        }
-    }
-
-    for (int x = 1; x < MAP_WIDTH - 1; x++)
-    {
-        for (int y = 1; y < MAP_HEIGHT - 1; y++)
-        {
-            struct tile *tile = &map->tiles[x][y];
-            if (tile->type == TILE_TYPE_FLOOR)
+            for (int y = 1; y < MAP_HEIGHT - 1; y++)
             {
-                struct tile *neighbors[8];
-                neighbors[0] = &map->tiles[x + 0][y - 1];
-                neighbors[1] = &map->tiles[x + 1][y - 1];
-                neighbors[2] = &map->tiles[x + 1][y + 0];
-                neighbors[3] = &map->tiles[x + 1][y + 1];
-                neighbors[4] = &map->tiles[x + 0][y + 1];
-                neighbors[5] = &map->tiles[x - 1][y + 1];
-                neighbors[6] = &map->tiles[x - 1][y + 0];
-                neighbors[7] = &map->tiles[x - 1][y - 1];
-                for (int i = 0; i < 8; i++)
+                struct tile *tile = &map->tiles[x][y];
+                if (tile->type == TILE_TYPE_FLOOR)
                 {
-                    struct tile *neighbor = neighbors[i];
-                    if (neighbor->type == TILE_TYPE_EMPTY)
+                    struct tile *neighbors[8];
+                    neighbors[0] = &map->tiles[x + 0][y - 1];
+                    neighbors[1] = &map->tiles[x + 1][y - 1];
+                    neighbors[2] = &map->tiles[x + 1][y + 0];
+                    neighbors[3] = &map->tiles[x + 1][y + 1];
+                    neighbors[4] = &map->tiles[x + 0][y + 1];
+                    neighbors[5] = &map->tiles[x - 1][y + 1];
+                    neighbors[6] = &map->tiles[x - 1][y + 0];
+                    neighbors[7] = &map->tiles[x - 1][y - 1];
+                    for (int i = 0; i < 8; i++)
                     {
-                        neighbor->type = TILE_TYPE_WALL;
+                        struct tile *neighbor = neighbors[i];
+                        if (neighbor->type == TILE_TYPE_EMPTY)
+                        {
+                            neighbor->type = TILE_TYPE_WALL;
+                        }
                     }
                 }
             }
         }
     }
-#elif MAP_ALGORITHM == MAP_ALGORITHM_BSP
-    TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    TCOD_bsp_split_recursive(
-        bsp,
-        NULL,
-        BSP_DEPTH,
-        BSP_MIN_ROOM_SIZE + (BSP_ROOM_WALLS ? 1 : 0),
-        BSP_MIN_ROOM_SIZE + (BSP_ROOM_WALLS ? 1 : 0),
-        1.5f,
-        1.5f);
-    TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, map);
-    TCOD_bsp_delete(bsp);
-#endif
+    break;
+    case MAP_TYPE_SMALL_DUNGEON:
+    {
+        int depth = 8;
+        int min_room_size = 4;
+        bool room_walls = true;
+        bool random_rooms = false;
 
+        TCOD_bsp_t *bsp = TCOD_bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT);
+        TCOD_bsp_split_recursive(
+            bsp,
+            NULL,
+            depth,
+            min_room_size + (room_walls ? 1 : 0),
+            min_room_size + (room_walls ? 1 : 0),
+            1.5f,
+            1.5f);
+
+        struct traverse_node_data traverse_node_data;
+        traverse_node_data.map = map;
+        traverse_node_data.min_room_size = min_room_size;
+        traverse_node_data.room_walls = room_walls;
+        traverse_node_data.random_rooms = random_rooms;
+        TCOD_bsp_traverse_inverted_level_order(bsp, traverse_node, &traverse_node_data);
+
+        TCOD_bsp_delete(bsp);
+    }
+    break;
+    case MAP_TYPE_CAVES:
+    {
+        struct room *room = room_new(0, 0, MAP_WIDTH, MAP_HEIGHT);
+        TCOD_list_push(map->rooms, room);
+    }
+    break;
+    default:
+    {
+    }
+    break;
+    }
+
+    // populate doors
     for (int x = 0; x < MAP_WIDTH; x++)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
@@ -456,6 +506,7 @@ void map_generate(struct map *map)
         }
     }
 
+    // create stairs down
     do
     {
         struct room *stair_down_room = map_get_random_room(map);
@@ -475,6 +526,7 @@ void map_generate(struct map *map)
     TCOD_list_push(map->objects, stair_down);
     stair_down_tile->object = stair_down;
 
+    // create stairs up
     do
     {
         struct room *stair_up_room = map_get_random_room(map);
@@ -494,6 +546,7 @@ void map_generate(struct map *map)
     TCOD_list_push(map->objects, stair_up);
     stair_up_tile->object = stair_up;
 
+    // spawn objects
     for (int i = 0; i < SPAWN_OBJECTS; i++)
     {
         struct room *room = map_get_random_room(map);
@@ -572,6 +625,7 @@ void map_generate(struct map *map)
         tile->object = object;
     }
 
+    // spawn adventurers
     for (int i = 0; i < SPAWN_ADVENTURERS; i++)
     {
         struct room *room = map_get_random_room(map);
@@ -623,7 +677,8 @@ void map_generate(struct map *map)
         tile->actor = actor;
     }
 
-    // TODO: spawn monster packs with an elite leader
+    // spawn monsters
+    // TODO: monster packs with an elite leader
     for (int i = 0; i < SPAWN_MONSTERS; i++)
     {
         struct room *room = map_get_random_room(map);
@@ -656,6 +711,7 @@ void map_generate(struct map *map)
         }
     }
 
+    // spawn items
     for (int i = 0; i < SPAWN_ITEMS; i++)
     {
         struct room *room = map_get_random_room(map);

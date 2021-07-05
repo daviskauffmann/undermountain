@@ -27,9 +27,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         }
         break;
         default:
-        {
-        }
-        break;
+            break;
         }
     }
     break;
@@ -44,9 +42,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     }
     break;
     default:
-    {
-    }
-    break;
+        break;
     }
 
     return &about_scene;

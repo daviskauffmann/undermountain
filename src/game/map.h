@@ -13,6 +13,7 @@ enum map_type
     MAP_TYPE_LARGE_DUNGEON,
     MAP_TYPE_SMALL_DUNGEON,
     MAP_TYPE_CAVES,
+    MAP_TYPE_RUINS,
 
     NUM_MAP_TYPES,
 };

@@ -284,20 +284,38 @@ void map_generate(struct map *map, enum map_type map_type)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             struct tile *tile = &map->tiles[x][y];
-            switch (map_type)
+
+            if (x == 0 || x == MAP_WIDTH - 1 || y == 0 || y == MAP_HEIGHT - 1)
             {
-            case MAP_TYPE_LARGE_DUNGEON:
-                tile->type = TILE_TYPE_EMPTY;
-                break;
-            case MAP_TYPE_SMALL_DUNGEON:
                 tile->type = TILE_TYPE_WALL;
+            }
+            else
+            {
+                switch (map_type)
+                {
+                case MAP_TYPE_LARGE_DUNGEON:
+                {
+                    tile->type = TILE_TYPE_EMPTY;
+                }
                 break;
-            case MAP_TYPE_CAVES:
-                tile->type = TILE_TYPE_EMPTY;
+                case MAP_TYPE_SMALL_DUNGEON:
+                {
+                    tile->type = TILE_TYPE_WALL;
+                }
                 break;
-            default:
-                tile->type = TILE_TYPE_EMPTY;
+                case MAP_TYPE_CAVES:
+                {
+                    tile->type = TILE_TYPE_FLOOR;
+                }
                 break;
+                case MAP_TYPE_RUINS:
+                {
+                    tile->type = TCOD_random_get_int(world->random, 0, 4) == 0 ? TILE_TYPE_WALL : TILE_TYPE_FLOOR;
+                }
+                break;
+                case NUM_MAP_TYPES:
+                    break;
+                }
             }
         }
     }
@@ -440,10 +458,14 @@ void map_generate(struct map *map, enum map_type map_type)
         TCOD_list_push(map->rooms, room);
     }
     break;
-    default:
+    case MAP_TYPE_RUINS:
     {
+        struct room *room = room_new(0, 0, MAP_WIDTH, MAP_HEIGHT);
+        TCOD_list_push(map->rooms, room);
     }
     break;
+    case NUM_MAP_TYPES:
+        break;
     }
 
     // populate doors
@@ -511,7 +533,7 @@ void map_generate(struct map *map, enum map_type map_type)
     {
         struct room *stair_down_room = map_get_random_room(map);
         room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
-    } while (map->tiles[map->stair_down_x][map->stair_down_y].object != NULL);
+    } while (map->tiles[map->stair_down_x][map->stair_down_y].type == TILE_TYPE_FLOOR && map->tiles[map->stair_down_x][map->stair_down_y].object != NULL);
     struct object *stair_down = object_new(
         OBJECT_TYPE_STAIR_DOWN,
         map->floor,
@@ -531,7 +553,7 @@ void map_generate(struct map *map, enum map_type map_type)
     {
         struct room *stair_up_room = map_get_random_room(map);
         room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
-    } while (map->tiles[map->stair_up_x][map->stair_up_y].object != NULL);
+    } while (map->tiles[map->stair_up_x][map->stair_up_y].type == TILE_TYPE_FLOOR && map->tiles[map->stair_up_x][map->stair_up_y].object != NULL);
     struct object *stair_up = object_new(
         OBJECT_TYPE_STAIR_UP,
         map->floor,
@@ -554,7 +576,7 @@ void map_generate(struct map *map, enum map_type map_type)
         do
         {
             room_get_random_pos(room, &x, &y);
-        } while (map->tiles[x][y].object != NULL);
+        } while (map->tiles[x][y].type == TILE_TYPE_FLOOR && map->tiles[x][y].object != NULL);
         enum object_type type = 0;
         TCOD_color_t color = TCOD_white;
         int light_radius = -1;
@@ -633,7 +655,7 @@ void map_generate(struct map *map, enum map_type map_type)
         do
         {
             room_get_random_pos(room, &x, &y);
-        } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
+        } while (map->tiles[x][y].type == TILE_TYPE_FLOOR && map->tiles[x][y].actor != NULL && map->tiles[x][y].object != NULL);
         enum race race = TCOD_random_get_int(world->random, RACE_DWARF, RACE_HUMAN);
         char *name;
         switch (race)
@@ -686,7 +708,7 @@ void map_generate(struct map *map, enum map_type map_type)
         do
         {
             room_get_random_pos(room, &x, &y);
-        } while (map->tiles[x][y].actor != NULL || map->tiles[x][y].object != NULL);
+        } while (map->tiles[x][y].type == TILE_TYPE_FLOOR && map->tiles[x][y].actor != NULL && map->tiles[x][y].object != NULL);
         enum monster monster = TCOD_random_get_int(world->random, 0, NUM_MONSTERS - 1);
         struct actor_prototype *monster_prototype = &monster_prototypes[monster];
         struct actor *actor = actor_new(
@@ -719,7 +741,7 @@ void map_generate(struct map *map, enum map_type map_type)
         do
         {
             room_get_random_pos(room, &x, &y);
-        } while (map->tiles[x][y].object != NULL);
+        } while (map->tiles[x][y].type == TILE_TYPE_FLOOR && map->tiles[x][y].object != NULL);
         enum item_type type;
         do
         {

@@ -1068,6 +1068,11 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 panel_toggle(PANEL_INVENTORY);
             }
             break;
+            case 'k':
+            {
+                actor_die(world->player, NULL);
+            }
+            break;
             case 'l':
             {
                 if (targeting == TARGETING_LOOK)
@@ -1291,16 +1296,12 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             break;
             default:
-            {
-            }
-            break;
+                break;
             }
         }
         break;
         default:
-        {
-        }
-        break;
+            break;
         }
     }
     break;
@@ -1328,59 +1329,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 else
                 {
                     tooltip_hide();
-                }
-            }
-            else if (rect_is_inside(view_rect, mouse_x, mouse_y))
-            {
-                if (can_take_turn)
-                {
-
-                    bool ranged = false;
-                    struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
-                    if (weapon)
-                    {
-                        struct item_datum item_datum = item_data[weapon->type];
-                        if (item_datum.ranged)
-                        {
-                            ranged = true;
-                        }
-                    }
-
-                    if (key.lctrl)
-                    {
-                        if (ranged)
-                        {
-                            actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
-                        }
-                        else
-                        {
-                            float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
-                            enum direction direction = get_direction_from_angle(angle);
-                            world->player->took_turn = player_swing(direction);
-                        }
-                    }
-                    else
-                    {
-                        struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
-                        if (tile->actor && tile->actor->faction != world->player->faction)
-                        {
-                            if (ranged)
-                            {
-                                actor_shoot(world->player, tile->actor->x, tile->actor->y);
-                            }
-                            else
-                            {
-                                automoving = true;
-                                automove_actor = tile->actor;
-                            }
-                        }
-                        else
-                        {
-                            automoving = true;
-                            automove_x = mouse_tile_x;
-                            automove_y = mouse_tile_y;
-                        }
-                    }
                 }
             }
             else if (rect_is_inside(panel_rect, mouse_x, mouse_y))
@@ -1478,52 +1426,62 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     panel_state[PANEL_SPELLBOOK].selection_mode = false;
                 }
             }
+            else if (map_is_inside(mouse_tile_x, mouse_tile_y))
+            {
+                if (can_take_turn)
+                {
+                    bool ranged = false;
+                    struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
+                    if (weapon)
+                    {
+                        struct item_datum item_datum = item_data[weapon->type];
+                        if (item_datum.ranged)
+                        {
+                            ranged = true;
+                        }
+                    }
+
+                    if (key.lctrl)
+                    {
+                        if (ranged)
+                        {
+                            actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
+                        }
+                        else
+                        {
+                            float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
+                            enum direction direction = get_direction_from_angle(angle);
+                            world->player->took_turn = player_swing(direction);
+                        }
+                    }
+                    else
+                    {
+                        struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
+                        if (tile->actor && tile->actor->faction != world->player->faction)
+                        {
+                            if (ranged)
+                            {
+                                actor_shoot(world->player, tile->actor->x, tile->actor->y);
+                            }
+                            else
+                            {
+                                automoving = true;
+                                automove_actor = tile->actor;
+                            }
+                        }
+                        else
+                        {
+                            automoving = true;
+                            automove_x = mouse_tile_x;
+                            automove_y = mouse_tile_y;
+                        }
+                    }
+                }
+            }
         }
         else if (mouse.rbutton)
         {
-            if (rect_is_inside(view_rect, mouse_x, mouse_y) && map_is_inside(mouse_tile_x, mouse_tile_y))
-            {
-                struct map *map = &world->maps[world->player->floor];
-                struct tile *tile = &map->tiles[mouse_tile_x][mouse_tile_y];
-                tooltip_show();
-                tooltip_options_add("Move", &toolip_option_on_click_move);
-                tooltip_options_add("Shoot", NULL); // TODO: only if ranged weapon equipped
-                tooltip_data.x = mouse_tile_x;
-                tooltip_data.y = mouse_tile_y;
-                if (tile->object)
-                {
-                    tooltip_options_add("Examine Object", NULL);
-                    tooltip_options_add("Interact", NULL);
-                    tooltip_options_add("Bash", NULL);
-                    tooltip_data.object = tile->object;
-                }
-                if (tile->actor)
-                {
-                    tooltip_options_add("Examine Actor", NULL);
-                    tooltip_options_add("Talk", NULL);
-                    tooltip_options_add("Swap", NULL);
-                    tooltip_options_add("Attack", NULL);
-                    if (tile->actor == world->player)
-                    {
-                        tooltip_options_add("Character Sheet", NULL);
-                        tooltip_options_add("Inventory", NULL);
-                        tooltip_options_add("Spellbook", NULL);
-                    }
-                    tooltip_data.actor = tile->actor;
-                }
-                if (TCOD_list_peek(tile->items))
-                {
-                    tooltip_options_add("Examine Item", NULL);
-                    tooltip_options_add("Take Item", NULL);
-                    tooltip_data.item = TCOD_list_peek(tile->items);
-                }
-                if (TCOD_list_size(tile->items) > 1)
-                {
-                    tooltip_options_add("Take All", NULL);
-                }
-                tooltip_options_add("Cancel", NULL);
-            }
-            else if (rect_is_inside(panel_rect, mouse_x, mouse_y))
+            if (rect_is_inside(panel_rect, mouse_x, mouse_y))
             {
                 switch (current_panel)
                 {
@@ -1590,10 +1548,50 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
                 break;
                 case NUM_PANELS:
+                    break;
+                }
+            }
+            else if (map_is_inside(mouse_tile_x, mouse_tile_y))
+            {
+                struct map *map = &world->maps[world->player->floor];
+                struct tile *tile = &map->tiles[mouse_tile_x][mouse_tile_y];
+                tooltip_show();
+                tooltip_options_add("Move", &toolip_option_on_click_move);
+                tooltip_options_add("Shoot", NULL); // TODO: only if ranged weapon equipped
+                tooltip_data.x = mouse_tile_x;
+                tooltip_data.y = mouse_tile_y;
+                if (tile->object)
                 {
+                    tooltip_options_add("Examine Object", NULL);
+                    tooltip_options_add("Interact", NULL);
+                    tooltip_options_add("Bash", NULL);
+                    tooltip_data.object = tile->object;
                 }
-                break;
+                if (tile->actor)
+                {
+                    tooltip_options_add("Examine Actor", NULL);
+                    tooltip_options_add("Talk", NULL);
+                    tooltip_options_add("Swap", NULL);
+                    tooltip_options_add("Attack", NULL);
+                    if (tile->actor == world->player)
+                    {
+                        tooltip_options_add("Character Sheet", NULL);
+                        tooltip_options_add("Inventory", NULL);
+                        tooltip_options_add("Spellbook", NULL);
+                    }
+                    tooltip_data.actor = tile->actor;
                 }
+                if (TCOD_list_peek(tile->items))
+                {
+                    tooltip_options_add("Examine Item", NULL);
+                    tooltip_options_add("Take Item", NULL);
+                    tooltip_data.item = TCOD_list_peek(tile->items);
+                }
+                if (TCOD_list_size(tile->items) > 1)
+                {
+                    tooltip_options_add("Take All", NULL);
+                }
+                tooltip_options_add("Cancel", NULL);
             }
         }
         else if (mouse.wheel_down)
@@ -1613,9 +1611,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     }
     break;
     default:
-    {
-    }
-    break;
+        break;
     }
 
     if (automoving && can_take_turn)
@@ -2658,9 +2654,7 @@ static void render(TCOD_console_t console)
         }
         break;
         case NUM_PANELS:
-        {
-        }
-        break;
+            break;
         }
 
         TCOD_console_blit(

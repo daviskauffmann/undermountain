@@ -522,9 +522,7 @@ bool actor_move(struct actor *actor, int x, int y)
         }
         break;
         case NUM_OBJECT_TYPES:
-        {
-        }
-        break;
+            break;
         }
 
         if (!object_data[object_type].is_walkable)
@@ -1528,9 +1526,7 @@ bool actor_cast_spell(struct actor *actor, int x, int y)
     }
     break;
     case NUM_SPELL_TYPES:
-    {
-    }
-    break;
+        break;
     }
 
     return true;

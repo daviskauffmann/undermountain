@@ -113,6 +113,7 @@ struct actor
     TCOD_color_t flash_color;
     float flash_fade_coef;
     bool controllable;
+    // TODO: list of known spells
 };
 
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);

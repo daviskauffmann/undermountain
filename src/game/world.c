@@ -175,6 +175,7 @@ void world_create(void)
             int y = map->stair_up_y + 1;
             struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, x, y);
             pet->leader = world->hero;
+            // pet->controllable = true;
             TCOD_list_push(map->actors, pet);
             struct tile *tile = &map->tiles[x][y];
             tile->actor = pet;
@@ -703,7 +704,8 @@ void world_update(float delta_time)
             // update world state
             world->time++;
 
-            // if there is a controllable actor, return control back to the UI
+            // reset all actor turns
+            // if there are no controllable actors, return control back to the UI so the current state will be rendered
             bool controllable_exists = false;
             TCOD_LIST_FOREACH(map->actors)
             {
@@ -794,13 +796,13 @@ void world_update(float delta_time)
 // also, need to store whether the event was initially seen by the player
 void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
-    // if (!world->player ||
-    //     floor != world->player->floor ||
-    //     !world->player->fov ||
-    //     !TCOD_map_is_in_fov(world->player->fov, x, y))
-    // {
-    //     return;
-    // }
+    if (!world->player ||
+        floor != world->player->floor ||
+        !world->player->fov ||
+        !TCOD_map_is_in_fov(world->player->fov, x, y))
+    {
+        return;
+    }
 
     va_list args;
     va_start(args, fmt);

@@ -364,9 +364,17 @@ static struct tooltip_option *tooltip_option_mouseover(void)
     return NULL;
 }
 
+/* HUD */
+
+static struct rect hud_rect;
+
 /* Message log */
 
 static struct rect message_log_rect;
+
+/* Status */
+
+static struct rect status_rect;
 
 /* Side panel */
 
@@ -483,6 +491,12 @@ static void init(struct scene *previous_scene)
 
     tooltip_rect.console = TCOD_console_new(console_width, console_height);
     tooltip_options = TCOD_list_new();
+
+    hud_rect.console = TCOD_console_new(console_width, console_height);
+    hud_rect.visible = true;
+
+    status_rect.console = TCOD_console_new(console_width, console_height);
+    status_rect.visible = true;
 
     message_log_rect.console = TCOD_console_new(console_width, console_height);
     message_log_rect.visible = true;
@@ -1046,7 +1060,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             break;
             case 'h':
             {
-                view_rect.visible = !view_rect.visible;
+                hud_rect.visible = !hud_rect.visible;
             }
             break;
             case 'i':
@@ -1066,11 +1080,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     target_x = world->player->x;
                     target_y = world->player->y;
                 }
-            }
-            break;
-            case 'm':
-            {
-                message_log_rect.visible = !message_log_rect.visible;
             }
             break;
             case 'O':
@@ -1681,13 +1690,30 @@ static void render(TCOD_console_t console)
     struct map *map = &world->maps[world->player->floor];
 
     // calculate ui sizes
-    if (message_log_rect.visible)
+    if (hud_rect.visible)
     {
-        // message log should take up the bottom 4th of the window
-        message_log_rect.x = 0;
-        message_log_rect.height = console_height / 4;
-        message_log_rect.y = console_height - message_log_rect.height;
-        message_log_rect.width = console_width;
+        hud_rect.x = 0;
+        hud_rect.height = console_height / 4;
+        hud_rect.y = console_height - hud_rect.height;
+        hud_rect.width = console_width;
+
+        if (status_rect.visible)
+        {
+            // status should take up the bottom 4th and left 1/3rd of the window
+            status_rect.x = 0;
+            status_rect.height = hud_rect.height;
+            status_rect.y = hud_rect.height - status_rect.height;
+            status_rect.width = hud_rect.width / 3;
+        }
+
+        if (message_log_rect.visible)
+        {
+            // message log should take up the bottom 4th and right 2/3rds of the window
+            message_log_rect.x = hud_rect.width / 3;
+            message_log_rect.height = hud_rect.height;
+            message_log_rect.y = hud_rect.height - message_log_rect.height;
+            message_log_rect.width = hud_rect.width - message_log_rect.x;
+        }
     }
 
     if (panel_rect.visible)
@@ -1696,7 +1722,7 @@ static void render(TCOD_console_t console)
         panel_rect.width = console_width / 2;
         panel_rect.x = console_width - panel_rect.width;
         panel_rect.y = 0;
-        panel_rect.height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);
+        panel_rect.height = console_height - (hud_rect.visible ? hud_rect.height : 0);
     }
 
     if (tooltip_rect.visible)
@@ -1741,7 +1767,7 @@ static void render(TCOD_console_t console)
         // determine size of the game area
         // it should be centered on the player, unless the player gets close to a map edge in which case it will stop
         view_rect.width = console_width - (panel_rect.visible ? panel_rect.width : 0);
-        view_rect.height = console_height - (message_log_rect.visible ? message_log_rect.height : 0);
+        view_rect.height = console_height - (hud_rect.visible ? hud_rect.height : 0);
         view_rect.x = world->player ? world->player->x - view_rect.width / 2 : MAP_WIDTH / 2;
         view_rect.y = world->player ? world->player->y - view_rect.height / 2 : MAP_HEIGHT / 2;
         if (view_rect.x + view_rect.width > MAP_WIDTH)
@@ -2225,45 +2251,112 @@ static void render(TCOD_console_t console)
         }
     }
 
-    if (message_log_rect.visible)
+    if (hud_rect.visible)
     {
-        TCOD_console_set_default_background(message_log_rect.console, TCOD_black);
-        TCOD_console_set_default_foreground(message_log_rect.console, TCOD_white);
-        TCOD_console_clear(message_log_rect.console);
+        TCOD_console_set_default_background(hud_rect.console, TCOD_black);
+        TCOD_console_set_default_foreground(hud_rect.console, TCOD_white);
+        TCOD_console_clear(hud_rect.console);
 
-        int y = 1;
-        TCOD_LIST_FOREACH(world->messages)
+        if (status_rect.visible)
         {
-            struct message *message = *iterator;
-            TCOD_console_set_default_foreground(message_log_rect.console, message->color);
+            TCOD_console_set_default_background(status_rect.console, TCOD_black);
+            TCOD_console_set_default_foreground(status_rect.console, TCOD_white);
+            TCOD_console_clear(status_rect.console);
+
+            int y = 1;
+
+            TCOD_console_set_default_foreground(status_rect.console, TCOD_red);
             TCOD_console_printf(
-                message_log_rect.console,
+                status_rect.console,
                 1,
-                y,
-                message->text);
-            y++;
+                y++,
+                "HP: %d/%d",
+                world->player->current_hp,
+                world->player->max_hp);
+
+            TCOD_console_set_default_foreground(status_rect.console, TCOD_white);
+            TCOD_console_printf(
+                status_rect.console,
+                1,
+                y++,
+                "Floor: %d",
+                world->player->floor);
+
+            TCOD_console_set_default_foreground(status_rect.console, TCOD_white);
+            TCOD_console_printf_frame(
+                status_rect.console,
+                0,
+                0,
+                status_rect.width,
+                status_rect.height,
+                false,
+                TCOD_BKGND_SET,
+                NULL);
+
+            TCOD_console_blit(
+                status_rect.console,
+                0,
+                0,
+                status_rect.width,
+                status_rect.height,
+                hud_rect.console,
+                status_rect.x,
+                status_rect.y,
+                1.0f,
+                1.0f);
         }
 
-        TCOD_console_set_default_foreground(message_log_rect.console, TCOD_white);
-        TCOD_console_printf_frame(
-            message_log_rect.console,
-            0,
-            0,
-            message_log_rect.width,
-            message_log_rect.height,
-            false,
-            TCOD_BKGND_SET,
-            "Log");
+        if (message_log_rect.visible)
+        {
+            TCOD_console_set_default_background(message_log_rect.console, TCOD_black);
+            TCOD_console_set_default_foreground(message_log_rect.console, TCOD_white);
+            TCOD_console_clear(message_log_rect.console);
+
+            int y = 1;
+            TCOD_LIST_FOREACH(world->messages)
+            {
+                struct message *message = *iterator;
+                TCOD_console_set_default_foreground(message_log_rect.console, message->color);
+                TCOD_console_printf(
+                    message_log_rect.console,
+                    1,
+                    y++,
+                    message->text);
+            }
+
+            TCOD_console_set_default_foreground(message_log_rect.console, TCOD_white);
+            TCOD_console_printf_frame(
+                message_log_rect.console,
+                0,
+                0,
+                message_log_rect.width,
+                message_log_rect.height,
+                false,
+                TCOD_BKGND_SET,
+                NULL);
+
+            TCOD_console_blit(
+                message_log_rect.console,
+                0,
+                0,
+                message_log_rect.width,
+                message_log_rect.height,
+                hud_rect.console,
+                message_log_rect.x,
+                message_log_rect.y,
+                1.0f,
+                1.0f);
+        }
 
         TCOD_console_blit(
-            message_log_rect.console,
+            hud_rect.console,
             0,
             0,
-            message_log_rect.width,
-            message_log_rect.height,
+            hud_rect.width,
+            hud_rect.height,
             console,
-            message_log_rect.x,
-            message_log_rect.y,
+            hud_rect.x,
+            hud_rect.y,
             1.0f,
             1.0f);
     }
@@ -2669,6 +2762,7 @@ static void quit(void)
         struct tooltip_option *tooltip_option = *iterator;
         tooltip_option_delete(tooltip_option);
     }
+    TCOD_console_delete(status_rect.console);
     TCOD_console_delete(message_log_rect.console);
     TCOD_console_delete(panel_rect.console);
     TCOD_console_delete(tooltip_rect.console);

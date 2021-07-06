@@ -2308,15 +2308,21 @@ static void render(TCOD_console_t console)
             TCOD_console_set_default_foreground(message_log_rect.console, TCOD_white);
             TCOD_console_clear(message_log_rect.console);
 
-            int y = 1;
-            TCOD_LIST_FOREACH(world->messages)
+            int y = message_log_rect.height - 2;
+            int message_index = TCOD_list_size(world->messages) - 1;
+            while (y > 0 && message_index >= 0)
             {
-                struct message *message = *iterator;
-                TCOD_console_set_default_foreground(message_log_rect.console, message->color);
+                struct message *message = TCOD_list_get(world->messages, message_index--);
+                if (!message)
+                {
+                    break;
+                }
+
+                TCOD_console_set_default_foreground(message_log_rect.console, TCOD_color_lerp(TCOD_gray, message->color, (float)y / (message_log_rect.height - 2)));
                 TCOD_console_printf(
                     message_log_rect.console,
                     1,
-                    y++,
+                    y--,
                     message->text);
             }
 

@@ -183,9 +183,9 @@ void world_create(void)
     }
 
     world_log(
-        world->hero->floor,
-        world->hero->x,
-        world->hero->y,
+        -1,
+        -1,
+        -1,
         TCOD_white,
         "Hail, %s!",
         world->hero->name);
@@ -621,9 +621,9 @@ void world_load(const char *filename)
     TCOD_zip_delete(zip);
 
     world_log(
-        world->hero->floor,
-        world->hero->x,
-        world->hero->y,
+        -1,
+        -1,
+        -1,
         TCOD_white,
         "Welcome back, %s!",
         world->hero->name);
@@ -789,17 +789,13 @@ void world_update(float delta_time)
     }
 }
 
-// TODO: logging system overhaul
-// instead of logging messages directly, the world should store all the events that have happened
-// the renderer can read the last few events to generate a message (using assets as template strings)
-// this gives the ability to read the entire history of the world and do anything with it
-// also, need to store whether the event was initially seen by the player
 void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
-    if (!world->player ||
-        floor != world->player->floor ||
-        !world->player->fov ||
-        !TCOD_map_is_in_fov(world->player->fov, x, y))
+    if (floor != -1 &&
+        (!world->player ||
+         floor != world->player->floor ||
+         !world->player->fov ||
+         !TCOD_map_is_in_fov(world->player->fov, x, y)))
     {
         return;
     }
@@ -816,13 +812,6 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
     char *line_end;
     do
     {
-        if (TCOD_list_size(world->messages) == (TCOD_console_get_height(NULL) / 4) - 2) // TODO: hardcoded message_log_rect.height for now because we're gonna throw all this away soon
-        {
-            struct message *message = TCOD_list_get(world->messages, 0);
-            TCOD_list_remove(world->messages, message);
-            message_delete(message);
-        }
-
         line_end = strchr(line_begin, '\n');
         if (line_end)
         {

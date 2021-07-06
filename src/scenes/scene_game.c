@@ -2261,7 +2261,10 @@ static void render(TCOD_console_t console)
 
             int y = 1;
 
-            TCOD_console_set_default_foreground(status_rect.console, TCOD_red);
+            TCOD_console_set_default_foreground(status_rect.console,
+                                                (float)world->player->current_hp / world->player->max_hp > 0.5f
+                                                    ? TCOD_color_lerp(TCOD_yellow, TCOD_green, world->player->current_hp / (world->player->max_hp * 0.5f))
+                                                    : TCOD_color_lerp(TCOD_red, TCOD_yellow, world->player->current_hp / (world->player->max_hp * 0.5f)));
             TCOD_console_printf(
                 status_rect.console,
                 1,

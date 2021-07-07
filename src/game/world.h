@@ -23,7 +23,7 @@ extern struct world *world;
 
 void world_setup(void);
 void world_cleanup(void);
-void world_create(void);
+void world_create(struct actor *hero);
 void world_save(const char *filename);
 void world_load(const char *filename);
 void world_update(float delta_time);

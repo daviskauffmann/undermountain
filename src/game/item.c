@@ -17,7 +17,7 @@ struct item *item_new(enum item_type type, int floor, int x, int y, int stack)
     item->current_stack = MIN(item_data[type].max_stack, stack);
     if (item_data[type].unique)
     {
-        assert(!item_data[type].spawned);
+        // assert(!item_data[type].spawned);
         item_data[type].spawned = true;
     }
     return item;

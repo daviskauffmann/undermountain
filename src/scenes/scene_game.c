@@ -2290,7 +2290,7 @@ static void render(TCOD_console_t console)
                 status_rect.height,
                 false,
                 TCOD_BKGND_SET,
-                NULL);
+                "Status");
 
             TCOD_console_blit(
                 status_rect.console,
@@ -2338,7 +2338,7 @@ static void render(TCOD_console_t console)
                 message_log_rect.height,
                 false,
                 TCOD_BKGND_SET,
-                NULL);
+                "Messages");
 
             TCOD_console_blit(
                 message_log_rect.console,
@@ -2747,8 +2747,10 @@ static void render(TCOD_console_t console)
          TCOD_list_size(map->projectiles) > 0 ||
          TCOD_list_size(map->explosions) > 0))
     {
-        TCOD_console_printf(console, 0, 0, "%c", (char)31);
-        TCOD_console_printf(console, 0, 1, "%c", (char)30);
+        TCOD_console_set_char_background(tooltip_rect.console, 0, 0, TCOD_black, TCOD_BKGND_SET);
+        TCOD_console_set_char_foreground(tooltip_rect.console, 0, 1, TCOD_white);
+        TCOD_console_set_char(console, 0, 0, 31);
+        TCOD_console_set_char(console, 0, 1, 30);
     }
 }
 

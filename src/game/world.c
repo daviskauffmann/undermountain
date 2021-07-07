@@ -30,10 +30,6 @@
 // traps should be invisible (unless the actor can see them though skills or magic)
 // different trap types
 
-// TOOD: chests
-// should chests just give items and disappear?
-// or maybe they should be containers that actors can store items in
-
 // TODO: wands and staves?
 
 // TODO: rarity
@@ -95,8 +91,11 @@ void world_setup(void)
 
 void world_cleanup(void)
 {
-    TCOD_random_delete(world->random);
-    TCOD_namegen_destroy();
+    if (world->random)
+    {
+        TCOD_random_delete(world->random);
+        TCOD_namegen_destroy();
+    }
     for (int i = 0; i < NUM_MAPS; i++)
     {
         struct map *map = &world->maps[i];
@@ -112,8 +111,7 @@ void world_cleanup(void)
     world = NULL;
 }
 
-// TODO: this should accept an actor which will become the player, presumably passed from a character creation menu
-void world_create(void)
+void world_create(struct actor *hero)
 {
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, (unsigned int)time(0));
     TCOD_namegen_parse("data/namegen.txt", world->random);
@@ -124,61 +122,32 @@ void world_create(void)
         map_generate(map, TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
     }
 
-    // DEBUG: spawn stuff
+    world->hero = hero;
+
     {
         int floor = 0;
         struct map *map = &world->maps[floor];
 
-        // DEBUG: create player
+        // init player
         {
-            int x = map->stair_up_x;
-            int y = map->stair_up_y;
-            struct actor *hero = world->hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, floor + 1, floor, x, y);
+            hero->x = map->stair_up_x;
+            hero->y = map->stair_up_y;
+            hero->floor = floor;
             hero->energy_per_turn = 1.0f;
             hero->controllable = true;
+
             TCOD_list_push(map->actors, hero);
-            struct tile *tile = &map->tiles[x][y];
-            tile->actor = hero;
-            struct item *_556 = item_new(ITEM_TYPE_556, floor, x, y, 200);
-            TCOD_list_push(hero->items, _556);
-            struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, floor, x, y, 50);
-            TCOD_list_push(hero->items, bodkin_arrow);
-            struct item *bolt = item_new(ITEM_TYPE_BOLT, floor, x, y, 50);
-            TCOD_list_push(hero->items, bolt);
-            struct item *cold_iron_blade = item_new(ITEM_TYPE_COLD_IRON_BLADE, floor, x, y, 1);
-            TCOD_list_push(hero->items, cold_iron_blade);
-            struct item *crossbow = item_new(ITEM_TYPE_CROSSBOW, floor, x, y, 1);
-            TCOD_list_push(hero->items, crossbow);
-            struct item *iron_armor = item_new(ITEM_TYPE_IRON_ARMOR, floor, x, y, 1);
-            TCOD_list_push(hero->items, iron_armor);
-            struct item *greatsword = item_new(ITEM_TYPE_GREATSWORD, floor, x, y, 1);
-            TCOD_list_push(hero->items, greatsword);
-            struct item *healing_potion = item_new(ITEM_TYPE_HEALING_POTION, floor, x, y, 10);
-            TCOD_list_push(hero->items, healing_potion);
-            struct item *kite_shield = item_new(ITEM_TYPE_KITE_SHIELD, floor, x, y, 1);
-            TCOD_list_push(hero->items, kite_shield);
-            struct item *longbow = item_new(ITEM_TYPE_LONGBOW, floor, x, y, 1);
-            TCOD_list_push(hero->items, longbow);
-            struct item *longsword = item_new(ITEM_TYPE_LONGSWORD, floor, x, y, 1);
-            TCOD_list_push(hero->items, longsword);
-            struct item *m4_carbine = item_new(ITEM_TYPE_M4_CARBINE, floor, x, y, 1);
-            TCOD_list_push(hero->items, m4_carbine);
-            struct item *scepter_of_unity = item_new(ITEM_TYPE_SCEPTER_OF_UNITY, floor, x, y, 1);
-            TCOD_list_push(hero->items, scepter_of_unity);
-            struct item *spiked_shield = item_new(ITEM_TYPE_SPIKED_SHIELD, floor, x, y, 1);
-            TCOD_list_push(hero->items, spiked_shield);
+            map->tiles[hero->x][hero->y].actor = hero;
         }
 
-        // DEBUG: create pet
+        // create
         {
-            int x = map->stair_up_x + 1;
-            int y = map->stair_up_y + 1;
-            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, x, y);
+            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1);
             pet->leader = world->hero;
             // pet->controllable = true;
+
             TCOD_list_push(map->actors, pet);
-            struct tile *tile = &map->tiles[x][y];
-            tile->actor = pet;
+            map->tiles[pet->x][pet->y].actor = pet;
         }
     }
 
@@ -195,21 +164,25 @@ void world_create(void)
 
 void world_save(const char *filename)
 {
-    // TODO: stop using TCOD_zip functions (deprecated)
     TCOD_zip_t zip = TCOD_zip_new();
+
     TCOD_zip_put_random(zip, world->random);
     TCOD_zip_put_int(zip, world->time);
+
     int player_map = -1;
     int player_index = -1;
     int hero_map = -1;
     int hero_index = -1;
+
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
+
         TCOD_zip_put_int(zip, map->stair_down_x);
         TCOD_zip_put_int(zip, map->stair_down_y);
         TCOD_zip_put_int(zip, map->stair_up_x);
         TCOD_zip_put_int(zip, map->stair_up_y);
+
         for (int x = 0; x < MAP_WIDTH; x++)
         {
             for (int y = 0; y < MAP_HEIGHT; y++)
@@ -219,6 +192,7 @@ void world_save(const char *filename)
                 TCOD_zip_put_int(zip, tile->seen);
             }
         }
+
         TCOD_zip_put_int(zip, TCOD_list_size(map->rooms));
         TCOD_LIST_FOREACH(map->rooms)
         {
@@ -228,6 +202,7 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, room->w);
             TCOD_zip_put_int(zip, room->h);
         }
+
         TCOD_zip_put_int(zip, TCOD_list_size(map->objects));
         TCOD_LIST_FOREACH(map->objects)
         {
@@ -241,11 +216,13 @@ void world_save(const char *filename)
             TCOD_zip_put_float(zip, object->light_intensity);
             TCOD_zip_put_int(zip, object->light_flicker);
         }
+
         TCOD_zip_put_int(zip, TCOD_list_size(map->actors));
         int index = 0;
         TCOD_LIST_FOREACH(map->actors)
         {
             struct actor *actor = *iterator;
+
             TCOD_zip_put_string(zip, actor->name);
             TCOD_zip_put_int(zip, actor->race);
             TCOD_zip_put_int(zip, actor->class);
@@ -297,18 +274,22 @@ void world_save(const char *filename)
             TCOD_zip_put_color(zip, actor->flash_color);
             TCOD_zip_put_float(zip, actor->flash_fade_coef);
             TCOD_zip_put_int(zip, actor->controllable);
+
             if (actor == world->player)
             {
                 player_map = floor;
                 player_index = index;
             }
+
             if (actor == world->hero)
             {
                 hero_map = floor;
                 hero_index = index;
             }
+
             index++;
         }
+
         TCOD_LIST_FOREACH(map->actors)
         {
             struct actor *actor = *iterator;
@@ -331,6 +312,7 @@ void world_save(const char *filename)
                 TCOD_zip_put_int(zip, -1);
             }
         }
+
         TCOD_zip_put_int(zip, TCOD_list_size(map->corpses));
         TCOD_LIST_FOREACH(map->corpses)
         {
@@ -340,6 +322,7 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, corpse->x);
             TCOD_zip_put_int(zip, corpse->y);
         }
+
         TCOD_zip_put_int(zip, TCOD_list_size(map->items));
         TCOD_LIST_FOREACH(map->items)
         {
@@ -350,6 +333,7 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, item->current_durability);
             TCOD_zip_put_int(zip, item->current_stack);
         }
+
         TCOD_zip_put_int(zip, TCOD_list_size(map->projectiles));
         TCOD_LIST_FOREACH(map->projectiles)
         {
@@ -362,6 +346,7 @@ void world_save(const char *filename)
             TCOD_zip_put_float(zip, projectile->x);
             TCOD_zip_put_float(zip, projectile->y);
         }
+
         TCOD_LIST_FOREACH(map->projectiles)
         {
             struct projectile *projectile = *iterator;
@@ -377,6 +362,7 @@ void world_save(const char *filename)
             }
             TCOD_zip_put_int(zip, shooter_index);
         }
+
         TCOD_zip_put_int(zip, TCOD_list_size(map->explosions));
         TCOD_LIST_FOREACH(map->explosions)
         {
@@ -387,14 +373,25 @@ void world_save(const char *filename)
             TCOD_zip_put_color(zip, explosion->color);
             TCOD_zip_put_float(zip, explosion->lifetime);
         }
+
         TCOD_zip_put_int(zip, map->current_actor_index);
     }
+
     TCOD_zip_put_int(zip, player_map);
     TCOD_zip_put_int(zip, player_index);
     TCOD_zip_put_int(zip, hero_map);
     TCOD_zip_put_int(zip, hero_index);
-    // TODO: save messages
+
+    TCOD_zip_put_int(zip, TCOD_list_size(world->messages));
+    TCOD_LIST_FOREACH(world->messages)
+    {
+        struct message *message = *iterator;
+        TCOD_zip_put_string(zip, message->text);
+        TCOD_zip_put_color(zip, message->color);
+    }
+
     TCOD_zip_save_to_file(zip, filename);
+
     TCOD_zip_delete(zip);
 
     printf("World saved.\n");
@@ -404,16 +401,20 @@ void world_load(const char *filename)
 {
     TCOD_zip_t zip = TCOD_zip_new();
     TCOD_zip_load_from_file(zip, filename);
+
     world->random = TCOD_zip_get_random(zip);
     TCOD_namegen_parse("data/namegen.txt", world->random);
     world->time = TCOD_zip_get_int(zip);
+
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
+
         map->stair_down_x = TCOD_zip_get_int(zip);
         map->stair_down_y = TCOD_zip_get_int(zip);
         map->stair_up_x = TCOD_zip_get_int(zip);
         map->stair_up_y = TCOD_zip_get_int(zip);
+
         for (int x = 0; x < MAP_WIDTH; x++)
         {
             for (int y = 0; y < MAP_HEIGHT; y++)
@@ -423,6 +424,7 @@ void world_load(const char *filename)
                 tile->seen = TCOD_zip_get_int(zip);
             }
         }
+
         int num_rooms = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_rooms; i++)
         {
@@ -430,9 +432,12 @@ void world_load(const char *filename)
             int y = TCOD_zip_get_int(zip);
             int w = TCOD_zip_get_int(zip);
             int h = TCOD_zip_get_int(zip);
+
             struct room *room = room_new(x, y, w, h);
+
             TCOD_list_push(map->rooms, room);
         }
+
         int num_objects = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_objects; i++)
         {
@@ -444,11 +449,13 @@ void world_load(const char *filename)
             TCOD_color_t light_color = TCOD_zip_get_color(zip);
             float light_intensity = TCOD_zip_get_float(zip);
             bool light_flicker = TCOD_zip_get_int(zip);
+
             struct object *object = object_new(type, floor, x, y, color, light_radius, light_color, light_intensity, light_flicker);
+
+            map->tiles[x][y].object = object;
             TCOD_list_push(map->objects, object);
-            struct tile *tile = &map->tiles[x][y];
-            tile->object = object;
         }
+
         int num_actors = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_actors; i++)
         {
@@ -489,8 +496,10 @@ void world_load(const char *filename)
                 int y = TCOD_zip_get_int(zip);
                 int current_durability = TCOD_zip_get_int(zip);
                 int current_stack = TCOD_zip_get_int(zip);
+
                 struct item *item = item_new(type, floor, x, y, current_stack);
                 item->current_durability = current_durability;
+
                 TCOD_list_push(items, item);
             }
             enum spell_type readied_spell = TCOD_zip_get_int(zip);
@@ -509,6 +518,7 @@ void world_load(const char *filename)
             TCOD_color_t flash_color = TCOD_zip_get_color(zip);
             float flash_fade_coef = TCOD_zip_get_float(zip);
             bool controllable = TCOD_zip_get_int(zip);
+
             struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y);
             actor->experience = experience;
             actor->max_hp = max_hp;
@@ -533,19 +543,22 @@ void world_load(const char *filename)
             actor->flash_color = flash_color;
             actor->flash_fade_coef = flash_fade_coef;
             actor->controllable = controllable;
+
+            map->tiles[x][y].actor = actor;
             TCOD_list_push(map->actors, actor);
-            struct tile *tile = &map->tiles[x][y];
-            tile->actor = actor;
         }
+
         TCOD_LIST_FOREACH(map->actors)
         {
             struct actor *actor = *iterator;
+
             int leader_index = TCOD_zip_get_int(zip);
             if (leader_index > -1)
             {
                 actor->leader = TCOD_list_get(map->actors, leader_index);
             }
         }
+
         int num_corpses = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_corpses; i++)
         {
@@ -553,11 +566,13 @@ void world_load(const char *filename)
             int level = TCOD_zip_get_int(zip);
             int x = TCOD_zip_get_int(zip);
             int y = TCOD_zip_get_int(zip);
+
             struct corpse *corpse = corpse_new(name, level, floor, x, y);
+
+            TCOD_list_push(map->tiles[x][y].corpses, corpse);
             TCOD_list_push(map->corpses, corpse);
-            struct tile *tile = &map->tiles[x][y];
-            TCOD_list_push(tile->corpses, corpse);
         }
+
         int num_items = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_items; i++)
         {
@@ -566,12 +581,14 @@ void world_load(const char *filename)
             int y = TCOD_zip_get_int(zip);
             int current_durability = TCOD_zip_get_int(zip);
             int current_stack = TCOD_zip_get_int(zip);
+
             struct item *item = item_new(type, floor, x, y, current_stack);
             item->current_durability = current_durability;
+
+            TCOD_list_push(map->tiles[x][y].items, item);
             TCOD_list_push(map->items, item);
-            struct tile *tile = &map->tiles[x][y];
-            TCOD_list_push(tile->items, item);
         }
+
         int num_projectiles = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_projectiles; i++)
         {
@@ -582,14 +599,18 @@ void world_load(const char *filename)
             int target_y = TCOD_zip_get_int(zip);
             float x = TCOD_zip_get_float(zip);
             float y = TCOD_zip_get_float(zip);
+
             struct projectile *projectile = projectile_new(type, floor, origin_x, origin_y, target_x, target_y, NULL, NULL);
             projectile->x = x;
             projectile->y = y;
+
             TCOD_list_push(map->projectiles, projectile);
         }
+
         TCOD_LIST_FOREACH(map->projectiles)
         {
             struct projectile *projectile = *iterator;
+
             int shooter_index = TCOD_zip_get_int(zip);
             projectile->shooter = TCOD_list_get(map->actors, shooter_index);
             if (projectile->type == PROJECTILE_TYPE_ARROW)
@@ -597,6 +618,7 @@ void world_load(const char *filename)
                 projectile->ammunition = projectile->shooter->equipment[EQUIP_SLOT_AMMUNITION];
             }
         }
+
         int num_explosions = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_explosions; i++)
         {
@@ -605,19 +627,35 @@ void world_load(const char *filename)
             int radius = TCOD_zip_get_int(zip);
             TCOD_color_t color = TCOD_zip_get_color(zip);
             float lifetime = TCOD_zip_get_float(zip);
+
             struct explosion *explosion = explosion_new(floor, x, y, radius, color, NULL);
             explosion->lifetime = lifetime;
+
             TCOD_list_push(map->explosions, explosion);
         }
+
         map->current_actor_index = TCOD_zip_get_int(zip);
     }
+
     int player_map = TCOD_zip_get_int(zip);
     int player_index = TCOD_zip_get_int(zip);
     world->player = TCOD_list_get(world->maps[player_map].actors, player_index);
+
     int hero_map = TCOD_zip_get_int(zip);
     int hero_index = TCOD_zip_get_int(zip);
     world->hero = TCOD_list_get(world->maps[hero_map].actors, hero_index);
-    // TODO: load messages
+
+    int num_messages = TCOD_zip_get_int(zip);
+    for (int i = 0; i < num_messages; i++)
+    {
+        const char *text = TCOD_zip_get_string(zip);
+        TCOD_color_t color = TCOD_zip_get_color(zip);
+
+        struct message *message = message_new(text, color);
+
+        TCOD_list_push(world->messages, message);
+    }
+
     TCOD_zip_delete(zip);
 
     world_log(

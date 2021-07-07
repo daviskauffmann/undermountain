@@ -6,10 +6,45 @@
 #include "scene_game.h"
 #include "../config.h"
 #include "../scene.h"
+#include "../game/actor.h"
 #include "../game/world.h"
+
+struct actor *hero;
 
 static void init(struct scene *previous_scene)
 {
+    world_setup();
+
+    hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, 1, 0, 0, 0);
+
+    // struct item *_556 = item_new(ITEM_TYPE_556, 0, 0, 0, 200);
+    // TCOD_list_push(hero->items, _556);
+    // struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, 0, 0, 0, 50);
+    // TCOD_list_push(hero->items, bodkin_arrow);
+    // struct item *bolt = item_new(ITEM_TYPE_BOLT, 0, 0, 0, 50);
+    // TCOD_list_push(hero->items, bolt);
+    // struct item *cold_iron_blade = item_new(ITEM_TYPE_COLD_IRON_BLADE, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, cold_iron_blade);
+    // struct item *crossbow = item_new(ITEM_TYPE_CROSSBOW, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, crossbow);
+    // struct item *iron_armor = item_new(ITEM_TYPE_IRON_ARMOR, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, iron_armor);
+    // struct item *greatsword = item_new(ITEM_TYPE_GREATSWORD, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, greatsword);
+    // struct item *healing_potion = item_new(ITEM_TYPE_HEALING_POTION, 0, 0, 0, 10);
+    // TCOD_list_push(hero->items, healing_potion);
+    // struct item *kite_shield = item_new(ITEM_TYPE_KITE_SHIELD, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, kite_shield);
+    // struct item *longbow = item_new(ITEM_TYPE_LONGBOW, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, longbow);
+    // struct item *longsword = item_new(ITEM_TYPE_LONGSWORD, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, longsword);
+    // struct item *m4_carbine = item_new(ITEM_TYPE_M4_CARBINE, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, m4_carbine);
+    // struct item *scepter_of_unity = item_new(ITEM_TYPE_SCEPTER_OF_UNITY, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, scepter_of_unity);
+    // struct item *spiked_shield = item_new(ITEM_TYPE_SPIKED_SHIELD, 0, 0, 0, 1);
+    // TCOD_list_push(hero->items, spiked_shield);
 }
 
 static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
@@ -22,8 +57,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         {
         case TCODK_ENTER:
         {
-            world_setup();
-            world_create();
+            world_create(hero);
 
             create_scene.quit();
             game_scene.init(&create_scene);
@@ -32,6 +66,10 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         break;
         case TCODK_ESCAPE:
         {
+            actor_delete(hero);
+
+            world_cleanup();
+
             create_scene.quit();
             menu_scene.init(&create_scene);
             return &menu_scene;
@@ -46,8 +84,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     {
         if (mouse.lbutton)
         {
-            world_setup();
-            world_create();
+            world_create(hero);
 
             create_scene.quit();
             game_scene.init(&create_scene);
@@ -55,6 +92,10 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         }
         else if (mouse.rbutton)
         {
+            actor_delete(hero);
+
+            world_cleanup();
+
             create_scene.quit();
             menu_scene.init(&create_scene);
             return &menu_scene;

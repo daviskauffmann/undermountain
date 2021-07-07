@@ -9,7 +9,7 @@ struct message
     TCOD_color_t color; // TODO: change to message type, let an asset or something decide the color
 };
 
-struct message *message_new(char *text, TCOD_color_t color);
+struct message *message_new(const char *text, TCOD_color_t color);
 void message_delete(struct message *message);
 
 #endif

@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <malloc.h>
 
-struct message *message_new(char *text, TCOD_color_t color)
+struct message *message_new(const char *text, TCOD_color_t color)
 {
     struct message *message = malloc(sizeof(*message));
     assert(message);

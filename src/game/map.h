@@ -10,6 +10,7 @@
 
 enum map_type
 {
+    MAP_TYPE_TOWN,
     MAP_TYPE_LARGE_DUNGEON,
     MAP_TYPE_SMALL_DUNGEON,
     MAP_TYPE_CAVES,

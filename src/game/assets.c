@@ -113,6 +113,7 @@ void assets_load(void)
 
     TILE_DATA(TILE_TYPE_EMPTY, "Empty", ' ', TCOD_white, true, true);
     TILE_DATA(TILE_TYPE_FLOOR, "Floor", '.', TCOD_white, true, true);
+    TILE_DATA(TILE_TYPE_GRASS, "Grass", '.', TCOD_light_green, true, true);
     TILE_DATA(TILE_TYPE_WALL, "Wall", '#', TCOD_white, false, false);
 
     OBJECT_COMMON(0);
@@ -127,6 +128,7 @@ void assets_load(void)
     OBJECT_DATA(OBJECT_TYPE_STAIR_UP, "Stair Up", '<', true, true);
     OBJECT_DATA(OBJECT_TYPE_THRONE, "Throne", '\\', true, false);
     OBJECT_DATA(OBJECT_TYPE_TRAP, "Trap", '^', true, true);
+    OBJECT_DATA(OBJECT_TYPE_BLACKSMITH, "Blacksmith", '@', true, false);
 
     FACTION_DATA(FACTION_GOOD, "Good");
     FACTION_DATA(FACTION_EVIL, "Evil");
@@ -169,6 +171,7 @@ void assets_load(void)
     ITEM_DATA(ITEM_TYPE_BOLT, "Bolt", "Standard ammunition for a crossbow.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 0, 0, false, 100, false, 100, AMMUNITION_TYPE_BOLT, false);
     ITEM_DATA(ITEM_TYPE_COLD_IRON_BLADE, "Cold Iron Blade", "A magical sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
     ITEM_DATA(ITEM_TYPE_CROSSBOW, "Crossbow", "A powerful ranged weapon.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, true, 100, false, 1, AMMUNITION_TYPE_BOLT, false);
+    ITEM_DATA(ITEM_TYPE_GOLD, "Gold", "Shiny!", '$', TCOD_gold, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, INT32_MAX, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_GREATSWORD, "Greatsword", "A two-handed straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, 10, AMMUNITION_TYPE_NONE, false);
     ITEM_DATA(ITEM_TYPE_IRON_ARMOR, "Iron Armor", "A set of iron armor.", '[', TCOD_white, EQUIP_SLOT_ARMOR, false, 3, 0, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);

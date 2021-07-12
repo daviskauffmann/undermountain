@@ -21,6 +21,9 @@ enum object_type
     OBJECT_TYPE_THRONE,
     OBJECT_TYPE_TRAP,
 
+    // TODO: probably want to make a separate townsfolk struct
+    OBJECT_TYPE_BLACKSMITH,
+
     NUM_OBJECT_TYPES
 };
 

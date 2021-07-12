@@ -15,7 +15,9 @@ static void init(struct scene *previous_scene)
 {
     world_setup();
 
-    hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, 1, 0, 0, 0);
+    hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, 100, 0, 0, 0, true);
+
+    hero->gold = 100;
 
     // struct item *_556 = item_new(ITEM_TYPE_556, 0, 0, 0, 200);
     // TCOD_list_push(hero->items, _556);

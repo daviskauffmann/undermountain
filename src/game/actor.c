@@ -13,7 +13,7 @@
 #include "util.h"
 #include "world.h"
 
-struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y)
+struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y, bool torch)
 {
     struct actor *actor = malloc(sizeof(*actor));
     assert(actor);
@@ -25,6 +25,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->experience = actor_calc_experience_to_level(actor->level);
     actor->max_hp = 10 * level;
     actor->current_hp = actor->max_hp;
+    actor->gold = 0;
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
         actor->equipment[equip_slot] = NULL;
@@ -42,12 +43,13 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->last_seen_y = -1;
     actor->turns_chased = 0;
     actor->leader = NULL;
+    actor->interacting = NULL;
     actor->light_radius = -1;
     actor->light_color = TCOD_white;
     actor->light_intensity = 0;
     actor->light_flicker = false;
     actor->light_fov = NULL;
-    if (TCOD_random_get_int(world->random, 0, 20) == 0)
+    if (torch)
     {
         actor->light_radius = actor_common.torch_radius;
         actor->light_color = actor_common.torch_color;
@@ -85,8 +87,16 @@ int actor_calc_experience_to_level(int level)
     return level * (level - 1) / 2 * 1000;
 }
 
-void actor_update_flash(struct actor *actor, float delta_time)
+void actor_update(struct actor *actor, float delta_time)
 {
+    if (actor->interacting)
+    {
+        if (distance_between(actor->x, actor->y, actor->interacting->x, actor->interacting->y) > 2.0f)
+        {
+            world->player->interacting = NULL;
+        }
+    }
+
     if (actor->flash_fade_coef > 0)
     {
         // TODO: slower/faster fade depending on circumstances
@@ -413,11 +423,15 @@ bool actor_path_towards(struct actor *actor, int x, int y)
 {
     // TODO: cache paths someehow if the map hasn't changed?
     bool success = false;
+
     struct map *map = &world->maps[actor->floor];
+
     TCOD_map_t TCOD_map = map_to_TCOD_map(map);
     TCOD_map_set_properties(TCOD_map, x, y, TCOD_map_is_transparent(TCOD_map, x, y), true);
+
     TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
     TCOD_path_compute(path, actor->x, actor->y, x, y);
+
     int next_x, next_y;
     if (!TCOD_path_is_empty(path) && TCOD_path_walk(path, &next_x, &next_y, false))
     {
@@ -427,8 +441,10 @@ bool actor_path_towards(struct actor *actor, int x, int y)
     {
         success = actor_move_towards(actor, x, y);
     }
+
     TCOD_path_delete(path);
     TCOD_map_delete(TCOD_map);
+
     return success;
 }
 
@@ -519,6 +535,11 @@ bool actor_move(struct actor *actor, int x, int y)
                 TCOD_white,
                 "%s triggers a trap!",
                 actor->name);
+        }
+        break;
+        case OBJECT_TYPE_BLACKSMITH:
+        {
+            actor->interacting = tile->object;
         }
         break;
         case NUM_OBJECT_TYPES:
@@ -662,7 +683,7 @@ bool actor_close_door(struct actor *actor, int x, int y)
     return false;
 }
 
-bool actor_descend(struct actor *actor, bool with_leader, void ***iterator)
+bool actor_descend(struct actor *actor, bool is_leader, void ***iterator)
 {
     if (actor->floor >= NUM_MAPS - 1)
     {
@@ -679,7 +700,7 @@ bool actor_descend(struct actor *actor, bool with_leader, void ***iterator)
 
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[actor->x][actor->y];
-    if (!with_leader && (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_DOWN))
+    if (is_leader && (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_DOWN))
     {
         world_log(
             actor->floor,
@@ -709,14 +730,14 @@ bool actor_descend(struct actor *actor, bool with_leader, void ***iterator)
     TCOD_list_push(next_map->actors, actor);
     next_tile->actor = actor;
 
-    if (!with_leader)
+    if (is_leader)
     {
         TCOD_LIST_FOREACH(map->actors)
         {
             struct actor *other = *iterator;
             if (other && other->leader == actor)
             {
-                actor_descend(other, true, &iterator);
+                actor_descend(other, false, &iterator);
             }
         }
     }
@@ -732,7 +753,7 @@ bool actor_descend(struct actor *actor, bool with_leader, void ***iterator)
     return true;
 }
 
-bool actor_ascend(struct actor *actor, bool with_leader, void ***iterator)
+bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator)
 {
     if (actor->floor == 0)
     {
@@ -749,7 +770,7 @@ bool actor_ascend(struct actor *actor, bool with_leader, void ***iterator)
 
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[actor->x][actor->y];
-    if (!with_leader && (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_UP))
+    if (is_leader && (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_UP))
     {
         world_log(
             actor->floor,
@@ -779,14 +800,14 @@ bool actor_ascend(struct actor *actor, bool with_leader, void ***iterator)
     TCOD_list_push(next_map->actors, actor);
     next_tile->actor = actor;
 
-    if (!with_leader)
+    if (is_leader)
     {
         TCOD_LIST_FOREACH(map->actors)
         {
             struct actor *other = *iterator;
             if (other && other->leader == actor)
             {
-                actor_ascend(other, true, &iterator);
+                actor_ascend(other, false, &iterator);
             }
         }
     }
@@ -1009,20 +1030,42 @@ bool actor_grab(struct actor *actor, int x, int y)
     }
 
     struct item *item = TCOD_list_pop(tile->items);
-    item->floor = actor->floor;
-    item->x = actor->x;
-    item->y = actor->y;
-    TCOD_list_push(actor->items, item);
-    TCOD_list_remove(map->items, item);
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        TCOD_white,
-        "%s picks up %s.",
-        actor->name,
-        item_data[item->type].name);
+    if (item->type == ITEM_TYPE_GOLD)
+    {
+        int gold = item->current_stack;
+
+        actor->gold += gold;
+
+        item_delete(item);
+        TCOD_list_remove(map->items, item);
+
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s picks up %d gold.",
+            actor->name,
+            gold);
+    }
+    else
+    {
+        item->floor = actor->floor;
+        item->x = actor->x;
+        item->y = actor->y;
+        TCOD_list_push(actor->items, item);
+        TCOD_list_remove(map->items, item);
+
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s picks up %s.",
+            actor->name,
+            item_data[item->type].name);
+    }
 
     return true;
 }
@@ -1349,6 +1392,8 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
         }
     }
 
+    // TODO: when projectiles come at the player from the dark, nothing gets logged
+    // it'd be nice if there were a way to do something like "someone attacks <player> for <damage>"
     world_log(
         actor->floor,
         actor->x,
@@ -1592,6 +1637,7 @@ void actor_die(struct actor *actor, struct actor *killer)
         "%s dies.",
         actor->name);
 
+    // TODO: all actors involved in combat with the dead actor should gain XP
     if (killer)
     {
         int experience = TCOD_random_get_int(world->random, 50, 100) * actor->level;

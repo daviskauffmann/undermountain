@@ -7,6 +7,7 @@ enum tile_type
 {
     TILE_TYPE_EMPTY,
     TILE_TYPE_FLOOR,
+    TILE_TYPE_GRASS,
     TILE_TYPE_WALL,
 
     NUM_TILE_TYPES

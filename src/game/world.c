@@ -116,10 +116,10 @@ void world_create(struct actor *hero)
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, (unsigned int)time(0));
     TCOD_namegen_parse("data/namegen.txt", world->random);
 
-    for (int floor = 0; floor < NUM_MAPS; floor++)
+    map_generate(&world->maps[0], MAP_TYPE_TOWN);
+    for (int floor = 1; floor < NUM_MAPS; floor++)
     {
-        struct map *map = &world->maps[floor];
-        map_generate(map, TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
+        map_generate(&world->maps[floor], TCOD_random_get_int(world->random, MAP_TYPE_TOWN + 1, NUM_MAP_TYPES - 1));
     }
 
     world->hero = hero;
@@ -142,7 +142,7 @@ void world_create(struct actor *hero)
 
         // create
         {
-            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1);
+            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1, false);
             pet->leader = world->hero;
             // pet->controllable = true;
 
@@ -231,6 +231,7 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, actor->experience);
             TCOD_zip_put_int(zip, actor->max_hp);
             TCOD_zip_put_int(zip, actor->current_hp);
+            TCOD_zip_put_int(zip, actor->gold);
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
                 struct item *item = actor->equipment[equip_slot];
@@ -467,6 +468,7 @@ void world_load(const char *filename)
             int experience = TCOD_zip_get_int(zip);
             int max_hp = TCOD_zip_get_int(zip);
             int current_hp = TCOD_zip_get_int(zip);
+            int gold = TCOD_zip_get_int(zip);
             struct item *equipment[NUM_EQUIP_SLOTS];
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
@@ -519,10 +521,11 @@ void world_load(const char *filename)
             float flash_fade_coef = TCOD_zip_get_float(zip);
             bool controllable = TCOD_zip_get_int(zip);
 
-            struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y);
+            struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y, false);
             actor->experience = experience;
             actor->max_hp = max_hp;
             actor->current_hp = current_hp;
+            actor->gold = gold;
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
                 actor->equipment[equip_slot] = equipment[equip_slot];
@@ -682,7 +685,7 @@ void world_update(float delta_time)
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
-        actor_update_flash(actor, delta_time);
+        actor_update(actor, delta_time);
         actor_calc_light(actor);
     }
     TCOD_LIST_FOREACH(map->projectiles)
@@ -777,7 +780,7 @@ void world_update(float delta_time)
 #if 0 // enable to simulate ai making a decision over multiple frames
                 static float timer = 0.0f;
                 timer += delta_time;
-                if (timer < 0.25f)
+                if (timer < 0.1f)
                 {
                     break;
                 }

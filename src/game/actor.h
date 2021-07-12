@@ -87,39 +87,55 @@ struct actor
     enum race race;
     enum class class;
     enum faction faction;
+
     int level;
     int experience;
+
     int max_hp;
     int current_hp;
+
+    int gold;
     struct item *equipment[NUM_EQUIP_SLOTS];
     TCOD_list_t items;
+
     enum spell_type readied_spell;
+
     int floor;
     int x;
     int y;
+
     TCOD_map_t fov;
+
     bool took_turn;
     float energy;
     float energy_per_turn;
+
     int last_seen_x;
     int last_seen_y;
     int turns_chased;
+
     struct actor *leader;
+
+    struct object *interacting;
+
     int light_radius;
     TCOD_color_t light_color;
     float light_intensity;
     bool light_flicker;
     TCOD_map_t light_fov;
+
     TCOD_color_t flash_color;
     float flash_fade_coef;
+
     bool controllable;
+
     // TODO: list of known spells
 };
 
-struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y);
+struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y, bool torch);
 void actor_delete(struct actor *actor);
 int actor_calc_experience_to_level(int level);
-void actor_update_flash(struct actor *actor, float delta_time);
+void actor_update(struct actor *actor, float delta_time);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);
@@ -131,8 +147,8 @@ bool actor_move(struct actor *actor, int x, int y);
 bool actor_swap(struct actor *actor, struct actor *other);
 bool actor_open_door(struct actor *actor, int x, int y);
 bool actor_close_door(struct actor *actor, int x, int y);
-bool actor_descend(struct actor *actor, bool with_leader, void ***iterator);
-bool actor_ascend(struct actor *actor, bool with_leader, void ***iterator);
+bool actor_descend(struct actor *actor, bool is_leader, void ***iterator);
+bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator);
 bool actor_open_chest(struct actor *actor, int x, int y);
 bool actor_pray(struct actor *actor, int x, int y);
 bool actor_drink(struct actor *actor, int x, int y);

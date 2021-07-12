@@ -231,6 +231,16 @@ enum spellbook_action
 
 static enum spellbook_action spellbook_action;
 
+/* Interact actions */
+
+enum interact_action
+{
+    INTERACT_ACTION_NONE,
+    INTERACT_ACTION_BUY,
+};
+
+static enum interact_action interact_action;
+
 /* Targeting */
 
 enum targeting
@@ -384,6 +394,7 @@ enum panel
     PANEL_EXAMINE,
     PANEL_INVENTORY,
     PANEL_SPELLBOOK,
+    PANEL_INTERACT,
 
     NUM_PANELS
 };
@@ -430,7 +441,7 @@ static enum equip_slot panel_character_equip_slot_mouseover(void)
 {
     if (panel_rect.visible && current_panel == PANEL_CHARACTER && !tooltip_rect.visible)
     {
-        int y = 7;
+        int y = 9; // must be updated every time the layout of the character sheet changes
         for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
         {
             if (mouse_x > panel_rect.x &&
@@ -650,15 +661,24 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             else if (directional_action != DIRECTIONAL_ACTION_NONE ||
                      inventory_action != INVENTORY_ACTION_NONE ||
                      character_action != CHARACTER_ACTION_NONE ||
-                     spellbook_action != SPELLBOOK_ACTION_NONE)
+                     spellbook_action != SPELLBOOK_ACTION_NONE ||
+                     interact_action != INTERACT_ACTION_NONE)
             {
                 directional_action = DIRECTIONAL_ACTION_NONE;
                 inventory_action = INVENTORY_ACTION_NONE;
                 character_action = CHARACTER_ACTION_NONE;
                 spellbook_action = SPELLBOOK_ACTION_NONE;
+                interact_action = INTERACT_ACTION_NONE;
+
                 for (enum panel panel = 0; panel < NUM_PANELS; panel++)
                 {
                     panel_state[panel].selection_mode = false;
+                }
+
+                if (world->player->interacting)
+                {
+                    world->player->interacting = NULL;
+                    panel_rect.visible = false;
                 }
 
                 world_log(
@@ -941,7 +961,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (can_take_turn)
                 {
-                    world->player->took_turn = actor_ascend(world->player, false, NULL);
+                    world->player->took_turn = actor_ascend(world->player, true, NULL);
                 }
             }
             break;
@@ -949,7 +969,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             {
                 if (can_take_turn)
                 {
-                    world->player->took_turn = actor_descend(world->player, false, NULL);
+                    world->player->took_turn = actor_descend(world->player, true, NULL);
                 }
             }
             break;
@@ -1664,6 +1684,42 @@ static struct scene *update(float delta_time)
 
     world_update(delta_time);
 
+    if (world->player->interacting)
+    {
+        if (!panel_rect.visible)
+        {
+            if (world->player->interacting->type == OBJECT_TYPE_BLACKSMITH)
+            {
+                panel_show(PANEL_INTERACT);
+                interact_action = INTERACT_ACTION_BUY;
+                panel_state[PANEL_INTERACT].selection_mode = true;
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose an item to buy. Press 'ESC' to cancel.");
+            }
+        }
+    }
+    else
+    {
+        if (panel_rect.visible && interact_action != INTERACT_ACTION_NONE)
+        {
+            panel_rect.visible = false;
+            interact_action = INTERACT_ACTION_NONE;
+            panel_state[PANEL_INTERACT].selection_mode = false;
+
+            world_log(
+                world->player->floor,
+                world->player->x,
+                world->player->y,
+                TCOD_yellow,
+                "Action cancelled.");
+        }
+    }
+
     if (world->hero_dead && file_exists(SAVE_PATH))
     {
         remove(SAVE_PATH);
@@ -1928,22 +1984,24 @@ static void render(TCOD_console_t console)
                         if (tile->type == TILE_TYPE_WALL)
                         {
                             const unsigned char glyphs[] = {
-                                TCOD_CHAR_BLOCK3,  //  0 - none
-                                TCOD_CHAR_DVLINE,  //  1 - N
-                                TCOD_CHAR_DHLINE,  //  2 - E
-                                TCOD_CHAR_DSW,     //  3 - NE
-                                TCOD_CHAR_DVLINE,  //  4 - S
-                                TCOD_CHAR_DVLINE,  //  5 - NS
-                                TCOD_CHAR_DNW,     //  6 - SE
-                                TCOD_CHAR_DTEEE,   //  7 - NES
-                                TCOD_CHAR_DHLINE,  //  8 - W
-                                TCOD_CHAR_DSE,     //  9 - NW
-                                TCOD_CHAR_DHLINE,  // 10 - EW
-                                TCOD_CHAR_DTEEN,   // 11 - NEW
-                                TCOD_CHAR_DNE,     // 12 - SW
-                                TCOD_CHAR_DTEEW,   // 13 - NSW
-                                TCOD_CHAR_DTEES,   // 14 - ESW
-                                TCOD_CHAR_DCROSS}; // 15 - NESW
+                                TCOD_CHAR_BLOCK3, //  0 - none
+                                TCOD_CHAR_DVLINE, //  1 - N
+                                TCOD_CHAR_DHLINE, //  2 - E
+                                TCOD_CHAR_DSW,    //  3 - NE
+                                TCOD_CHAR_DVLINE, //  4 - S
+                                TCOD_CHAR_DVLINE, //  5 - NS
+                                TCOD_CHAR_DNW,    //  6 - SE
+                                TCOD_CHAR_DTEEE,  //  7 - NES
+                                TCOD_CHAR_DHLINE, //  8 - W
+                                TCOD_CHAR_DSE,    //  9 - NW
+                                TCOD_CHAR_DHLINE, // 10 - EW
+                                TCOD_CHAR_DTEEN,  // 11 - NEW
+                                TCOD_CHAR_DNE,    // 12 - SW
+                                TCOD_CHAR_DTEEW,  // 13 - NSW
+                                TCOD_CHAR_DTEES,  // 14 - ESW
+                                TCOD_CHAR_DCROSS  // 15 - NESW
+                            };
+
                             int index = 0;
                             if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
                             {
@@ -2313,7 +2371,7 @@ static void render(TCOD_console_t console)
 
             int y = message_log_rect.height - 2;
             int message_index = TCOD_list_size(world->messages) - 1;
-            while (y > 0 && message_index >= 0)
+            while (message_index >= 0)
             {
                 struct message *message = TCOD_list_get(world->messages, message_index--);
                 if (!message)
@@ -2322,11 +2380,28 @@ static void render(TCOD_console_t console)
                 }
 
                 TCOD_console_set_default_foreground(message_log_rect.console, TCOD_color_lerp(TCOD_gray, message->color, (float)y / (message_log_rect.height - 2)));
-                TCOD_console_printf(
+
+                int lines = TCOD_console_get_height_rect(
                     message_log_rect.console,
                     1,
-                    y--,
+                    y,
+                    message_log_rect.width - 2,
+                    message_log_rect.height - 2,
                     message->text);
+                if (y - lines < 0)
+                {
+                    break;
+                }
+
+                TCOD_console_printf_rect(
+                    message_log_rect.console,
+                    1,
+                    y - lines + 1,
+                    message_log_rect.width - 2,
+                    message_log_rect.height - 2,
+                    message->text);
+
+                y -= lines;
             }
 
             TCOD_console_set_default_foreground(message_log_rect.console, TCOD_white);
@@ -2378,6 +2453,7 @@ static void render(TCOD_console_t console)
         case PANEL_CHARACTER:
         {
             int y = 1;
+
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -2391,6 +2467,7 @@ static void render(TCOD_console_t console)
                 TCOD_RIGHT,
                 world->player->name);
             y++;
+
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -2404,6 +2481,7 @@ static void render(TCOD_console_t console)
                 TCOD_RIGHT,
                 race_data[world->player->race].name);
             y++;
+
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -2417,6 +2495,7 @@ static void render(TCOD_console_t console)
                 TCOD_RIGHT,
                 class_data[world->player->class].name);
             y++;
+
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -2430,6 +2509,7 @@ static void render(TCOD_console_t console)
                 TCOD_RIGHT,
                 faction_data[world->player->faction].name);
             y++;
+
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -2444,6 +2524,7 @@ static void render(TCOD_console_t console)
                 "%d",
                 world->player->level);
             y++;
+
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -2459,7 +2540,24 @@ static void render(TCOD_console_t console)
                 world->player->experience,
                 actor_calc_experience_to_level(world->player->level + 1));
             y++;
+
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "Gold");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d",
+                world->player->gold);
             y++;
+
+            y++;
+
             for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
                 TCOD_color_t color =
@@ -2660,6 +2758,51 @@ static void render(TCOD_console_t console)
                 false,
                 TCOD_BKGND_SET,
                 "Spellbook");
+        }
+        break;
+        case PANEL_INTERACT:
+        {
+            int y = 1;
+            for (enum item_type item_type = 0; item_type < NUM_ITEM_TYPES; item_type++)
+            {
+                struct item_datum item_datum = item_data[item_type];
+                TCOD_color_t color = item_datum.color;
+
+                TCOD_console_set_default_foreground(panel_rect.console, color);
+                if (current_panel_status->selection_mode)
+                {
+                    TCOD_console_printf(
+                        panel_rect.console,
+                        1,
+                        y - current_panel_status->scroll,
+                        "%c) %s",
+                        y - 1 + 'a' - current_panel_status->scroll,
+                        item_datum.name);
+                }
+                else
+                {
+                    TCOD_console_printf(
+                        panel_rect.console,
+                        1,
+                        y - current_panel_status->scroll,
+                        "%s",
+                        item_datum.name);
+                }
+                TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
+
+                y++;
+            }
+
+            TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
+            TCOD_console_printf_frame(
+                panel_rect.console,
+                0,
+                0,
+                panel_rect.width,
+                panel_rect.height,
+                false,
+                TCOD_BKGND_SET,
+                "Blacksmith");
         }
         break;
         case NUM_PANELS:

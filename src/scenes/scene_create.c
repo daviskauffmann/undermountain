@@ -15,7 +15,7 @@ static void init(struct scene *previous_scene)
 {
     world_setup();
 
-    hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, 100, 0, 0, 0, true);
+    hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_GOOD, 1, 0, 0, 0, true);
 
     hero->gold = 100;
 

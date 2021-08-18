@@ -120,7 +120,6 @@ static void vline(struct map *map, int x, int y1, int y2)
     }
 }
 
-#if MAP_ALGORITHM == MAP_ALGORITHM_BSP
 static void hline_left(struct map *map, int x, int y)
 {
     while (x >= 0 && map->tiles[x][y].type != TILE_TYPE_FLOOR)
@@ -274,7 +273,6 @@ static bool traverse_node(TCOD_bsp_t *node, void *data)
     }
     return true;
 }
-#endif
 
 void map_generate(struct map *map, enum map_type map_type)
 {

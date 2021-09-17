@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21.2)
+cmake_minimum_required(VERSION 3.0.0)
 
 message(STATUS ${CMAKE_TOOLCHAIN_FILE})
 

@@ -7,41 +7,25 @@
 ```sh
 git clone https://github.com/daviskauffmann/undermountain.git
 cd undermountain
-git submodule update --init
 ```
 
-### Build libtcod
+### Install libtcod
+
+First, install [Vcpkg](https://github.com/microsoft/vcpkg). On Windows, I would recommend setting the `VCPKG_DEFAULT_TRIPLET` environment variable for your system to `x64-windows`, since vcpkg defaults to x64. Come on, its *current year*.
 
 ```sh
-make build_libtcod
+vcpkg install libtcod
 ```
 
-I am on Windows using MSYS2, so that is the only development platform supported for building libtcod for this project at this time. If the above command doesn't work, you can go into `extern/libtcod` and build it yourself for your platform. The Makefile paths will then most likely need to be updated in order to properly link the library and copy the dll to `bin`.
-
-If you're on Linux, you could build and install libtcod from source and it will most likely work, but this is untested.
+I am on Windows using MSYS2, so vcpkg is my only choice for the libtcod dependency. Theoretically, you could build and install libtcod from source whichever way you want and it will most likely work, but this is untested.
 
 ### Build
 
 ```sh
+mkdir build
+cd build
+cmake ..
 make
-```
-
-### Build & Run
-
-```sh
-make run
-```
-
-### Cleanup
-
-```sh
-make clean
-```
-
-### Cleanup libtcod
-
-```sh
-make clean_libtcod
 ```
 
 ## Configuration

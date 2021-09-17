@@ -1,8 +1,6 @@
 .vscode
 
-bin
-obj
-dep
+build
 
 config.local.txt
 

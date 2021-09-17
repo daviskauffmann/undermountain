@@ -65,12 +65,12 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
 void actor_delete(struct actor *actor)
 {
     free(actor->name);
-    TCOD_list_delete(actor->items);
     TCOD_LIST_FOREACH(actor->items)
     {
         struct item *item = *iterator;
         item_delete(item);
     }
+    TCOD_list_delete(actor->items);
     if (actor->fov != NULL)
     {
         TCOD_map_delete(actor->fov);

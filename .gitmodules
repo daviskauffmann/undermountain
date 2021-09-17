@@ -1,3 +1,0 @@
-[submodule "extern/libtcod"]
-	path = extern/libtcod
-	url = https://github.com/libtcod/libtcod.git

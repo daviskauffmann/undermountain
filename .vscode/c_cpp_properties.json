@@ -4,7 +4,7 @@
             "name": "C99",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:/msys64/mingw64/include/**"
+                "C:/vcpkg/installed/x64-windows/include/**"
             ],
             "compilerPath": "C:/msys64/mingw64/bin/gcc.exe",
             "cStandard": "c99",

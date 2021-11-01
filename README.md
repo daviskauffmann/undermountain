@@ -11,12 +11,9 @@ cd undermountain
 
 ### Install Dependencies
 
-Install [CMake](https://cmake.org/).
-Install [vcpkg](https://vcpkg.io/).
+Install the following using the package manager of your choice:
 
-```sh
-vcpkg install libtcod
-```
+- libtcod
 
 ### Build
 

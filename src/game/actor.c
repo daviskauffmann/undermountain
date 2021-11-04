@@ -537,7 +537,7 @@ bool actor_move(struct actor *actor, int x, int y)
                 actor->name);
         }
         break;
-        case OBJECT_TYPE_BLACKSMITH:
+        case OBJECT_TYPE_TRADER:
         {
             actor->interacting = tile->object;
         }

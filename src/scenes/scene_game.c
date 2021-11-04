@@ -1688,7 +1688,7 @@ static struct scene *update(float delta_time)
     {
         if (!panel_rect.visible)
         {
-            if (world->player->interacting->type == OBJECT_TYPE_BLACKSMITH)
+            if (world->player->interacting->type == OBJECT_TYPE_TRADER)
             {
                 panel_show(PANEL_INTERACT);
                 interact_action = INTERACT_ACTION_BUY;

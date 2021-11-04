@@ -116,10 +116,10 @@ void world_create(struct actor *hero)
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, (unsigned int)time(0));
     TCOD_namegen_parse("data/namegen.txt", world->random);
 
-    map_generate(&world->maps[0], MAP_TYPE_TOWN);
-    for (int floor = 1; floor < NUM_MAPS; floor++)
+    for (int floor = 0; floor < NUM_MAPS; floor++)
     {
-        map_generate(&world->maps[floor], TCOD_random_get_int(world->random, MAP_TYPE_TOWN + 1, NUM_MAP_TYPES - 1));
+        // map_generate(&world->maps[floor], TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
+        map_generate(&world->maps[floor], MAP_TYPE_LARGE_DUNGEON);
     }
 
     world->hero = hero;
@@ -140,7 +140,7 @@ void world_create(struct actor *hero)
             map->tiles[hero->x][hero->y].actor = hero;
         }
 
-        // create
+        // create pet
         {
             struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1, false);
             pet->leader = world->hero;

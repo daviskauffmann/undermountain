@@ -128,7 +128,7 @@ void assets_load(void)
     OBJECT_DATA(OBJECT_TYPE_STAIR_UP, "Stair Up", '<', true, true);
     OBJECT_DATA(OBJECT_TYPE_THRONE, "Throne", '\\', true, false);
     OBJECT_DATA(OBJECT_TYPE_TRAP, "Trap", '^', true, true);
-    OBJECT_DATA(OBJECT_TYPE_BLACKSMITH, "Blacksmith", '@', true, false);
+    OBJECT_DATA(OBJECT_TYPE_TRADER, "Trader", '@', true, false);
 
     FACTION_DATA(FACTION_GOOD, "Good");
     FACTION_DATA(FACTION_EVIL, "Evil");

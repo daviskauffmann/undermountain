@@ -21,8 +21,8 @@ enum object_type
     OBJECT_TYPE_THRONE,
     OBJECT_TYPE_TRAP,
 
-    // TODO: probably want to make a separate townsfolk struct
-    OBJECT_TYPE_BLACKSMITH,
+    // TODO: probably want to make a separate non-hostile NPC struct
+    OBJECT_TYPE_TRADER,
 
     NUM_OBJECT_TYPES
 };

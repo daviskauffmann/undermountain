@@ -291,11 +291,6 @@ void map_generate(struct map *map, enum map_type map_type)
             {
                 switch (map_type)
                 {
-                case MAP_TYPE_TOWN:
-                {
-                    tile->type = TILE_TYPE_GRASS;
-                }
-                break;
                 case MAP_TYPE_LARGE_DUNGEON:
                 {
                     tile->type = TILE_TYPE_EMPTY;
@@ -309,6 +304,11 @@ void map_generate(struct map *map, enum map_type map_type)
                 case MAP_TYPE_CAVES:
                 {
                     tile->type = TILE_TYPE_FLOOR;
+                }
+                break;
+                case MAP_TYPE_GRASSY_CAVES:
+                {
+                    tile->type = TILE_TYPE_GRASS;
                 }
                 break;
                 case MAP_TYPE_RUINS:
@@ -326,50 +326,6 @@ void map_generate(struct map *map, enum map_type map_type)
     // create rooms
     switch (map_type)
     {
-    case MAP_TYPE_TOWN:
-    {
-        // no need to spawn actual stairs up, but the coordinates are used for the player's spawn position
-        map->stair_up_x = MAP_WIDTH / 2;
-        map->stair_up_y = MAP_WIDTH / 2;
-
-        map->stair_down_x = MAP_WIDTH / 2;
-        map->stair_down_y = MAP_WIDTH / 2;
-
-        {
-            struct object *stair_down = object_new(
-                OBJECT_TYPE_STAIR_DOWN,
-                map->floor,
-                map->stair_down_x,
-                map->stair_down_y,
-                TCOD_white,
-                -1,
-                TCOD_white,
-                0.0f,
-                false);
-
-            map->tiles[stair_down->x][stair_down->y].object = stair_down;
-            TCOD_list_push(map->objects, stair_down);
-        }
-
-        {
-            struct object *blacksmith = object_new(
-                OBJECT_TYPE_BLACKSMITH,
-                map->floor,
-                (MAP_WIDTH / 2) + 5,
-                (MAP_WIDTH / 2) + 5,
-                TCOD_white,
-                -1,
-                TCOD_white,
-                0.0f,
-                false);
-
-            map->tiles[blacksmith->x][blacksmith->y].object = blacksmith;
-            TCOD_list_push(map->objects, blacksmith);
-        }
-
-        return; // abort normal map generation for the town
-    }
-    break;
     case MAP_TYPE_LARGE_DUNGEON:
     {
         int num_room_attempts = 20;
@@ -500,6 +456,12 @@ void map_generate(struct map *map, enum map_type map_type)
     }
     break;
     case MAP_TYPE_CAVES:
+    {
+        struct room *room = room_new(0, 0, MAP_WIDTH, MAP_HEIGHT);
+        TCOD_list_push(map->rooms, room);
+    }
+    break;
+    case MAP_TYPE_GRASSY_CAVES:
     {
         struct room *room = room_new(0, 0, MAP_WIDTH, MAP_HEIGHT);
         TCOD_list_push(map->rooms, room);

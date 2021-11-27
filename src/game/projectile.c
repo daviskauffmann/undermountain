@@ -128,6 +128,6 @@ void projectile_calc_light(struct projectile *projectile)
     if (projectile_datum.light_radius >= 0)
     {
         struct map *map = &world->maps[projectile->floor];
-        projectile->light_fov = map_to_fov_map(map, projectile->x, projectile->y, projectile_datum.light_radius);
+        projectile->light_fov = map_to_fov_map(map, (int)projectile->x, (int)projectile->y, projectile_datum.light_radius);
     }
 }

@@ -1905,7 +1905,7 @@ static void render(TCOD_console_t console)
                             struct actor *actor = *iterator;
                             if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
                             {
-                                float radius_sq = powf(actor->light_radius, 2);
+                                float radius_sq = powf((float)actor->light_radius, 2);
                                 float distance_sq =
                                     powf((float)(x - actor->x + (actor->light_flicker ? dx : 0)), 2) +
                                     powf((float)(y - actor->y + (actor->light_flicker ? dy : 0)), 2);
@@ -1927,7 +1927,7 @@ static void render(TCOD_console_t console)
                             struct projectile_datum projectile_datum = projectile_data[projectile->type];
                             if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
                             {
-                                float radius_sq = powf(projectile_datum.light_radius, 2);
+                                float radius_sq = powf((float)projectile_datum.light_radius, 2);
                                 float distance_sq =
                                     powf((float)(x - projectile->x + (projectile_datum.light_flicker ? dx : 0)), 2) +
                                     powf((float)(y - projectile->y + (projectile_datum.light_flicker ? dy : 0)), 2);
@@ -1948,7 +1948,7 @@ static void render(TCOD_console_t console)
                             struct explosion *explosion = *iterator;
                             if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
                             {
-                                float radius_sq = powf(explosion->radius, 2);
+                                float radius_sq = powf((float)explosion->radius, 2);
                                 float distance_sq =
                                     powf((float)(x - explosion->x + dx * 2), 2) +
                                     powf((float)(y - explosion->y + dy * 2), 2);
@@ -2381,7 +2381,7 @@ static void render(TCOD_console_t console)
 
                 TCOD_console_set_default_foreground(message_log_rect.console, TCOD_color_lerp(TCOD_gray, message->color, (float)y / (message_log_rect.height - 2)));
 
-                int lines = TCOD_console_get_height_rect(
+                int lines = TCOD_console_get_height_rect_fmt(
                     message_log_rect.console,
                     1,
                     y,

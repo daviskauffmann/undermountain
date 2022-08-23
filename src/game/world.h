@@ -1,16 +1,15 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <libtcod.h>
-
 #include "map.h"
 #include "spell.h"
+#include <libtcod.h>
 
-#define NUM_MAPS 60
+#define NUM_MAPS 20
 
 struct world
 {
-    TCOD_random_t random;
+    TCOD_Random *random;
     unsigned int time;
     struct map maps[NUM_MAPS];
     struct actor *player;
@@ -21,7 +20,7 @@ struct world
 
 extern struct world *world;
 
-void world_setup(void);
+void world_init(void);
 void world_cleanup(void);
 void world_create(struct actor *hero);
 void world_save(const char *filename);

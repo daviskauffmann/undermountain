@@ -1,10 +1,5 @@
 #include "actor.h"
 
-#include <assert.h>
-#include <float.h>
-#include <malloc.h>
-#include <math.h>
-
 #include "assets.h"
 #include "explosion.h"
 #include "item.h"
@@ -12,6 +7,10 @@
 #include "room.h"
 #include "util.h"
 #include "world.h"
+#include <assert.h>
+#include <float.h>
+#include <malloc.h>
+#include <math.h>
 
 struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y, bool torch)
 {
@@ -23,7 +22,7 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->faction = faction;
     actor->level = level;
     actor->experience = actor_calc_experience_to_level(actor->level);
-    actor->max_hp = 10 * level;
+    actor->max_hp = 10 + (10 * level);
     actor->current_hp = actor->max_hp;
     actor->gold = 0;
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
@@ -38,12 +37,11 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
     actor->fov = NULL;
     actor->took_turn = false;
     actor->energy = 1.0f;
-    actor->energy_per_turn = TCOD_random_get_float(world->random, 0.5f, 2.0f);
+    actor->energy_per_turn = race_data[race].speed;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
     actor->turns_chased = 0;
     actor->leader = NULL;
-    actor->interacting = NULL;
     actor->light_radius = -1;
     actor->light_color = TCOD_white;
     actor->light_intensity = 0;
@@ -64,21 +62,25 @@ struct actor *actor_new(const char *name, enum race race, enum class class, enum
 
 void actor_delete(struct actor *actor)
 {
-    free(actor->name);
+    if (actor->light_fov != NULL)
+    {
+        TCOD_map_delete(actor->light_fov);
+    }
+
+    if (actor->fov != NULL)
+    {
+        TCOD_map_delete(actor->fov);
+    }
+
     TCOD_LIST_FOREACH(actor->items)
     {
         struct item *item = *iterator;
         item_delete(item);
     }
     TCOD_list_delete(actor->items);
-    if (actor->fov != NULL)
-    {
-        TCOD_map_delete(actor->fov);
-    }
-    if (actor->light_fov != NULL)
-    {
-        TCOD_map_delete(actor->light_fov);
-    }
+
+    free(actor->name);
+
     free(actor);
 }
 
@@ -89,14 +91,6 @@ int actor_calc_experience_to_level(int level)
 
 void actor_update(struct actor *actor, float delta_time)
 {
-    if (actor->interacting)
-    {
-        if (distance_between(actor->x, actor->y, actor->interacting->x, actor->interacting->y) > 2.0f)
-        {
-            world->player->interacting = NULL;
-        }
-    }
-
     if (actor->flash_fade_coef > 0)
     {
         // TODO: slower/faster fade depending on circumstances
@@ -537,11 +531,6 @@ bool actor_move(struct actor *actor, int x, int y)
                 actor->name);
         }
         break;
-        case OBJECT_TYPE_TRADER:
-        {
-            actor->interacting = tile->object;
-        }
-        break;
         case NUM_OBJECT_TYPES:
             break;
         }
@@ -587,6 +576,7 @@ bool actor_swap(struct actor *actor, struct actor *other)
         // actors can't intiiate a swap with the player
         return false;
     }
+
     struct map *map = &world->maps[actor->floor];
     struct tile *tile = &map->tiles[actor->x][actor->y];
     struct tile *other_tile = &map->tiles[other->x][other->y];
@@ -738,6 +728,11 @@ bool actor_descend(struct actor *actor, bool is_leader, void ***iterator)
             if (other && other->leader == actor)
             {
                 actor_descend(other, false, &iterator);
+
+                if (!iterator)
+                {
+                    break;
+                }
             }
         }
     }
@@ -808,6 +803,11 @@ bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator)
             if (other && other->leader == actor)
             {
                 actor_ascend(other, false, &iterator);
+
+                if (!iterator)
+                {
+                    break;
+                }
             }
         }
     }
@@ -1358,6 +1358,20 @@ bool actor_shoot(struct actor *actor, int x, int y)
 
 bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition)
 {
+    if (TCOD_random_get_int(world->random, 0, 1) == 0)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s misses %s.",
+            actor->name,
+            other->name);
+
+        return true;
+    }
+
     int min_damage = 1;
     int max_damage = 3;
     struct item *weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
@@ -1369,6 +1383,12 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     }
 
     int damage = TCOD_random_get_int(world->random, min_damage, max_damage);
+
+    if (ammunition)
+    {
+        struct item_datum item_datum = item_data[ammunition->type];
+        damage += TCOD_random_get_int(world->random, item_datum.min_damage, item_datum.max_damage);
+    }
 
     struct item *armor = other->equipment[EQUIP_SLOT_ARMOR];
     if (armor)
@@ -1431,9 +1451,9 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
                     actor->x,
                     actor->y,
                     TCOD_white,
-                    "%s has joined the %s faction!",
+                    "%s has become friendly to %s!",
                     other->name,
-                    faction_data[other->faction].name);
+                    actor->name);
             }
         }
 
@@ -1626,6 +1646,11 @@ void actor_die(struct actor *actor, struct actor *killer)
             TCOD_list_push(tile->items, item);
             TCOD_list_push(map->items, item);
             iterator = TCOD_list_remove_iterator_fast(actor->items, iterator);
+
+            if (!iterator)
+            {
+                break;
+            }
         }
     }
 

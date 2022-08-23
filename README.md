@@ -5,15 +5,9 @@
 ### Download
 
 ```sh
-git clone https://github.com/daviskauffmann/undermountain.git
+git clone --recurse-submodules https://github.com/daviskauffmann/undermountain.git
 cd undermountain
 ```
-
-### Install Dependencies
-
-Install the following using the package manager of your choice:
-
-- libtcod
 
 ### Build
 
@@ -25,4 +19,8 @@ cmake ..
 
 ## Configuration
 
-In `data`, copy `config.txt` and rename to `config.local.txt` to make local changes to the configuration. This file is not source controlled.
+In `data`, copy `config.cfg` and rename to `config.local.cfg` to make local changes to the configuration. This file is not source controlled. Some configuration values can be controlled by command line arguments as well. Run with `--help` to view them. Command line arguments will override config file values for the same setting.
+
+## Resources Used
+
+[A Turn-Based Game Loop](http://journal.stuffwithstuff.com/2014/07/15/a-turn-based-game-loop/)

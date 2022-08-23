@@ -1,6 +1,6 @@
 #include "tile.h"
 
-void tile_setup(struct tile *tile, enum tile_type type, bool seen)
+void tile_init(struct tile *tile, enum tile_type type, bool seen)
 {
     tile->type = type;
     tile->seen = seen;
@@ -10,8 +10,9 @@ void tile_setup(struct tile *tile, enum tile_type type, bool seen)
     tile->items = TCOD_list_new();
 }
 
-void tile_cleanup(struct tile *tile)
+void tile_uninit(struct tile *tile)
 {
-    TCOD_list_delete(tile->corpses);
     TCOD_list_delete(tile->items);
+
+    TCOD_list_delete(tile->corpses);
 }

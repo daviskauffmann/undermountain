@@ -1,15 +1,14 @@
 #include "projectile.h"
 
+#include "actor.h"
+#include "assets.h"
+#include "explosion.h"
+#include "util.h"
+#include "world.h"
 #include <assert.h>
 #include <malloc.h>
 #include <math.h>
 #include <stdio.h>
-
-#include "actor.h"
-#include "assets.h"
-#include "explosion.h"
-#include "world.h"
-#include "util.h"
 
 // TODO: scale damage over distance?
 

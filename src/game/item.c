@@ -1,9 +1,8 @@
 #include "item.h"
 
+#include "assets.h"
 #include <assert.h>
 #include <malloc.h>
-
-#include "assets.h"
 
 struct item *item_new(enum item_type type, int floor, int x, int y, int stack)
 {

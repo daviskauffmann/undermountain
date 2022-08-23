@@ -1,9 +1,8 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include <libtcod.h>
-
 #include "tile.h"
+#include <libtcod.h>
 
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
@@ -37,8 +36,8 @@ struct map
     int current_actor_index;
 };
 
-void map_setup(struct map *map, unsigned int floor);
-void map_cleanup(struct map *map);
+void map_init(struct map *map, unsigned int floor);
+void map_uninit(struct map *map);
 void map_generate(struct map *map, enum map_type map_type);
 bool map_is_inside(int x, int y);
 struct room *map_get_random_room(struct map *map);

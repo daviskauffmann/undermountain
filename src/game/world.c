@@ -1,13 +1,5 @@
 #include "world.h"
 
-#include <assert.h>
-#include <malloc.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
 #include "actor.h"
 #include "assets.h"
 #include "corpse.h"
@@ -17,6 +9,13 @@
 #include "projectile.h"
 #include "room.h"
 #include "util.h"
+#include <assert.h>
+#include <malloc.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 // TODO: there is a lot of repetition of things with light properties
 // pack them into a light struct?
@@ -68,7 +67,7 @@
 
 struct world *world;
 
-void world_setup(void)
+void world_init(void)
 {
     world = malloc(sizeof(*world));
     assert(world);
@@ -81,7 +80,7 @@ void world_setup(void)
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
-        map_setup(map, floor);
+        map_init(map, floor);
     }
     world->player = NULL;
     world->hero = NULL;
@@ -91,22 +90,25 @@ void world_setup(void)
 
 void world_cleanup(void)
 {
-    if (world->random)
-    {
-        TCOD_random_delete(world->random);
-        TCOD_namegen_destroy();
-    }
-    for (int i = 0; i < NUM_MAPS; i++)
-    {
-        struct map *map = &world->maps[i];
-        map_cleanup(map);
-    }
     TCOD_LIST_FOREACH(world->messages)
     {
         struct message *message = *iterator;
         message_delete(message);
     }
     TCOD_list_delete(world->messages);
+
+    for (int i = 0; i < NUM_MAPS; i++)
+    {
+        struct map *map = &world->maps[i];
+        map_uninit(map);
+    }
+
+    if (world->random)
+    {
+        TCOD_random_delete(world->random);
+        TCOD_namegen_destroy();
+    }
+
     free(world);
     world = NULL;
 }
@@ -114,12 +116,12 @@ void world_cleanup(void)
 void world_create(struct actor *hero)
 {
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, (unsigned int)time(0));
-    TCOD_namegen_parse("data/namegen.txt", world->random);
+    TCOD_namegen_parse("data/namegen.cfg", world->random);
 
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
-        // map_generate(&world->maps[floor], TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
-        map_generate(&world->maps[floor], MAP_TYPE_LARGE_DUNGEON);
+        map_generate(&world->maps[floor], TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
+        // map_generate(&world->maps[floor], MAP_TYPE_LARGE_DUNGEON);
     }
 
     world->hero = hero;
@@ -142,9 +144,8 @@ void world_create(struct actor *hero)
 
         // create pet
         {
-            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, FACTION_GOOD, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1, false);
+            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, hero->faction, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1, false);
             pet->leader = world->hero;
-            // pet->controllable = true;
 
             TCOD_list_push(map->actors, pet);
             map->tiles[pet->x][pet->y].actor = pet;
@@ -699,6 +700,11 @@ void world_update(float delta_time)
         {
             iterator = TCOD_list_remove_iterator_fast(map->projectiles, iterator);
             projectile_delete(projectile);
+
+            if (!iterator)
+            {
+                break;
+            }
         }
     }
     TCOD_LIST_FOREACH(map->explosions)
@@ -708,6 +714,11 @@ void world_update(float delta_time)
         {
             iterator = TCOD_list_remove_iterator_fast(map->explosions, iterator);
             explosion_delete(explosion);
+
+            if (!iterator)
+            {
+                break;
+            }
         }
     }
 
@@ -790,7 +801,7 @@ void world_update(float delta_time)
             }
 
             // for a controllable actor, the UI is responsible for setting took_turn to true
-            // for non-controllable actors, took_turn will always be set to true after running their AI
+            // for non-controllable actors, the AI function will do it
             if (actor->took_turn)
             {
                 // decrease energy

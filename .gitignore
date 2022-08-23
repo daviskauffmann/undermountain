@@ -1,7 +1,5 @@
-.vscode
-
 build
 
-config.local.txt
+config.local.cfg
 
 save.gz

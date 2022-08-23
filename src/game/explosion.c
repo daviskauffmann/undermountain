@@ -1,11 +1,10 @@
 #include "explosion.h"
 
+#include "actor.h"
+#include "world.h"
 #include <assert.h>
 #include <malloc.h>
 #include <math.h>
-
-#include "actor.h"
-#include "world.h"
 
 struct explosion *explosion_new(int floor, int x, int y, int radius, TCOD_color_t color, struct actor *initiator)
 {

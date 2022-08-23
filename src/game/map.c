@@ -15,7 +15,7 @@
 #define SPAWN_MONSTERS 10
 #define SPAWN_ITEMS 2
 
-void map_setup(struct map *map, unsigned int floor)
+void map_init(struct map *map, unsigned int floor)
 {
     map->floor = floor;
     for (int x = 0; x < MAP_WIDTH; x++)
@@ -23,7 +23,7 @@ void map_setup(struct map *map, unsigned int floor)
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
             struct tile *tile = &map->tiles[x][y];
-            tile_setup(tile, TILE_TYPE_EMPTY, false);
+            tile_init(tile, TILE_TYPE_EMPTY, false);
         }
     }
     map->rooms = TCOD_list_new();
@@ -36,58 +36,65 @@ void map_setup(struct map *map, unsigned int floor)
     map->current_actor_index = 0;
 }
 
-void map_cleanup(struct map *map)
+void map_uninit(struct map *map)
 {
-    for (int x = 0; x < MAP_WIDTH; x++)
-    {
-        for (int y = 0; y < MAP_HEIGHT; y++)
-        {
-            struct tile *tile = &map->tiles[x][y];
-            tile_cleanup(tile);
-        }
-    }
-    TCOD_LIST_FOREACH(map->rooms)
-    {
-        struct room *room = *iterator;
-        room_delete(room);
-    }
-    TCOD_list_delete(map->rooms);
-    TCOD_LIST_FOREACH(map->objects)
-    {
-        struct object *object = *iterator;
-        object_delete(object);
-    }
-    TCOD_list_delete(map->objects);
-    TCOD_LIST_FOREACH(map->actors)
-    {
-        struct actor *actor = *iterator;
-        actor_delete(actor);
-    }
-    TCOD_list_delete(map->actors);
-    TCOD_LIST_FOREACH(map->corpses)
-    {
-        struct corpse *corpse = *iterator;
-        corpse_delete(corpse);
-    }
-    TCOD_list_delete(map->corpses);
-    TCOD_LIST_FOREACH(map->items)
-    {
-        struct item *item = *iterator;
-        item_delete(item);
-    }
-    TCOD_list_delete(map->items);
-    TCOD_LIST_FOREACH(map->projectiles)
-    {
-        struct projectile *projectile = *iterator;
-        projectile_delete(projectile);
-    }
-    TCOD_list_delete(map->projectiles);
     TCOD_LIST_FOREACH(map->explosions)
     {
         struct explosion *explosion = *iterator;
         explosion_delete(explosion);
     }
     TCOD_list_delete(map->explosions);
+
+    TCOD_LIST_FOREACH(map->projectiles)
+    {
+        struct projectile *projectile = *iterator;
+        projectile_delete(projectile);
+    }
+    TCOD_list_delete(map->projectiles);
+
+    TCOD_LIST_FOREACH(map->items)
+    {
+        struct item *item = *iterator;
+        item_delete(item);
+    }
+    TCOD_list_delete(map->items);
+
+    TCOD_LIST_FOREACH(map->corpses)
+    {
+        struct corpse *corpse = *iterator;
+        corpse_delete(corpse);
+    }
+    TCOD_list_delete(map->corpses);
+
+    TCOD_LIST_FOREACH(map->actors)
+    {
+        struct actor *actor = *iterator;
+        actor_delete(actor);
+    }
+    TCOD_list_delete(map->actors);
+
+    TCOD_LIST_FOREACH(map->objects)
+    {
+        struct object *object = *iterator;
+        object_delete(object);
+    }
+    TCOD_list_delete(map->objects);
+
+    TCOD_LIST_FOREACH(map->rooms)
+    {
+        struct room *room = *iterator;
+        room_delete(room);
+    }
+    TCOD_list_delete(map->rooms);
+
+    for (int x = 0; x < MAP_WIDTH; x++)
+    {
+        for (int y = 0; y < MAP_HEIGHT; y++)
+        {
+            struct tile *tile = &map->tiles[x][y];
+            tile_uninit(tile);
+        }
+    }
 }
 
 static void hline(struct map *map, int x1, int y, int x2)
@@ -708,8 +715,8 @@ void map_generate(struct map *map, enum map_type map_type)
             TCOD_namegen_generate(name, false),
             race,
             TCOD_random_get_int(world->random, CLASS_MAGE, CLASS_WARRIOR),
-            FACTION_GOOD,
-            map->floor,
+            FACTION_ADVENTURER,
+            map->floor + 1,
             map->floor,
             x,
             y,
@@ -738,8 +745,8 @@ void map_generate(struct map *map, enum map_type map_type)
             monster_prototype->name,
             monster_prototype->race,
             monster_prototype->class,
-            FACTION_EVIL,
-            map->floor,
+            FACTION_MONSTER,
+            map->floor + 1,
             map->floor,
             x,
             y,

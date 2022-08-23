@@ -1,10 +1,9 @@
 #include "room.h"
 
+#include "world.h"
 #include <assert.h>
 #include <libtcod.h>
 #include <malloc.h>
-
-#include "world.h"
 
 struct room *room_new(int x, int y, int w, int h)
 {

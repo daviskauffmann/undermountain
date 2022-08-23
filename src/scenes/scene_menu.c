@@ -1,14 +1,12 @@
 #include "scene_menu.h"
 
-#include <libtcod.h>
-
+#include "../config.h"
+#include "../game/world.h"
+#include "../scene.h"
 #include "scene_about.h"
 #include "scene_create.h"
 #include "scene_game.h"
-#include "../config.h"
-#include "../scene.h"
-#include "../sys.h"
-#include "../game/world.h"
+#include <libtcod.h>
 
 enum option
 {
@@ -50,11 +48,11 @@ static struct scene *select_option(enum option option)
     {
     case OPTION_START:
     {
-        if (file_exists(SAVE_PATH))
+        if (TCOD_sys_file_exists(SAVE_PATH))
         {
             // TODO: prompt whether the player wants to overwrite the save with a new character
             // if so, go to character creation
-            world_setup();
+            world_init();
             world_load(SAVE_PATH);
 
             menu_scene.quit();

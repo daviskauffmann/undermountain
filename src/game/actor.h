@@ -1,11 +1,9 @@
 #ifndef ACTOR_H
 #define ACTOR_H
 
-#include <libtcod.h>
-
-#include "faction.h"
 #include "item.h"
 #include "spell.h"
+#include <libtcod.h>
 
 struct object;
 
@@ -39,6 +37,12 @@ enum class
     NUM_CLASSES
 };
 
+enum faction
+{
+    FACTION_ADVENTURER,
+    FACTION_MONSTER
+};
+
 enum monster
 {
     MONSTER_BUGBEAR,
@@ -64,6 +68,7 @@ struct race_datum
 {
     const char *name;
     unsigned char glyph;
+    float speed;
 };
 
 struct class_datum
@@ -115,8 +120,6 @@ struct actor
     int turns_chased;
 
     struct actor *leader;
-
-    struct object *interacting;
 
     int light_radius;
     TCOD_color_t light_color;

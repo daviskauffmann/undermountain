@@ -1,9 +1,8 @@
 #include "object.h"
 
+#include "world.h"
 #include <assert.h>
 #include <malloc.h>
-
-#include "world.h"
 
 struct object *object_new(enum object_type type, int floor, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, float light_intensity, bool light_flicker)
 {

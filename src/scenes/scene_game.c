@@ -1,17 +1,6 @@
 #include "scene_game.h"
 
-#include <assert.h>
-#include <float.h>
-#include <libtcod.h>
-#include <malloc.h>
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "scene_menu.h"
 #include "../config.h"
-#include "../scene.h"
-#include "../sys.h"
 #include "../game/actor.h"
 #include "../game/assets.h"
 #include "../game/explosion.h"
@@ -21,6 +10,15 @@
 #include "../game/spell.h"
 #include "../game/util.h"
 #include "../game/world.h"
+#include "../scene.h"
+#include "scene_menu.h"
+#include <assert.h>
+#include <float.h>
+#include <libtcod.h>
+#include <malloc.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 // TODO: better mouse controls
 // design a system where when selecting an action from the right-click menu, other actions are ignored as the actor paths to the location
@@ -337,6 +335,11 @@ static void tooltip_options_clear(void)
         struct tooltip_option *tooltip_option = *iterator;
         iterator = TCOD_list_remove_iterator_fast(tooltip_options, iterator);
         tooltip_option_delete(tooltip_option);
+
+        if (!iterator)
+        {
+            break;
+        }
     }
 }
 
@@ -394,7 +397,6 @@ enum panel
     PANEL_EXAMINE,
     PANEL_INVENTORY,
     PANEL_SPELLBOOK,
-    PANEL_INTERACT,
 
     NUM_PANELS
 };
@@ -441,7 +443,7 @@ static enum equip_slot panel_character_equip_slot_mouseover(void)
 {
     if (panel_rect.visible && current_panel == PANEL_CHARACTER && !tooltip_rect.visible)
     {
-        int y = 9; // must be updated every time the layout of the character sheet changes
+        int y = 8; // must be updated every time the layout of the character sheet changes
         for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
         {
             if (mouse_x > panel_rect.x &&
@@ -673,12 +675,6 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 for (enum panel panel = 0; panel < NUM_PANELS; panel++)
                 {
                     panel_state[panel].selection_mode = false;
-                }
-
-                if (world->player->interacting)
-                {
-                    world->player->interacting = NULL;
-                    panel_rect.visible = false;
                 }
 
                 world_log(
@@ -1684,43 +1680,7 @@ static struct scene *update(float delta_time)
 
     world_update(delta_time);
 
-    if (world->player->interacting)
-    {
-        if (!panel_rect.visible)
-        {
-            if (world->player->interacting->type == OBJECT_TYPE_TRADER)
-            {
-                panel_show(PANEL_INTERACT);
-                interact_action = INTERACT_ACTION_BUY;
-                panel_state[PANEL_INTERACT].selection_mode = true;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    TCOD_yellow,
-                    "Choose an item to buy. Press 'ESC' to cancel.");
-            }
-        }
-    }
-    else
-    {
-        if (panel_rect.visible && interact_action != INTERACT_ACTION_NONE)
-        {
-            panel_rect.visible = false;
-            interact_action = INTERACT_ACTION_NONE;
-            panel_state[PANEL_INTERACT].selection_mode = false;
-
-            world_log(
-                world->player->floor,
-                world->player->x,
-                world->player->y,
-                TCOD_yellow,
-                "Action cancelled.");
-        }
-    }
-
-    if (world->hero_dead && file_exists(SAVE_PATH))
+    if (world->hero_dead && TCOD_sys_file_exists(SAVE_PATH))
     {
         remove(SAVE_PATH);
     }
@@ -1981,7 +1941,7 @@ static void render(TCOD_console_t console)
                         int glyph = tile_datum.glyph;
 
                         // select appropriate wall graphic
-                        if (tile->type == TILE_TYPE_WALL)
+                        if (tile->type == TILE_TYPE_WALL && false)
                         {
                             const unsigned char glyphs[] = {
                                 TCOD_CHAR_BLOCK3, //  0 - none
@@ -2246,13 +2206,27 @@ static void render(TCOD_console_t console)
                     struct item *item = TCOD_list_peek(tile->items);
                     if (item)
                     {
-                        TCOD_console_printf_ex(
-                            console,
-                            view_rect.width / 2,
-                            view_rect.height - 2,
-                            TCOD_BKGND_NONE,
-                            TCOD_CENTER,
-                            item_data[item->type].name);
+                        if (TCOD_list_size(tile->items) > 1)
+                        {
+                            TCOD_console_printf_ex(
+                                console,
+                                view_rect.width / 2,
+                                view_rect.height - 2,
+                                TCOD_BKGND_NONE,
+                                TCOD_CENTER,
+                                "%s (multiple)",
+                                item_data[item->type].name);
+                        }
+                        else
+                        {
+                            TCOD_console_printf_ex(
+                                console,
+                                view_rect.width / 2,
+                                view_rect.height - 2,
+                                TCOD_BKGND_NONE,
+                                TCOD_CENTER,
+                                item_data[item->type].name);
+                        }
 
                         goto done;
                     }
@@ -2494,20 +2468,6 @@ static void render(TCOD_console_t console)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 class_data[world->player->class].name);
-            y++;
-
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y - current_panel_status->scroll,
-                "Faction");
-            TCOD_console_printf_ex(
-                panel_rect.console,
-                panel_rect.width - 2,
-                y - current_panel_status->scroll,
-                TCOD_BKGND_NONE,
-                TCOD_RIGHT,
-                faction_data[world->player->faction].name);
             y++;
 
             TCOD_console_printf(
@@ -2758,51 +2718,6 @@ static void render(TCOD_console_t console)
                 false,
                 TCOD_BKGND_SET,
                 "Spellbook");
-        }
-        break;
-        case PANEL_INTERACT:
-        {
-            int y = 1;
-            for (enum item_type item_type = 0; item_type < NUM_ITEM_TYPES; item_type++)
-            {
-                struct item_datum item_datum = item_data[item_type];
-                TCOD_color_t color = item_datum.color;
-
-                TCOD_console_set_default_foreground(panel_rect.console, color);
-                if (current_panel_status->selection_mode)
-                {
-                    TCOD_console_printf(
-                        panel_rect.console,
-                        1,
-                        y - current_panel_status->scroll,
-                        "%c) %s",
-                        y - 1 + 'a' - current_panel_status->scroll,
-                        item_datum.name);
-                }
-                else
-                {
-                    TCOD_console_printf(
-                        panel_rect.console,
-                        1,
-                        y - current_panel_status->scroll,
-                        "%s",
-                        item_datum.name);
-                }
-                TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
-
-                y++;
-            }
-
-            TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
-            TCOD_console_printf_frame(
-                panel_rect.console,
-                0,
-                0,
-                panel_rect.width,
-                panel_rect.height,
-                false,
-                TCOD_BKGND_SET,
-                "Blacksmith");
         }
         break;
         case NUM_PANELS:

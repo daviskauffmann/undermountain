@@ -38,7 +38,10 @@ struct tile
     TCOD_list_t items;
 };
 
-void tile_init(struct tile *tile, enum tile_type type, bool seen);
+void tile_init(
+    struct tile *tile,
+    enum tile_type type,
+    bool seen);
 void tile_uninit(struct tile *tile);
 
 #endif

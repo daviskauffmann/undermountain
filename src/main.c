@@ -18,8 +18,8 @@ int main(int argc, char *argv[])
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
         {
             printf("Options:\n");
-            printf("      --console-width\tSet the width of the console in characters\n");
-            printf("      --console-height\tSet the height of the console in characters\n");
+            printf("  -c, --columns\tSet the width of the console in characters\n");
+            printf("  -r, --rows\tSet the height of the console in characters\n");
             printf("  -h, --help\tPrint this message\n");
             printf("  -v, --version\tPrint current version\n");
             return 0;
@@ -29,24 +29,24 @@ int main(int argc, char *argv[])
             printf("%s\n", VERSION);
             return 0;
         }
-        if (strcmp(argv[i], "--console-width") == 0)
+        if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--columns") == 0)
         {
             console_width = atoi(argv[i + 1]);
         }
-        if (strcmp(argv[i], "--console-height") == 0)
+        if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--rows") == 0)
         {
             console_height = atoi(argv[i + 1]);
         }
     }
 
-    TCOD_Console *console = TCOD_console_new(console_width, console_height);
+    TCOD_Console *const console = TCOD_console_new(console_width, console_height);
     if (!console)
     {
         printf("Error: Couldn't initialize console: \n%s\n", TCOD_get_error());
         return 1;
     }
 
-    TCOD_ContextParams params = {
+    const TCOD_ContextParams params = {
         .tcod_version = TCOD_COMPILEDVERSION,
         .console = console,
         .window_title = TITLE,
@@ -75,47 +75,47 @@ int main(int argc, char *argv[])
         current_time = SDL_GetTicks64();
         const float delta_time = (current_time - previous_time) / 1000.0f;
 
-        // SDL_Event event;
-        // while (SDL_PollEvent(&event))
-        // {
-        //     TCOD_context_convert_event_coordinates(context, &event);
-
-        //     switch (event.type)
-        //     {
-        //     case SDL_QUIT:
-        //     {
-        //         running = false;
-        //     }
-        //     break;
-        //     }
-
-        //     if (!(scene = scene->handle_event(ev, key, mouse)))
-        //     {
-        //         break;
-        //     }
-        // }
-
-        TCOD_key_t key;
-        TCOD_mouse_t mouse;
-        TCOD_event_t ev = TCOD_sys_check_for_event(TCOD_EVENT_ANY, &key, &mouse);
-        if (!(scene = scene->handle_event(ev, key, mouse)))
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
         {
-            break;
-        }
+            TCOD_context_convert_event_coordinates(context, &event);
 
-        if (!(scene = scene->update(delta_time)))
-        {
+            switch (event.type)
+            {
+            case SDL_QUIT:
+            {
+                running = false;
+            }
             break;
+            }
+
+            if (scene)
+            {
+                if (!(scene = scene->handle_event(&event)))
+                {
+                    running = false;
+                    break;
+                }
+            }
         }
 
         TCOD_console_clear(console);
-        scene->render(console);
+
+        if (scene)
+        {
+            if (!(scene = scene->update(console, delta_time)))
+            {
+                running = false;
+                break;
+            }
+        }
+
         TCOD_context_present(context, console, NULL);
     }
 
     if (scene)
     {
-        scene->quit();
+        scene->uninit();
     }
 
     TCOD_console_delete(console);

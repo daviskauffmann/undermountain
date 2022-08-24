@@ -77,7 +77,7 @@ void world_init(void)
     {
         item_data[item_type].spawned = false;
     }
-    for (int floor = 0; floor < NUM_MAPS; floor++)
+    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
         map_init(map, floor);
@@ -88,7 +88,7 @@ void world_init(void)
     world->messages = TCOD_list_new();
 }
 
-void world_cleanup(void)
+void world_uninit(void)
 {
     TCOD_LIST_FOREACH(world->messages)
     {
@@ -118,16 +118,16 @@ void world_create(struct actor *hero)
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, (unsigned int)time(0));
     TCOD_namegen_parse("data/namegen.cfg", world->random);
 
-    for (int floor = 0; floor < NUM_MAPS; floor++)
+    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
-        map_generate(&world->maps[floor], TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
-        // map_generate(&world->maps[floor], MAP_TYPE_LARGE_DUNGEON);
+        // map_generate(&world->maps[floor], TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
+        map_generate(&world->maps[floor], MAP_TYPE_LARGE_DUNGEON);
     }
 
     world->hero = hero;
 
     {
-        int floor = 0;
+        uint8_t floor = 0;
         struct map *map = &world->maps[floor];
 
         // init player
@@ -170,12 +170,12 @@ void world_save(const char *filename)
     TCOD_zip_put_random(zip, world->random);
     TCOD_zip_put_int(zip, world->time);
 
-    int player_map = -1;
+    int player_floor = -1;
     int player_index = -1;
-    int hero_map = -1;
+    int hero_floor = -1;
     int hero_index = -1;
 
-    for (int floor = 0; floor < NUM_MAPS; floor++)
+    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
 
@@ -279,13 +279,13 @@ void world_save(const char *filename)
 
             if (actor == world->player)
             {
-                player_map = floor;
+                player_floor = floor;
                 player_index = index;
             }
 
             if (actor == world->hero)
             {
-                hero_map = floor;
+                hero_floor = floor;
                 hero_index = index;
             }
 
@@ -347,6 +347,19 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, projectile->target_x);
             TCOD_zip_put_float(zip, projectile->x);
             TCOD_zip_put_float(zip, projectile->y);
+            if (projectile->ammunition)
+            {
+                TCOD_zip_put_int(zip, 1);
+                TCOD_zip_put_int(zip, projectile->ammunition->type);
+                TCOD_zip_put_int(zip, projectile->ammunition->x);
+                TCOD_zip_put_int(zip, projectile->ammunition->y);
+                TCOD_zip_put_int(zip, projectile->ammunition->current_durability);
+                TCOD_zip_put_int(zip, projectile->ammunition->current_stack);
+            }
+            else
+            {
+                TCOD_zip_put_int(zip, 0);
+            }
         }
 
         TCOD_LIST_FOREACH(map->projectiles)
@@ -379,9 +392,9 @@ void world_save(const char *filename)
         TCOD_zip_put_int(zip, map->current_actor_index);
     }
 
-    TCOD_zip_put_int(zip, player_map);
+    TCOD_zip_put_int(zip, player_floor);
     TCOD_zip_put_int(zip, player_index);
-    TCOD_zip_put_int(zip, hero_map);
+    TCOD_zip_put_int(zip, hero_floor);
     TCOD_zip_put_int(zip, hero_index);
 
     TCOD_zip_put_int(zip, TCOD_list_size(world->messages));
@@ -405,10 +418,10 @@ void world_load(const char *filename)
     TCOD_zip_load_from_file(zip, filename);
 
     world->random = TCOD_zip_get_random(zip);
-    TCOD_namegen_parse("data/namegen.txt", world->random);
+    TCOD_namegen_parse("data/namegen.cfg", world->random);
     world->time = TCOD_zip_get_int(zip);
 
-    for (int floor = 0; floor < NUM_MAPS; floor++)
+    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
 
@@ -492,7 +505,7 @@ void world_load(const char *filename)
             }
             TCOD_list_t items = TCOD_list_new();
             int num_items = TCOD_zip_get_int(zip);
-            for (int i = 0; i < num_items; i++)
+            for (int j = 0; j < num_items; j++)
             {
                 enum item_type type = TCOD_zip_get_int(zip);
                 int x = TCOD_zip_get_int(zip);
@@ -603,8 +616,21 @@ void world_load(const char *filename)
             int target_y = TCOD_zip_get_int(zip);
             float x = TCOD_zip_get_float(zip);
             float y = TCOD_zip_get_float(zip);
+            bool ammunition_exists = TCOD_zip_get_int(zip);
+            struct item *ammunition = NULL;
+            if (ammunition_exists)
+            {
+                enum item_type ammunition_type = TCOD_zip_get_int(zip);
+                int ammunition_x = TCOD_zip_get_int(zip);
+                int ammunition_y = TCOD_zip_get_int(zip);
+                int ammunition_current_durability = TCOD_zip_get_int(zip);
+                int ammunition_current_stack = TCOD_zip_get_int(zip);
 
-            struct projectile *projectile = projectile_new(type, floor, origin_x, origin_y, target_x, target_y, NULL, NULL);
+                ammunition = item_new(ammunition_type, floor, ammunition_x, ammunition_y, ammunition_current_stack);
+                ammunition->current_durability = ammunition_current_durability;
+            }
+
+            struct projectile *projectile = projectile_new(type, floor, origin_x, origin_y, target_x, target_y, NULL, ammunition);
             projectile->x = x;
             projectile->y = y;
 
@@ -641,13 +667,13 @@ void world_load(const char *filename)
         map->current_actor_index = TCOD_zip_get_int(zip);
     }
 
-    int player_map = TCOD_zip_get_int(zip);
+    int player_floor = TCOD_zip_get_int(zip);
     int player_index = TCOD_zip_get_int(zip);
-    world->player = TCOD_list_get(world->maps[player_map].actors, player_index);
+    world->player = TCOD_list_get(world->maps[player_floor].actors, player_index);
 
-    int hero_map = TCOD_zip_get_int(zip);
+    int hero_floor = TCOD_zip_get_int(zip);
     int hero_index = TCOD_zip_get_int(zip);
-    world->hero = TCOD_list_get(world->maps[hero_map].actors, hero_index);
+    world->hero = TCOD_list_get(world->maps[hero_floor].actors, hero_index);
 
     int num_messages = TCOD_zip_get_int(zip);
     for (int i = 0; i < num_messages; i++)
@@ -725,9 +751,8 @@ void world_update(float delta_time)
     // calculate player fov every frame because of moving lights (like projectiles) that can reveal things in between turns
     actor_calc_fov(world->player);
 
-    // process actor turns as long as the hero is alive and no animations are playing
-    while (!world->hero_dead &&
-           TCOD_list_size(map->projectiles) == 0 &&
+    // process actor turns as long no animations are playing
+    while (TCOD_list_size(map->projectiles) == 0 &&
            TCOD_list_size(map->explosions) == 0)
     {
         // update things that should be updated per-turn
@@ -841,6 +866,32 @@ void world_update(float delta_time)
     }
 }
 
+bool world_player_can_take_turn(void)
+{
+    if (world->hero_dead)
+    {
+        return false;
+    }
+
+    const struct map *const map = &world->maps[world->player->floor];
+    if (world->player != TCOD_list_get(map->actors, map->current_actor_index))
+    {
+        return false;
+    }
+
+    if (TCOD_list_size(map->projectiles) > 0)
+    {
+        return false;
+    }
+
+    if (TCOD_list_size(map->explosions) > 0)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 {
     if (floor != -1 &&
@@ -854,10 +905,12 @@ void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
 
     va_list args;
     va_start(args, fmt);
-    size_t length = vsnprintf(NULL, 0, fmt, args);
-    char *string = malloc(length + 1);
+
+    size_t size = vsnprintf(NULL, 0, fmt, args);
+    char *string = malloc(size + 1);
     assert(string);
-    vsprintf(string, fmt, args);
+    vsprintf_s(string, size + 1, fmt, args);
+
     va_end(args);
 
     char *line_begin = string;

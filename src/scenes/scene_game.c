@@ -10,6 +10,7 @@
 #include "../game/spell.h"
 #include "../game/util.h"
 #include "../game/world.h"
+#include "../print.h"
 #include "../scene.h"
 #include "scene_menu.h"
 #include <assert.h>
@@ -520,6 +521,33 @@ static void init(struct scene *previous_scene)
     noise = TCOD_noise_new(1, TCOD_NOISE_DEFAULT_HURST, TCOD_NOISE_DEFAULT_LACUNARITY, NULL);
 }
 
+static void uninit(void)
+{
+    if (!world->hero_dead)
+    {
+        world_save(SAVE_PATH);
+    }
+    world_uninit();
+
+    TCOD_noise_delete(noise);
+
+    TCOD_console_delete(panel_rect.console);
+
+    TCOD_console_delete(message_log_rect.console);
+
+    TCOD_console_delete(status_rect.console);
+
+    TCOD_console_delete(hud_rect.console);
+
+    TCOD_LIST_FOREACH(tooltip_options)
+    {
+        struct tooltip_option *tooltip_option = *iterator;
+        tooltip_option_delete(tooltip_option);
+    }
+    TCOD_list_delete(tooltip_options);
+    TCOD_console_delete(tooltip_rect.console);
+}
+
 static bool player_swing(enum direction direction)
 {
     int x;
@@ -572,11 +600,11 @@ static bool player_swing(enum direction direction)
     return false;
 }
 
-static bool player_interact(TCOD_key_t key, enum direction direction)
+static bool player_interact(SDL_Event *event, enum direction direction)
 {
     if (directional_action == DIRECTIONAL_ACTION_NONE)
     {
-        if (key.lctrl)
+        if (event->key.keysym.mod & KMOD_CTRL)
         {
             return player_swing(direction);
         }
@@ -623,7 +651,7 @@ static bool toolip_option_on_click_unequip(void)
     return actor_unequip(world->player, tooltip_data.equip_slot);
 }
 
-static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static struct scene *handle_event(SDL_Event *event)
 {
     if (!world->player)
     {
@@ -634,27 +662,15 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         }
     }
 
-    mouse_x = mouse.cx;
-    mouse_y = mouse.cy;
-    mouse_tile_x = mouse.cx + view_rect.x;
-    mouse_tile_y = mouse.cy + view_rect.y;
-
-    struct map *map = &world->maps[world->player->floor];
-    bool can_take_turn =
-        !world->hero_dead &&
-        world->player == TCOD_list_get(map->actors, map->current_actor_index) &&
-        TCOD_list_size(map->projectiles) == 0 &&
-        TCOD_list_size(map->explosions) == 0;
-
-    switch (ev)
+    switch (event->type)
     {
-    case TCOD_EVENT_KEY_PRESS:
+    case SDL_KEYDOWN:
     {
         automoving = false;
 
-        switch (key.vk)
+        switch (event->key.keysym.sym)
         {
-        case TCODK_ESCAPE:
+        case SDLK_ESCAPE:
         {
             if (tooltip_rect.visible)
             {
@@ -694,13 +710,13 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else
             {
-                game_scene.quit();
+                game_scene.uninit();
                 menu_scene.init(&game_scene);
                 return &menu_scene;
             }
         }
         break;
-        case TCODK_PAGEDOWN:
+        case SDLK_PAGEDOWN:
         {
             if (panel_rect.visible)
             {
@@ -708,7 +724,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
         }
         break;
-        case TCODK_PAGEUP:
+        case SDLK_PAGEUP:
         {
             if (panel_rect.visible)
             {
@@ -716,122 +732,169 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
         }
         break;
-        case TCODK_KP1:
+        case SDLK_KP_1:
         {
             if (targeting != TARGETING_NONE)
             {
                 target_x--;
                 target_y++;
             }
-            else if (can_take_turn)
+            else if (world_player_can_take_turn())
             {
-                world->player->took_turn = player_interact(key, DIRECTION_SW);
+                world->player->took_turn = player_interact(event, DIRECTION_SW);
             }
         }
         break;
-        case TCODK_KP2:
-        case TCODK_DOWN:
+        case SDLK_KP_2:
+        case SDLK_DOWN:
         {
             if (targeting != TARGETING_NONE)
             {
                 target_y++;
             }
-            else if (can_take_turn)
+            else if (world_player_can_take_turn())
             {
-                world->player->took_turn = player_interact(key, DIRECTION_S);
+                world->player->took_turn = player_interact(event, DIRECTION_S);
             }
         }
         break;
-        case TCODK_KP3:
+        case SDLK_KP_3:
         {
             if (targeting != TARGETING_NONE)
             {
                 target_x++;
                 target_y++;
             }
-            else if (can_take_turn)
+            else if (world_player_can_take_turn())
             {
-                world->player->took_turn = player_interact(key, DIRECTION_SE);
+                world->player->took_turn = player_interact(event, DIRECTION_SE);
             }
         }
         break;
-        case TCODK_KP4:
-        case TCODK_LEFT:
+        case SDLK_KP_4:
+        case SDLK_LEFT:
         {
             if (targeting != TARGETING_NONE)
             {
                 target_x--;
             }
-            else if (can_take_turn)
+            else if (world_player_can_take_turn())
             {
-                world->player->took_turn = player_interact(key, DIRECTION_W);
+                world->player->took_turn = player_interact(event, DIRECTION_W);
             }
         }
         break;
-        case TCODK_KP5:
+        case SDLK_KP_5:
         {
-            if (can_take_turn)
+            if (world_player_can_take_turn())
             {
                 world->player->took_turn = true;
             }
         }
         break;
-        case TCODK_KP6:
-        case TCODK_RIGHT:
+        case SDLK_KP_6:
+        case SDLK_RIGHT:
         {
             if (targeting != TARGETING_NONE)
             {
                 target_x++;
             }
-            else if (can_take_turn)
+            else if (world_player_can_take_turn())
             {
-                world->player->took_turn = player_interact(key, DIRECTION_E);
+                world->player->took_turn = player_interact(event, DIRECTION_E);
             }
         }
         break;
-        case TCODK_KP7:
+        case SDLK_KP_7:
         {
             if (targeting != TARGETING_NONE)
             {
                 target_x--;
                 target_y--;
             }
-            else if (can_take_turn)
+            else if (world_player_can_take_turn())
             {
-                world->player->took_turn = player_interact(key, DIRECTION_NW);
+                world->player->took_turn = player_interact(event, DIRECTION_NW);
             }
         }
         break;
-        case TCODK_KP8:
-        case TCODK_UP:
+        case SDLK_KP_8:
+        case SDLK_UP:
         {
             if (targeting != TARGETING_NONE)
             {
                 target_y--;
             }
-            else if (can_take_turn)
+            else if (world_player_can_take_turn())
             {
-                world->player->took_turn = player_interact(key, DIRECTION_N);
+                world->player->took_turn = player_interact(event, DIRECTION_N);
             }
         }
         break;
-        case TCODK_KP9:
+        case SDLK_KP_9:
         {
             if (targeting != TARGETING_NONE)
             {
                 target_x++;
                 target_y--;
             }
-            else if (can_take_turn)
+            else if (world_player_can_take_turn())
             {
-                world->player->took_turn = player_interact(key, DIRECTION_NE);
+                world->player->took_turn = player_interact(event, DIRECTION_NE);
             }
         }
         break;
-        case TCODK_TEXT:
+        case SDLK_PERIOD:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                if (world_player_can_take_turn())
+                {
+                    world->player->took_turn = actor_ascend(world->player, true, NULL);
+                }
+            }
+        }
+        break;
+        case SDLK_COMMA:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                if (world_player_can_take_turn())
+                {
+                    world->player->took_turn = actor_descend(world->player, true, NULL);
+                }
+            }
+        }
+        break;
+        case SDLK_a:
+        case SDLK_b:
+        case SDLK_c:
+        case SDLK_d:
+        case SDLK_e:
+        case SDLK_f:
+        case SDLK_g:
+        case SDLK_h:
+        case SDLK_i:
+        case SDLK_j:
+        case SDLK_k:
+        case SDLK_l:
+        case SDLK_m:
+        case SDLK_n:
+        case SDLK_o:
+        case SDLK_p:
+        case SDLK_q:
+        case SDLK_r:
+        case SDLK_s:
+        case SDLK_t:
+        case SDLK_u:
+        case SDLK_v:
+        case SDLK_w:
+        case SDLK_x:
+        case SDLK_y:
+        case SDLK_z:
         {
             bool handled = false;
-            int alpha = key.text[0] - 'a';
+            int alpha = event->key.keysym.sym - SDLK_a;
             if (inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(world->player->items))
             {
                 struct item *item = TCOD_list_get(world->player->items, alpha);
@@ -843,7 +906,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case INVENTORY_ACTION_DROP:
                 {
-                    if (can_take_turn)
+                    if (world_player_can_take_turn())
                     {
                         world->player->took_turn = actor_drop(world->player, item);
                     }
@@ -851,7 +914,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case INVENTORY_ACTION_EQUIP:
                 {
-                    if (can_take_turn)
+                    if (world_player_can_take_turn())
                     {
                         world->player->took_turn = actor_equip(world->player, item);
                     }
@@ -865,7 +928,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case INVENTORY_ACTION_QUAFF:
                 {
-                    if (can_take_turn)
+                    if (world_player_can_take_turn())
                     {
                         world->player->took_turn = actor_quaff(world->player, item);
                     }
@@ -896,7 +959,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
                 case CHARACTER_ACTION_UNEQUIP:
                 {
-                    if (can_take_turn)
+                    if (world_player_can_take_turn())
                     {
                         world->player->took_turn = actor_unequip(world->player, equip_slot);
                     }
@@ -951,73 +1014,61 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 break;
             }
 
-            switch (key.text[0])
+            switch (event->key.keysym.sym)
             {
-            case '<':
-            {
-                if (can_take_turn)
-                {
-                    world->player->took_turn = actor_ascend(world->player, true, NULL);
-                }
-            }
-            break;
-            case '>':
-            {
-                if (can_take_turn)
-                {
-                    world->player->took_turn = actor_descend(world->player, true, NULL);
-                }
-            }
-            break;
-            case 'b':
+            case SDLK_b:
             {
                 panel_toggle(PANEL_SPELLBOOK);
             }
             break;
-            case 'C':
+            case SDLK_c:
             {
-                panel_toggle(PANEL_CHARACTER);
-            }
-            break;
-            case 'c':
-            {
-                directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
+                if (event->key.keysym.mod & KMOD_SHIFT)
+                {
+                    panel_toggle(PANEL_CHARACTER);
+                }
+                else
+                {
+                    directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
 
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    TCOD_yellow,
-                    "Choose a direction. Press 'ESC' to cancel.");
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
+                }
             }
             break;
-            case 'D':
+            case SDLK_d:
             {
-                directional_action = DIRECTIONAL_ACTION_DRINK;
+                if (event->key.keysym.mod & KMOD_SHIFT)
+                {
+                    directional_action = DIRECTIONAL_ACTION_DRINK;
 
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    TCOD_yellow,
-                    "Choose a direction. Press 'ESC' to cancel.");
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
+                }
+                else
+                {
+                    panel_show(PANEL_INVENTORY);
+                    inventory_action = INVENTORY_ACTION_DROP;
+                    panel_state[PANEL_INVENTORY].selection_mode = true;
+
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "Choose an item to drop. Press 'ESC' to cancel.");
+                }
             }
             break;
-            case 'd':
-            {
-                panel_show(PANEL_INVENTORY);
-                inventory_action = INVENTORY_ACTION_DROP;
-                panel_state[PANEL_INVENTORY].selection_mode = true;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    TCOD_yellow,
-                    "Choose an item to drop. Press 'ESC' to cancel.");
-            }
-            break;
-            case 'e':
+            case SDLK_e:
             {
                 panel_show(PANEL_INVENTORY);
                 inventory_action = INVENTORY_ACTION_EQUIP;
@@ -1031,11 +1082,11 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     "Choose an item to equip. Press 'ESC' to cancel.");
             }
             break;
-            case 'f':
+            case SDLK_f:
             {
                 if (targeting == TARGETING_SHOOT)
                 {
-                    if (can_take_turn)
+                    if (world_player_can_take_turn())
                     {
                         actor_shoot(world->player, target_x, target_y);
                         targeting = TARGETING_NONE;
@@ -1066,30 +1117,30 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
             }
             break;
-            case 'g':
+            case SDLK_g:
             {
-                if (can_take_turn)
+                if (world_player_can_take_turn())
                 {
                     world->player->took_turn = actor_grab(world->player, world->player->x, world->player->y);
                 }
             }
             break;
-            case 'h':
+            case SDLK_h:
             {
                 hud_rect.visible = !hud_rect.visible;
             }
             break;
-            case 'i':
+            case SDLK_i:
             {
                 panel_toggle(PANEL_INVENTORY);
             }
             break;
-            case 'k':
+            case SDLK_k:
             {
                 actor_die(world->player, NULL);
             }
             break;
-            case 'l':
+            case SDLK_l:
             {
                 if (targeting == TARGETING_LOOK)
                 {
@@ -1103,31 +1154,33 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
             }
             break;
-            case 'O':
+            case SDLK_o:
             {
-                directional_action = DIRECTIONAL_ACTION_OPEN_CHEST;
+                if (event->key.keysym.mod & KMOD_SHIFT)
+                {
+                    directional_action = DIRECTIONAL_ACTION_OPEN_CHEST;
 
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    TCOD_yellow,
-                    "Choose a direction. Press 'ESC' to cancel.");
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
+                }
+                else
+                {
+                    directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
+
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "Choose a direction. Press 'ESC' to cancel.");
+                }
             }
             break;
-            case 'o':
-            {
-                directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    TCOD_yellow,
-                    "Choose a direction. Press 'ESC' to cancel.");
-            }
-            break;
-            case 'p':
+            case SDLK_p:
             {
                 directional_action = DIRECTIONAL_ACTION_PRAY;
 
@@ -1139,7 +1192,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
-            case 'q':
+            case SDLK_q:
             {
                 panel_show(PANEL_INVENTORY);
 
@@ -1154,7 +1207,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     "Choose an item to quaff. Press 'ESC' to cancel.");
             }
             break;
-            case 's':
+            case SDLK_s:
             {
                 directional_action = DIRECTIONAL_ACTION_SIT;
 
@@ -1166,45 +1219,47 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
-            case 'T':
+            case SDLK_t:
             {
-                if (can_take_turn)
+                if (event->key.keysym.mod & KMOD_SHIFT)
                 {
-                    if (world->player->light_radius >= 0 && TCOD_color_equals(world->player->light_color, actor_common.glow_color))
+                    if (world_player_can_take_turn())
                     {
-                        world->player->light_radius = -1;
+                        if (world->player->light_radius >= 0 && TCOD_color_equals(world->player->light_color, actor_common.glow_color))
+                        {
+                            world->player->light_radius = -1;
+                        }
+                        else
+                        {
+                            world->player->light_radius = actor_common.glow_radius;
+                            world->player->light_color = actor_common.glow_color;
+                            world->player->light_intensity = actor_common.glow_intensity;
+                            world->player->light_flicker = false;
+                        }
+                        world->player->took_turn = true;
                     }
-                    else
+                }
+                else
+                {
+                    if (world_player_can_take_turn())
                     {
-                        world->player->light_radius = actor_common.glow_radius;
-                        world->player->light_color = actor_common.glow_color;
-                        world->player->light_intensity = actor_common.glow_intensity;
-                        world->player->light_flicker = false;
+                        if (world->player->light_radius >= 0 && TCOD_color_equals(world->player->light_color, actor_common.torch_color))
+                        {
+                            world->player->light_radius = -1;
+                        }
+                        else
+                        {
+                            world->player->light_radius = actor_common.torch_radius;
+                            world->player->light_color = actor_common.torch_color;
+                            world->player->light_intensity = actor_common.torch_intensity;
+                            world->player->light_flicker = true;
+                        }
+                        world->player->took_turn = true;
                     }
-                    world->player->took_turn = true;
                 }
             }
             break;
-            case 't':
-            {
-                if (can_take_turn)
-                {
-                    if (world->player->light_radius >= 0 && TCOD_color_equals(world->player->light_color, actor_common.torch_color))
-                    {
-                        world->player->light_radius = -1;
-                    }
-                    else
-                    {
-                        world->player->light_radius = actor_common.torch_radius;
-                        world->player->light_color = actor_common.torch_color;
-                        world->player->light_intensity = actor_common.torch_intensity;
-                        world->player->light_flicker = true;
-                    }
-                    world->player->took_turn = true;
-                }
-            }
-            break;
-            case 'u':
+            case SDLK_u:
             {
                 panel_show(PANEL_CHARACTER);
                 character_action = CHARACTER_ACTION_UNEQUIP;
@@ -1218,96 +1273,100 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                     "Choose an item to unequip. Press 'ESC' to cancel.");
             }
             break;
-            case 'X':
+            case SDLK_x:
             {
-                panel_show(PANEL_INVENTORY);
-                inventory_action = INVENTORY_ACTION_EXAMINE;
-                panel_state[PANEL_INVENTORY].selection_mode = true;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    TCOD_yellow,
-                    "Choose an item to examine. Press 'ESC' to cancel.");
-            }
-            break;
-            case 'x':
-            {
-                if (key.lctrl)
+                if (event->key.keysym.mod & KMOD_SHIFT)
                 {
-                    panel_show(PANEL_CHARACTER);
-                    character_action = CHARACTER_ACTION_EXAMINE;
-                    panel_state[PANEL_CHARACTER].selection_mode = true;
+                    panel_show(PANEL_INVENTORY);
+                    inventory_action = INVENTORY_ACTION_EXAMINE;
+                    panel_state[PANEL_INVENTORY].selection_mode = true;
 
                     world_log(
                         world->player->floor,
                         world->player->x,
                         world->player->y,
                         TCOD_yellow,
-                        "Choose an equipment to examine. Press 'ESC' to cancel.");
+                        "Choose an item to examine. Press 'ESC' to cancel.");
                 }
                 else
                 {
-                    if (targeting == TARGETING_EXAMINE)
+                    if (event->key.keysym.mod & KMOD_CTRL)
                     {
-                        panel_show(PANEL_EXAMINE); // TODO: send examine target to ui
-                        targeting = TARGETING_NONE;
+                        panel_show(PANEL_CHARACTER);
+                        character_action = CHARACTER_ACTION_EXAMINE;
+                        panel_state[PANEL_CHARACTER].selection_mode = true;
+
+                        world_log(
+                            world->player->floor,
+                            world->player->x,
+                            world->player->y,
+                            TCOD_yellow,
+                            "Choose an equipment to examine. Press 'ESC' to cancel.");
                     }
                     else
                     {
-                        targeting = TARGETING_EXAMINE;
-                        target_x = world->player->x;
-                        target_y = world->player->y;
-                    }
-                }
-            }
-            break;
-            case 'Z':
-            {
-                panel_show(PANEL_SPELLBOOK);
-                spellbook_action = SPELLBOOK_ACTION_SELECT;
-                panel_state[PANEL_SPELLBOOK].selection_mode = true;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    TCOD_yellow,
-                    "Choose a spell. Press 'ESC' to cancel.");
-            }
-            break;
-            case 'z':
-            {
-                enum spell_range spell_range = spell_data[world->player->readied_spell].range;
-                switch (spell_range)
-                {
-                case SPELL_RANGE_SELF:
-                {
-                    if (can_take_turn)
-                    {
-                        world->player->took_turn = actor_cast_spell(world->player, world->player->x, world->player->y);
-                    }
-                }
-                break;
-                case SPELL_RANGE_TARGET:
-                {
-                    if (targeting == TARGETING_SPELL)
-                    {
-                        if (can_take_turn)
+                        if (targeting == TARGETING_EXAMINE)
                         {
-                            world->player->took_turn = actor_cast_spell(world->player, target_x, target_y);
+                            panel_show(PANEL_EXAMINE); // TODO: send examine target to ui
                             targeting = TARGETING_NONE;
                         }
+                        else
+                        {
+                            targeting = TARGETING_EXAMINE;
+                            target_x = world->player->x;
+                            target_y = world->player->y;
+                        }
                     }
-                    else
+                }
+            }
+            break;
+            case SDLK_z:
+            {
+                if (event->key.keysym.mod & KMOD_SHIFT)
+                {
+                    panel_show(PANEL_SPELLBOOK);
+                    spellbook_action = SPELLBOOK_ACTION_SELECT;
+                    panel_state[PANEL_SPELLBOOK].selection_mode = true;
+
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "Choose a spell. Press 'ESC' to cancel.");
+                }
+                else
+                {
+                    enum spell_range spell_range = spell_data[world->player->readied_spell].range;
+                    switch (spell_range)
                     {
-                        targeting = TARGETING_SPELL;
-                        target_x = world->player->x;
-                        target_y = world->player->y;
+                    case SPELL_RANGE_SELF:
+                    {
+                        if (world_player_can_take_turn())
+                        {
+                            world->player->took_turn = actor_cast_spell(world->player, world->player->x, world->player->y);
+                        }
                     }
                     break;
-                }
+                    case SPELL_RANGE_TARGET:
+                    {
+                        if (targeting == TARGETING_SPELL)
+                        {
+                            if (world_player_can_take_turn())
+                            {
+                                world->player->took_turn = actor_cast_spell(world->player, target_x, target_y);
+                                targeting = TARGETING_NONE;
+                            }
+                        }
+                        else
+                        {
+                            targeting = TARGETING_SPELL;
+                            target_x = world->player->x;
+                            target_y = world->player->y;
+                        }
+                        break;
+                    }
+                    }
                 }
             }
             break;
@@ -1321,9 +1380,9 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         }
     }
     break;
-    case TCOD_EVENT_MOUSE_PRESS:
+    case SDL_MOUSEBUTTONDOWN:
     {
-        if (mouse.lbutton)
+        if (event->button.button == SDL_BUTTON_LEFT)
         {
             automoving = false;
 
@@ -1362,7 +1421,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         break;
                         case INVENTORY_ACTION_DROP:
                         {
-                            if (can_take_turn)
+                            if (world_player_can_take_turn())
                             {
                                 world->player->took_turn = actor_drop(world->player, item);
                             }
@@ -1370,7 +1429,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         break;
                         case INVENTORY_ACTION_EQUIP:
                         {
-                            if (can_take_turn)
+                            if (world_player_can_take_turn())
                             {
                                 world->player->took_turn = actor_equip(world->player, item);
                             }
@@ -1407,7 +1466,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         break;
                         case CHARACTER_ACTION_UNEQUIP:
                         {
-                            if (can_take_turn)
+                            if (world_player_can_take_turn())
                             {
                                 world->player->took_turn = actor_unequip(world->player, equip_slot);
                             }
@@ -1444,7 +1503,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
             }
             else if (map_is_inside(mouse_tile_x, mouse_tile_y))
             {
-                if (can_take_turn)
+                if (world_player_can_take_turn())
                 {
                     bool ranged = false;
                     struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
@@ -1457,7 +1516,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                         }
                     }
 
-                    if (key.lctrl)
+                    if (event->key.keysym.mod & KMOD_CTRL)
                     {
                         if (ranged)
                         {
@@ -1495,7 +1554,7 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 }
             }
         }
-        else if (mouse.rbutton)
+        else if (event->button.button == SDL_BUTTON_RIGHT)
         {
             if (rect_is_inside(panel_rect, mouse_x, mouse_y))
             {
@@ -1610,27 +1669,43 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
                 tooltip_options_add("Cancel", NULL);
             }
         }
-        else if (mouse.wheel_down)
+    }
+    break;
+    case SDL_MOUSEWHEEL:
+    {
+        if (panel_rect.visible)
         {
-            if (panel_rect.visible)
-            {
-                panel_state[current_panel].scroll++;
-            }
+            panel_state[current_panel].scroll -= event->wheel.y;
         }
-        else if (mouse.wheel_up)
-        {
-            if (panel_rect.visible)
-            {
-                panel_state[current_panel].scroll--;
-            }
-        }
+    }
+    break;
+    case SDL_MOUSEMOTION:
+    {
+        mouse_x = event->motion.x;
+        mouse_y = event->motion.y;
+        mouse_tile_x = mouse_x + view_rect.x;
+        mouse_tile_y = mouse_y + view_rect.y;
     }
     break;
     default:
         break;
     }
 
-    if (automoving && can_take_turn)
+    return &game_scene;
+}
+
+static struct scene *update(TCOD_Console *const console, const float delta_time)
+{
+    if (!world->player)
+    {
+        world->player = world->hero;
+        if (!world->player)
+        {
+            return &game_scene;
+        }
+    }
+
+    if (automoving && world_player_can_take_turn())
     {
         if (automove_actor)
         {
@@ -1648,9 +1723,10 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         // stop automoving if there is an enemy in FOV
         if (automoving)
         {
+            const struct map *const map = &world->maps[world->player->floor];
             TCOD_LIST_FOREACH(map->actors)
             {
-                struct actor *actor = *iterator;
+                const struct actor *const actor = *iterator;
                 if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y) &&
                     actor->faction != world->player->faction)
                 {
@@ -1664,42 +1740,13 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         automove_actor = NULL;
     }
 
-    return &game_scene;
-}
-
-static struct scene *update(float delta_time)
-{
-    if (!world->player)
-    {
-        world->player = world->hero;
-        if (!world->player)
-        {
-            return &game_scene;
-        }
-    }
-
     world_update(delta_time);
 
+    // delete save if hero died
     if (world->hero_dead && TCOD_sys_file_exists(SAVE_PATH))
     {
-        remove(SAVE_PATH);
+        TCOD_sys_delete_file(SAVE_PATH);
     }
-
-    return &game_scene;
-}
-
-static void render(TCOD_console_t console)
-{
-    if (!world->player)
-    {
-        world->player = world->hero;
-        if (!world->player)
-        {
-            return;
-        }
-    }
-
-    struct map *map = &world->maps[world->player->floor];
 
     // calculate ui sizes
     if (hud_rect.visible)
@@ -1799,14 +1846,6 @@ static void render(TCOD_console_t console)
             view_rect.y = 0;
         }
 
-        // set default colors
-        TCOD_console_set_default_background(
-            console,
-            TCOD_color_multiply_scalar(
-                tile_common.ambient_light_color,
-                tile_common.ambient_light_intensity));
-        TCOD_console_set_default_foreground(console, TCOD_white);
-
         // calculate random noise coefficients
         noise_x += 0.2f;
         float noise_dx = noise_x + 20.0f;
@@ -1815,6 +1854,9 @@ static void render(TCOD_console_t console)
         float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
         float di = 0.2f * TCOD_noise_get(noise, &noise_x);
 
+        // get map to draw
+        struct map *const map = &world->maps[world->player->floor];
+
         // draw tiles
         for (int x = view_rect.x; x < view_rect.x + view_rect.width; x++)
         {
@@ -1822,8 +1864,8 @@ static void render(TCOD_console_t console)
             {
                 if (map_is_inside(x, y))
                 {
-                    struct tile *tile = &map->tiles[x][y];
-                    struct tile_datum tile_datum = tile_data[tile->type];
+                    struct tile *const tile = &map->tiles[x][y];
+                    const struct tile_datum tile_datum = tile_data[tile->type];
 
                     // ambient lighting
                     float fg_r = tile_common.ambient_light_color.r;
@@ -1941,46 +1983,46 @@ static void render(TCOD_console_t console)
                         int glyph = tile_datum.glyph;
 
                         // select appropriate wall graphic
-                        if (tile->type == TILE_TYPE_WALL && false)
-                        {
-                            const unsigned char glyphs[] = {
-                                TCOD_CHAR_BLOCK3, //  0 - none
-                                TCOD_CHAR_DVLINE, //  1 - N
-                                TCOD_CHAR_DHLINE, //  2 - E
-                                TCOD_CHAR_DSW,    //  3 - NE
-                                TCOD_CHAR_DVLINE, //  4 - S
-                                TCOD_CHAR_DVLINE, //  5 - NS
-                                TCOD_CHAR_DNW,    //  6 - SE
-                                TCOD_CHAR_DTEEE,  //  7 - NES
-                                TCOD_CHAR_DHLINE, //  8 - W
-                                TCOD_CHAR_DSE,    //  9 - NW
-                                TCOD_CHAR_DHLINE, // 10 - EW
-                                TCOD_CHAR_DTEEN,  // 11 - NEW
-                                TCOD_CHAR_DNE,    // 12 - SW
-                                TCOD_CHAR_DTEEW,  // 13 - NSW
-                                TCOD_CHAR_DTEES,  // 14 - ESW
-                                TCOD_CHAR_DCROSS  // 15 - NESW
-                            };
+                        // if (tile->type == TILE_TYPE_WALL)
+                        // {
+                        //     const unsigned char glyphs[] = {
+                        //         TCOD_CHAR_BLOCK3, //  0 - none
+                        //         TCOD_CHAR_DVLINE, //  1 - N
+                        //         TCOD_CHAR_DHLINE, //  2 - E
+                        //         TCOD_CHAR_DSW,    //  3 - NE
+                        //         TCOD_CHAR_DVLINE, //  4 - S
+                        //         TCOD_CHAR_DVLINE, //  5 - NS
+                        //         TCOD_CHAR_DNW,    //  6 - SE
+                        //         TCOD_CHAR_DTEEE,  //  7 - NES
+                        //         TCOD_CHAR_DHLINE, //  8 - W
+                        //         TCOD_CHAR_DSE,    //  9 - NW
+                        //         TCOD_CHAR_DHLINE, // 10 - EW
+                        //         TCOD_CHAR_DTEEN,  // 11 - NEW
+                        //         TCOD_CHAR_DNE,    // 12 - SW
+                        //         TCOD_CHAR_DTEEW,  // 13 - NSW
+                        //         TCOD_CHAR_DTEES,  // 14 - ESW
+                        //         TCOD_CHAR_DCROSS  // 15 - NESW
+                        //     };
 
-                            int index = 0;
-                            if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 0;
-                            }
-                            if (x < MAP_WIDTH - 1 && map->tiles[x + 1][y].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 1;
-                            }
-                            if (y < MAP_HEIGHT - 1 && map->tiles[x][y + 1].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 2;
-                            }
-                            if (x > 0 && map->tiles[x - 1][y].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 3;
-                            }
-                            glyph = glyphs[index];
-                        }
+                        //     int index = 0;
+                        //     if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
+                        //     {
+                        //         index |= 1 << 0;
+                        //     }
+                        //     if (x < MAP_WIDTH - 1 && map->tiles[x + 1][y].type == TILE_TYPE_WALL)
+                        //     {
+                        //         index |= 1 << 1;
+                        //     }
+                        //     if (y < MAP_HEIGHT - 1 && map->tiles[x][y + 1].type == TILE_TYPE_WALL)
+                        //     {
+                        //         index |= 1 << 2;
+                        //     }
+                        //     if (x > 0 && map->tiles[x - 1][y].type == TILE_TYPE_WALL)
+                        //     {
+                        //         index |= 1 << 3;
+                        //     }
+                        //     glyph = glyphs[index];
+                        // }
 
                         TCOD_console_set_char_foreground(
                             console,
@@ -2014,12 +2056,12 @@ static void render(TCOD_console_t console)
                     console,
                     corpse->x - view_rect.x,
                     corpse->y - view_rect.y,
-                    corpse_common.corpse_color);
+                    corpse_common.color);
                 TCOD_console_set_char(
                     console,
                     corpse->x - view_rect.x,
                     corpse->y - view_rect.y,
-                    corpse_common.corpse_glyph);
+                    corpse_common.glyph);
             }
         }
 
@@ -2281,66 +2323,69 @@ static void render(TCOD_console_t console)
 
     if (hud_rect.visible)
     {
-        TCOD_console_set_default_background(hud_rect.console, TCOD_black);
-        TCOD_console_set_default_foreground(hud_rect.console, TCOD_white);
         TCOD_console_clear(hud_rect.console);
 
         if (status_rect.visible)
         {
-            TCOD_console_set_default_background(status_rect.console, TCOD_black);
-            TCOD_console_set_default_foreground(status_rect.console, TCOD_white);
             TCOD_console_clear(status_rect.console);
 
             int y = 1;
+            const TCOD_color_t fg =
+                (float)world->player->current_hp / world->player->max_hp > 0.5f
+                    ? TCOD_color_lerp(TCOD_yellow, TCOD_green, world->player->current_hp / (world->player->max_hp * 0.5f))
+                    : TCOD_color_lerp(TCOD_red, TCOD_yellow, world->player->current_hp / (world->player->max_hp * 0.5f));
 
-            TCOD_console_set_default_foreground(status_rect.console,
-                                                (float)world->player->current_hp / world->player->max_hp > 0.5f
-                                                    ? TCOD_color_lerp(TCOD_yellow, TCOD_green, world->player->current_hp / (world->player->max_hp * 0.5f))
-                                                    : TCOD_color_lerp(TCOD_red, TCOD_yellow, world->player->current_hp / (world->player->max_hp * 0.5f)));
-            TCOD_console_printf(
+            console_print(
                 status_rect.console,
                 1,
                 y++,
+                &fg,
+                NULL,
+                TCOD_BKGND_NONE,
+                TCOD_LEFT,
                 "HP: %d/%d",
                 world->player->current_hp,
                 world->player->max_hp);
 
-            TCOD_console_set_default_foreground(status_rect.console, TCOD_white);
-            TCOD_console_printf(
+            console_print(
                 status_rect.console,
                 1,
                 y++,
+                &TCOD_white,
+                NULL,
+                TCOD_BKGND_NONE,
+                TCOD_LEFT,
                 "Floor: %d",
                 world->player->floor);
 
-            TCOD_console_set_default_foreground(status_rect.console, TCOD_white);
+            console_print(
+                status_rect.console,
+                1,
+                y++,
+                &TCOD_white,
+                NULL,
+                TCOD_BKGND_NONE,
+                TCOD_LEFT,
+                "Time: %d",
+                world->time);
+
             TCOD_console_printf_frame(
                 status_rect.console,
-                0,
-                0,
-                status_rect.width,
-                status_rect.height,
+                0, 0, status_rect.width, status_rect.height,
                 false,
-                TCOD_BKGND_SET,
+                TCOD_BKGND_NONE,
                 "Status");
 
             TCOD_console_blit(
                 status_rect.console,
-                0,
-                0,
-                status_rect.width,
-                status_rect.height,
+                0, 0, status_rect.width, status_rect.height,
                 hud_rect.console,
-                status_rect.x,
-                status_rect.y,
-                1.0f,
-                1.0f);
+                status_rect.x, status_rect.y,
+                1.0f, 1.0f);
         }
 
         if (message_log_rect.visible)
         {
-            TCOD_console_set_default_background(message_log_rect.console, TCOD_black);
-            TCOD_console_set_default_foreground(message_log_rect.console, TCOD_white);
             TCOD_console_clear(message_log_rect.console);
 
             int y = message_log_rect.height - 2;
@@ -2352,8 +2397,6 @@ static void render(TCOD_console_t console)
                 {
                     break;
                 }
-
-                TCOD_console_set_default_foreground(message_log_rect.console, TCOD_color_lerp(TCOD_gray, message->color, (float)y / (message_log_rect.height - 2)));
 
                 int lines = TCOD_console_get_height_rect_fmt(
                     message_log_rect.console,
@@ -2367,58 +2410,45 @@ static void render(TCOD_console_t console)
                     break;
                 }
 
-                TCOD_console_printf_rect(
+                const TCOD_color_t fg = TCOD_color_lerp(TCOD_gray, message->color, (float)y / (message_log_rect.height - 2));
+                console_print(
                     message_log_rect.console,
                     1,
                     y - lines + 1,
-                    message_log_rect.width - 2,
-                    message_log_rect.height - 2,
+                    &fg,
+                    NULL,
+                    TCOD_BKGND_NONE,
+                    TCOD_LEFT,
                     message->text);
 
                 y -= lines;
             }
 
-            TCOD_console_set_default_foreground(message_log_rect.console, TCOD_white);
             TCOD_console_printf_frame(
                 message_log_rect.console,
-                0,
-                0,
-                message_log_rect.width,
-                message_log_rect.height,
+                0, 0, message_log_rect.width, message_log_rect.height,
                 false,
-                TCOD_BKGND_SET,
+                TCOD_BKGND_NONE,
                 "Messages");
 
             TCOD_console_blit(
                 message_log_rect.console,
-                0,
-                0,
-                message_log_rect.width,
-                message_log_rect.height,
+                0, 0, message_log_rect.width, message_log_rect.height,
                 hud_rect.console,
-                message_log_rect.x,
-                message_log_rect.y,
-                1.0f,
-                1.0f);
+                message_log_rect.x, message_log_rect.y,
+                1.0f, 1.0f);
         }
 
         TCOD_console_blit(
             hud_rect.console,
-            0,
-            0,
-            hud_rect.width,
-            hud_rect.height,
+            0, 0, hud_rect.width, hud_rect.height,
             console,
-            hud_rect.x,
-            hud_rect.y,
-            1.0f,
-            1.0f);
+            hud_rect.x, hud_rect.y,
+            1.0f, 1.0f);
     }
 
     if (panel_rect.visible)
     {
-        TCOD_console_set_default_background(panel_rect.console, TCOD_black);
-        TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
         TCOD_console_clear(panel_rect.console);
 
         struct panel_state *current_panel_status = &panel_state[current_panel];
@@ -2520,68 +2550,58 @@ static void render(TCOD_console_t console)
 
             for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
-                TCOD_color_t color =
+                const TCOD_color_t fg =
                     equip_slot == panel_character_equip_slot_mouseover()
                         ? TCOD_yellow
                         : TCOD_white;
-                TCOD_console_set_default_foreground(panel_rect.console, color);
-                struct equip_slot_datum equip_slot_datum = equip_slot_data[equip_slot];
+                const struct equip_slot_datum equip_slot_datum = equip_slot_data[equip_slot];
+
+                if (current_panel_status->selection_mode)
+                {
+                    console_print(
+                        panel_rect.console,
+                        1,
+                        y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
+                        "%c) %s",
+                        equip_slot + 'a' - 1,
+                        equip_slot_datum.name);
+                }
+                else
+                {
+                    console_print(
+                        panel_rect.console,
+                        1,
+                        y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
+                        equip_slot_datum.name);
+                }
+
                 if (world->player->equipment[equip_slot])
                 {
                     struct item *equipment = world->player->equipment[equip_slot];
                     struct item_datum item_datum = item_data[equipment->type];
-                    if (current_panel_status->selection_mode)
-                    {
-                        TCOD_console_printf(
-                            panel_rect.console,
-                            1,
-                            y - current_panel_status->scroll,
-                            "%c) %s",
-                            equip_slot + 'a' - 1,
-                            equip_slot_datum.name);
-                    }
-                    else
-                    {
-                        TCOD_console_printf(
-                            panel_rect.console,
-                            1,
-                            y - current_panel_status->scroll,
-                            equip_slot_datum.name);
-                    }
-                    TCOD_console_printf_ex(
+
+                    console_print(
                         panel_rect.console,
                         panel_rect.width - 2,
                         y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
                         TCOD_BKGND_NONE,
                         TCOD_RIGHT,
                         equipment->current_stack > 1 ? "%s (%d)" : "%s",
                         item_datum.name,
                         equipment->current_stack);
-                    y++;
                 }
-                else
-                {
-                    if (current_panel_status->selection_mode)
-                    {
-                        TCOD_console_printf(
-                            panel_rect.console,
-                            1,
-                            y - current_panel_status->scroll,
-                            "%c) %s",
-                            equip_slot + 'a' - 1,
-                            equip_slot_datum.name);
-                    }
-                    else
-                    {
-                        TCOD_console_printf(
-                            panel_rect.console,
-                            1,
-                            y - current_panel_status->scroll,
-                            equip_slot_datum.name);
-                    }
-                    y++;
-                }
-                TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
+
+                y++;
             }
             y++;
             TCOD_console_printf(
@@ -2599,29 +2619,21 @@ static void render(TCOD_console_t console)
                 world->player->current_hp,
                 world->player->max_hp);
 
-            TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
             TCOD_console_printf_frame(
                 panel_rect.console,
-                0,
-                0,
-                panel_rect.width,
-                panel_rect.height,
+                0, 0, panel_rect.width, panel_rect.height,
                 false,
-                TCOD_BKGND_SET,
+                TCOD_BKGND_NONE,
                 "Character");
         }
         break;
         case PANEL_EXAMINE:
         {
-            TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
             TCOD_console_printf_frame(
                 panel_rect.console,
-                0,
-                0,
-                panel_rect.width,
-                panel_rect.height,
+                0, 0, panel_rect.width, panel_rect.height,
                 false,
-                TCOD_BKGND_SET,
+                TCOD_BKGND_NONE,
                 "Examine");
         }
         break;
@@ -2633,17 +2645,21 @@ static void render(TCOD_console_t console)
             {
                 struct item *item = *iterator;
                 struct item_datum item_datum = item_data[item->type];
-                TCOD_color_t color =
+                const TCOD_color_t fg =
                     item == mouseover_item
                         ? TCOD_yellow
                         : item_datum.color;
-                TCOD_console_set_default_foreground(panel_rect.console, color);
+
                 if (current_panel_status->selection_mode)
                 {
-                    TCOD_console_printf(
+                    console_print(
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
                         item->current_stack > 1 ? "%c) %s (%d)" : "%c) %s",
                         y - 1 + 'a' - current_panel_status->scroll,
                         item_datum.name,
@@ -2651,23 +2667,25 @@ static void render(TCOD_console_t console)
                 }
                 else
                 {
-                    TCOD_console_printf(
+                    console_print(
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
                         item->current_stack > 1 ? "%s (%d)" : "%s",
                         item_datum.name,
                         item->current_stack);
                 }
-                TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
+
                 y++;
             }
+
             TCOD_console_printf_frame(
                 panel_rect.console,
-                0,
-                0,
-                panel_rect.width,
-                panel_rect.height,
+                0, 0, panel_rect.width, panel_rect.height,
                 false,
                 TCOD_BKGND_SET,
                 "Inventory");
@@ -2680,43 +2698,45 @@ static void render(TCOD_console_t console)
             for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
             {
                 struct spell_datum spell_datum = spell_data[spell_type];
-                TCOD_color_t color =
+                const TCOD_color_t fg =
                     spell_type == mouseover_spell_type
                         ? TCOD_yellow
                         : TCOD_white;
-                TCOD_console_set_default_foreground(panel_rect.console, color);
                 if (current_panel_status->selection_mode)
                 {
-                    TCOD_console_printf(
+                    console_print(
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
                         world->player->readied_spell == spell_type ? "%c) %s (readied)" : "%c) %s",
                         y - 1 + 'a' - current_panel_status->scroll,
                         spell_datum.name);
                 }
                 else
                 {
-                    TCOD_console_printf(
+                    console_print(
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
                         world->player->readied_spell == spell_type ? "%s (readied)" : "%s",
                         spell_datum.name);
                 }
-                TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
                 y++;
             }
 
-            TCOD_console_set_default_foreground(panel_rect.console, TCOD_white);
             TCOD_console_printf_frame(
                 panel_rect.console,
-                0,
-                0,
-                panel_rect.width,
-                panel_rect.height,
+                0, 0, panel_rect.width, panel_rect.height,
                 false,
-                TCOD_BKGND_SET,
+                TCOD_BKGND_NONE,
                 "Spellbook");
         }
         break;
@@ -2726,10 +2746,7 @@ static void render(TCOD_console_t console)
 
         TCOD_console_blit(
             panel_rect.console,
-            0,
-            0,
-            panel_rect.width,
-            panel_rect.height,
+            0, 0, panel_rect.width, panel_rect.height,
             console,
             panel_rect.x,
             panel_rect.y,
@@ -2739,46 +2756,41 @@ static void render(TCOD_console_t console)
 
     if (tooltip_rect.visible)
     {
-        TCOD_console_set_default_background(tooltip_rect.console, TCOD_black);
-        TCOD_console_set_default_foreground(tooltip_rect.console, TCOD_white);
         TCOD_console_clear(tooltip_rect.console);
 
-        struct tooltip_option *mouseover_tooltip_option = tooltip_option_mouseover();
+        const struct tooltip_option *const mouseover_tooltip_option = tooltip_option_mouseover();
         int y = 1;
         TCOD_LIST_FOREACH(tooltip_options)
         {
-            struct tooltip_option *option = *iterator;
-            TCOD_color_t color =
+            const struct tooltip_option *const option = *iterator;
+            const TCOD_color_t fg =
                 option == mouseover_tooltip_option
                     ? TCOD_yellow
                     : TCOD_white;
-            TCOD_console_set_default_foreground(tooltip_rect.console, color);
-            TCOD_console_printf(
+
+            console_print(
                 tooltip_rect.console,
                 1,
                 y,
+                &fg,
+                NULL,
+                TCOD_BKGND_NONE,
+                TCOD_LEFT,
                 option->text);
+
             y++;
         }
 
-        TCOD_console_set_default_foreground(tooltip_rect.console, TCOD_white);
         TCOD_console_printf_frame(
             tooltip_rect.console,
-            0,
-            0,
-            tooltip_rect.width,
-            tooltip_rect.height,
+            0, 0, tooltip_rect.width, tooltip_rect.height,
             false,
-            TCOD_BKGND_SET,
-            "%s",
+            TCOD_BKGND_NONE,
             "");
 
         TCOD_console_blit(
             tooltip_rect.console,
-            0,
-            0,
-            tooltip_rect.width,
-            tooltip_rect.height,
+            0, 0, tooltip_rect.width, tooltip_rect.height,
             console,
             tooltip_rect.x,
             tooltip_rect.y,
@@ -2800,42 +2812,23 @@ static void render(TCOD_console_t console)
         TCOD_console_set_char_background(console, x - view_rect.x, y - view_rect.y, TCOD_red, TCOD_BKGND_SET);
     }
 
-    if (!world->hero_dead &&
-        (world->player != TCOD_list_get(map->actors, map->current_actor_index) ||
-         TCOD_list_size(map->projectiles) > 0 ||
-         TCOD_list_size(map->explosions) > 0))
+    if (!world->hero_dead && !world_player_can_take_turn())
     {
-        TCOD_console_set_char_background(tooltip_rect.console, 0, 0, TCOD_black, TCOD_BKGND_SET);
-        TCOD_console_set_char_foreground(tooltip_rect.console, 0, 1, TCOD_white);
-        TCOD_console_set_char(console, 0, 0, 31);
-        TCOD_console_set_char(console, 0, 1, 30);
+        console_print(
+            console,
+            0, 0,
+            &TCOD_white,
+            NULL,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
+            "Waiting...");
     }
-}
 
-static void quit(void)
-{
-    if (!world->hero_dead)
-    {
-        world_save(SAVE_PATH);
-    }
-    world_cleanup();
-
-    TCOD_LIST_FOREACH(tooltip_options)
-    {
-        struct tooltip_option *tooltip_option = *iterator;
-        tooltip_option_delete(tooltip_option);
-    }
-    TCOD_console_delete(status_rect.console);
-    TCOD_console_delete(message_log_rect.console);
-    TCOD_console_delete(panel_rect.console);
-    TCOD_console_delete(tooltip_rect.console);
-    TCOD_list_delete(tooltip_options);
-    TCOD_noise_delete(noise);
+    return &game_scene;
 }
 
 struct scene game_scene =
     {&init,
+     &uninit,
      &handle_event,
-     &update,
-     &render,
-     &quit};
+     &update};

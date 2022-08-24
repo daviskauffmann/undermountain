@@ -35,10 +35,13 @@ struct object_datum
 struct object
 {
     enum object_type type;
-    int floor;
-    int x;
-    int y;
+
+    uint8_t floor;
+    uint8_t x;
+    uint8_t y;
+
     TCOD_color_t color;
+
     int light_radius;
     TCOD_color_t light_color;
     float light_intensity;
@@ -46,7 +49,16 @@ struct object
     TCOD_map_t light_fov;
 };
 
-struct object *object_new(enum object_type type, int floor, int x, int y, TCOD_color_t color, int light_radius, TCOD_color_t light_color, float light_intensity, bool light_flicker);
+struct object *object_new(
+    enum object_type type,
+    uint8_t floor,
+    uint8_t x,
+    uint8_t y,
+    TCOD_color_t color,
+    int light_radius,
+    TCOD_color_t light_color,
+    float light_intensity,
+    bool light_flicker);
 void object_delete(struct object *object);
 void object_calc_light(struct object *object);
 

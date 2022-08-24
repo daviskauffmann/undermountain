@@ -17,169 +17,426 @@ struct item_datum item_data[NUM_ITEM_TYPES];
 struct spell_datum spell_data[NUM_SPELL_TYPES];
 struct projectile_datum projectile_data[NUM_PROJECTILE_TYPES];
 
-#define TILE_COMMON(_ambient_light_color, _ambient_light_intensity) \
-    tile_common.ambient_light_color = _ambient_light_color;         \
-    tile_common.ambient_light_intensity = _ambient_light_intensity;
-
-#define TILE_DATA(_type, _name, _glyph, _color, _is_transparent, _is_walkable) \
-    tile_data[_type].name = _name;                                             \
-    tile_data[_type].glyph = _glyph;                                           \
-    tile_data[_type].color = _color;                                           \
-    tile_data[_type].is_transparent = _is_transparent;                         \
-    tile_data[_type].is_walkable = _is_walkable;
-
-#define OBJECT_COMMON(_placeholder) \
-    object_common.__placeholder = _placeholder;
-
-#define OBJECT_DATA(_type, _name, _glyph, _is_transparent, _is_walkable) \
-    object_data[_type].name = _name;                                     \
-    object_data[_type].glyph = _glyph;                                   \
-    object_data[_type].is_transparent = _is_transparent;                 \
-    object_data[_type].is_walkable = _is_walkable;
-
-#define FACTION_DATA(_type, _name) \
-    faction_data[_type].name = _name;
-
-#define ACTOR_COMMON(_turns_to_chase, _glow_radius, _glow_color, _glow_intensity, _torch_radius, _torch_color, _torch_intensity) \
-    actor_common.turns_to_chase = _turns_to_chase;                                                                               \
-    actor_common.glow_radius = _glow_radius;                                                                                     \
-    actor_common.glow_color = _glow_color;                                                                                       \
-    actor_common.glow_intensity = _glow_intensity;                                                                               \
-    actor_common.torch_radius = _torch_radius;                                                                                   \
-    actor_common.torch_color = _torch_color;                                                                                     \
-    actor_common.torch_intensity = _torch_intensity;
-
-#define RACE_DATA(_race, _name, _glyph, _speed) \
-    race_data[_race].name = _name;              \
-    race_data[_race].glyph = _glyph;            \
-    race_data[_race].speed = _speed;
-
-#define CLASS_DATA(_class, _name, _color) \
-    class_data[_class].name = _name;      \
-    class_data[_class].color = _color;
-
-#define MONSTER_PROTOTYPE(_monster, _name, _race, _class) \
-    monster_prototypes[_monster].name = _name;            \
-    monster_prototypes[_monster].race = _race;            \
-    monster_prototypes[_monster].class = _class;
-
-#define CORPSE_COMMON(_corpse_glyph, _corpse_color) \
-    corpse_common.corpse_glyph = _corpse_glyph;     \
-    corpse_common.corpse_color = _corpse_color;
-
-#define ITEM_COMMON(_placeholder) \
-    item_common.__placeholder = _placeholder;
-
-#define EQUIP_SLOT_DATA(_type, _name) \
-    equip_slot_data[_type].name = _name;
-
-#define ITEM_DATA(_type, _name, _description, _glyph, _color, _equip_slot, _two_handed, _armor, _block_chance, _min_damage, _max_damage, _ranged, _max_durability, _quaffable, _max_stack, _ammunition_type, _unique) \
-    item_data[_type].name = _name;                                                                                                                                                                                    \
-    item_data[_type].description = _description;                                                                                                                                                                      \
-    item_data[_type].glyph = _glyph;                                                                                                                                                                                  \
-    item_data[_type].color = _color;                                                                                                                                                                                  \
-    item_data[_type].equip_slot = _equip_slot;                                                                                                                                                                        \
-    item_data[_type].two_handed = _two_handed;                                                                                                                                                                        \
-    item_data[_type].armor = _armor;                                                                                                                                                                                  \
-    item_data[_type].block_chance = _block_chance;                                                                                                                                                                    \
-    item_data[_type].min_damage = _min_damage;                                                                                                                                                                        \
-    item_data[_type].max_damage = _max_damage;                                                                                                                                                                        \
-    item_data[_type].ranged = _ranged;                                                                                                                                                                                \
-    item_data[_type].max_durability = _max_durability;                                                                                                                                                                \
-    item_data[_type].quaffable = _quaffable;                                                                                                                                                                          \
-    item_data[_type].max_stack = _max_stack;                                                                                                                                                                          \
-    item_data[_type].ammunition_type = _ammunition_type;                                                                                                                                                              \
-    item_data[_type].unique = _unique;                                                                                                                                                                                \
-    item_data[_type].spawned = false;
-
-#define SPELL_DATA(_type, _name, _range) \
-    spell_data[_type].name = _name;      \
-    spell_data[_type].range = _range;
-
-#define PROJECTILE_DATA(_type, _glyph, _color, _light_radius, _light_color, _light_intensity, _light_flicker, _speed) \
-    projectile_data[_type].glyph = _glyph;                                                                            \
-    projectile_data[_type].color = _color;                                                                            \
-    projectile_data[_type].light_radius = _light_radius;                                                              \
-    projectile_data[_type].light_color = _light_color;                                                                \
-    projectile_data[_type].light_intensity = _light_intensity;                                                        \
-    projectile_data[_type].light_flicker = _light_flicker;                                                            \
-    projectile_data[_type].speed = _speed;
-
 void assets_load(void)
 {
     // TODO: load from file
 
-    TILE_COMMON(TCOD_color_RGB(16, 16, 32), 0.05f);
+    tile_common.ambient_light_color = TCOD_color_RGB(16, 16, 32);
+    tile_common.ambient_light_intensity = 0.05f;
 
-    TILE_DATA(TILE_TYPE_EMPTY, "Empty", ' ', TCOD_white, true, true);
-    TILE_DATA(TILE_TYPE_FLOOR, "Floor", '.', TCOD_white, true, true);
-    TILE_DATA(TILE_TYPE_GRASS, "Grass", '.', TCOD_light_green, true, true);
-    TILE_DATA(TILE_TYPE_WALL, "Wall", '#', TCOD_white, false, false);
+    tile_data[TILE_TYPE_EMPTY] = (struct tile_datum){
+        .name = "Empty",
+        .glyph = ' ',
+        .color = TCOD_white,
+        .is_walkable = true,
+        .is_transparent = true};
+    tile_data[TILE_TYPE_FLOOR] = (struct tile_datum){
+        .name = "Floor",
+        .glyph = '.',
+        .color = TCOD_white,
+        .is_walkable = true,
+        .is_transparent = true};
+    tile_data[TILE_TYPE_GRASS] = (struct tile_datum){
+        .name = "Grass",
+        .glyph = '.',
+        .color = TCOD_light_green,
+        .is_walkable = true,
+        .is_transparent = true};
+    tile_data[TILE_TYPE_WALL] = (struct tile_datum){
+        .name = "Wall",
+        .glyph = '#',
+        .color = TCOD_white,
+        .is_walkable = false,
+        .is_transparent = false};
 
-    OBJECT_COMMON(0);
+    object_common.__placeholder = 0;
 
-    OBJECT_DATA(OBJECT_TYPE_ALTAR, "Altar", '_', true, false);
-    OBJECT_DATA(OBJECT_TYPE_BRAZIER, "Brazier", '*', true, false);
-    OBJECT_DATA(OBJECT_TYPE_CHEST, "Chest", '~', true, false);
-    OBJECT_DATA(OBJECT_TYPE_DOOR_CLOSED, "Closed Door", '+', false, false);
-    OBJECT_DATA(OBJECT_TYPE_DOOR_OPEN, "Open Door", '-', true, true);
-    OBJECT_DATA(OBJECT_TYPE_FOUNTAIN, "Fountain", '{', true, false);
-    OBJECT_DATA(OBJECT_TYPE_STAIR_DOWN, "Stair Down", '>', true, true);
-    OBJECT_DATA(OBJECT_TYPE_STAIR_UP, "Stair Up", '<', true, true);
-    OBJECT_DATA(OBJECT_TYPE_THRONE, "Throne", '\\', true, false);
-    OBJECT_DATA(OBJECT_TYPE_TRAP, "Trap", '^', true, true);
+    object_data[OBJECT_TYPE_ALTAR] = (struct object_datum){
+        .name = "Altar",
+        .glyph = '_',
+        .is_walkable = true,
+        .is_transparent = false};
+    object_data[OBJECT_TYPE_BRAZIER] = (struct object_datum){
+        .name = "Brazier",
+        .glyph = '*',
+        .is_walkable = true,
+        .is_transparent = false};
+    object_data[OBJECT_TYPE_CHEST] = (struct object_datum){
+        .name = "Chest",
+        .glyph = '~',
+        .is_walkable = true,
+        .is_transparent = false};
+    object_data[OBJECT_TYPE_DOOR_CLOSED] = (struct object_datum){
+        .name = "Closed Door",
+        .glyph = '+',
+        .is_walkable = false,
+        .is_transparent = false};
+    object_data[OBJECT_TYPE_DOOR_OPEN] = (struct object_datum){
+        .name = "Open Door",
+        .glyph = '-',
+        .is_walkable = true,
+        .is_transparent = true};
+    object_data[OBJECT_TYPE_FOUNTAIN] = (struct object_datum){
+        .name = "Fountain",
+        .glyph = '{',
+        .is_walkable = true,
+        .is_transparent = false};
+    object_data[OBJECT_TYPE_STAIR_DOWN] = (struct object_datum){
+        .name = "Stair Down",
+        .glyph = '>',
+        .is_walkable = true,
+        .is_transparent = true};
+    object_data[OBJECT_TYPE_STAIR_UP] = (struct object_datum){
+        .name = "Stair Up",
+        .glyph = '<',
+        .is_walkable = true,
+        .is_transparent = true};
+    object_data[OBJECT_TYPE_THRONE] = (struct object_datum){
+        .name = "Throne",
+        .glyph = '\\',
+        .is_walkable = true,
+        .is_transparent = false};
+    object_data[OBJECT_TYPE_TRAP] = (struct object_datum){
+        .name = "Trap",
+        .glyph = '^',
+        .is_walkable = true,
+        .is_transparent = true};
 
-    ACTOR_COMMON(10, 5, TCOD_white, 0.1f, 10, TCOD_light_amber, 0.25f);
+    actor_common.turns_to_chase = 10;
+    actor_common.glow_radius = 5;
+    actor_common.glow_color = TCOD_white;
+    actor_common.glow_intensity = 0.1f;
+    actor_common.torch_radius = 10;
+    actor_common.torch_color = TCOD_light_amber;
+    actor_common.torch_intensity = 0.25f;
 
-    RACE_DATA(RACE_HUMAN, "Human", '@', 1.0f);
-    RACE_DATA(RACE_DWARF, "Dwarf", '@', 0.8f);
-    RACE_DATA(RACE_ELF, "Elf", '@', 1.2f);
+    race_data[RACE_HUMAN] = (struct race_datum){
+        .name = "Human",
+        .glyph = '@',
+        .speed = 1.0f};
+    race_data[RACE_DWARF] = (struct race_datum){
+        .name = "Dwarf",
+        .glyph = '@',
+        .speed = 0.8f};
+    race_data[RACE_ELF] = (struct race_datum){
+        .name = "Elf",
+        .glyph = '@',
+        .speed = 1.2f};
 
-    RACE_DATA(RACE_ANIMAL, "Animal", 'a', 0.9f);
-    RACE_DATA(RACE_BUGBEAR, "Bugbear", 'b', 0.7f);
-    RACE_DATA(RACE_ORC, "Orc", 'o', 0.7f);
-    RACE_DATA(RACE_SLIME, "Slime", 's', 0.5f);
+    race_data[RACE_ANIMAL] = (struct race_datum){
+        .name = "Animal",
+        .glyph = 'a',
+        .speed = 0.9f};
+    race_data[RACE_BUGBEAR] = (struct race_datum){
+        .name = "Bugbear",
+        .glyph = 'b',
+        .speed = 0.7f};
+    race_data[RACE_ORC] = (struct race_datum){
+        .name = "Orc",
+        .glyph = 'o',
+        .speed = 0.7f};
+    race_data[RACE_SLIME] = (struct race_datum){
+        .name = "Slime",
+        .glyph = 's',
+        .speed = 0.5f};
 
-    CLASS_DATA(CLASS_WARRIOR, "Warrior", TCOD_brass);
-    CLASS_DATA(CLASS_MAGE, "Wizard", TCOD_azure);
-    CLASS_DATA(CLASS_ROGUE, "Rogue", TCOD_yellow);
+    class_data[CLASS_WARRIOR] = (struct class_datum){
+        .name = "Warrior",
+        .color = TCOD_brass};
+    class_data[CLASS_MAGE] = (struct class_datum){
+        .name = "Wizard",
+        .color = TCOD_azure};
+    class_data[CLASS_ROGUE] = (struct class_datum){
+        .name = "Rogue",
+        .color = TCOD_yellow};
 
-    CLASS_DATA(CLASS_ANIMAL, "Animal", TCOD_lightest_grey);
-    CLASS_DATA(CLASS_SLIME, "Slime", TCOD_lightest_grey);
+    class_data[CLASS_ANIMAL] = (struct class_datum){
+        .name = "Animal",
+        .color = TCOD_lightest_grey};
+    class_data[CLASS_SLIME] = (struct class_datum){
+        .name = "Slime",
+        .color = TCOD_lightest_grey};
 
-    MONSTER_PROTOTYPE(MONSTER_BUGBEAR, "Bugbear", RACE_BUGBEAR, CLASS_WARRIOR);
-    MONSTER_PROTOTYPE(MONSTER_ORC, "Orc", RACE_ORC, CLASS_WARRIOR);
-    MONSTER_PROTOTYPE(MONSTER_RAT, "Rat", RACE_ANIMAL, CLASS_ANIMAL);
-    MONSTER_PROTOTYPE(MONSTER_SLIME, "Slime", RACE_SLIME, CLASS_SLIME);
+    monster_prototypes[MONSTER_BUGBEAR] = (struct actor_prototype){
+        .name = "Bugbear",
+        .race = RACE_BUGBEAR,
+        .class = CLASS_WARRIOR};
+    monster_prototypes[MONSTER_ORC] = (struct actor_prototype){
+        .name = "Orc",
+        .race = RACE_ORC,
+        .class = CLASS_WARRIOR};
+    monster_prototypes[MONSTER_RAT] = (struct actor_prototype){
+        .name = "Rat",
+        .race = RACE_ANIMAL,
+        .class = CLASS_ANIMAL};
+    monster_prototypes[MONSTER_SLIME] = (struct actor_prototype){
+        .name = "Slime",
+        .race = RACE_SLIME,
+        .class = CLASS_SLIME};
 
-    CORPSE_COMMON('%', TCOD_dark_red);
+    corpse_common.glyph = '%';
+    corpse_common.color = TCOD_dark_red;
 
-    ITEM_COMMON(0);
+    item_common.__placeholder = 0;
 
-    EQUIP_SLOT_DATA(EQUIP_SLOT_NONE, "None");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_AMMUNITION, "Ammunition");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_ARMOR, "Armor");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_MAIN_HAND, "Main Hand");
-    EQUIP_SLOT_DATA(EQUIP_SLOT_OFF_HAND, "Off Hand");
+    equip_slot_data[EQUIP_SLOT_NONE] = (struct equip_slot_datum){
+        .name = "None"};
+    equip_slot_data[EQUIP_SLOT_AMMUNITION] = (struct equip_slot_datum){
+        .name = "Ammunition"};
+    equip_slot_data[EQUIP_SLOT_ARMOR] = (struct equip_slot_datum){
+        .name = "Armor"};
+    equip_slot_data[EQUIP_SLOT_MAIN_HAND] = (struct equip_slot_datum){
+        .name = "Main Hand"};
+    equip_slot_data[EQUIP_SLOT_OFF_HAND] = (struct equip_slot_datum){
+        .name = "Off Hand"};
 
-    ITEM_DATA(ITEM_TYPE_BODKIN_ARROW, "Bodkin Arrow", "Arrow designed for penetrating armor.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 1, 2, false, 100, false, 100, AMMUNITION_TYPE_ARROW, false);
-    ITEM_DATA(ITEM_TYPE_BOLT, "Bolt", "Standard ammunition for a crossbow.", '`', TCOD_white, EQUIP_SLOT_AMMUNITION, false, 0, 0, 2, 3, false, 100, false, 100, AMMUNITION_TYPE_BOLT, false);
-    ITEM_DATA(ITEM_TYPE_COLD_IRON_BLADE, "Cold Iron Blade", "A magical sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
-    ITEM_DATA(ITEM_TYPE_CROSSBOW, "Crossbow", "A powerful ranged weapon.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, true, 100, false, 1, AMMUNITION_TYPE_BOLT, false);
-    ITEM_DATA(ITEM_TYPE_GOLD, "Gold", "Shiny!", '$', TCOD_gold, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, INT32_MAX, AMMUNITION_TYPE_NONE, false);
-    ITEM_DATA(ITEM_TYPE_GREATSWORD, "Greatsword", "A two-handed straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 4, 12, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
-    ITEM_DATA(ITEM_TYPE_HEALING_POTION, "Healing Potion", "Restores full health.", '!', TCOD_red, EQUIP_SLOT_NONE, false, 0, 0, 0, 0, false, 0, true, 10, AMMUNITION_TYPE_NONE, false);
-    ITEM_DATA(ITEM_TYPE_IRON_ARMOR, "Iron Armor", "A set of iron armor.", '[', TCOD_white, EQUIP_SLOT_ARMOR, false, 3, 0, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
-    ITEM_DATA(ITEM_TYPE_KITE_SHIELD, "Kite Shield", "A medium-sized shield.", ')', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 0, 0, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
-    ITEM_DATA(ITEM_TYPE_LONGBOW, "Longbow", "A tall war bow.", '}', TCOD_white, EQUIP_SLOT_MAIN_HAND, true, 0, 0, 1, 8, true, 100, false, 1, AMMUNITION_TYPE_ARROW, false);
-    ITEM_DATA(ITEM_TYPE_LONGSWORD, "Longsword", "A straight sword.", '|', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, false);
-    ITEM_DATA(ITEM_TYPE_SCEPTER_OF_UNITY, "Scepter of Unity", "A magical scepter.", '!', TCOD_white, EQUIP_SLOT_MAIN_HAND, false, 0, 0, 1, 8, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
-    ITEM_DATA(ITEM_TYPE_SPIKED_SHIELD, "Spiked Shield", "A spiked shield.", ')', TCOD_white, EQUIP_SLOT_OFF_HAND, false, 0, 0.3f, 1, 4, false, 100, false, 1, AMMUNITION_TYPE_NONE, true);
+    item_data[ITEM_TYPE_BODKIN_ARROW] = (struct item_datum){
+        .name = "Bodkin Arrow",
+        .description = "A sharp, wooden arrow with a pointy tip.",
+        .glyph = '`',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_AMMUNITION,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 1,
+        .max_damage = 2,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 100,
+        .ammunition_type = AMMUNITION_TYPE_ARROW,
+        .unique = false,
+    };
+    item_data[ITEM_TYPE_BOLT] = (struct item_datum){
+        .name = "Bolt",
+        .description = "Standard ammunition for a crossbow.",
+        .glyph = '`',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_AMMUNITION,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 2,
+        .max_damage = 3,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 100,
+        .ammunition_type = AMMUNITION_TYPE_BOLT,
+        .unique = false};
+    item_data[ITEM_TYPE_COLD_IRON_BLADE] = (struct item_datum){
+        .name = "Cold Iron Blade",
+        .description = "A magical sword.",
+        .glyph = '|',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 1,
+        .max_damage = 8,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = true};
+    item_data[ITEM_TYPE_CROSSBOW] = (struct item_datum){
+        .name = "Crossbow",
+        .description = "A powerful ranged weapon.",
+        .glyph = '}',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .two_handed = true,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 4,
+        .max_damage = 12,
+        .ranged = true,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_BOLT,
+        .unique = false};
+    item_data[ITEM_TYPE_GOLD] = (struct item_datum){
+        .name = "Gold",
+        .description = "Shiny!",
+        .glyph = '$',
+        .color = TCOD_gold,
+        .equip_slot = EQUIP_SLOT_NONE,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 0,
+        .max_damage = 0,
+        .ranged = false,
+        .max_durability = 0,
+        .quaffable = true,
+        .max_stack = INT32_MAX,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = false};
+    item_data[ITEM_TYPE_GREATSWORD] = (struct item_datum){
+        .name = "Greatsword",
+        .description = "A two-handed straight sword.",
+        .glyph = '|',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .two_handed = true,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 4,
+        .max_damage = 12,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = false};
+    item_data[ITEM_TYPE_HEALING_POTION] = (struct item_datum){
+        .name = "Healing Potion",
+        .description = "Restores full health.",
+        .glyph = '!',
+        .color = TCOD_red,
+        .equip_slot = EQUIP_SLOT_NONE,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 0,
+        .max_damage = 0,
+        .ranged = false,
+        .max_durability = 0,
+        .quaffable = true,
+        .max_stack = 10,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = false};
+    item_data[ITEM_TYPE_IRON_ARMOR] = (struct item_datum){
+        .name = "Iron Armor",
+        .description = "A set of iron armor.",
+        .glyph = '[',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_ARMOR,
+        .two_handed = false,
+        .armor = 3,
+        .block_chance = 0,
+        .min_damage = 0,
+        .max_damage = 0,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = false};
+    item_data[ITEM_TYPE_KITE_SHIELD] = (struct item_datum){
+        .name = "Kite Shield",
+        .description = "A medium-sized shield.",
+        .glyph = ')',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_OFF_HAND,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0.3f,
+        .min_damage = 0,
+        .max_damage = 0,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = false};
+    item_data[ITEM_TYPE_LONGBOW] = (struct item_datum){
+        .name = "Longbow",
+        .description = "A tall war bow.",
+        .glyph = '}',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .two_handed = true,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 1,
+        .max_damage = 8,
+        .ranged = true,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_ARROW,
+        .unique = false};
+    item_data[ITEM_TYPE_LONGSWORD] = (struct item_datum){
+        .name = "Longsword",
+        .description = "A straight sword.",
+        .glyph = '|',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 1,
+        .max_damage = 8,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = false};
+    item_data[ITEM_TYPE_SCEPTER_OF_UNITY] = (struct item_datum){
+        .name = "Scepter of Unity",
+        .description = "A magical scepter.",
+        .glyph = '!',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0,
+        .min_damage = 1,
+        .max_damage = 8,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = true};
+    item_data[ITEM_TYPE_SPIKED_SHIELD] = (struct item_datum){
+        .name = "Spiked Shield",
+        .description = "A spiked shield.",
+        .glyph = ')',
+        .color = TCOD_white,
+        .equip_slot = EQUIP_SLOT_OFF_HAND,
+        .two_handed = false,
+        .armor = 0,
+        .block_chance = 0.3f,
+        .min_damage = 1,
+        .max_damage = 4,
+        .ranged = false,
+        .max_durability = 100,
+        .quaffable = false,
+        .max_stack = 1,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+        .unique = true};
 
-    SPELL_DATA(SPELL_TYPE_HEAL, "Heal", SPELL_RANGE_SELF);
-    SPELL_DATA(SPELL_TYPE_LIGHTNING, "Lightning", SPELL_RANGE_TARGET);
-    SPELL_DATA(SPELL_TYPE_FIREBALL, "Fireball", SPELL_RANGE_TARGET);
+    spell_data[SPELL_TYPE_HEAL] = (struct spell_datum){
+        .name = "Heal",
+        .range = SPELL_RANGE_SELF};
+    spell_data[SPELL_TYPE_LIGHTNING] = (struct spell_datum){
+        .name = "Lightning",
+        .range = SPELL_RANGE_TARGET};
+    spell_data[SPELL_TYPE_FIREBALL] = (struct spell_datum){
+        .name = "Fireball",
+        .range = SPELL_RANGE_TARGET};
 
-    PROJECTILE_DATA(PROJECTILE_TYPE_ARROW, '`', TCOD_white, -1, TCOD_white, 0.0f, false, 50.0f);
-    PROJECTILE_DATA(PROJECTILE_TYPE_FIREBALL, '*', TCOD_flame, 5, TCOD_flame, 0.1f, true, 30.0f);
+    projectile_data[PROJECTILE_TYPE_ARROW] = (struct projectile_datum){
+        .glyph = '`',
+        .color = TCOD_white,
+        .light_radius = -1,
+        .light_color = TCOD_white,
+        .light_intensity = 0.0f,
+        .light_flicker = false,
+        .speed = 50.0f};
+    projectile_data[PROJECTILE_TYPE_FIREBALL] = (struct projectile_datum){
+        .glyph = '*',
+        .color = TCOD_flame,
+        .light_radius = 5,
+        .light_color = TCOD_flame,
+        .light_intensity = 0.1f,
+        .light_flicker = true,
+        .speed = 30.0f};
 }

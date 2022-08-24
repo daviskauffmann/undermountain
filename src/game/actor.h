@@ -93,7 +93,7 @@ struct actor
     enum class class;
     enum faction faction;
 
-    int level;
+    uint8_t level;
     int experience;
 
     int max_hp;
@@ -105,9 +105,9 @@ struct actor
 
     enum spell_type readied_spell;
 
-    int floor;
-    int x;
-    int y;
+    uint8_t floor;
+    uint8_t x;
+    uint8_t y;
 
     TCOD_map_t fov;
 
@@ -135,7 +135,16 @@ struct actor
     // TODO: list of known spells
 };
 
-struct actor *actor_new(const char *name, enum race race, enum class class, enum faction faction, int level, int floor, int x, int y, bool torch);
+struct actor *actor_new(
+    const char *name,
+    enum race race,
+    enum class class,
+    enum faction faction,
+    uint8_t level,
+    uint8_t floor,
+    uint8_t x,
+    uint8_t y,
+    bool torch);
 void actor_delete(struct actor *actor);
 int actor_calc_experience_to_level(int level);
 void actor_update(struct actor *actor, float delta_time);
@@ -144,27 +153,57 @@ void actor_calc_fov(struct actor *actor);
 void actor_ai(struct actor *actor);
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
-bool actor_path_towards(struct actor *actor, int x, int y);
-bool actor_move_towards(struct actor *actor, int x, int y);
-bool actor_move(struct actor *actor, int x, int y);
+bool actor_path_towards(
+    struct actor *actor,
+    int target_x, int target_y);
+bool actor_move_towards(
+    struct actor *actor,
+    int target_x, int target_y);
+bool actor_move(
+    struct actor *actor,
+    int x, int y);
 bool actor_swap(struct actor *actor, struct actor *other);
-bool actor_open_door(struct actor *actor, int x, int y);
-bool actor_close_door(struct actor *actor, int x, int y);
-bool actor_descend(struct actor *actor, bool is_leader, void ***iterator);
-bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator);
-bool actor_open_chest(struct actor *actor, int x, int y);
-bool actor_pray(struct actor *actor, int x, int y);
-bool actor_drink(struct actor *actor, int x, int y);
-bool actor_sit(struct actor *actor, int x, int y);
-bool actor_grab(struct actor *actor, int x, int y);
+bool actor_open_door(
+    struct actor *actor,
+    int x, int y);
+bool actor_close_door(
+    struct actor *actor,
+    int x, int y);
+bool actor_descend(
+    struct actor *actor,
+    bool is_leader,
+    void ***iterator);
+bool actor_ascend(
+    struct actor *actor,
+    bool is_leader,
+    void ***iterator);
+bool actor_open_chest(
+    struct actor *actor,
+    int x, int y);
+bool actor_pray(
+    struct actor *actor,
+    int x, int y);
+bool actor_drink(
+    struct actor *actor,
+    int x, int y);
+bool actor_sit(
+    struct actor *actor,
+    int x, int y);
+bool actor_grab(
+    struct actor *actor,
+    int x, int y);
 bool actor_drop(struct actor *actor, struct item *item);
 bool actor_equip(struct actor *actor, struct item *item);
 bool actor_unequip(struct actor *actor, enum equip_slot equip_slot);
 bool actor_quaff(struct actor *actor, struct item *item);
 bool actor_bash(struct actor *actor, struct object *object);
-bool actor_shoot(struct actor *actor, int x, int y);
+bool actor_shoot(
+    struct actor *actor,
+    int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition);
-bool actor_cast_spell(struct actor *actor, int x, int y);
+bool actor_cast_spell(
+    struct actor *actor,
+    int x, int y);
 bool actor_take_damage(struct actor *actor, struct actor *attacker, int damage);
 void actor_die(struct actor *actor, struct actor *killer);
 

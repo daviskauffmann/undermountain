@@ -5,23 +5,31 @@
 #include <libtcod.h>
 #include <malloc.h>
 
-struct room *room_new(int x, int y, int w, int h)
+struct room *room_new(
+    const uint8_t x,
+    const uint8_t y,
+    const uint8_t w,
+    const uint8_t h)
 {
-    struct room *room = malloc(sizeof(*room));
+    struct room *const room = malloc(sizeof(*room));
     assert(room);
+
     room->x = x;
     room->y = y;
     room->w = w;
     room->h = h;
+
     return room;
 }
 
-void room_delete(struct room *room)
+void room_delete(struct room *const room)
 {
     free(room);
 }
 
-void room_get_random_pos(struct room *room, int *x, int *y)
+void room_get_random_pos(
+    const struct room *const room,
+    int *const x, int *const y)
 {
     *x = TCOD_random_get_int(
         world->random,

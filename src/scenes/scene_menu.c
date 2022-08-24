@@ -2,8 +2,8 @@
 
 #include "../config.h"
 #include "../game/world.h"
+#include "../print.h"
 #include "../scene.h"
-#include "scene_about.h"
 #include "scene_create.h"
 #include "scene_game.h"
 #include <libtcod.h>
@@ -11,7 +11,6 @@
 enum option
 {
     OPTION_START,
-    OPTION_ABOUT,
     OPTION_QUIT,
 
     NUM_OPTIONS
@@ -55,28 +54,21 @@ static struct scene *select_option(enum option option)
             world_init();
             world_load(SAVE_PATH);
 
-            menu_scene.quit();
+            menu_scene.uninit();
             game_scene.init(&menu_scene);
             return &game_scene;
         }
         else
         {
-            menu_scene.quit();
+            menu_scene.uninit();
             create_scene.init(&menu_scene);
             return &create_scene;
         }
     }
     break;
-    case OPTION_ABOUT:
-    {
-        menu_scene.quit();
-        about_scene.init(&menu_scene);
-        return &about_scene;
-    }
-    break;
     case OPTION_QUIT:
     {
-        menu_scene.quit();
+        menu_scene.uninit();
         return NULL;
     }
     break;
@@ -90,32 +82,57 @@ static struct scene *select_option(enum option option)
 static void init(struct scene *previous_scene)
 {
     option_data[OPTION_START].text = "Start";
-    option_data[OPTION_ABOUT].text = "About";
     option_data[OPTION_QUIT].text = "Quit";
 
     mouse_x = -1;
     mouse_y = -1;
 }
 
-static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static void uninit(void)
 {
-    mouse_x = mouse.cx;
-    mouse_y = mouse.cy;
+}
 
-    switch (ev)
+static struct scene *handle_event(SDL_Event *event)
+{
+    switch (event->type)
     {
-    case TCOD_EVENT_KEY_PRESS:
+    case SDL_KEYDOWN:
     {
-        switch (key.vk)
+        switch (event->key.keysym.sym)
         {
-        case TCODK_ESCAPE:
+        case SDLK_ESCAPE:
         {
             return NULL;
         }
         break;
-        case TCODK_TEXT:
+        case SDLK_a:
+        case SDLK_b:
+        case SDLK_c:
+        case SDLK_d:
+        case SDLK_e:
+        case SDLK_f:
+        case SDLK_g:
+        case SDLK_h:
+        case SDLK_i:
+        case SDLK_j:
+        case SDLK_k:
+        case SDLK_l:
+        case SDLK_m:
+        case SDLK_n:
+        case SDLK_o:
+        case SDLK_p:
+        case SDLK_q:
+        case SDLK_r:
+        case SDLK_s:
+        case SDLK_t:
+        case SDLK_u:
+        case SDLK_v:
+        case SDLK_w:
+        case SDLK_x:
+        case SDLK_y:
+        case SDLK_z:
         {
-            int alpha = key.text[0] - 'a';
+            int alpha = event->key.keysym.sym - SDLK_a;
             enum option option = (enum option)alpha;
             return select_option(option);
         }
@@ -125,13 +142,19 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         }
     }
     break;
-    case TCOD_EVENT_MOUSE_PRESS:
+    case SDL_MOUSEBUTTONDOWN:
     {
-        if (mouse.lbutton)
+        if (event->button.button == SDL_BUTTON_LEFT)
         {
             enum option option = get_selected_option();
             return select_option(option);
         }
+    }
+    break;
+    case SDL_MOUSEMOTION:
+    {
+        mouse_x = event->motion.x;
+        mouse_y = event->motion.y;
     }
     break;
     default:
@@ -141,45 +164,36 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     return &menu_scene;
 }
 
-static struct scene *update(float delta_time)
-{
-    return &menu_scene;
-}
-
-static void render(TCOD_console_t console)
+static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
     int y = 1;
     for (enum option option = 0; option < NUM_OPTIONS; option++)
     {
-        TCOD_console_set_default_foreground(console, option == get_selected_option() ? TCOD_yellow : TCOD_white);
-        TCOD_console_printf(
+        console_print(
             console,
             1,
             y++,
+            option == get_selected_option() ? &TCOD_yellow : &TCOD_white,
+            &TCOD_black,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
             "%c) %s",
             option + 'a',
             option_data[option].text);
     }
 
-    TCOD_console_set_default_foreground(console, TCOD_white);
     TCOD_console_printf_frame(
         console,
-        0,
-        0,
-        console_width,
-        console_height,
+        0, 0, console_width, console_height,
         false,
-        TCOD_BKGND_SET,
+        TCOD_BKGND_NONE,
         TITLE);
-}
 
-static void quit(void)
-{
+    return &menu_scene;
 }
 
 struct scene menu_scene =
     {&init,
+     &uninit,
      &handle_event,
-     &update,
-     &render,
-     &quit};
+     &update};

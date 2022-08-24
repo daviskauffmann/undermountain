@@ -3,19 +3,27 @@
 #include <assert.h>
 #include <malloc.h>
 
-struct corpse *corpse_new(const char *name, int level, int floor, int x, int y)
+struct corpse *corpse_new(
+    const char *const name,
+    const uint8_t level,
+    const uint8_t floor,
+    const uint8_t x,
+    const uint8_t y)
 {
-    struct corpse *corpse = malloc(sizeof(*corpse));
+    struct corpse *const corpse = malloc(sizeof(*corpse));
     assert(corpse);
+
     corpse->name = TCOD_strdup(name);
     corpse->level = level;
+
     corpse->floor = floor;
     corpse->x = x;
     corpse->y = y;
+
     return corpse;
 }
 
-void corpse_delete(struct corpse *corpse)
+void corpse_delete(struct corpse *const corpse)
 {
     free(corpse->name);
     free(corpse);

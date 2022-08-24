@@ -3,6 +3,7 @@
 #include "../config.h"
 #include "../game/actor.h"
 #include "../game/world.h"
+#include "../print.h"
 #include "../scene.h"
 #include "scene_game.h"
 #include "scene_menu.h"
@@ -15,7 +16,6 @@ static void init(struct scene *previous_scene)
     world_init();
 
     hero = actor_new("Blinky", RACE_HUMAN, CLASS_WARRIOR, FACTION_ADVENTURER, 1, 0, 0, 0, true);
-
     hero->gold = 100;
 
     struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, 0, 0, 0, 50);
@@ -44,30 +44,34 @@ static void init(struct scene *previous_scene)
     TCOD_list_push(hero->items, spiked_shield);
 }
 
-static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t mouse)
+static void uninit(void)
 {
-    switch (ev)
+}
+
+static struct scene *handle_event(SDL_Event *event)
+{
+    switch (event->type)
     {
-    case TCOD_EVENT_KEY_PRESS:
+    case SDL_KEYDOWN:
     {
-        switch (key.vk)
+        switch (event->key.keysym.sym)
         {
-        case TCODK_ENTER:
+        case SDLK_RETURN:
         {
             world_create(hero);
 
-            create_scene.quit();
+            create_scene.uninit();
             game_scene.init(&create_scene);
             return &game_scene;
         }
         break;
-        case TCODK_ESCAPE:
+        case SDLK_ESCAPE:
         {
             actor_delete(hero);
 
-            world_cleanup();
+            world_uninit();
 
-            create_scene.quit();
+            create_scene.uninit();
             menu_scene.init(&create_scene);
             return &menu_scene;
         }
@@ -77,23 +81,23 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
         }
     }
     break;
-    case TCOD_EVENT_MOUSE_PRESS:
+    case SDL_MOUSEBUTTONDOWN:
     {
-        if (mouse.lbutton)
+        if (event->button.button == SDL_BUTTON_LEFT)
         {
             world_create(hero);
 
-            create_scene.quit();
+            create_scene.uninit();
             game_scene.init(&create_scene);
             return &game_scene;
         }
-        else if (mouse.rbutton)
+        else if (event->button.button == SDL_BUTTON_RIGHT)
         {
             actor_delete(hero);
 
-            world_cleanup();
+            world_uninit();
 
-            create_scene.quit();
+            create_scene.uninit();
             menu_scene.init(&create_scene);
             return &menu_scene;
         }
@@ -106,55 +110,52 @@ static struct scene *handle_event(TCOD_event_t ev, TCOD_key_t key, TCOD_mouse_t 
     return &create_scene;
 }
 
-static struct scene *update(float delta_time)
-{
-    return &create_scene;
-}
-
-static void render(TCOD_console_t console)
+static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
     int y = 1;
-    TCOD_console_printf_rect(
+    console_print(
         console,
         1,
         y++,
-        console_width - 2,
-        console_height - 2,
+        &TCOD_white,
+        &TCOD_black,
+        TCOD_BKGND_NONE,
+        TCOD_LEFT,
         "TODO: character creation.");
-    TCOD_console_printf_rect(
+    console_print(
         console,
         1,
         y++,
-        console_width - 2,
-        console_height - 2,
+        &TCOD_white,
+        &TCOD_black,
+        TCOD_BKGND_NONE,
+        TCOD_LEFT,
         "Press ENTER or L-Mouse to start.");
-    TCOD_console_printf_rect(
+    console_print(
         console,
         1,
         y++,
-        console_width - 2,
-        console_height - 2,
+        &TCOD_white,
+        &TCOD_black,
+        TCOD_BKGND_NONE,
+        TCOD_LEFT,
         "Press ESC or R-Mouse to return.");
 
-    TCOD_console_set_default_foreground(console, TCOD_white);
-    TCOD_console_printf_frame(
+    TCOD_console_printn_frame(
         console,
-        0,
-        0,
-        console_width,
-        console_height,
-        false,
-        TCOD_BKGND_SET,
-        TITLE);
-}
+        0, 0, console_width, console_height,
+        sizeof(TITLE),
+        TITLE,
+        &TCOD_white,
+        &TCOD_black,
+        TCOD_BKGND_NONE,
+        false);
 
-static void quit(void)
-{
+    return &create_scene;
 }
 
 struct scene create_scene =
     {&init,
+     &uninit,
      &handle_event,
-     &update,
-     &render,
-     &quit};
+     &update};

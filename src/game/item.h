@@ -28,13 +28,11 @@ enum ammunition_type
 {
     AMMUNITION_TYPE_NONE,
     AMMUNITION_TYPE_ARROW,
-    AMMUNITION_TYPE_BOLT,
-    AMMUNITION_TYPE_556
+    AMMUNITION_TYPE_BOLT
 };
 
 enum item_type
 {
-    ITEM_TYPE_556,
     ITEM_TYPE_BODKIN_ARROW,
     ITEM_TYPE_BOLT,
     ITEM_TYPE_COLD_IRON_BLADE,
@@ -46,7 +44,6 @@ enum item_type
     ITEM_TYPE_KITE_SHIELD,
     ITEM_TYPE_LONGBOW,
     ITEM_TYPE_LONGSWORD,
-    ITEM_TYPE_M4_CARBINE,
     ITEM_TYPE_SCEPTER_OF_UNITY,
     ITEM_TYPE_SPIKED_SHIELD,
 
@@ -77,14 +74,21 @@ struct item_datum
 struct item
 {
     enum item_type type;
-    int floor;
+
+    uint8_t floor;
     int x;
     int y;
+
     int current_durability;
     int current_stack;
 };
 
-struct item *item_new(enum item_type type, int floor, int x, int y, int stack);
+struct item *item_new(
+    enum item_type type,
+    uint8_t floor,
+    int x,
+    int y,
+    int stack);
 void item_delete(struct item *item);
 
 #endif

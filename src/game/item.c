@@ -7,8 +7,8 @@
 struct item *item_new(
     const enum item_type type,
     const uint8_t floor,
-    const int x,
-    const int y,
+    const uint8_t x,
+    const uint8_t y,
     const int stack)
 {
     struct item *const item = malloc(sizeof(*item));
@@ -20,8 +20,9 @@ struct item *item_new(
     item->x = x;
     item->y = y;
 
-    item->current_durability = item_data[type].max_durability;
-    item->current_stack = MIN(item_data[type].max_stack, stack);
+    item->stack = CLAMP(0, item_data[type].max_stack, stack);
+
+    item->durability = item_data[type].max_durability;
 
     if (item_data[type].unique)
     {

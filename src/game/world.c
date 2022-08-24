@@ -92,8 +92,7 @@ void world_uninit(void)
 {
     TCOD_LIST_FOREACH(world->messages)
     {
-        struct message *message = *iterator;
-        message_delete(message);
+        message_delete(*iterator);
     }
     TCOD_list_delete(world->messages);
 
@@ -132,10 +131,9 @@ void world_create(struct actor *hero)
 
         // init player
         {
+            hero->floor = floor;
             hero->x = map->stair_up_x;
             hero->y = map->stair_up_y;
-            hero->floor = floor;
-            hero->energy_per_turn = 1.0f;
             hero->controllable = true;
 
             TCOD_list_push(map->actors, hero);
@@ -242,8 +240,8 @@ void world_save(const char *filename)
                     TCOD_zip_put_int(zip, item->type);
                     TCOD_zip_put_int(zip, item->x);
                     TCOD_zip_put_int(zip, item->y);
-                    TCOD_zip_put_int(zip, item->current_durability);
-                    TCOD_zip_put_int(zip, item->current_stack);
+                    TCOD_zip_put_int(zip, item->durability);
+                    TCOD_zip_put_int(zip, item->stack);
                 }
                 else
                 {
@@ -257,15 +255,14 @@ void world_save(const char *filename)
                 TCOD_zip_put_int(zip, item->type);
                 TCOD_zip_put_int(zip, item->x);
                 TCOD_zip_put_int(zip, item->y);
-                TCOD_zip_put_int(zip, item->current_durability);
-                TCOD_zip_put_int(zip, item->current_stack);
+                TCOD_zip_put_int(zip, item->durability);
+                TCOD_zip_put_int(zip, item->stack);
             }
             TCOD_zip_put_int(zip, actor->readied_spell);
             TCOD_zip_put_int(zip, actor->x);
             TCOD_zip_put_int(zip, actor->y);
             TCOD_zip_put_int(zip, actor->took_turn);
             TCOD_zip_put_float(zip, actor->energy);
-            TCOD_zip_put_float(zip, actor->energy_per_turn);
             TCOD_zip_put_int(zip, actor->last_seen_x);
             TCOD_zip_put_int(zip, actor->last_seen_y);
             TCOD_zip_put_int(zip, actor->turns_chased);
@@ -332,8 +329,8 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, item->type);
             TCOD_zip_put_int(zip, item->x);
             TCOD_zip_put_int(zip, item->y);
-            TCOD_zip_put_int(zip, item->current_durability);
-            TCOD_zip_put_int(zip, item->current_stack);
+            TCOD_zip_put_int(zip, item->durability);
+            TCOD_zip_put_int(zip, item->stack);
         }
 
         TCOD_zip_put_int(zip, TCOD_list_size(map->projectiles));
@@ -353,8 +350,8 @@ void world_save(const char *filename)
                 TCOD_zip_put_int(zip, projectile->ammunition->type);
                 TCOD_zip_put_int(zip, projectile->ammunition->x);
                 TCOD_zip_put_int(zip, projectile->ammunition->y);
-                TCOD_zip_put_int(zip, projectile->ammunition->current_durability);
-                TCOD_zip_put_int(zip, projectile->ammunition->current_stack);
+                TCOD_zip_put_int(zip, projectile->ammunition->durability);
+                TCOD_zip_put_int(zip, projectile->ammunition->stack);
             }
             else
             {
@@ -495,7 +492,7 @@ void world_load(const char *filename)
                     int current_durability = TCOD_zip_get_int(zip);
                     int current_stack = TCOD_zip_get_int(zip);
                     struct item *item = item_new(type, floor, x, y, current_stack);
-                    item->current_durability = current_durability;
+                    item->durability = current_durability;
                     equipment[equip_slot] = item;
                 }
                 else
@@ -514,7 +511,7 @@ void world_load(const char *filename)
                 int current_stack = TCOD_zip_get_int(zip);
 
                 struct item *item = item_new(type, floor, x, y, current_stack);
-                item->current_durability = current_durability;
+                item->durability = current_durability;
 
                 TCOD_list_push(items, item);
             }
@@ -523,7 +520,6 @@ void world_load(const char *filename)
             int y = TCOD_zip_get_int(zip);
             bool took_turn = TCOD_zip_get_int(zip);
             float energy = TCOD_zip_get_float(zip);
-            float energy_per_turn = TCOD_zip_get_float(zip);
             int last_seen_x = TCOD_zip_get_int(zip);
             int last_seen_y = TCOD_zip_get_int(zip);
             int turns_chased = TCOD_zip_get_int(zip);
@@ -549,7 +545,6 @@ void world_load(const char *filename)
             actor->readied_spell = readied_spell;
             actor->took_turn = took_turn;
             actor->energy = energy;
-            actor->energy_per_turn = energy_per_turn;
             actor->last_seen_x = last_seen_x;
             actor->last_seen_y = last_seen_y;
             actor->turns_chased = turns_chased;
@@ -600,7 +595,7 @@ void world_load(const char *filename)
             int current_stack = TCOD_zip_get_int(zip);
 
             struct item *item = item_new(type, floor, x, y, current_stack);
-            item->current_durability = current_durability;
+            item->durability = current_durability;
 
             TCOD_list_push(map->tiles[x][y].items, item);
             TCOD_list_push(map->items, item);
@@ -627,7 +622,7 @@ void world_load(const char *filename)
                 int ammunition_current_stack = TCOD_zip_get_int(zip);
 
                 ammunition = item_new(ammunition_type, floor, ammunition_x, ammunition_y, ammunition_current_stack);
-                ammunition->current_durability = ammunition_current_durability;
+                ammunition->durability = ammunition_current_durability;
             }
 
             struct projectile *projectile = projectile_new(type, floor, origin_x, origin_y, target_x, target_y, NULL, ammunition);
@@ -712,8 +707,8 @@ void world_update(float delta_time)
     TCOD_LIST_FOREACH(map->actors)
     {
         struct actor *actor = *iterator;
-        actor_update(actor, delta_time);
         actor_calc_light(actor);
+        actor_calc_fade(actor, delta_time);
     }
     TCOD_LIST_FOREACH(map->projectiles)
     {
@@ -788,7 +783,7 @@ void world_update(float delta_time)
             {
                 struct actor *actor = *iterator;
                 actor->took_turn = false;
-                actor->energy += actor->energy_per_turn;
+                actor->energy += race_data[actor->race].speed;
                 if (actor->controllable)
                 {
                     controllable_exists = true;
@@ -813,16 +808,20 @@ void world_update(float delta_time)
             else
             {
                 // if not, then run the actor's AI
-#if 0 // enable to simulate ai making a decision over multiple frames
-                static float timer = 0.0f;
-                timer += delta_time;
-                if (timer < 0.1f)
+
+                // slow down the AI if the hero is dead
+                if (world->hero_dead)
                 {
-                    break;
+                    static float timer = 0.0f;
+                    timer += delta_time;
+                    if (timer < 0.1f)
+                    {
+                        break;
+                    }
+                    timer = 0.0f;
                 }
-                timer = 0.0f;
-#endif
-                actor_ai(actor);
+
+                actor->took_turn = actor_ai(actor);
             }
 
             // for a controllable actor, the UI is responsible for setting took_turn to true

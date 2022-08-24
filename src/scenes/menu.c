@@ -1,11 +1,11 @@
-#include "scene_menu.h"
+#include "menu.h"
 
 #include "../config.h"
 #include "../game/world.h"
 #include "../print.h"
 #include "../scene.h"
-#include "scene_create.h"
-#include "scene_game.h"
+#include "create.h"
+#include "game.h"
 #include <libtcod.h>
 
 enum option

@@ -32,9 +32,9 @@ struct actor *actor_new(
     actor->faction = faction;
 
     actor->level = level;
-    actor->experience = actor_calc_experience_to_level(actor->level);
+    actor->experience = (level - 1) * 1000;
 
-    actor->max_hp = 10 + (10 * level);
+    actor->max_hp = actor_calc_max_hp(actor);
     actor->current_hp = actor->max_hp;
 
     actor->gold = 0;
@@ -54,7 +54,6 @@ struct actor *actor_new(
 
     actor->took_turn = false;
     actor->energy = 1.0f;
-    actor->energy_per_turn = race_data[race].speed;
 
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -97,8 +96,7 @@ void actor_delete(struct actor *const actor)
 
     TCOD_LIST_FOREACH(actor->items)
     {
-        struct item *item = *iterator;
-        item_delete(item);
+        item_delete(*iterator);
     }
     TCOD_list_delete(actor->items);
 
@@ -107,23 +105,83 @@ void actor_delete(struct actor *const actor)
     free(actor);
 }
 
-int actor_calc_experience_to_level(const int level)
+int actor_calc_max_hp(const struct actor *actor)
 {
-    return level * (level - 1) / 2 * 1000;
+    return 10 + (10 * (actor->level - 1));
 }
 
-void actor_update(struct actor *const actor, const float delta_time)
+int actor_calc_armor_class(const struct actor *const actor)
 {
-    if (actor->flash_fade_coef > 0)
+    int armor_class = 10;
+
+    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
+    if (armor)
     {
-        // TODO: slower/faster fade depending on circumstances
-        // TODO: different fade functions such as sin()
-        actor->flash_fade_coef -= 4.0f * delta_time;
+        const struct item_datum *const armor_datum = &item_data[armor->type];
+
+        armor_class += armor_datum->armor_class;
     }
-    else
+
+    const struct item *const shield = actor->equipment[EQUIP_SLOT_OFF_HAND];
+    if (shield)
     {
-        actor->flash_fade_coef = 0.0f;
+        const struct item_datum *const shield_datum = &item_data[shield->type];
+        armor_class += shield_datum->armor_class;
     }
+
+    return armor_class;
+}
+
+int actor_calc_attack_bonus(const struct actor *const actor)
+{
+    return actor->level - 1;
+}
+
+int actor_calc_threat_range(const struct actor *const actor)
+{
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    if (weapon)
+    {
+        const struct item_datum *const weapon_datum = &item_data[weapon->type];
+        return weapon_datum->threat_range;
+    }
+
+    return 20;
+}
+
+int actor_calc_critical_multiplier(const struct actor *const actor)
+{
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    if (weapon)
+    {
+        const struct item_datum *const weapon_datum = &item_data[weapon->type];
+        return weapon_datum->critical_multiplier;
+    }
+
+    return 2;
+}
+
+const char *actor_calc_damage(const struct actor *const actor)
+{
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    if (weapon)
+    {
+        const struct item_datum *const weapon_datum = &item_data[weapon->type];
+        return weapon_datum->damage;
+    }
+
+    return "1d3";
+}
+
+int actor_calc_damage_bonus(const struct actor *const actor)
+{
+    return actor->level - 1;
+}
+
+int actor_calc_experience_to_level(const struct actor *const actor)
+{
+    // TODO: progressive XP formula
+    return actor->level * 1000;
 }
 
 void actor_calc_light(struct actor *const actor)
@@ -141,6 +199,20 @@ void actor_calc_light(struct actor *const actor)
             actor->x,
             actor->y,
             actor->light_radius);
+    }
+}
+
+void actor_calc_fade(struct actor *const actor, const float delta_time)
+{
+    if (actor->flash_fade_coef > 0)
+    {
+        // TODO: slower/faster fade depending on circumstances
+        // TODO: different fade functions such as sin()
+        actor->flash_fade_coef -= 4.0f * delta_time;
+    }
+    else
+    {
+        actor->flash_fade_coef = 0.0f;
     }
 }
 
@@ -209,7 +281,48 @@ void actor_calc_fov(struct actor *const actor)
     TCOD_map_delete(los_map);
 }
 
-void actor_ai(struct actor *const actor)
+void actor_give_experience(struct actor *const actor, const int experience)
+{
+    actor->experience += experience;
+
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        TCOD_azure,
+        "%s gains %d experience.",
+        actor->name,
+        experience);
+
+    while (actor->experience >= actor_calc_experience_to_level(actor))
+    {
+        // TODO: do not automatically level up if it's the player character
+        // notify the player instead and they can level up in a level up screen
+        actor_level_up(actor);
+    }
+}
+
+void actor_level_up(struct actor *const actor)
+{
+    // TODO: the player should not generally use this to level up
+    // this is an automatic level up that all non-player actors will use when their experience is high enough
+    // however, in the level up screen (to be implemented), the player can elect to auto-level their character
+    // in that case, use this function
+
+    actor->level++;
+    actor->max_hp = actor_calc_max_hp(actor);
+    actor->current_hp = actor->max_hp;
+
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        TCOD_yellow,
+        "%s has gained a level!",
+        actor->name);
+}
+
+bool actor_ai(struct actor *const actor)
 {
     const struct map *const map = &world->maps[actor->floor];
     const struct tile *const tile = &map->tiles[actor->x][actor->y];
@@ -245,14 +358,14 @@ void actor_ai(struct actor *const actor)
             {
                 if (actor_drink(actor, target->x, target->y))
                 {
-                    goto done;
+                    return true;
                 }
             }
             else
             {
                 if (actor_path_towards(actor, target->x, target->y))
                 {
-                    goto done;
+                    return true;
                 }
             }
         }
@@ -312,7 +425,7 @@ void actor_ai(struct actor *const actor)
                         // TODO: look in inventory for suitable ammo and equip
                         if (actor_unequip(actor, EQUIP_SLOT_MAIN_HAND))
                         {
-                            goto done;
+                            return true;
                         }
                     }
                 }
@@ -324,7 +437,7 @@ void actor_ai(struct actor *const actor)
                 {
                     // do not set took_turn to true
                     // the turn is not complete until the projectile is done moving
-                    return;
+                    return false;
                 }
             }
             else
@@ -335,14 +448,14 @@ void actor_ai(struct actor *const actor)
                 {
                     if (actor_attack(actor, target, NULL))
                     {
-                        goto done;
+                        return true;
                     }
                 }
                 else
                 {
                     if (actor_path_towards(actor, target->x, target->y))
                     {
-                        goto done;
+                        return true;
                     }
                 }
             }
@@ -362,7 +475,7 @@ void actor_ai(struct actor *const actor)
         {
             actor->turns_chased++;
 
-            goto done;
+            return true;
         }
     }
 
@@ -374,7 +487,7 @@ void actor_ai(struct actor *const actor)
         {
             if (actor_path_towards(actor, actor->leader->x, actor->leader->y))
             {
-                goto done;
+                return true;
             }
         }
     }
@@ -388,7 +501,7 @@ void actor_ai(struct actor *const actor)
     //     {
     //         if (actor_descend(actor))
     //         {
-    //             goto done;
+    //             return true;
     //         }
     //     }
     //     break;
@@ -396,7 +509,7 @@ void actor_ai(struct actor *const actor)
     //     {
     //         if (actor_ascend(actor))
     //         {
-    //             goto done;
+    //             return true;
     //         }
     //     }
     //     break;
@@ -412,7 +525,7 @@ void actor_ai(struct actor *const actor)
     {
         if (actor_grab(actor, actor->x, actor->y))
         {
-            goto done;
+            return true;
         }
     }
 
@@ -423,51 +536,10 @@ void actor_ai(struct actor *const actor)
         const int y = actor->y + TCOD_random_get_int(world->random, -1, 1);
         actor_move(actor, x, y);
 
-        goto done;
+        return true;
     }
-done:;
-    actor->took_turn = true;
-}
 
-void actor_give_experience(struct actor *const actor, const int experience)
-{
-    actor->experience += experience;
-
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        TCOD_azure,
-        "%s gains %d experience.",
-        actor->name,
-        experience);
-
-    while (actor->experience >= actor_calc_experience_to_level(actor->level + 1))
-    {
-        // TODO: do not automatically level up if it's the player character
-        // notify the player instead and they can level up in a level up screen
-        actor_level_up(actor);
-    }
-}
-
-void actor_level_up(struct actor *const actor)
-{
-    // TODO: the player should not generally use this to level up
-    // this is an automatic level up that all non-player actors will use when their experience is high enough
-    // however, in the level up screen (to be implemented), the player can elect to auto-level their character
-    // in that case, use this function
-
-    actor->level++;
-    actor->max_hp += 10;
-    actor->current_hp = actor->max_hp;
-
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        TCOD_yellow,
-        "%s has gained a level!",
-        actor->name);
+    return true;
 }
 
 bool actor_path_towards(
@@ -1165,7 +1237,7 @@ bool actor_grab(
     struct item *const item = TCOD_list_pop(tile->items);
     if (item->type == ITEM_TYPE_GOLD)
     {
-        const int gold = item->current_stack;
+        const int gold = item->stack;
         actor->gold += gold;
 
         TCOD_list_remove(map->items, item);
@@ -1377,10 +1449,10 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
     }
 
     // decrement item stack
-    item->current_stack--;
+    item->stack--;
 
     // delete item if stack is empty
-    if (item->current_stack <= 0)
+    if (item->stack <= 0)
     {
         // remove from inventory
         TCOD_list_remove(actor->items, item);
@@ -1528,10 +1600,10 @@ bool actor_shoot(
     TCOD_list_push(map->projectiles, projectile);
 
     // decrement the actor's ammunition
-    ammunition->current_stack--;
+    ammunition->stack--;
 
     // unequip and delete the item if out of ammo
-    if (ammunition->current_stack <= 0)
+    if (ammunition->stack <= 0)
     {
         // remove from inventory
         TCOD_list_remove(actor->items, ammunition);
@@ -1548,14 +1620,23 @@ bool actor_shoot(
 
 bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition)
 {
-    // TODO: better miss calculation
-    if (TCOD_random_get_float(world->random, 0, 1) < 0.25f)
+    // calculate other armor class
+    const int armor_class = actor_calc_armor_class(other);
+
+    // calculate hit
+    const int attack_roll =
+        TCOD_random_dice_roll(
+            world->random,
+            TCOD_random_dice_new("1d20"));
+    const int attack_bonus = actor_calc_attack_bonus(actor);
+    const int hit_challenge = attack_roll + attack_bonus;
+    if (hit_challenge < armor_class)
     {
         world_log(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            TCOD_light_gray,
             "%s misses %s.",
             actor->name,
             other->name);
@@ -1563,77 +1644,75 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
         return true;
     }
 
-    // calculate damage, initializing with unarmed damage
-    int min_damage = 1;
-    int max_damage = 3;
+    // calculate critical hit
+    int threat_roll = 0;
+    int crit_challenge = 0;
+    bool crit = false;
 
-    // if the actor has a weapon, use that weapon's damage
-    const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-    if (weapon)
+    if (attack_roll >= actor_calc_threat_range(actor))
     {
-        const struct item_datum *const weapon_datum = &item_data[weapon->type];
-        min_damage = weapon_datum->min_damage;
-        max_damage = weapon_datum->max_damage;
-    }
-
-    // roll for damage
-    int damage = TCOD_random_get_int(
-        world->random,
-        min_damage,
-        max_damage);
-
-    // if the actor has ammunition, add the ammunition's damage roll to the total
-    if (ammunition)
-    {
-        const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
-        damage += TCOD_random_get_int(
-            world->random,
-            ammunition_datum->min_damage,
-            ammunition_datum->max_damage);
-    }
-
-    // if the other actor has armor, reduce the damage by the armor's value
-    const struct item *const other_armor = other->equipment[EQUIP_SLOT_ARMOR];
-    if (other_armor)
-    {
-        const struct item_datum *const other_armor_datum = &item_data[other_armor->type];
-        // TODO: armor piercing weapons/ammunition
-        damage -= other_armor_datum->armor;
-        if (damage < 0)
+        threat_roll =
+            TCOD_random_dice_roll(
+                world->random,
+                TCOD_random_dice_new("1d20"));
+        crit_challenge = threat_roll + attack_bonus;
+        if (crit_challenge >= armor_class)
         {
-            damage = 0;
+            crit = true;
         }
     }
 
-    // if the other actor has a shield, roll for shield block
-    // shield block will prevent all damage
-    const struct item *const other_shield = other->equipment[EQUIP_SLOT_OFF_HAND];
-    if (other_shield)
+    // calculate damage
+    const int num_attack_rolls =
+        crit
+            ? actor_calc_critical_multiplier(actor)
+            : 1;
+    const int damage_bonus = actor_calc_damage_bonus(actor);
+    int damage = 0;
+    for (int i = 0; i < num_attack_rolls; i++)
     {
-        const struct item_datum *const other_shield_datum = &item_data[other_shield->type];
-        if (TCOD_random_get_float(world->random, 0, 1) <= other_shield_datum->block_chance)
-        {
-            damage = 0;
-        }
+        damage +=
+            TCOD_random_dice_roll(
+                world->random,
+                TCOD_random_dice_new(actor_calc_damage(actor))) +
+            damage_bonus;
     }
 
     // TODO: when projectiles come at the player from the dark, nothing gets logged
     // it'd be nice if there were a way to do something like "someone attacks <player> for <damage>"
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        TCOD_white,
-        "%s hits %s for %d.",
-        actor->name,
-        other->name,
-        damage);
+    if (threat_roll)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            crit ? TCOD_light_red : TCOD_white,
+            "%s %s %s for %d.",
+            actor->name,
+            crit ? "crits" : "hits",
+            other->name,
+            damage);
+    }
+    else
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s hits %s for %d.",
+            actor->name,
+            other->name,
+            damage);
+    }
 
+    // deal damage
     const bool killed = actor_take_damage(other, actor, damage);
 
     // if the other actor wasn't killed, perform any other effects
     if (!killed)
     {
+        const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
         if (weapon)
         {
             if (weapon->type == ITEM_TYPE_COLD_IRON_BLADE)
@@ -1664,15 +1743,15 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
             }
         }
 
+        const struct item *const other_shield = other->equipment[EQUIP_SLOT_OFF_HAND];
         if (other_shield)
         {
             if (other_shield->type == ITEM_TYPE_SPIKED_SHIELD && !ammunition)
             {
                 const struct item_datum *const other_shield_datum = &item_data[other_shield->type];
-                const int spike_damage = TCOD_random_get_int(
+                const int spike_damage = TCOD_random_dice_roll(
                     world->random,
-                    other_shield_datum->min_damage,
-                    other_shield_datum->max_damage);
+                    TCOD_random_dice_new(other_shield_datum->damage));
 
                 world_log(
                     actor->floor,
@@ -1832,7 +1911,12 @@ void actor_die(struct actor *actor, struct actor *killer)
     tile->actor = NULL;
 
     // create a corpse
-    struct corpse *const corpse = corpse_new(actor->name, actor->level, actor->floor, actor->x, actor->y);
+    struct corpse *const corpse = corpse_new(
+        actor->name,
+        actor->level,
+        actor->floor,
+        actor->x,
+        actor->y);
     TCOD_list_push(map->corpses, corpse);
     TCOD_list_push(tile->corpses, corpse);
 

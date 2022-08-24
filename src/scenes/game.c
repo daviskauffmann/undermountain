@@ -1,4 +1,4 @@
-#include "scene_game.h"
+#include "game.h"
 
 #include "../config.h"
 #include "../game/actor.h"
@@ -12,7 +12,7 @@
 #include "../game/world.h"
 #include "../print.h"
 #include "../scene.h"
-#include "scene_menu.h"
+#include "menu.h"
 #include <assert.h>
 #include <float.h>
 #include <libtcod.h>
@@ -850,7 +850,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (world_player_can_take_turn())
                 {
-                    world->player->took_turn = actor_ascend(world->player, true, NULL);
+                    world->player->took_turn = actor_descend(world->player, true, NULL);
                 }
             }
         }
@@ -861,7 +861,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (world_player_can_take_turn())
                 {
-                    world->player->took_turn = actor_descend(world->player, true, NULL);
+                    world->player->took_turn = actor_ascend(world->player, true, NULL);
                 }
             }
         }
@@ -1847,10 +1847,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // calculate random noise coefficients
-        noise_x += 0.2f;
-        float noise_dx = noise_x + 20.0f;
+        noise_x += delta_time * 10;
+        float noise_dx = noise_x + 20;
         float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-        noise_dx += 30.0f;
+        noise_dx += 30;
         float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
         float di = 0.2f * TCOD_noise_get(noise, &noise_x);
 
@@ -2528,7 +2528,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_RIGHT,
                 "%d / %d",
                 world->player->experience,
-                actor_calc_experience_to_level(world->player->level + 1));
+                actor_calc_experience_to_level(world->player));
             y++;
 
             TCOD_console_printf(
@@ -2596,14 +2596,15 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_RIGHT,
-                        equipment->current_stack > 1 ? "%s (%d)" : "%s",
+                        equipment->stack > 1 ? "%s (%d)" : "%s",
                         item_datum.name,
-                        equipment->current_stack);
+                        equipment->stack);
                 }
 
                 y++;
             }
             y++;
+
             TCOD_console_printf(
                 panel_rect.console,
                 1,
@@ -2618,6 +2619,72 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 "%d / %d",
                 world->player->current_hp,
                 world->player->max_hp);
+            y++;
+
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "AC");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d",
+                actor_calc_armor_class(world->player));
+            y++;
+
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "Attack Bonus");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d",
+                actor_calc_attack_bonus(world->player));
+            y++;
+
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "Damage");
+            const int threat_range = actor_calc_threat_range(world->player);
+            if (threat_range == 20)
+            {
+                TCOD_console_printf_ex(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%s + %d (x%d)",
+                    actor_calc_damage(world->player),
+                    actor_calc_damage_bonus(world->player),
+                    actor_calc_critical_multiplier(world->player));
+            }
+            else
+            {
+                TCOD_console_printf_ex(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%s + %d (%d-20/x%d)",
+                    actor_calc_damage(world->player),
+                    actor_calc_damage_bonus(world->player),
+                    threat_range,
+                    actor_calc_critical_multiplier(world->player));
+            }
+            y++;
 
             TCOD_console_printf_frame(
                 panel_rect.console,
@@ -2660,10 +2727,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        item->current_stack > 1 ? "%c) %s (%d)" : "%c) %s",
+                        item->stack > 1 ? "%c) %s (%d)" : "%c) %s",
                         y - 1 + 'a' - current_panel_status->scroll,
                         item_datum.name,
-                        item->current_stack);
+                        item->stack);
                 }
                 else
                 {
@@ -2675,9 +2742,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        item->current_stack > 1 ? "%s (%d)" : "%s",
+                        item->stack > 1 ? "%s (%d)" : "%s",
                         item_datum.name,
-                        item->current_stack);
+                        item->stack);
                 }
 
                 y++;

@@ -56,9 +56,11 @@ enum monster
 struct actor_common
 {
     int turns_to_chase;
+
     int glow_radius;
     TCOD_color_t glow_color;
     float glow_intensity;
+
     int torch_radius;
     TCOD_color_t torch_color;
     float torch_intensity;
@@ -113,7 +115,6 @@ struct actor
 
     bool took_turn;
     float energy;
-    float energy_per_turn;
 
     int last_seen_x;
     int last_seen_y;
@@ -146,13 +147,25 @@ struct actor *actor_new(
     uint8_t y,
     bool torch);
 void actor_delete(struct actor *actor);
-int actor_calc_experience_to_level(int level);
-void actor_update(struct actor *actor, float delta_time);
+
+int actor_calc_max_hp(const struct actor *actor);
+int actor_calc_armor_class(const struct actor *actor);
+int actor_calc_attack_bonus(const struct actor *actor);
+int actor_calc_threat_range(const struct actor *actor);
+int actor_calc_critical_multiplier(const struct actor *actor);
+const char *actor_calc_damage(const struct actor *actor);
+int actor_calc_damage_bonus(const struct actor *actor);
+int actor_calc_experience_to_level(const struct actor *actor);
+
 void actor_calc_light(struct actor *actor);
+void actor_calc_fade(struct actor *actor, float delta_time);
+
 void actor_calc_fov(struct actor *actor);
-void actor_ai(struct actor *actor);
+
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
+
+bool actor_ai(struct actor *actor);
 bool actor_path_towards(
     struct actor *actor,
     int target_x, int target_y);
@@ -204,6 +217,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
 bool actor_cast_spell(
     struct actor *actor,
     int x, int y);
+
 bool actor_take_damage(struct actor *actor, struct actor *attacker, int damage);
 void actor_die(struct actor *actor, struct actor *killer);
 

@@ -150,6 +150,7 @@ done:
         // TODO: i'm actually not sure why reducing the energy needs to happen here
         // i would expect the game update loop to do it when took_turn is set to true
         // however, enemies seem to fire many more projectiles than they should if this isn't done, so leaving it for now
+        // tbh, enemies seem to be shooting too many projectiles anyways even with this, so idk whats going on
         projectile->shooter->energy -= 1.0f;
         projectile->shooter->took_turn = true;
     }

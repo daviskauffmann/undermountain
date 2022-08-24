@@ -13,7 +13,7 @@
 #define SPAWN_OBJECTS 2
 #define SPAWN_ADVENTURERS 1
 #define SPAWN_MONSTERS 10
-#define SPAWN_ITEMS 2
+#define SPAWN_ITEMS 5
 
 void map_init(struct map *const map, const uint8_t floor)
 {
@@ -819,10 +819,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
         // TODO: default inventory/equipment
         if (monster == MONSTER_BUGBEAR)
         {
-            struct item *longbow = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
-            actor->equipment[EQUIP_SLOT_MAIN_HAND] = longbow;
-            struct item *bodkin_arrow = item_new(ITEM_TYPE_BODKIN_ARROW, map->floor, x, y, 5);
-            actor->equipment[EQUIP_SLOT_AMMUNITION] = bodkin_arrow;
+            actor->equipment[EQUIP_SLOT_MAIN_HAND] = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
+            actor->equipment[EQUIP_SLOT_AMMUNITION] = item_new(ITEM_TYPE_ARROW, map->floor, x, y, 5);
         }
     }
 

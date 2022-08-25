@@ -10,11 +10,16 @@
 struct world
 {
     TCOD_Random *random;
+
     unsigned int time;
+
     struct map maps[NUM_MAPS];
+
     struct actor *player;
+
     struct actor *hero;
     bool hero_dead;
+
     TCOD_list_t messages;
 };
 

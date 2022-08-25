@@ -98,14 +98,14 @@ struct actor
     uint8_t level;
     int experience;
 
-    int max_hp;
-    int current_hp;
+    int health;
+    int mana;
 
     int gold;
     struct item *equipment[NUM_EQUIP_SLOTS];
     TCOD_list_t items;
-
-    enum spell_type readied_spell;
+    TCOD_list_t known_spell_types;
+    enum spell_type readied_spell_type;
 
     uint8_t floor;
     uint8_t x;
@@ -132,8 +132,6 @@ struct actor
     float flash_fade_coef;
 
     bool controllable;
-
-    // TODO: list of known spells
 };
 
 struct actor *actor_new(
@@ -148,7 +146,8 @@ struct actor *actor_new(
     bool torch);
 void actor_delete(struct actor *actor);
 
-int actor_calc_max_hp(const struct actor *actor);
+int actor_calc_max_health(const struct actor *actor);
+int actor_calc_max_mana(const struct actor *actor);
 int actor_calc_armor_class(const struct actor *actor);
 int actor_calc_attack_bonus(const struct actor *actor);
 int actor_calc_threat_range(const struct actor *actor);
@@ -209,6 +208,10 @@ bool actor_drop(struct actor *actor, struct item *item);
 bool actor_equip(struct actor *actor, struct item *item);
 bool actor_unequip(struct actor *actor, enum equip_slot equip_slot);
 bool actor_quaff(struct actor *actor, struct item *item);
+bool actor_read(
+    struct actor *actor,
+    struct item *item,
+    int x, int y);
 bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(
     struct actor *actor,
@@ -216,8 +219,12 @@ bool actor_shoot(
 bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition);
 bool actor_cast_spell(
     struct actor *actor,
-    int x, int y);
+    enum spell_type spell_type,
+    int x, int y,
+    bool from_memory);
 
+void actor_restore_health(struct actor *actor, int health);
+void actor_restore_mana(struct actor *actor, int mana);
 bool actor_take_damage(struct actor *actor, struct actor *attacker, int damage);
 void actor_die(struct actor *actor, struct actor *killer);
 

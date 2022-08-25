@@ -13,6 +13,7 @@ struct actor_prototype monster_prototypes[NUM_MONSTERS];
 struct corpse_common corpse_common;
 struct item_common item_common;
 struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
+struct base_item_datum base_item_data[NUM_BASE_ITEM_TYPES];
 struct item_datum item_data[NUM_ITEM_TYPES];
 struct spell_datum spell_data[NUM_SPELL_TYPES];
 struct projectile_datum projectile_data[NUM_PROJECTILE_TYPES];
@@ -230,18 +231,16 @@ void assets_load(void)
     equip_slot_data[EQUIP_SLOT_ARMOR] = (struct equip_slot_datum){
         .name = "Armor",
     };
-    equip_slot_data[EQUIP_SLOT_MAIN_HAND] = (struct equip_slot_datum){
-        .name = "Main Hand",
+    equip_slot_data[EQUIP_SLOT_SHIELD] = (struct equip_slot_datum){
+        .name = "Shield",
     };
-    equip_slot_data[EQUIP_SLOT_OFF_HAND] = (struct equip_slot_datum){
-        .name = "Off Hand",
+    equip_slot_data[EQUIP_SLOT_WEAPON] = (struct equip_slot_datum){
+        .name = "Weapon",
     };
 
-    item_data[ITEM_TYPE_ARROW] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_ARROW] = (struct base_item_datum){
         .name = "Arrow",
-        .description = "",
         .glyph = '`',
-        .color = TCOD_white,
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .two_handed = false,
@@ -258,17 +257,10 @@ void assets_load(void)
         .max_stack = 100,
 
         .max_durability = 100,
-
-        .quaffable = false,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_BOLT] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_BOLT] = (struct base_item_datum){
         .name = "Bolt",
-        .description = "",
         .glyph = '`',
-        .color = TCOD_white,
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .two_handed = false,
@@ -282,26 +274,19 @@ void assets_load(void)
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = false,
-
         .max_stack = 100,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_BULLET] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_BULLET] = (struct base_item_datum){
         .name = "Bullet",
-        .description = "",
         .glyph = '`',
-        .color = TCOD_white,
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .two_handed = false,
 
         .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_BOLT,
+        .ammunition_type = AMMUNITION_TYPE_BULLET,
 
         .armor_class = 0,
 
@@ -309,22 +294,15 @@ void assets_load(void)
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = false,
-
         .max_stack = 100,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_CLUB] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_CLUB] = (struct base_item_datum){
         .name = "Club",
-        .description = "",
         .glyph = '|',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .equip_slot = EQUIP_SLOT_WEAPON,
         .two_handed = false,
 
         .ranged = false,
@@ -336,49 +314,15 @@ void assets_load(void)
         .threat_range = 20,
         .critical_multiplier = 2,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_COLD_IRON_BLADE] = (struct item_datum){
-        .name = "Cold Iron Blade",
-        .description = "",
-        .glyph = '|',
-        .color = TCOD_white,
-
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
-        .two_handed = false,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d8",
-        .threat_range = 19,
-        .critical_multiplier = 2,
-
-        .quaffable = false,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = true,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_DAGGER] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_DAGGER] = (struct base_item_datum){
         .name = "Dagger",
-        .description = "",
         .glyph = '|',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .equip_slot = EQUIP_SLOT_WEAPON,
         .two_handed = true,
 
         .armor_class = 0,
@@ -390,20 +334,13 @@ void assets_load(void)
         .threat_range = 19,
         .critical_multiplier = 2,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_FULL_PLATE] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_FULL_PLATE] = (struct base_item_datum){
         .name = "Full Plate",
-        .description = "",
         .glyph = '[',
-        .color = TCOD_white,
 
         .equip_slot = EQUIP_SLOT_ARMOR,
         .two_handed = false,
@@ -417,20 +354,13 @@ void assets_load(void)
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_GOLD] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_GOLD] = (struct base_item_datum){
         .name = "Gold",
-        .description = "",
         .glyph = '$',
-        .color = TCOD_gold,
 
         .equip_slot = EQUIP_SLOT_NONE,
         .two_handed = false,
@@ -444,22 +374,15 @@ void assets_load(void)
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = true,
-
         .max_stack = INT32_MAX,
 
         .max_durability = 0,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_GREATSWORD] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_GREATSWORD] = (struct base_item_datum){
         .name = "Greatsword",
-        .description = "",
         .glyph = '|',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .equip_slot = EQUIP_SLOT_WEAPON,
         .two_handed = true,
 
         .armor_class = 0,
@@ -471,22 +394,15 @@ void assets_load(void)
         .threat_range = 19,
         .critical_multiplier = 2,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_HEAVY_CROSSBOW] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_HEAVY_CROSSBOW] = (struct base_item_datum){
         .name = "Heavy Crossbow",
-        .description = "",
         .glyph = 'T',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .equip_slot = EQUIP_SLOT_WEAPON,
         .two_handed = true,
 
         .armor_class = 0,
@@ -498,20 +414,133 @@ void assets_load(void)
         .threat_range = 19,
         .critical_multiplier = 2,
 
-        .quaffable = false,
+        .max_stack = 1,
+
+        .max_durability = 100,
+    };
+    base_item_data[BASE_ITEM_TYPE_LARGE_SHIELD] = (struct base_item_datum){
+        .name = "Large Shield",
+        .glyph = ')',
+
+        .equip_slot = EQUIP_SLOT_SHIELD,
+        .two_handed = false,
+
+        .ranged = false,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .armor_class = 2,
+
+        .damage = NULL,
+        .threat_range = 0,
+        .critical_multiplier = 0,
 
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_HEALING_POTION] = (struct item_datum){
-        .name = "Healing Potion",
-        .description = "",
+    base_item_data[BASE_ITEM_TYPE_LIGHT_CROSSBOW] = (struct base_item_datum){
+        .name = "Light Crossbow",
+        .glyph = 't',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .two_handed = true,
+
+        .armor_class = 0,
+
+        .ranged = true,
+        .ammunition_type = AMMUNITION_TYPE_BOLT,
+
+        .damage = "1d8",
+        .threat_range = 19,
+        .critical_multiplier = 2,
+
+        .max_stack = 1,
+
+        .max_durability = 100,
+    };
+    base_item_data[BASE_ITEM_TYPE_LONGBOW] = (struct base_item_datum){
+        .name = "Longbow",
+        .glyph = '}',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .two_handed = true,
+
+        .ranged = true,
+        .ammunition_type = AMMUNITION_TYPE_ARROW,
+
+        .armor_class = 0,
+
+        .damage = "1d8",
+        .threat_range = 20,
+        .critical_multiplier = 3,
+
+        .max_stack = 1,
+
+        .max_durability = 100,
+    };
+    base_item_data[BASE_ITEM_TYPE_LONGSWORD] = (struct base_item_datum){
+        .name = "Longsword",
+        .glyph = '|',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .two_handed = false,
+
+        .ranged = false,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .armor_class = 0,
+
+        .damage = "1d8",
+        .threat_range = 19,
+        .critical_multiplier = 2,
+
+        .max_stack = 1,
+
+        .max_durability = 100,
+    };
+    base_item_data[BASE_ITEM_TYPE_MACE] = (struct base_item_datum){
+        .name = "Mace",
         .glyph = '!',
-        .color = TCOD_red,
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .two_handed = false,
+
+        .ranged = false,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .armor_class = 0,
+
+        .damage = "1d6",
+        .threat_range = 20,
+        .critical_multiplier = 2,
+
+        .max_stack = 1,
+
+        .max_durability = 100,
+    };
+    base_item_data[BASE_ITEM_TYPE_MORNINGSTAR] = (struct base_item_datum){
+        .name = "Morning Star",
+        .glyph = '!',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .two_handed = false,
+
+        .ranged = false,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .armor_class = 0,
+
+        .damage = "1d8",
+        .threat_range = 20,
+        .critical_multiplier = 2,
+
+        .max_stack = 1,
+
+        .max_durability = 100,
+    };
+    base_item_data[BASE_ITEM_TYPE_POTION] = (struct base_item_datum){
+        .name = "Potion",
+        .glyph = '!',
 
         .equip_slot = EQUIP_SLOT_NONE,
         .two_handed = false,
@@ -525,238 +554,55 @@ void assets_load(void)
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = true,
-
         .max_stack = 10,
 
         .max_durability = 0,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_LARGE_SHIELD] = (struct item_datum){
-        .name = "Large Shield",
-        .description = "",
-        .glyph = ')',
-        .color = TCOD_white,
+    base_item_data[BASE_ITEM_TYPE_QUARTERSTAFF] = (struct base_item_datum){
+        .name = "Quarterstaff",
+        .glyph = '|',
 
-        .equip_slot = EQUIP_SLOT_OFF_HAND,
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .two_handed = true,
+
+        .ranged = false,
+        .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .armor_class = 0,
+
+        .damage = "1d8",
+        .threat_range = 20,
+        .critical_multiplier = 2,
+
+        .max_stack = 1,
+
+        .max_durability = 100,
+    };
+    base_item_data[BASE_ITEM_TYPE_SCROLL] = (struct base_item_datum){
+        .name = "Scroll",
+        .glyph = '%',
+
+        .equip_slot = EQUIP_SLOT_NONE,
         .two_handed = false,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
 
-        .armor_class = 2,
+        .armor_class = 0,
 
         .damage = NULL,
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = false,
+        .max_stack = 10,
 
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
+        .max_durability = 0,
     };
-    item_data[ITEM_TYPE_LIGHT_CROSSBOW] = (struct item_datum){
-        .name = "Light Crossbow",
-        .description = "",
-        .glyph = 't',
-        .color = TCOD_white,
-
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
-        .two_handed = true,
-
-        .armor_class = 0,
-
-        .ranged = true,
-        .ammunition_type = AMMUNITION_TYPE_BOLT,
-
-        .damage = "1d8",
-        .threat_range = 19,
-        .critical_multiplier = 2,
-
-        .quaffable = false,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_LONGBOW] = (struct item_datum){
-        .name = "Longbow",
-        .description = "",
-        .glyph = '}',
-        .color = TCOD_white,
-
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
-        .two_handed = true,
-
-        .ranged = true,
-        .ammunition_type = AMMUNITION_TYPE_ARROW,
-
-        .armor_class = 0,
-
-        .damage = "1d8",
-        .threat_range = 20,
-        .critical_multiplier = 3,
-
-        .quaffable = false,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_LONGSWORD] = (struct item_datum){
-        .name = "Longsword",
-        .description = "",
-        .glyph = '|',
-        .color = TCOD_white,
-
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
-        .two_handed = false,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d8",
-        .threat_range = 19,
-        .critical_multiplier = 2,
-
-        .quaffable = false,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_MACE] = (struct item_datum){
-        .name = "Mace",
-        .description = "",
-        .glyph = '!',
-        .color = TCOD_white,
-
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
-        .two_handed = false,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d6",
-        .threat_range = 20,
-        .critical_multiplier = 2,
-
-        .quaffable = false,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_MORNINGSTAR] = (struct item_datum){
-        .name = "Morning Star",
-        .description = "",
-        .glyph = '!',
-        .color = TCOD_white,
-
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
-        .two_handed = false,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d8",
-        .threat_range = 20,
-        .critical_multiplier = 2,
-
-        .quaffable = false,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_QUARTERSTAFF] = (struct item_datum){
-        .name = "Quarterstaff",
-        .description = "",
-        .glyph = '|',
-        .color = TCOD_white,
-
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
-        .two_handed = true,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d8",
-        .threat_range = 20,
-        .critical_multiplier = 2,
-
-        .quaffable = false,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_SCEPTER_OF_UNITY] = (struct item_datum){
-        .name = "Scepter of Unity",
-        .description = "",
-        .glyph = '!',
-        .color = TCOD_white,
-
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
-        .two_handed = false,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d8",
-        .threat_range = 20,
-        .critical_multiplier = 2,
-
-        .quaffable = false,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-
-        .unique = true,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_SICKLE] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_SICKLE] = (struct base_item_datum){
         .name = "Sickle",
-        .description = "",
         .glyph = '?',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .equip_slot = EQUIP_SLOT_WEAPON,
         .two_handed = false,
 
         .ranged = false,
@@ -768,22 +614,15 @@ void assets_load(void)
         .threat_range = 20,
         .critical_multiplier = 2,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_SLING] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_SLING] = (struct base_item_datum){
         .name = "Sling",
-        .description = "",
         .glyph = '?',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .equip_slot = EQUIP_SLOT_WEAPON,
         .two_handed = false,
 
         .armor_class = 0,
@@ -795,22 +634,15 @@ void assets_load(void)
         .threat_range = 20,
         .critical_multiplier = 2,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_SMALL_SHIELD] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_SMALL_SHIELD] = (struct base_item_datum){
         .name = "Small Shield",
-        .description = "",
         .glyph = ')',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_OFF_HAND,
+        .equip_slot = EQUIP_SLOT_SHIELD,
         .two_handed = false,
 
         .ranged = false,
@@ -822,22 +654,15 @@ void assets_load(void)
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_SPEAR] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_SPEAR] = (struct base_item_datum){
         .name = "Spear",
-        .description = "",
         .glyph = '|',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_MAIN_HAND,
+        .equip_slot = EQUIP_SLOT_WEAPON,
         .two_handed = true,
 
         .ranged = false,
@@ -849,49 +674,35 @@ void assets_load(void)
         .threat_range = 20,
         .critical_multiplier = 3,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
-
-        .unique = false,
-        .spawned = false,
     };
-    item_data[ITEM_TYPE_SPIKED_SHIELD] = (struct item_datum){
-        .name = "Spiked Shield",
-        .description = "",
-        .glyph = ')',
-        .color = TCOD_white,
+    base_item_data[BASE_ITEM_TYPE_TOME] = (struct base_item_datum){
+        .name = "Tome",
+        .glyph = '=',
 
-        .equip_slot = EQUIP_SLOT_OFF_HAND,
+        .equip_slot = EQUIP_SLOT_NONE,
         .two_handed = false,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
 
-        .armor_class = 2,
+        .armor_class = 0,
 
-        .damage = "1d4",
+        .damage = NULL,
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
-        .max_durability = 100,
-
-        .unique = true,
-        .spawned = false,
+        .max_durability = 0,
     };
-    item_data[ITEM_TYPE_TOWER_SHIELD] = (struct item_datum){
+    base_item_data[BASE_ITEM_TYPE_TOWER_SHIELD] = (struct base_item_datum){
         .name = "Tower Shield",
-        .description = "",
         .glyph = ')',
-        .color = TCOD_white,
 
-        .equip_slot = EQUIP_SLOT_OFF_HAND,
+        .equip_slot = EQUIP_SLOT_SHIELD,
         .two_handed = false,
 
         .ranged = false,
@@ -903,27 +714,471 @@ void assets_load(void)
         .threat_range = 0,
         .critical_multiplier = 0,
 
-        .quaffable = false,
-
         .max_stack = 1,
 
         .max_durability = 100,
+    };
+
+    item_data[ITEM_TYPE_ARROW] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_ARROW,
+
+        .name = "Arrow",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_ARROW_1] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_ARROW,
+
+        .name = "Arrow + 1",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 1,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_BOLT] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_BOLT,
+
+        .name = "Bolt",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_BULLET] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_BULLET,
+
+        .name = "Bullet",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_CLUB] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_CLUB,
+
+        .name = "Club",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_COLD_IRON_BLADE] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_LONGSWORD,
+
+        .name = "Cold Iron Blade",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 1,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = true,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_DAGGER] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_DAGGER,
+
+        .name = "Dagger",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_FULL_PLATE] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_FULL_PLATE,
+
+        .name = "Full Plate",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_FULL_PLATE_1] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_FULL_PLATE,
+
+        .name = "Full Plate + 1",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 1,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_GOLD] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_GOLD,
+
+        .name = "Gold",
+        .description = "",
+        .color = TCOD_gold,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_GREATSWORD] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_GREATSWORD,
+
+        .name = "Greatsword",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_HEAVY_CROSSBOW] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_HEAVY_CROSSBOW,
+
+        .name = "Heavy Crossbow",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_LARGE_SHIELD] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_LARGE_SHIELD,
+
+        .name = "Large Shield",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_LIGHT_CROSSBOW] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_LIGHT_CROSSBOW,
+
+        .name = "Light Crossbow",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_LONGBOW] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_LONGBOW,
+
+        .name = "Longbow",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_LONGBOW_1] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_LONGBOW,
+
+        .name = "Longbow + 1",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 1,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_LONGSWORD] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_LONGSWORD,
+
+        .name = "Longsword",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_LONGSWORD_1] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_LONGSWORD,
+
+        .name = "Longsword + 1",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 1,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_MACE] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_MACE,
+
+        .name = "Mace",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_MORNINGSTAR] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_MORNINGSTAR,
+
+        .name = "Morning Star",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_POTION_MINOR_HEAL] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_POTION,
+
+        .name = "Potion of Minor Heal",
+        .description = "",
+        .color = TCOD_red,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_MINOR_HEAL,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_QUARTERSTAFF] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_QUARTERSTAFF,
+
+        .name = "Quarterstaff",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_SCEPTER_OF_UNITY] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_MACE,
+
+        .name = "Scepter of Unity",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = true,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_SCROLL_LIGHTNING] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_SCROLL,
+
+        .name = "Scroll of Lightning",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_LIGHTNING,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_SICKLE] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_SICKLE,
+
+        .name = "Sickle",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_SLING] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_SLING,
+
+        .name = "Sling",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_SMALL_SHIELD] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_SMALL_SHIELD,
+
+        .name = "Small Shield",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_SPEAR] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_SPEAR,
+
+        .name = "Spear",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_SPIKED_SHIELD] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_LARGE_SHIELD,
+
+        .name = "Spiked Shield",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = true,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_TOME_FIREBALL] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_TOME,
+
+        .name = "Tome of Fireball",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_FIREBALL,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_TOWER_SHIELD] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_TOWER_SHIELD,
+
+        .name = "Tower Shield",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_TOWER_SHIELD_1] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_TOWER_SHIELD,
+
+        .name = "Tower Shield + 1",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 1,
+
+        .spell_type = SPELL_TYPE_NONE,
 
         .unique = false,
         .spawned = false,
     };
 
-    spell_data[SPELL_TYPE_HEAL] = (struct spell_datum){
-        .name = "Heal",
+    spell_data[SPELL_TYPE_MINOR_HEAL] = (struct spell_datum){
+        .name = "Minor Heal",
         .range = SPELL_RANGE_SELF,
+        .mana_cost = 40,
     };
     spell_data[SPELL_TYPE_LIGHTNING] = (struct spell_datum){
         .name = "Lightning",
         .range = SPELL_RANGE_TARGET,
+        .mana_cost = 50,
     };
     spell_data[SPELL_TYPE_FIREBALL] = (struct spell_datum){
         .name = "Fireball",
         .range = SPELL_RANGE_TARGET,
+        .mana_cost = 70,
     };
 
     projectile_data[PROJECTILE_TYPE_ARROW] = (struct projectile_datum){

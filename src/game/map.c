@@ -819,7 +819,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
         // TODO: default inventory/equipment
         if (monster == MONSTER_BUGBEAR)
         {
-            actor->equipment[EQUIP_SLOT_MAIN_HAND] = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
+            actor->equipment[EQUIP_SLOT_WEAPON] = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
             actor->equipment[EQUIP_SLOT_AMMUNITION] = item_new(ITEM_TYPE_ARROW, map->floor, x, y, 5);
         }
     }
@@ -849,7 +849,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             y,
             type == ITEM_TYPE_GOLD
                 ? TCOD_random_get_int(world->random, 1, 10 * map->floor)
-                : item_data[type].max_stack);
+                : base_item_data[item_data[type].type].max_stack);
 
         TCOD_list_push(map->tiles[x][y].items, item);
 

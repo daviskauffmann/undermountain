@@ -20,6 +20,7 @@ extern struct actor_prototype monster_prototypes[NUM_MONSTERS];
 extern struct corpse_common corpse_common;
 extern struct item_common item_common;
 extern struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
+extern struct base_item_datum base_item_data[NUM_BASE_ITEM_TYPES];
 extern struct item_datum item_data[NUM_ITEM_TYPES];
 extern struct spell_datum spell_data[NUM_SPELL_TYPES];
 extern struct projectile_datum projectile_data[NUM_PROJECTILE_TYPES];

@@ -3,7 +3,9 @@
 
 enum spell_type
 {
-    SPELL_TYPE_HEAL,
+    SPELL_TYPE_NONE,
+
+    SPELL_TYPE_MINOR_HEAL,
     SPELL_TYPE_LIGHTNING,
     SPELL_TYPE_FIREBALL,
 
@@ -20,6 +22,7 @@ struct spell_datum
 {
     const char *name;
     enum spell_range range;
+    int mana_cost;
 };
 
 #endif

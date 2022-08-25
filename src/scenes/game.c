@@ -204,7 +204,8 @@ enum inventory_action
     INVENTORY_ACTION_DROP,
     INVENTORY_ACTION_EQUIP,
     INVENTORY_ACTION_EXAMINE,
-    INVENTORY_ACTION_QUAFF
+    INVENTORY_ACTION_QUAFF,
+    INVENTORY_ACTION_READ,
 };
 
 static enum inventory_action inventory_action;
@@ -247,6 +248,7 @@ enum targeting
     TARGETING_NONE,
     TARGETING_LOOK,
     TARGETING_EXAMINE,
+    TARGETING_READ,
     TARGETING_SHOOT,
     TARGETING_SPELL
 };
@@ -254,6 +256,7 @@ enum targeting
 static enum targeting targeting;
 static int target_x;
 static int target_y;
+static struct item *targeting_item;
 
 /* Noise */
 
@@ -466,7 +469,8 @@ static struct item *panel_inventory_item_mouseover(void)
         int y = 1;
         TCOD_LIST_FOREACH(world->player->items)
         {
-            struct item *item = *iterator;
+            struct item *const item = *iterator;
+
             if (mouse_x > panel_rect.x &&
                 mouse_x < panel_rect.x + panel_rect.width &&
                 mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
@@ -484,8 +488,10 @@ static enum spell_type panel_spellbook_spell_type_mouseover(void)
     if (panel_rect.visible && current_panel == PANEL_SPELLBOOK && !tooltip_rect.visible)
     {
         int y = 1;
-        for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
+        TCOD_LIST_FOREACH(world->player->known_spell_types)
         {
+            const enum spell_type spell_type = (enum spell_type)(*iterator);
+
             if (mouse_x > panel_rect.x &&
                 mouse_x < panel_rect.x + panel_rect.width &&
                 mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
@@ -556,10 +562,12 @@ static bool player_swing(enum direction direction)
 
     if (map_is_inside(x, y))
     {
-        struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
+        struct item *weapon = world->player->equipment[EQUIP_SLOT_WEAPON];
         if (weapon)
         {
-            if (item_data[weapon->type].ranged)
+            const struct item_datum *const weapon_datum = &item_data[weapon->type];
+            const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+            if (base_weapon_datum->ranged)
             {
                 actor_shoot(world->player, x, y);
                 return false;
@@ -934,6 +942,36 @@ static struct scene *handle_event(SDL_Event *event)
                     }
                 }
                 break;
+                case INVENTORY_ACTION_READ:
+                {
+                    bool needs_target = false;
+
+                    const struct item_datum *const item_datum = &item_data[item->type];
+                    if (item_datum->type == BASE_ITEM_TYPE_SCROLL)
+                    {
+                        const struct spell_datum *const spell_datum = &spell_data[item_datum->spell_type];
+                        if (spell_datum->range == SPELL_RANGE_TARGET)
+                        {
+                            needs_target = true;
+                        }
+                    }
+
+                    if (needs_target)
+                    {
+                        targeting = TARGETING_READ;
+                        target_x = world->player->x;
+                        target_y = world->player->y;
+                        targeting_item = item;
+                    }
+                    else
+                    {
+                        if (world_player_can_take_turn())
+                        {
+                            world->player->took_turn = actor_read(world->player, item, world->player->x, world->player->y);
+                        }
+                    }
+                }
+                break;
                 }
 
                 inventory_action = INVENTORY_ACTION_NONE;
@@ -972,9 +1010,10 @@ static struct scene *handle_event(SDL_Event *event)
 
                 handled = true;
             }
-            else if (spellbook_action != SPELLBOOK_ACTION_NONE && alpha >= 0 && alpha < NUM_SPELL_TYPES)
+            else if (spellbook_action != SPELLBOOK_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(world->player->known_spell_types))
             {
-                enum spell_type spell_type = (enum spell_type)alpha;
+                enum spell_type spell_type = (enum spell_type)TCOD_list_get(world->player->known_spell_types, alpha);
+
                 switch (spellbook_action)
                 {
                 case SPELLBOOK_ACTION_NONE:
@@ -983,7 +1022,7 @@ static struct scene *handle_event(SDL_Event *event)
                 break;
                 case SPELLBOOK_ACTION_SELECT:
                 {
-                    world->player->readied_spell = spell_type;
+                    world->player->readied_spell_type = spell_type;
 
                     world_log(
                         world->player->floor,
@@ -991,7 +1030,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->y,
                         TCOD_yellow,
                         "%s selected.",
-                        spell_data[world->player->readied_spell].name);
+                        spell_data[spell_type].name);
                 }
                 break;
                 }
@@ -1207,6 +1246,36 @@ static struct scene *handle_event(SDL_Event *event)
                     "Choose an item to quaff. Press 'ESC' to cancel.");
             }
             break;
+            case SDLK_r:
+            {
+                if (targeting == TARGETING_READ)
+                {
+                    if (world_player_can_take_turn())
+                    {
+                        world->player->took_turn = actor_read(
+                            world->player,
+                            targeting_item,
+                            target_x, target_y);
+
+                        targeting = TARGETING_NONE;
+                    }
+                }
+                else
+                {
+                    panel_show(PANEL_INVENTORY);
+
+                    inventory_action = INVENTORY_ACTION_READ;
+                    panel_state[PANEL_INVENTORY].selection_mode = true;
+
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        TCOD_yellow,
+                        "Choose an item to read. Press 'ESC' to cancel.");
+                }
+            }
+            break;
             case SDLK_s:
             {
                 directional_action = DIRECTIONAL_ACTION_SIT;
@@ -1337,35 +1406,46 @@ static struct scene *handle_event(SDL_Event *event)
                 }
                 else
                 {
-                    enum spell_range spell_range = spell_data[world->player->readied_spell].range;
-                    switch (spell_range)
+                    if (world->player->readied_spell_type != SPELL_TYPE_NONE)
                     {
-                    case SPELL_RANGE_SELF:
-                    {
-                        if (world_player_can_take_turn())
+                        enum spell_range spell_range = spell_data[world->player->readied_spell_type].range;
+                        switch (spell_range)
                         {
-                            world->player->took_turn = actor_cast_spell(world->player, world->player->x, world->player->y);
-                        }
-                    }
-                    break;
-                    case SPELL_RANGE_TARGET:
-                    {
-                        if (targeting == TARGETING_SPELL)
+                        case SPELL_RANGE_SELF:
                         {
                             if (world_player_can_take_turn())
                             {
-                                world->player->took_turn = actor_cast_spell(world->player, target_x, target_y);
-                                targeting = TARGETING_NONE;
+                                world->player->took_turn = actor_cast_spell(
+                                    world->player,
+                                    world->player->readied_spell_type,
+                                    world->player->x, world->player->y,
+                                    true);
                             }
                         }
-                        else
-                        {
-                            targeting = TARGETING_SPELL;
-                            target_x = world->player->x;
-                            target_y = world->player->y;
-                        }
                         break;
-                    }
+                        case SPELL_RANGE_TARGET:
+                        {
+                            if (targeting == TARGETING_SPELL)
+                            {
+                                if (world_player_can_take_turn())
+                                {
+                                    world->player->took_turn = actor_cast_spell(
+                                        world->player,
+                                        world->player->readied_spell_type,
+                                        target_x, target_y,
+                                        true);
+                                    targeting = TARGETING_NONE;
+                                }
+                            }
+                            else
+                            {
+                                targeting = TARGETING_SPELL;
+                                target_x = world->player->x;
+                                target_y = world->player->y;
+                            }
+                            break;
+                        }
+                        }
                     }
                 }
             }
@@ -1491,7 +1571,7 @@ static struct scene *handle_event(SDL_Event *event)
                         break;
                         case SPELLBOOK_ACTION_SELECT:
                         {
-                            world->player->readied_spell = spell_type;
+                            world->player->readied_spell_type = spell_type;
                         }
                         break;
                         }
@@ -1506,11 +1586,12 @@ static struct scene *handle_event(SDL_Event *event)
                 if (world_player_can_take_turn())
                 {
                     bool ranged = false;
-                    struct item *weapon = world->player->equipment[EQUIP_SLOT_MAIN_HAND];
+                    struct item *weapon = world->player->equipment[EQUIP_SLOT_WEAPON];
                     if (weapon)
                     {
-                        struct item_datum item_datum = item_data[weapon->type];
-                        if (item_datum.ranged)
+                        const struct item_datum *const item_datum = &item_data[weapon->type];
+                        const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
+                        if (base_item_datum->ranged)
                         {
                             ranged = true;
                         }
@@ -1587,12 +1668,13 @@ static struct scene *handle_event(SDL_Event *event)
                     {
                         tooltip_show();
                         tooltip_options_add("Drop", NULL);
-                        struct item_datum item_datum = item_data[item->type];
-                        if (item_datum.equip_slot != EQUIP_SLOT_NONE)
+                        const struct item_datum *const item_datum = &item_data[item->type];
+                        const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
+                        if (base_item_datum->equip_slot != EQUIP_SLOT_NONE)
                         {
                             tooltip_options_add("Equip", &toolip_option_on_click_equip);
                         }
-                        if (item_datum.quaffable)
+                        if (item_datum->type == BASE_ITEM_TYPE_POTION)
                         {
                             tooltip_options_add("Quaff", NULL);
                         }
@@ -1609,7 +1691,7 @@ static struct scene *handle_event(SDL_Event *event)
                     if (spell_type >= 0 && spell_type < NUM_SPELL_TYPES)
                     {
                         tooltip_show();
-                        if (world->player->readied_spell == spell_type)
+                        if (world->player->readied_spell_type == spell_type)
                         {
                             tooltip_options_add("Unready", NULL);
                         }
@@ -1758,17 +1840,17 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
         if (status_rect.visible)
         {
-            // status should take up the bottom 4th and left 1/3rd of the window
+            // status should take up the bottom 4th and left 4th of the window
             status_rect.x = 0;
             status_rect.height = hud_rect.height;
             status_rect.y = hud_rect.height - status_rect.height;
-            status_rect.width = hud_rect.width / 3;
+            status_rect.width = hud_rect.width / 4;
         }
 
         if (message_log_rect.visible)
         {
-            // message log should take up the bottom 4th and right 2/3rds of the window
-            message_log_rect.x = hud_rect.width / 3;
+            // message log should take up the bottom 4th and right 3/4ths of the window
+            message_log_rect.x = hud_rect.width / 4;
             message_log_rect.height = hud_rect.height;
             message_log_rect.y = hud_rect.height - message_log_rect.height;
             message_log_rect.width = hud_rect.width - message_log_rect.x;
@@ -2091,17 +2173,18 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             struct item *item = *iterator;
             if (TCOD_map_is_in_fov(world->player->fov, item->x, item->y))
             {
-                struct item_datum item_datum = item_data[item->type];
+                const struct item_datum *const item_datum = &item_data[item->type];
+                const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
                 TCOD_console_set_char_foreground(
                     console,
                     item->x - view_rect.x,
                     item->y - view_rect.y,
-                    item_datum.color);
+                    item_datum->color);
                 TCOD_console_set_char(
                     console,
                     item->x - view_rect.x,
                     item->y - view_rect.y,
-                    item_datum.glyph);
+                    base_item_datum->glyph);
             }
         }
 
@@ -2330,22 +2413,43 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             TCOD_console_clear(status_rect.console);
 
             int y = 1;
-            const TCOD_color_t fg =
-                (float)world->player->current_hp / world->player->max_hp > 0.5f
-                    ? TCOD_color_lerp(TCOD_yellow, TCOD_green, world->player->current_hp / (world->player->max_hp * 0.5f))
-                    : TCOD_color_lerp(TCOD_red, TCOD_yellow, world->player->current_hp / (world->player->max_hp * 0.5f));
 
-            console_print(
-                status_rect.console,
-                1,
-                y++,
-                &fg,
-                NULL,
-                TCOD_BKGND_NONE,
-                TCOD_LEFT,
-                "HP: %d/%d",
-                world->player->current_hp,
-                world->player->max_hp);
+            {
+                const int max_health = actor_calc_max_health(world->player);
+                const TCOD_color_t fg =
+                    (float)world->player->health / max_health > 0.5f
+                        ? TCOD_color_lerp(TCOD_yellow, TCOD_green, world->player->health / (max_health * 0.5f))
+                        : TCOD_color_lerp(TCOD_red, TCOD_yellow, world->player->health / (max_health * 0.5f));
+
+                console_print(
+                    status_rect.console,
+                    1,
+                    y++,
+                    &fg,
+                    NULL,
+                    TCOD_BKGND_NONE,
+                    TCOD_LEFT,
+                    "HP: %d/%d",
+                    world->player->health,
+                    max_health);
+            }
+
+            {
+                const int max_mana = actor_calc_max_mana(world->player);
+                const TCOD_color_t fg = TCOD_color_lerp(TCOD_gray, TCOD_azure, (float)world->player->mana / max_mana);
+
+                console_print(
+                    status_rect.console,
+                    1,
+                    y++,
+                    &fg,
+                    NULL,
+                    TCOD_BKGND_NONE,
+                    TCOD_LEFT,
+                    "MP: %d/%d",
+                    world->player->mana,
+                    max_mana);
+            }
 
             console_print(
                 status_rect.console,
@@ -2609,7 +2713,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 panel_rect.console,
                 1,
                 y - current_panel_status->scroll,
-                "HP");
+                "Health");
             TCOD_console_printf_ex(
                 panel_rect.console,
                 panel_rect.width - 2,
@@ -2617,15 +2721,31 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 "%d / %d",
-                world->player->current_hp,
-                world->player->max_hp);
+                world->player->health,
+                actor_calc_max_health(world->player));
             y++;
 
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y - current_panel_status->scroll,
-                "AC");
+                "Mana");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d / %d",
+                world->player->mana,
+                actor_calc_max_mana(world->player));
+            y++;
+
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "Armor Class");
             TCOD_console_printf_ex(
                 panel_rect.console,
                 panel_rect.width - 2,
@@ -2762,13 +2882,15 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         {
             enum spell_type mouseover_spell_type = panel_spellbook_spell_type_mouseover();
             int y = 1;
-            for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
+            TCOD_LIST_FOREACH(world->player->known_spell_types)
             {
-                struct spell_datum spell_datum = spell_data[spell_type];
+                const enum spell_type spell_type = (enum spell_type)(*iterator);
+                const struct spell_datum *const spell_datum = &spell_data[spell_type];
                 const TCOD_color_t fg =
                     spell_type == mouseover_spell_type
                         ? TCOD_yellow
                         : TCOD_white;
+
                 if (current_panel_status->selection_mode)
                 {
                     console_print(
@@ -2779,9 +2901,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        world->player->readied_spell == spell_type ? "%c) %s (readied)" : "%c) %s",
+                        world->player->readied_spell_type == spell_type ? "%c) %s (readied)" : "%c) %s",
                         y - 1 + 'a' - current_panel_status->scroll,
-                        spell_datum.name);
+                        spell_datum->name);
                 }
                 else
                 {
@@ -2793,9 +2915,21 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        world->player->readied_spell == spell_type ? "%s (readied)" : "%s",
-                        spell_datum.name);
+                        world->player->readied_spell_type == spell_type ? "%s (readied)" : "%s",
+                        spell_datum->name);
                 }
+
+                console_print(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    &fg,
+                    NULL,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%d",
+                    spell_datum->mana_cost);
+
                 y++;
             }
 

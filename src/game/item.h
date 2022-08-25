@@ -1,6 +1,7 @@
 #ifndef ITEM_H
 #define ITEM_H
 
+#include "spell.h"
 #include <libtcod.h>
 
 struct item_common
@@ -14,8 +15,8 @@ enum equip_slot
 
     EQUIP_SLOT_AMMUNITION,
     EQUIP_SLOT_ARMOR,
-    EQUIP_SLOT_MAIN_HAND,
-    EQUIP_SLOT_OFF_HAND,
+    EQUIP_SLOT_SHIELD,
+    EQUIP_SLOT_WEAPON,
 
     NUM_EQUIP_SLOTS
 };
@@ -34,43 +35,40 @@ enum ammunition_type
     AMMUNITION_TYPE_BULLET,
 };
 
-enum item_type
+enum base_item_type
 {
-    ITEM_TYPE_ARROW,
-    ITEM_TYPE_BOLT,
-    ITEM_TYPE_BULLET,
-    ITEM_TYPE_CLUB,
-    ITEM_TYPE_COLD_IRON_BLADE,
-    ITEM_TYPE_DAGGER,
-    ITEM_TYPE_FULL_PLATE,
-    ITEM_TYPE_GOLD,
-    ITEM_TYPE_GREATSWORD,
-    ITEM_TYPE_HEAVY_CROSSBOW,
-    ITEM_TYPE_HEALING_POTION,
-    ITEM_TYPE_LARGE_SHIELD,
-    ITEM_TYPE_LIGHT_CROSSBOW,
-    ITEM_TYPE_LONGBOW,
-    ITEM_TYPE_LONGSWORD,
-    ITEM_TYPE_MACE,
-    ITEM_TYPE_MORNINGSTAR,
-    ITEM_TYPE_QUARTERSTAFF,
-    ITEM_TYPE_SCEPTER_OF_UNITY,
-    ITEM_TYPE_SICKLE,
-    ITEM_TYPE_SLING,
-    ITEM_TYPE_SMALL_SHIELD,
-    ITEM_TYPE_SPEAR,
-    ITEM_TYPE_SPIKED_SHIELD,
-    ITEM_TYPE_TOWER_SHIELD,
+    BASE_ITEM_TYPE_ARROW,
+    BASE_ITEM_TYPE_BOLT,
+    BASE_ITEM_TYPE_BULLET,
+    BASE_ITEM_TYPE_CLUB,
+    BASE_ITEM_TYPE_DAGGER,
+    BASE_ITEM_TYPE_FULL_PLATE,
+    BASE_ITEM_TYPE_GOLD,
+    BASE_ITEM_TYPE_GREATSWORD,
+    BASE_ITEM_TYPE_HEAVY_CROSSBOW,
+    BASE_ITEM_TYPE_POTION,
+    BASE_ITEM_TYPE_LARGE_SHIELD,
+    BASE_ITEM_TYPE_LIGHT_CROSSBOW,
+    BASE_ITEM_TYPE_LONGBOW,
+    BASE_ITEM_TYPE_LONGSWORD,
+    BASE_ITEM_TYPE_MACE,
+    BASE_ITEM_TYPE_MORNINGSTAR,
+    BASE_ITEM_TYPE_QUARTERSTAFF,
+    BASE_ITEM_TYPE_SCROLL,
+    BASE_ITEM_TYPE_SICKLE,
+    BASE_ITEM_TYPE_SLING,
+    BASE_ITEM_TYPE_SMALL_SHIELD,
+    BASE_ITEM_TYPE_SPEAR,
+    BASE_ITEM_TYPE_TOME,
+    BASE_ITEM_TYPE_TOWER_SHIELD,
 
-    NUM_ITEM_TYPES
+    NUM_BASE_ITEM_TYPES
 };
 
-struct item_datum
+struct base_item_datum
 {
     const char *name;
-    const char *description;
     unsigned char glyph;
-    TCOD_color_t color;
 
     enum equip_slot equip_slot;
     bool two_handed;
@@ -84,11 +82,60 @@ struct item_datum
     int threat_range;
     int critical_multiplier;
 
-    bool quaffable;
-
     int max_stack;
 
     int max_durability;
+};
+
+enum item_type
+{
+    ITEM_TYPE_ARROW,
+    ITEM_TYPE_ARROW_1,
+    ITEM_TYPE_BOLT,
+    ITEM_TYPE_BULLET,
+    ITEM_TYPE_CLUB,
+    ITEM_TYPE_COLD_IRON_BLADE,
+    ITEM_TYPE_DAGGER,
+    ITEM_TYPE_FULL_PLATE,
+    ITEM_TYPE_FULL_PLATE_1,
+    ITEM_TYPE_GOLD,
+    ITEM_TYPE_GREATSWORD,
+    ITEM_TYPE_HEAVY_CROSSBOW,
+    ITEM_TYPE_LARGE_SHIELD,
+    ITEM_TYPE_LIGHT_CROSSBOW,
+    ITEM_TYPE_LONGBOW,
+    ITEM_TYPE_LONGBOW_1,
+    ITEM_TYPE_LONGSWORD,
+    ITEM_TYPE_LONGSWORD_1,
+    ITEM_TYPE_MACE,
+    ITEM_TYPE_MORNINGSTAR,
+    ITEM_TYPE_POTION_MINOR_HEAL,
+    ITEM_TYPE_QUARTERSTAFF,
+    ITEM_TYPE_SCEPTER_OF_UNITY,
+    ITEM_TYPE_SCROLL_LIGHTNING,
+    ITEM_TYPE_SICKLE,
+    ITEM_TYPE_SLING,
+    ITEM_TYPE_SMALL_SHIELD,
+    ITEM_TYPE_SPEAR,
+    ITEM_TYPE_SPIKED_SHIELD,
+    ITEM_TYPE_TOME_FIREBALL,
+    ITEM_TYPE_TOWER_SHIELD,
+    ITEM_TYPE_TOWER_SHIELD_1,
+
+    NUM_ITEM_TYPES
+};
+
+struct item_datum
+{
+    enum base_item_type type;
+
+    const char *name;
+    const char *description;
+    TCOD_color_t color;
+
+    int enhancement_bonus;
+
+    enum spell_type spell_type;
 
     bool unique;
     bool spawned;

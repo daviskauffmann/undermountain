@@ -20,9 +20,9 @@ struct item *item_new(
     item->x = x;
     item->y = y;
 
-    item->stack = CLAMP(0, item_data[type].max_stack, stack);
+    item->stack = CLAMP(0, base_item_data[item_data[type].type].max_stack, stack);
 
-    item->durability = item_data[type].max_durability;
+    item->durability = base_item_data[item_data[type].type].max_durability;
 
     if (item_data[type].unique)
     {

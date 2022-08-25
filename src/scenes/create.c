@@ -18,12 +18,15 @@ static void init(struct scene *previous_scene)
     hero = actor_new("Jalina Feynolt", RACE_HUMAN, CLASS_WARRIOR, FACTION_ADVENTURER, 1, 0, 0, 0, true);
     hero->gold = 100;
 
-    hero->equipment[EQUIP_SLOT_MAIN_HAND] = item_new(ITEM_TYPE_LONGSWORD, 0, 0, 0, 1);
-    hero->equipment[EQUIP_SLOT_OFF_HAND] = item_new(ITEM_TYPE_TOWER_SHIELD, 0, 0, 0, 1);
-    hero->equipment[EQUIP_SLOT_ARMOR] = item_new(ITEM_TYPE_FULL_PLATE, 0, 0, 0, 1);
-    hero->equipment[EQUIP_SLOT_AMMUNITION] = item_new(ITEM_TYPE_ARROW, 0, 0, 0, 50);
-    TCOD_list_push(hero->items, item_new(ITEM_TYPE_LONGBOW, 0, 0, 0, 1));
-    TCOD_list_push(hero->items, item_new(ITEM_TYPE_HEALING_POTION, 0, 0, 0, 10));
+    hero->equipment[EQUIP_SLOT_WEAPON] = item_new(ITEM_TYPE_LONGSWORD_1, 0, 0, 0, 1);
+    hero->equipment[EQUIP_SLOT_SHIELD] = item_new(ITEM_TYPE_TOWER_SHIELD_1, 0, 0, 0, 1);
+    hero->equipment[EQUIP_SLOT_ARMOR] = item_new(ITEM_TYPE_FULL_PLATE_1, 0, 0, 0, 1);
+    hero->equipment[EQUIP_SLOT_AMMUNITION] = item_new(ITEM_TYPE_ARROW_1, 0, 0, 0, 50);
+    TCOD_list_push(hero->items, item_new(ITEM_TYPE_LONGBOW_1, 0, 0, 0, 1));
+    TCOD_list_push(hero->items, item_new(ITEM_TYPE_POTION_MINOR_HEAL, 0, 0, 0, 10));
+    TCOD_list_push(hero->items, item_new(ITEM_TYPE_SCROLL_LIGHTNING, 0, 0, 0, 10));
+    TCOD_list_push(hero->known_spell_types, (void *)SPELL_TYPE_MINOR_HEAL);
+    hero->readied_spell_type = SPELL_TYPE_MINOR_HEAL;
 }
 
 static void uninit(void)

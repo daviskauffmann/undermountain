@@ -8,6 +8,7 @@
 #include "object.h"
 #include "projectile.h"
 #include "room.h"
+#include "spell.h"
 #include "util.h"
 #include <assert.h>
 #include <malloc.h>
@@ -71,8 +72,11 @@ void world_init(void)
 {
     world = malloc(sizeof(*world));
     assert(world);
+
     world->random = NULL;
+
     world->time = 0;
+
     for (enum item_type item_type = 0; item_type < NUM_ITEM_TYPES; item_type++)
     {
         item_data[item_type].spawned = false;
@@ -82,9 +86,12 @@ void world_init(void)
         struct map *map = &world->maps[floor];
         map_init(map, floor);
     }
+
     world->player = NULL;
+
     world->hero = NULL;
     world->hero_dead = false;
+
     world->messages = TCOD_list_new();
 }
 
@@ -172,6 +179,7 @@ void world_save(const char *filename)
     int player_index = -1;
     int hero_floor = -1;
     int hero_index = -1;
+    int hero_readied_spell_index = -1;
 
     for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -228,8 +236,8 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, actor->faction);
             TCOD_zip_put_int(zip, actor->level);
             TCOD_zip_put_int(zip, actor->experience);
-            TCOD_zip_put_int(zip, actor->max_hp);
-            TCOD_zip_put_int(zip, actor->current_hp);
+            TCOD_zip_put_int(zip, actor->health);
+            TCOD_zip_put_int(zip, actor->mana);
             TCOD_zip_put_int(zip, actor->gold);
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
@@ -258,7 +266,13 @@ void world_save(const char *filename)
                 TCOD_zip_put_int(zip, item->durability);
                 TCOD_zip_put_int(zip, item->stack);
             }
-            TCOD_zip_put_int(zip, actor->readied_spell);
+            TCOD_zip_put_int(zip, TCOD_list_size(actor->known_spell_types));
+            TCOD_LIST_FOREACH(actor->known_spell_types)
+            {
+                enum spell_type spell_type = (enum spell_type)(*iterator);
+                TCOD_zip_put_int(zip, spell_type);
+            }
+            TCOD_zip_put_int(zip, actor->readied_spell_type);
             TCOD_zip_put_int(zip, actor->x);
             TCOD_zip_put_int(zip, actor->y);
             TCOD_zip_put_int(zip, actor->took_turn);
@@ -477,8 +491,8 @@ void world_load(const char *filename)
             int faction = TCOD_zip_get_int(zip);
             int level = TCOD_zip_get_int(zip);
             int experience = TCOD_zip_get_int(zip);
-            int max_hp = TCOD_zip_get_int(zip);
-            int current_hp = TCOD_zip_get_int(zip);
+            int health = TCOD_zip_get_int(zip);
+            int mana = TCOD_zip_get_int(zip);
             int gold = TCOD_zip_get_int(zip);
             struct item *equipment[NUM_EQUIP_SLOTS];
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
@@ -515,7 +529,15 @@ void world_load(const char *filename)
 
                 TCOD_list_push(items, item);
             }
-            enum spell_type readied_spell = TCOD_zip_get_int(zip);
+            TCOD_list_t known_spell_types = TCOD_list_new();
+            int num_known_spell_types = TCOD_zip_get_int(zip);
+            for (int j = 0; j < num_known_spell_types; j++)
+            {
+                enum spell_type spell_type = TCOD_zip_get_int(zip);
+
+                TCOD_list_push(known_spell_types, (void *)spell_type);
+            }
+            enum spell_type readied_spell_type = TCOD_zip_get_int(zip);
             int x = TCOD_zip_get_int(zip);
             int y = TCOD_zip_get_int(zip);
             bool took_turn = TCOD_zip_get_int(zip);
@@ -533,8 +555,8 @@ void world_load(const char *filename)
 
             struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y, false);
             actor->experience = experience;
-            actor->max_hp = max_hp;
-            actor->current_hp = current_hp;
+            actor->health = health;
+            actor->mana = mana;
             actor->gold = gold;
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
@@ -542,7 +564,8 @@ void world_load(const char *filename)
             }
             TCOD_list_delete(actor->items);
             actor->items = items;
-            actor->readied_spell = readied_spell;
+            actor->known_spell_types = known_spell_types;
+            actor->readied_spell_type = readied_spell_type;
             actor->took_turn = took_turn;
             actor->energy = energy;
             actor->last_seen_x = last_seen_x;
@@ -782,8 +805,11 @@ void world_update(float delta_time)
             TCOD_LIST_FOREACH(map->actors)
             {
                 struct actor *actor = *iterator;
+
+                actor_restore_mana(actor, 1);
                 actor->took_turn = false;
                 actor->energy += race_data[actor->race].speed;
+
                 if (actor->controllable)
                 {
                     controllable_exists = true;

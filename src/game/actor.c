@@ -34,8 +34,8 @@ struct actor *actor_new(
     actor->level = level;
     actor->experience = (level - 1) * 1000;
 
-    actor->max_hp = actor_calc_max_hp(actor);
-    actor->current_hp = actor->max_hp;
+    actor->health = actor_calc_max_health(actor);
+    actor->mana = actor_calc_max_mana(actor);
 
     actor->gold = 0;
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
@@ -43,8 +43,8 @@ struct actor *actor_new(
         actor->equipment[equip_slot] = NULL;
     }
     actor->items = TCOD_list_new();
-
-    actor->readied_spell = SPELL_TYPE_HEAL;
+    actor->known_spell_types = TCOD_list_new();
+    actor->readied_spell_type = SPELL_TYPE_NONE;
 
     actor->floor = floor;
     actor->x = x;
@@ -94,6 +94,8 @@ void actor_delete(struct actor *const actor)
         TCOD_map_delete(actor->fov);
     }
 
+    TCOD_list_delete(actor->known_spell_types);
+
     TCOD_LIST_FOREACH(actor->items)
     {
         item_delete(*iterator);
@@ -105,9 +107,14 @@ void actor_delete(struct actor *const actor)
     free(actor);
 }
 
-int actor_calc_max_hp(const struct actor *actor)
+int actor_calc_max_health(const struct actor *actor)
 {
     return 10 + (10 * (actor->level - 1));
+}
+
+int actor_calc_max_mana(const struct actor *actor)
+{
+    return 100 + (100 * (actor->level - 1));
 }
 
 int actor_calc_armor_class(const struct actor *const actor)
@@ -118,15 +125,20 @@ int actor_calc_armor_class(const struct actor *const actor)
     if (armor)
     {
         const struct item_datum *const armor_datum = &item_data[armor->type];
+        const struct base_item_datum *const base_armor_datum = &base_item_data[armor_datum->type];
 
-        armor_class += armor_datum->armor_class;
+        armor_class += base_armor_datum->armor_class;
+        armor_class += armor_datum->enhancement_bonus;
     }
 
-    const struct item *const shield = actor->equipment[EQUIP_SLOT_OFF_HAND];
+    const struct item *const shield = actor->equipment[EQUIP_SLOT_SHIELD];
     if (shield)
     {
         const struct item_datum *const shield_datum = &item_data[shield->type];
-        armor_class += shield_datum->armor_class;
+        const struct base_item_datum *const base_shield_datum = &base_item_data[shield_datum->type];
+
+        armor_class += base_shield_datum->armor_class;
+        armor_class += shield_datum->enhancement_bonus;
     }
 
     return armor_class;
@@ -134,16 +146,40 @@ int actor_calc_armor_class(const struct actor *const actor)
 
 int actor_calc_attack_bonus(const struct actor *const actor)
 {
-    return actor->level - 1;
+    int attack_bonus = actor->level - 1;
+
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+    if (weapon)
+    {
+        const struct item_datum *const weapon_datum = &item_data[weapon->type];
+
+        attack_bonus += weapon_datum->enhancement_bonus;
+
+        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+        if (base_weapon_datum->ranged)
+        {
+            const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+            if (ammunition)
+            {
+                const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
+
+                attack_bonus += ammunition_datum->enhancement_bonus;
+            }
+        }
+    }
+
+    return attack_bonus;
 }
 
 int actor_calc_threat_range(const struct actor *const actor)
 {
-    const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
     {
         const struct item_datum *const weapon_datum = &item_data[weapon->type];
-        return weapon_datum->threat_range;
+        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+
+        return base_weapon_datum->threat_range;
     }
 
     return 20;
@@ -151,11 +187,13 @@ int actor_calc_threat_range(const struct actor *const actor)
 
 int actor_calc_critical_multiplier(const struct actor *const actor)
 {
-    const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
     {
         const struct item_datum *const weapon_datum = &item_data[weapon->type];
-        return weapon_datum->critical_multiplier;
+        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+
+        return base_weapon_datum->critical_multiplier;
     }
 
     return 2;
@@ -163,11 +201,13 @@ int actor_calc_critical_multiplier(const struct actor *const actor)
 
 const char *actor_calc_damage(const struct actor *const actor)
 {
-    const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
     {
         const struct item_datum *const weapon_datum = &item_data[weapon->type];
-        return weapon_datum->damage;
+        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+
+        return base_weapon_datum->damage;
     }
 
     return "1d3";
@@ -175,7 +215,29 @@ const char *actor_calc_damage(const struct actor *const actor)
 
 int actor_calc_damage_bonus(const struct actor *const actor)
 {
-    return actor->level - 1;
+    int damage_bonus = 0;
+
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+    if (weapon)
+    {
+        const struct item_datum *const weapon_datum = &item_data[weapon->type];
+
+        damage_bonus += weapon_datum->enhancement_bonus;
+
+        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+        if (base_weapon_datum->ranged)
+        {
+            const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+            if (ammunition)
+            {
+                const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
+
+                damage_bonus += ammunition_datum->enhancement_bonus;
+            }
+        }
+    }
+
+    return damage_bonus;
 }
 
 int actor_calc_experience_to_level(const struct actor *const actor)
@@ -310,8 +372,8 @@ void actor_level_up(struct actor *const actor)
     // in that case, use this function
 
     actor->level++;
-    actor->max_hp = actor_calc_max_hp(actor);
-    actor->current_hp = actor->max_hp;
+    actor->health = actor_calc_max_health(actor);
+    actor->mana = actor_calc_max_mana(actor);
 
     world_log(
         actor->floor,
@@ -328,7 +390,7 @@ bool actor_ai(struct actor *const actor)
     const struct tile *const tile = &map->tiles[actor->x][actor->y];
 
     // look for fountains to heal if low health
-    if (actor->current_hp < actor->max_hp / 2)
+    if (actor->health < actor_calc_max_health(actor) / 2)
     {
         const struct object *target = NULL;
 
@@ -402,11 +464,13 @@ bool actor_ai(struct actor *const actor)
 
             bool ranged = false;
 
-            const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+            const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
             if (weapon)
             {
                 const struct item_datum *const weapon_datum = &item_data[weapon->type];
-                if (weapon_datum->ranged)
+                const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+
+                if (base_weapon_datum->ranged)
                 {
                     // does the actor have ammo?
                     struct item *ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
@@ -414,7 +478,8 @@ bool actor_ai(struct actor *const actor)
                     {
                         // is it the correct ammo?
                         const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
-                        if (weapon_datum->ammunition_type == ammunition_datum->ammunition_type)
+                        const struct base_item_datum *const base_ammunition_datum = &base_item_data[ammunition_datum->type];
+                        if (base_weapon_datum->ammunition_type == base_ammunition_datum->ammunition_type)
                         {
                             ranged = true;
                         }
@@ -423,7 +488,7 @@ bool actor_ai(struct actor *const actor)
                     {
                         // out of ammo or using the wrong ammo, so unequip the weapon
                         // TODO: look in inventory for suitable ammo and equip
-                        if (actor_unequip(actor, EQUIP_SLOT_MAIN_HAND))
+                        if (actor_unequip(actor, EQUIP_SLOT_WEAPON))
                         {
                             return true;
                         }
@@ -700,8 +765,18 @@ bool actor_move(
         }
         else
         {
-            const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-            if (weapon && item_data[weapon->type].ranged)
+            bool ranged = false;
+
+            const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+            if (weapon)
+            {
+                const struct item_datum *const weapon_datum = &item_data[weapon->type];
+                const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+
+                ranged = base_weapon_datum->ranged;
+            }
+
+            if (ranged)
             {
                 return actor_shoot(world->player, x, y);
             }
@@ -1106,25 +1181,8 @@ bool actor_drink(
     struct tile *const tile = &map->tiles[x][y];
     if (tile->object && tile->object->type == OBJECT_TYPE_FOUNTAIN)
     {
-        if (actor->current_hp == actor->max_hp)
-        {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                TCOD_white,
-                "%s is at full HP.",
-                actor->name);
-
-            return false;
-        }
-
-        const int hp = actor->max_hp - actor->current_hp;
-        actor->current_hp += hp;
-        if (actor->current_hp > actor->max_hp)
-        {
-            actor->current_hp = actor->max_hp;
-        }
+        actor_restore_health(actor, actor_calc_max_health(actor) - actor->health);
+        actor_restore_mana(actor, actor_calc_max_mana(actor) - actor->mana);
 
         TCOD_list_remove(map->objects, tile->object);
 
@@ -1136,9 +1194,8 @@ bool actor_drink(
             actor->x,
             actor->y,
             TCOD_orange,
-            "%s drinks from the fountain, restoring %d health.",
-            actor->name,
-            hp);
+            "%s drinks from the fountain.",
+            actor->name);
 
         return true;
     }
@@ -1305,9 +1362,10 @@ bool actor_drop(struct actor *const actor, struct item *const item)
 bool actor_equip(struct actor *const actor, struct item *const item)
 {
     const struct item_datum *const item_datum = &item_data[item->type];
+    const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
 
     // check if item is equippable
-    enum equip_slot equip_slot = item_datum->equip_slot;
+    enum equip_slot equip_slot = base_item_datum->equip_slot;
     if (equip_slot == EQUIP_SLOT_NONE)
     {
         world_log(
@@ -1329,21 +1387,27 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     }
 
     // if the item being equipped is two handed, also unequip the off hand
-    if (item_datum->two_handed)
+    if (base_item_datum->two_handed)
     {
-        if (actor->equipment[EQUIP_SLOT_OFF_HAND])
+        if (actor->equipment[EQUIP_SLOT_SHIELD])
         {
-            actor_unequip(actor, EQUIP_SLOT_OFF_HAND);
+            actor_unequip(actor, EQUIP_SLOT_SHIELD);
         }
     }
 
     // if the item being equipped is an off hand and the equipped main hand is two handed, also unequip the main hand
-    if (equip_slot == EQUIP_SLOT_OFF_HAND)
+    if (equip_slot == EQUIP_SLOT_SHIELD)
     {
-        const struct item *const main_hand = actor->equipment[EQUIP_SLOT_MAIN_HAND];
-        if (main_hand && item_data[main_hand->type].two_handed)
+        const struct item *const main_hand = actor->equipment[EQUIP_SLOT_WEAPON];
+        if (main_hand)
         {
-            actor_unequip(actor, EQUIP_SLOT_MAIN_HAND);
+            const struct item_datum *const main_hand_datum = &item_data[main_hand->type];
+            const struct base_item_datum *const base_main_hand_datum = &base_item_data[main_hand_datum->type];
+
+            if (base_main_hand_datum->two_handed)
+            {
+                actor_unequip(actor, EQUIP_SLOT_WEAPON);
+            }
         }
     }
 
@@ -1405,7 +1469,7 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
 {
     // is the item quaffable?
     const struct item_datum *const item_datum = &item_data[item->type];
-    if (!item_datum->quaffable)
+    if (item_datum->type != BASE_ITEM_TYPE_POTION)
     {
         world_log(
             actor->floor,
@@ -1428,25 +1492,13 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
         actor->name,
         item_datum->name);
 
-    // determine effects
-    if (item->type == ITEM_TYPE_HEALING_POTION)
-    {
-        int hp = actor->max_hp - actor->current_hp;
-        actor->current_hp += hp;
-        if (actor->current_hp > actor->max_hp)
-        {
-            actor->current_hp = actor->max_hp;
-        }
-
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            TCOD_white,
-            "%s heals for %d.",
-            actor->name,
-            hp);
-    }
+    // cast the stored spell
+    const struct spell_datum *const spell_datum = &spell_data[item_datum->spell_type];
+    actor_cast_spell(
+        actor,
+        item_datum->spell_type,
+        actor->x, actor->y,
+        false);
 
     // decrement item stack
     item->stack--;
@@ -1454,6 +1506,72 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
     // delete item if stack is empty
     if (item->stack <= 0)
     {
+        // remove from inventory
+        TCOD_list_remove(actor->items, item);
+
+        // delete the item
+        item_delete(item);
+    }
+
+    return true;
+}
+
+bool actor_read(struct actor *actor, struct item *item, int x, int y)
+{
+    // is the item readable?
+    const struct item_datum *const item_datum = &item_data[item->type];
+    if (item_datum->type != BASE_ITEM_TYPE_SCROLL &&
+        item_datum->type != BASE_ITEM_TYPE_TOME)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s cannot read %s.",
+            actor->name,
+            item_datum->name);
+
+        return false;
+    }
+
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        TCOD_white,
+        "%s reads %s.",
+        actor->name,
+        item_datum->name);
+
+    if (item_datum->type == BASE_ITEM_TYPE_SCROLL)
+    {
+        // cast the stored spell
+        const struct spell_datum *const spell_datum = &spell_data[item_datum->spell_type];
+        actor_cast_spell(
+            actor,
+            item_datum->spell_type,
+            x, y,
+            false);
+
+        // decrement item stack
+        item->stack--;
+
+        // delete item if stack is empty
+        if (item->stack <= 0)
+        {
+            // remove from inventory
+            TCOD_list_remove(actor->items, item);
+
+            // delete the item
+            item_delete(item);
+        }
+    }
+    else if (item_datum->type == BASE_ITEM_TYPE_TOME)
+    {
+        // add spell to known spells
+        TCOD_list_push(actor->known_spell_types, (void *)item_datum->spell_type);
+
         // remove from inventory
         TCOD_list_remove(actor->items, item);
 
@@ -1523,7 +1641,7 @@ bool actor_shoot(
     }
 
     // does the actor have a weapon?
-    const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (!weapon)
     {
         world_log(
@@ -1539,7 +1657,8 @@ bool actor_shoot(
 
     // is the weapon ranged?
     const struct item_datum *const weapon_datum = &item_data[weapon->type];
-    if (!weapon_datum->ranged)
+    const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+    if (!base_weapon_datum->ranged)
     {
         world_log(
             actor->floor,
@@ -1569,7 +1688,8 @@ bool actor_shoot(
 
     // is it the right ammo?
     const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
-    if (ammunition_datum->ammunition_type != weapon_datum->ammunition_type)
+    const struct base_item_datum *const base_ammunition_datum = &base_item_data[ammunition_datum->type];
+    if (base_ammunition_datum->ammunition_type != base_weapon_datum->ammunition_type)
     {
         world_log(
             actor->floor,
@@ -1624,13 +1744,11 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     const int armor_class = actor_calc_armor_class(other);
 
     // calculate hit
-    const int attack_roll =
-        TCOD_random_dice_roll(
-            world->random,
-            TCOD_random_dice_new("1d20"));
+    const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
     const int attack_bonus = actor_calc_attack_bonus(actor);
     const int hit_challenge = attack_roll + attack_bonus;
-    if (hit_challenge < armor_class)
+    if (attack_roll == 1 ||
+        (attack_roll != 20 && hit_challenge < armor_class))
     {
         world_log(
             actor->floor,
@@ -1652,9 +1770,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     if (attack_roll >= actor_calc_threat_range(actor))
     {
         threat_roll =
-            TCOD_random_dice_roll(
-                world->random,
-                TCOD_random_dice_new("1d20"));
+            TCOD_random_dice_roll_s(world->random, "1d20");
         crit_challenge = threat_roll + attack_bonus;
         if (crit_challenge >= armor_class)
         {
@@ -1672,9 +1788,9 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     for (int i = 0; i < num_attack_rolls; i++)
     {
         damage +=
-            TCOD_random_dice_roll(
+            TCOD_random_dice_roll_s(
                 world->random,
-                TCOD_random_dice_new(actor_calc_damage(actor))) +
+                actor_calc_damage(actor)) +
             damage_bonus;
     }
 
@@ -1712,7 +1828,7 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
     // if the other actor wasn't killed, perform any other effects
     if (!killed)
     {
-        const struct item *const weapon = actor->equipment[EQUIP_SLOT_MAIN_HAND];
+        const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
         if (weapon)
         {
             if (weapon->type == ITEM_TYPE_COLD_IRON_BLADE)
@@ -1743,15 +1859,12 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
             }
         }
 
-        const struct item *const other_shield = other->equipment[EQUIP_SLOT_OFF_HAND];
+        const struct item *const other_shield = other->equipment[EQUIP_SLOT_SHIELD];
         if (other_shield)
         {
             if (other_shield->type == ITEM_TYPE_SPIKED_SHIELD && !ammunition)
             {
-                const struct item_datum *const other_shield_datum = &item_data[other_shield->type];
-                const int spike_damage = TCOD_random_dice_roll(
-                    world->random,
-                    TCOD_random_dice_new(other_shield_datum->damage));
+                const int spike_damage = TCOD_random_dice_roll_s(world->random, "1d4");
 
                 world_log(
                     actor->floor,
@@ -1773,36 +1886,71 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
 
 bool actor_cast_spell(
     struct actor *const actor,
-    const int x, const int y)
+    const enum spell_type spell_type,
+    const int x, const int y,
+    const bool from_memory)
 {
     if (!map_is_inside(x, y))
     {
         return false;
     }
 
-    // TODO: mana and/or some other kind of spell limiter
+    const struct spell_datum *const spell_datum = &spell_data[spell_type];
 
-    const struct spell_datum *const spell_datum = &spell_data[actor->readied_spell];
+    if (from_memory)
+    {
+        // does the actor know the spell?
+        // this should never happen, but just in case
+        // an actor should only be able to "ready" a spell they know
+        if (!TCOD_list_contains(actor->known_spell_types, (void *)spell_type))
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s does not know %s.",
+                actor->name,
+                spell_datum->name);
+
+            return false;
+        }
+
+        // does the actor have enough mana?
+        if (actor->mana < spell_datum->mana_cost)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                TCOD_white,
+                "%s does not have enough mana.",
+                actor->name,
+                spell_datum->name);
+
+            return false;
+        }
+    }
 
     world_log(
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        TCOD_purple,
         "%s casts %s.",
         actor->name,
         spell_datum->name);
 
-    switch (actor->readied_spell)
+    if (from_memory)
     {
-    case SPELL_TYPE_HEAL:
+        actor->mana -= spell_datum->mana_cost;
+    }
+
+    switch (spell_type)
     {
-        const int hp = actor->max_hp - actor->current_hp;
-        actor->current_hp += hp;
-        if (actor->current_hp > actor->max_hp)
-        {
-            actor->current_hp = actor->max_hp;
-        }
+    case SPELL_TYPE_MINOR_HEAL:
+    {
+        const int health = TCOD_random_dice_roll_s(world->random, "1d4");
 
         world_log(
             actor->floor,
@@ -1811,7 +1959,9 @@ bool actor_cast_spell(
             TCOD_white,
             "%s heals for %d.",
             actor->name,
-            hp);
+            health);
+
+        actor_restore_health(actor, health);
     }
     break;
     case SPELL_TYPE_LIGHTNING:
@@ -1821,7 +1971,7 @@ bool actor_cast_spell(
         struct actor *const other = tile->actor;
         if (other)
         {
-            const int damage = TCOD_random_get_int(world->random, 1, 4);
+            const int damage = TCOD_random_dice_roll_s(world->random, "1d4");
 
             world_log(
                 actor->floor,
@@ -1882,15 +2032,39 @@ bool actor_cast_spell(
     return true;
 }
 
+void actor_restore_health(struct actor *actor, int health)
+{
+    actor->health += health;
+    actor->flash_color = TCOD_green;
+    actor->flash_fade_coef = 1.0f;
+
+    const int max_health = actor_calc_max_health(actor);
+    if (actor->health > max_health)
+    {
+        actor->health = max_health;
+    }
+}
+
+void actor_restore_mana(struct actor *actor, int mana)
+{
+    actor->mana += mana;
+
+    const int max_mana = actor_calc_max_mana(actor);
+    if (actor->mana > max_mana)
+    {
+        actor->mana = max_mana;
+    }
+}
+
 bool actor_take_damage(struct actor *actor, struct actor *attacker, int damage)
 {
-    actor->current_hp -= damage;
+    actor->health -= damage;
     actor->flash_color = TCOD_red;
     actor->flash_fade_coef = 1.0f;
 
-    if (actor->current_hp <= 0)
+    if (actor->health <= 0)
     {
-        actor->current_hp = 0;
+        actor->health = 0;
 
         actor_die(actor, attacker);
 

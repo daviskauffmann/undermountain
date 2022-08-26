@@ -2,6 +2,7 @@
 #define ACTOR_H
 
 #include "item.h"
+#include "light.h"
 #include "spell.h"
 #include <libtcod.h>
 
@@ -15,9 +16,11 @@ enum race
     RACE_HUMAN,
 
     // monster races
-    RACE_ANIMAL,
     RACE_BUGBEAR,
+    RACE_DOG,
+    RACE_JACKAL,
     RACE_ORC,
+    RACE_RAT,
     RACE_SLIME,
 
     NUM_RACES
@@ -46,6 +49,7 @@ enum faction
 enum monster
 {
     MONSTER_BUGBEAR,
+    MONSTER_JACKAL,
     MONSTER_ORC,
     MONSTER_RAT,
     MONSTER_SLIME,
@@ -56,14 +60,6 @@ enum monster
 struct actor_common
 {
     int turns_to_chase;
-
-    int glow_radius;
-    TCOD_color_t glow_color;
-    float glow_intensity;
-
-    int torch_radius;
-    TCOD_color_t torch_color;
-    float torch_intensity;
 };
 
 struct race_datum
@@ -122,16 +118,15 @@ struct actor
 
     struct actor *leader;
 
-    int light_radius;
-    TCOD_color_t light_color;
-    float light_intensity;
-    bool light_flicker;
+    enum light_type light_type;
     TCOD_map_t light_fov;
 
     TCOD_color_t flash_color;
     float flash_fade_coef;
 
     bool controllable;
+
+    bool dead;
 };
 
 struct actor *actor_new(
@@ -143,7 +138,7 @@ struct actor *actor_new(
     uint8_t floor,
     uint8_t x,
     uint8_t y,
-    bool torch);
+    enum light_type light_type);
 void actor_delete(struct actor *actor);
 
 int actor_calc_max_health(const struct actor *actor);
@@ -163,6 +158,10 @@ void actor_calc_fov(struct actor *actor);
 
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
+
+bool actor_can_take_turn(const struct actor *actor);
+
+struct actor *actor_find_closest_enemy(const struct actor *actor);
 
 bool actor_ai(struct actor *actor);
 bool actor_path_towards(

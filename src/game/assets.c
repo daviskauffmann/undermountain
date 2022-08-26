@@ -6,6 +6,7 @@ struct tile_common tile_common;
 struct tile_datum tile_data[NUM_TILE_TYPES];
 struct object_common object_common;
 struct object_datum object_data[NUM_OBJECT_TYPES];
+struct light_datum light_data[NUM_LIGHT_TYPES];
 struct actor_common actor_common;
 struct race_datum race_data[NUM_RACES];
 struct class_datum class_data[NUM_CLASSES];
@@ -121,16 +122,33 @@ void assets_load(void)
         .is_transparent = true,
     };
 
+    light_data[LIGHT_TYPE_NONE] = (struct light_datum){
+        .radius = -1,
+        .color = TCOD_black,
+        .intensity = 0,
+        .flicker = false,
+    };
+    light_data[LIGHT_TYPE_GLOW] = (struct light_datum){
+        .radius = 5,
+        .color = TCOD_white,
+        .intensity = 0.1f,
+        .flicker = false,
+    };
+    light_data[LIGHT_TYPE_TORCH] = (struct light_datum){
+        .radius = 10,
+        .color = TCOD_light_amber,
+        .intensity = 0.25f,
+        .flicker = true,
+    };
+    light_data[LIGHT_TYPE_FIREBALL] = (struct light_datum){
+        .radius = 5,
+        .color = TCOD_flame,
+        .intensity = 0.5f,
+        .flicker = true,
+    };
+
     actor_common = (struct actor_common){
         .turns_to_chase = 10,
-
-        .glow_radius = 5,
-        .glow_color = TCOD_white,
-        .glow_intensity = 0.1f,
-
-        .torch_radius = 10,
-        .torch_color = TCOD_light_amber,
-        .torch_intensity = 0.25f,
     };
 
     race_data[RACE_HUMAN] = (struct race_datum){
@@ -149,20 +167,30 @@ void assets_load(void)
         .speed = 1.2f,
     };
 
-    race_data[RACE_ANIMAL] = (struct race_datum){
-        .name = "Animal",
-        .glyph = 'a',
-        .speed = 0.7f,
-    };
     race_data[RACE_BUGBEAR] = (struct race_datum){
         .name = "Bugbear",
         .glyph = 'b',
         .speed = 0.5f,
     };
+    race_data[RACE_DOG] = (struct race_datum){
+        .name = "Dog",
+        .glyph = 'd',
+        .speed = 0.7f,
+    };
+    race_data[RACE_JACKAL] = (struct race_datum){
+        .name = "Jackal",
+        .glyph = 'j',
+        .speed = 1.8f,
+    };
     race_data[RACE_ORC] = (struct race_datum){
         .name = "Orc",
         .glyph = 'o',
         .speed = 0.5f,
+    };
+    race_data[RACE_RAT] = (struct race_datum){
+        .name = "Rat",
+        .glyph = 'r',
+        .speed = 0.7f,
     };
     race_data[RACE_SLIME] = (struct race_datum){
         .name = "Slime",
@@ -189,13 +217,18 @@ void assets_load(void)
     };
     class_data[CLASS_SLIME] = (struct class_datum){
         .name = "Slime",
-        .color = TCOD_lightest_grey,
+        .color = TCOD_light_green,
     };
 
     monster_prototypes[MONSTER_BUGBEAR] = (struct actor_prototype){
         .name = "Bugbear",
         .race = RACE_BUGBEAR,
         .class = CLASS_WARRIOR,
+    };
+    monster_prototypes[MONSTER_JACKAL] = (struct actor_prototype){
+        .name = "Jackal",
+        .race = RACE_JACKAL,
+        .class = CLASS_ANIMAL,
     };
     monster_prototypes[MONSTER_ORC] = (struct actor_prototype){
         .name = "Orc",
@@ -204,7 +237,7 @@ void assets_load(void)
     };
     monster_prototypes[MONSTER_RAT] = (struct actor_prototype){
         .name = "Rat",
-        .race = RACE_ANIMAL,
+        .race = RACE_RAT,
         .class = CLASS_ANIMAL,
     };
     monster_prototypes[MONSTER_SLIME] = (struct actor_prototype){
@@ -298,26 +331,6 @@ void assets_load(void)
 
         .max_durability = 100,
     };
-    base_item_data[BASE_ITEM_TYPE_CLUB] = (struct base_item_datum){
-        .name = "Club",
-        .glyph = '|',
-
-        .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = false,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d6",
-        .threat_range = 20,
-        .critical_multiplier = 2,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-    };
     base_item_data[BASE_ITEM_TYPE_DAGGER] = (struct base_item_datum){
         .name = "Dagger",
         .glyph = '|',
@@ -398,8 +411,8 @@ void assets_load(void)
 
         .max_durability = 100,
     };
-    base_item_data[BASE_ITEM_TYPE_HEAVY_CROSSBOW] = (struct base_item_datum){
-        .name = "Heavy Crossbow",
+    base_item_data[BASE_ITEM_TYPE_CROSSBOW] = (struct base_item_datum){
+        .name = "Crossbow",
         .glyph = 'T',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
@@ -433,26 +446,6 @@ void assets_load(void)
         .damage = NULL,
         .threat_range = 0,
         .critical_multiplier = 0,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-    };
-    base_item_data[BASE_ITEM_TYPE_LIGHT_CROSSBOW] = (struct base_item_datum){
-        .name = "Light Crossbow",
-        .glyph = 't',
-
-        .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = true,
-
-        .armor_class = 0,
-
-        .ranged = true,
-        .ammunition_type = AMMUNITION_TYPE_BOLT,
-
-        .damage = "1d8",
-        .threat_range = 19,
-        .critical_multiplier = 2,
 
         .max_stack = 1,
 
@@ -518,26 +511,6 @@ void assets_load(void)
 
         .max_durability = 100,
     };
-    base_item_data[BASE_ITEM_TYPE_MORNINGSTAR] = (struct base_item_datum){
-        .name = "Morning Star",
-        .glyph = '!',
-
-        .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = false,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d8",
-        .threat_range = 20,
-        .critical_multiplier = 2,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-    };
     base_item_data[BASE_ITEM_TYPE_POTION] = (struct base_item_datum){
         .name = "Potion",
         .glyph = '!',
@@ -558,26 +531,6 @@ void assets_load(void)
 
         .max_durability = 0,
     };
-    base_item_data[BASE_ITEM_TYPE_QUARTERSTAFF] = (struct base_item_datum){
-        .name = "Quarterstaff",
-        .glyph = '|',
-
-        .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = true,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d8",
-        .threat_range = 20,
-        .critical_multiplier = 2,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
-    };
     base_item_data[BASE_ITEM_TYPE_SCROLL] = (struct base_item_datum){
         .name = "Scroll",
         .glyph = '%',
@@ -597,26 +550,6 @@ void assets_load(void)
         .max_stack = 10,
 
         .max_durability = 0,
-    };
-    base_item_data[BASE_ITEM_TYPE_SICKLE] = (struct base_item_datum){
-        .name = "Sickle",
-        .glyph = '?',
-
-        .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = false,
-
-        .ranged = false,
-        .ammunition_type = AMMUNITION_TYPE_NONE,
-
-        .armor_class = 0,
-
-        .damage = "1d6",
-        .threat_range = 20,
-        .critical_multiplier = 2,
-
-        .max_stack = 1,
-
-        .max_durability = 100,
     };
     base_item_data[BASE_ITEM_TYPE_SLING] = (struct base_item_datum){
         .name = "Sling",
@@ -773,20 +706,6 @@ void assets_load(void)
         .unique = false,
         .spawned = false,
     };
-    item_data[ITEM_TYPE_CLUB] = (struct item_datum){
-        .type = BASE_ITEM_TYPE_CLUB,
-
-        .name = "Club",
-        .description = "",
-        .color = TCOD_white,
-
-        .enhancement_bonus = 0,
-
-        .spell_type = SPELL_TYPE_NONE,
-
-        .unique = false,
-        .spawned = false,
-    };
     item_data[ITEM_TYPE_COLD_IRON_BLADE] = (struct item_datum){
         .type = BASE_ITEM_TYPE_LONGSWORD,
 
@@ -799,6 +718,20 @@ void assets_load(void)
         .spell_type = SPELL_TYPE_NONE,
 
         .unique = true,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_CROSSBOW] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_CROSSBOW,
+
+        .name = "Crossbow",
+        .description = "",
+        .color = TCOD_white,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .unique = false,
         .spawned = false,
     };
     item_data[ITEM_TYPE_DAGGER] = (struct item_datum){
@@ -871,38 +804,10 @@ void assets_load(void)
         .unique = false,
         .spawned = false,
     };
-    item_data[ITEM_TYPE_HEAVY_CROSSBOW] = (struct item_datum){
-        .type = BASE_ITEM_TYPE_HEAVY_CROSSBOW,
-
-        .name = "Heavy Crossbow",
-        .description = "",
-        .color = TCOD_white,
-
-        .enhancement_bonus = 0,
-
-        .spell_type = SPELL_TYPE_NONE,
-
-        .unique = false,
-        .spawned = false,
-    };
     item_data[ITEM_TYPE_LARGE_SHIELD] = (struct item_datum){
         .type = BASE_ITEM_TYPE_LARGE_SHIELD,
 
         .name = "Large Shield",
-        .description = "",
-        .color = TCOD_white,
-
-        .enhancement_bonus = 0,
-
-        .spell_type = SPELL_TYPE_NONE,
-
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_LIGHT_CROSSBOW] = (struct item_datum){
-        .type = BASE_ITEM_TYPE_LIGHT_CROSSBOW,
-
-        .name = "Light Crossbow",
         .description = "",
         .color = TCOD_white,
 
@@ -983,20 +888,6 @@ void assets_load(void)
         .unique = false,
         .spawned = false,
     };
-    item_data[ITEM_TYPE_MORNINGSTAR] = (struct item_datum){
-        .type = BASE_ITEM_TYPE_MORNINGSTAR,
-
-        .name = "Morning Star",
-        .description = "",
-        .color = TCOD_white,
-
-        .enhancement_bonus = 0,
-
-        .spell_type = SPELL_TYPE_NONE,
-
-        .unique = false,
-        .spawned = false,
-    };
     item_data[ITEM_TYPE_POTION_MINOR_HEAL] = (struct item_datum){
         .type = BASE_ITEM_TYPE_POTION,
 
@@ -1007,20 +898,6 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_MINOR_HEAL,
-
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_QUARTERSTAFF] = (struct item_datum){
-        .type = BASE_ITEM_TYPE_QUARTERSTAFF,
-
-        .name = "Quarterstaff",
-        .description = "",
-        .color = TCOD_white,
-
-        .enhancement_bonus = 0,
-
-        .spell_type = SPELL_TYPE_NONE,
 
         .unique = false,
         .spawned = false,
@@ -1050,19 +927,6 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_LIGHTNING,
 
-        .unique = false,
-        .spawned = false,
-    };
-    item_data[ITEM_TYPE_SICKLE] = (struct item_datum){
-        .type = BASE_ITEM_TYPE_SICKLE,
-
-        .name = "Sickle",
-        .description = "",
-        .color = TCOD_white,
-
-        .enhancement_bonus = 0,
-
-        .spell_type = SPELL_TYPE_NONE,
         .unique = false,
         .spawned = false,
     };
@@ -1185,21 +1049,15 @@ void assets_load(void)
         .glyph = '`',
         .color = TCOD_white,
 
-        .light_radius = -1,
-        .light_color = TCOD_white,
-        .light_intensity = 0.0f,
+        .light_type = LIGHT_TYPE_NONE,
 
-        .light_flicker = false,
         .speed = 50.0f,
     };
     projectile_data[PROJECTILE_TYPE_FIREBALL] = (struct projectile_datum){
         .glyph = '*',
         .color = TCOD_flame,
 
-        .light_radius = 5,
-        .light_color = TCOD_flame,
-        .light_intensity = 0.1f,
-        .light_flicker = true,
+        .light_type = LIGHT_TYPE_FIREBALL,
 
         .speed = 30.0f,
     };

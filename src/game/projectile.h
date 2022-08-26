@@ -1,6 +1,7 @@
 #ifndef PROJECTILE_H
 #define PROJECTILE_H
 
+#include "light.h"
 #include <libtcod.h>
 
 enum projectile_type
@@ -16,10 +17,7 @@ struct projectile_datum
     unsigned char glyph;
     TCOD_color_t color;
 
-    int light_radius;
-    TCOD_color_t light_color;
-    float light_intensity;
-    bool light_flicker;
+    enum light_type light_type;
 
     float speed;
 };

@@ -12,9 +12,9 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_compile_features(${PROJECT_NAME} PRIVATE c_std_11)
 
 if(MSVC)
-    add_compile_options(/W4)
+    target_compile_options(${PROJECT_NAME} PRIVATE /utf-8 /W4)
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 find_package(libtcod CONFIG REQUIRED)

@@ -246,10 +246,10 @@ static bool traverse_node(TCOD_bsp_t *const node, void *const data)
         }
 
         struct room *const room = room_new(
-            node->x,
-            node->y,
-            node->w,
-            node->h);
+            (uint8_t)node->x,
+            (uint8_t)node->y,
+            (uint8_t)node->w,
+            (uint8_t)node->h);
         TCOD_list_push(map->rooms, room);
     }
     else
@@ -415,10 +415,10 @@ void map_generate(struct map *const map, const enum map_type map_type)
             }
 
             struct room *const room = room_new(
-                room_x,
-                room_y,
-                room_w,
-                room_h);
+                (uint8_t)room_x,
+                (uint8_t)room_y,
+                (uint8_t)room_w,
+                (uint8_t)room_h);
             TCOD_list_push(map->rooms, room);
         }
 
@@ -573,8 +573,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
                 struct object *const object = object_new(
                     OBJECT_TYPE_DOOR_CLOSED,
                     map->floor,
-                    x,
-                    y,
+                    (uint8_t)x,
+                    (uint8_t)y,
                     TCOD_white,
                     -1,
                     TCOD_white,
@@ -674,9 +674,9 @@ void map_generate(struct map *const map, const enum map_type map_type)
         case 1:
         {
             TCOD_color_t random_color = TCOD_color_RGB(
-                TCOD_random_get_int(world->random, 0, 255),
-                TCOD_random_get_int(world->random, 0, 255),
-                TCOD_random_get_int(world->random, 0, 255));
+                (uint8_t)TCOD_random_get_int(world->random, 0, 255),
+                (uint8_t)TCOD_random_get_int(world->random, 0, 255),
+                (uint8_t)TCOD_random_get_int(world->random, 0, 255));
             type = OBJECT_TYPE_BRAZIER;
             color = random_color;
             light_radius = TCOD_random_get_int(world->random, 5, 20);
@@ -713,8 +713,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
         struct object *const object = object_new(
             type,
             map->floor,
-            x,
-            y,
+            (uint8_t)x,
+            (uint8_t)y,
             color,
             light_radius,
             light_color,
@@ -775,9 +775,9 @@ void map_generate(struct map *const map, const enum map_type map_type)
             FACTION_ADVENTURER,
             map->floor + 1,
             map->floor,
-            x,
-            y,
-            TCOD_random_get_int(world->random, 0, 20) == 0);
+            (uint8_t)x,
+            (uint8_t)y,
+            TCOD_random_get_int(world->random, 0, 20) == 0 ? LIGHT_TYPE_TORCH : LIGHT_TYPE_NONE);
 
         map->tiles[x][y].actor = actor;
 
@@ -808,9 +808,9 @@ void map_generate(struct map *const map, const enum map_type map_type)
             FACTION_MONSTER,
             map->floor + 1,
             map->floor,
-            x,
-            y,
-            TCOD_random_get_int(world->random, 0, 20) == 0);
+            (uint8_t)x,
+            (uint8_t)y,
+            TCOD_random_get_int(world->random, 0, 20) == 0 ? LIGHT_TYPE_TORCH : LIGHT_TYPE_NONE);
 
         map->tiles[x][y].actor = actor;
 
@@ -819,8 +819,18 @@ void map_generate(struct map *const map, const enum map_type map_type)
         // TODO: default inventory/equipment
         if (monster == MONSTER_BUGBEAR)
         {
-            actor->equipment[EQUIP_SLOT_WEAPON] = item_new(ITEM_TYPE_LONGBOW, map->floor, x, y, 1);
-            actor->equipment[EQUIP_SLOT_AMMUNITION] = item_new(ITEM_TYPE_ARROW, map->floor, x, y, 5);
+            actor->equipment[EQUIP_SLOT_WEAPON] = item_new(
+                ITEM_TYPE_LONGBOW,
+                map->floor,
+                (uint8_t)x,
+                (uint8_t)y,
+                1);
+            actor->equipment[EQUIP_SLOT_AMMUNITION] = item_new(
+                ITEM_TYPE_ARROW,
+                map->floor,
+                (uint8_t)x,
+                (uint8_t)y,
+                5);
         }
     }
 
@@ -845,8 +855,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
         struct item *const item = item_new(
             type,
             map->floor,
-            x,
-            y,
+            (uint8_t)x,
+            (uint8_t)y,
             type == ITEM_TYPE_GOLD
                 ? TCOD_random_get_int(world->random, 1, 10 * map->floor)
                 : base_item_data[item_data[type].type].max_stack);

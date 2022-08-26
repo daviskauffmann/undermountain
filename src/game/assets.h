@@ -4,6 +4,7 @@
 #include "actor.h"
 #include "corpse.h"
 #include "item.h"
+#include "light.h"
 #include "object.h"
 #include "projectile.h"
 #include "spell.h"
@@ -13,6 +14,7 @@ extern struct tile_common tile_common;
 extern struct tile_datum tile_data[NUM_TILE_TYPES];
 extern struct object_common object_common;
 extern struct object_datum object_data[NUM_OBJECT_TYPES];
+extern struct light_datum light_data[NUM_LIGHT_TYPES];
 extern struct actor_common actor_common;
 extern struct race_datum race_data[NUM_RACES];
 extern struct class_datum class_data[NUM_CLASSES];

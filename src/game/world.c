@@ -18,54 +18,6 @@
 #include <string.h>
 #include <time.h>
 
-// TODO: there is a lot of repetition of things with light properties
-// pack them into a light struct?
-
-// TODO: resurrect corpses
-
-// TODO: optimize
-// pathfinding takes a while
-
-// TODO: traps
-// traps should be invisible (unless the actor can see them though skills or magic)
-// different trap types
-
-// TODO: wands and staves?
-
-// TODO: rarity
-// map generation should take into account rarity of different things, such as items
-// monster types and objects should also be included in rarity
-// rarity should also be more than just randomness, because certain things might only start appearing after certain floors
-// so those things should have a 0% chance above that floor
-
-// TODO: sound and sound propogation
-// play "sounds" in the game such as footsteps and monster noises
-// calculate whether the player can hear and identify the sound and put it in the log if so
-// sound "reflection"?
-
-// TODO: redo map generation
-// no need for overworld map, world will start on the first dungeon
-// we need to define a win condition for the world, probably just grabbing an amulet or something and returning to the entrance?
-// ascending the first floor stairs will end the world
-// maps should support multiple stairs
-// the stairs should geographically connect to the above/below floors, so that will have to be taken into account during map generation
-// thus, the stair object should be a little more sophisticated. it should hold a stair_id which connects it to another stair with the same id
-// using the stair will just teleport the player to the other stair
-// this simplifies the code a little bit because we no longer need to have ascend() and descend() functions, just one that handles moving from one stair to the other
-// making a system that is aware of the layout of the entire dungeon allows for the possibility of "pit traps", which make the player (or creatures) fall to a lower floor
-// these pit traps will be generated in a similar way to the stairs, in that they can only appear if the same tile coordinate on the map below is a floor
-// in addition to all that, there should be ladders that connect to smaller maps that contain loot and enemies
-// these maps have no way out other than the entrance and are smaller
-
-// TODO: implement processing of maps the player is not on?
-
-// TODO: not storing all maps in memory?
-// if we have a small number of maps, this might not be a problem
-// might interfere with the above todo
-
-// TODO: save game at certain intervals for crash protection
-// maybe when the player changes maps?
-
 struct world *world;
 
 void world_init(void)
@@ -115,6 +67,11 @@ void world_uninit(void)
         TCOD_namegen_destroy();
     }
 
+    if (world->hero_dead)
+    {
+        actor_delete(world->hero);
+    }
+
     free(world);
     world = NULL;
 }
@@ -149,7 +106,7 @@ void world_create(struct actor *hero)
 
         // create pet
         {
-            struct actor *pet = actor_new("Spot", RACE_ANIMAL, CLASS_ANIMAL, hero->faction, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1, false);
+            struct actor *pet = actor_new("Spot", RACE_DOG, CLASS_ANIMAL, hero->faction, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1, LIGHT_TYPE_NONE);
             pet->leader = world->hero;
 
             TCOD_list_push(map->actors, pet);
@@ -179,7 +136,6 @@ void world_save(const char *filename)
     int player_index = -1;
     int hero_floor = -1;
     int hero_index = -1;
-    int hero_readied_spell_index = -1;
 
     for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -269,7 +225,7 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, TCOD_list_size(actor->known_spell_types));
             TCOD_LIST_FOREACH(actor->known_spell_types)
             {
-                enum spell_type spell_type = (enum spell_type)(*iterator);
+                enum spell_type spell_type = (size_t)(*iterator);
                 TCOD_zip_put_int(zip, spell_type);
             }
             TCOD_zip_put_int(zip, actor->readied_spell_type);
@@ -280,10 +236,7 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, actor->last_seen_x);
             TCOD_zip_put_int(zip, actor->last_seen_y);
             TCOD_zip_put_int(zip, actor->turns_chased);
-            TCOD_zip_put_int(zip, actor->light_radius);
-            TCOD_zip_put_color(zip, actor->light_color);
-            TCOD_zip_put_float(zip, actor->light_intensity);
-            TCOD_zip_put_int(zip, actor->light_flicker);
+            TCOD_zip_put_int(zip, actor->light_type);
             TCOD_zip_put_color(zip, actor->flash_color);
             TCOD_zip_put_float(zip, actor->flash_fade_coef);
             TCOD_zip_put_int(zip, actor->controllable);
@@ -436,10 +389,10 @@ void world_load(const char *filename)
     {
         struct map *map = &world->maps[floor];
 
-        map->stair_down_x = TCOD_zip_get_int(zip);
-        map->stair_down_y = TCOD_zip_get_int(zip);
-        map->stair_up_x = TCOD_zip_get_int(zip);
-        map->stair_up_y = TCOD_zip_get_int(zip);
+        map->stair_down_x = (uint8_t)TCOD_zip_get_int(zip);
+        map->stair_down_y = (uint8_t)TCOD_zip_get_int(zip);
+        map->stair_up_x = (uint8_t)TCOD_zip_get_int(zip);
+        map->stair_up_y = (uint8_t)TCOD_zip_get_int(zip);
 
         for (int x = 0; x < MAP_WIDTH; x++)
         {
@@ -454,10 +407,10 @@ void world_load(const char *filename)
         int num_rooms = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_rooms; i++)
         {
-            int x = TCOD_zip_get_int(zip);
-            int y = TCOD_zip_get_int(zip);
-            int w = TCOD_zip_get_int(zip);
-            int h = TCOD_zip_get_int(zip);
+            uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t w = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t h = (uint8_t)TCOD_zip_get_int(zip);
 
             struct room *room = room_new(x, y, w, h);
 
@@ -468,8 +421,8 @@ void world_load(const char *filename)
         for (int i = 0; i < num_objects; i++)
         {
             enum object_type type = TCOD_zip_get_int(zip);
-            int x = TCOD_zip_get_int(zip);
-            int y = TCOD_zip_get_int(zip);
+            uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
             TCOD_color_t color = TCOD_zip_get_color(zip);
             int light_radius = TCOD_zip_get_int(zip);
             TCOD_color_t light_color = TCOD_zip_get_color(zip);
@@ -486,10 +439,10 @@ void world_load(const char *filename)
         for (int i = 0; i < num_actors; i++)
         {
             const char *name = TCOD_zip_get_string(zip);
-            int race = TCOD_zip_get_int(zip);
-            int class = TCOD_zip_get_int(zip);
-            int faction = TCOD_zip_get_int(zip);
-            int level = TCOD_zip_get_int(zip);
+            enum race race = TCOD_zip_get_int(zip);
+            enum class class = TCOD_zip_get_int(zip);
+            enum faction faction = TCOD_zip_get_int(zip);
+            uint8_t level = (uint8_t)TCOD_zip_get_int(zip);
             int experience = TCOD_zip_get_int(zip);
             int health = TCOD_zip_get_int(zip);
             int mana = TCOD_zip_get_int(zip);
@@ -501,8 +454,8 @@ void world_load(const char *filename)
                 if (exists)
                 {
                     enum item_type type = TCOD_zip_get_int(zip);
-                    int x = TCOD_zip_get_int(zip);
-                    int y = TCOD_zip_get_int(zip);
+                    uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
+                    uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
                     int current_durability = TCOD_zip_get_int(zip);
                     int current_stack = TCOD_zip_get_int(zip);
                     struct item *item = item_new(type, floor, x, y, current_stack);
@@ -519,8 +472,8 @@ void world_load(const char *filename)
             for (int j = 0; j < num_items; j++)
             {
                 enum item_type type = TCOD_zip_get_int(zip);
-                int x = TCOD_zip_get_int(zip);
-                int y = TCOD_zip_get_int(zip);
+                uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
+                uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
                 int current_durability = TCOD_zip_get_int(zip);
                 int current_stack = TCOD_zip_get_int(zip);
 
@@ -535,25 +488,22 @@ void world_load(const char *filename)
             {
                 enum spell_type spell_type = TCOD_zip_get_int(zip);
 
-                TCOD_list_push(known_spell_types, (void *)spell_type);
+                TCOD_list_push(known_spell_types, (void *)(size_t)spell_type);
             }
             enum spell_type readied_spell_type = TCOD_zip_get_int(zip);
-            int x = TCOD_zip_get_int(zip);
-            int y = TCOD_zip_get_int(zip);
+            uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
             bool took_turn = TCOD_zip_get_int(zip);
             float energy = TCOD_zip_get_float(zip);
             int last_seen_x = TCOD_zip_get_int(zip);
             int last_seen_y = TCOD_zip_get_int(zip);
             int turns_chased = TCOD_zip_get_int(zip);
-            int light_radius = TCOD_zip_get_int(zip);
-            TCOD_color_t light_color = TCOD_zip_get_color(zip);
-            float light_intensity = TCOD_zip_get_float(zip);
-            int light_flicker = TCOD_zip_get_int(zip);
+            enum light_type light_type = TCOD_zip_get_int(zip);
             TCOD_color_t flash_color = TCOD_zip_get_color(zip);
             float flash_fade_coef = TCOD_zip_get_float(zip);
             bool controllable = TCOD_zip_get_int(zip);
 
-            struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y, false);
+            struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y, light_type);
             actor->experience = experience;
             actor->health = health;
             actor->mana = mana;
@@ -564,6 +514,7 @@ void world_load(const char *filename)
             }
             TCOD_list_delete(actor->items);
             actor->items = items;
+            TCOD_list_delete(actor->known_spell_types);
             actor->known_spell_types = known_spell_types;
             actor->readied_spell_type = readied_spell_type;
             actor->took_turn = took_turn;
@@ -571,10 +522,6 @@ void world_load(const char *filename)
             actor->last_seen_x = last_seen_x;
             actor->last_seen_y = last_seen_y;
             actor->turns_chased = turns_chased;
-            actor->light_radius = light_radius;
-            actor->light_color = light_color;
-            actor->light_intensity = light_intensity;
-            actor->light_flicker = light_flicker;
             actor->flash_color = flash_color;
             actor->flash_fade_coef = flash_fade_coef;
             actor->controllable = controllable;
@@ -598,9 +545,9 @@ void world_load(const char *filename)
         for (int i = 0; i < num_corpses; i++)
         {
             const char *name = TCOD_zip_get_string(zip);
-            int level = TCOD_zip_get_int(zip);
-            int x = TCOD_zip_get_int(zip);
-            int y = TCOD_zip_get_int(zip);
+            uint8_t level = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
 
             struct corpse *corpse = corpse_new(name, level, floor, x, y);
 
@@ -612,8 +559,8 @@ void world_load(const char *filename)
         for (int i = 0; i < num_items; i++)
         {
             enum item_type type = TCOD_zip_get_int(zip);
-            int x = TCOD_zip_get_int(zip);
-            int y = TCOD_zip_get_int(zip);
+            uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
             int current_durability = TCOD_zip_get_int(zip);
             int current_stack = TCOD_zip_get_int(zip);
 
@@ -639,8 +586,8 @@ void world_load(const char *filename)
             if (ammunition_exists)
             {
                 enum item_type ammunition_type = TCOD_zip_get_int(zip);
-                int ammunition_x = TCOD_zip_get_int(zip);
-                int ammunition_y = TCOD_zip_get_int(zip);
+                uint8_t ammunition_x = (uint8_t)TCOD_zip_get_int(zip);
+                uint8_t ammunition_y = (uint8_t)TCOD_zip_get_int(zip);
                 int ammunition_current_durability = TCOD_zip_get_int(zip);
                 int ammunition_current_stack = TCOD_zip_get_int(zip);
 
@@ -670,8 +617,8 @@ void world_load(const char *filename)
         int num_explosions = TCOD_zip_get_int(zip);
         for (int i = 0; i < num_explosions; i++)
         {
-            int x = TCOD_zip_get_int(zip);
-            int y = TCOD_zip_get_int(zip);
+            uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
+            uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
             int radius = TCOD_zip_get_int(zip);
             TCOD_color_t color = TCOD_zip_get_color(zip);
             float lifetime = TCOD_zip_get_float(zip);
@@ -804,7 +751,7 @@ void world_update(float delta_time)
             bool controllable_exists = false;
             TCOD_LIST_FOREACH(map->actors)
             {
-                struct actor *actor = *iterator;
+                struct actor *const actor = *iterator;
 
                 actor_restore_mana(actor, 1);
                 actor->took_turn = false;
@@ -814,6 +761,88 @@ void world_update(float delta_time)
                 {
                     controllable_exists = true;
                 }
+
+                if (actor->dead)
+                {
+                    // remove from map
+                    struct map *const map = &world->maps[actor->floor];
+                    iterator = TCOD_list_remove_iterator(map->actors, iterator);
+
+                    // remove from tile
+                    struct tile *const tile = &map->tiles[actor->x][actor->y];
+                    tile->actor = NULL;
+
+                    // create a corpse
+                    struct corpse *const corpse = corpse_new(
+                        actor->name,
+                        actor->level,
+                        actor->floor,
+                        actor->x,
+                        actor->y);
+                    TCOD_list_push(map->corpses, corpse);
+                    TCOD_list_push(tile->corpses, corpse);
+
+                    // drop items
+                    if (actor != world->hero)
+                    {
+                        // move equipment to ground
+                        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+                        {
+                            struct item *const equipment = actor->equipment[i];
+                            if (equipment)
+                            {
+                                equipment->floor = actor->floor;
+                                equipment->x = actor->x;
+                                equipment->y = actor->y;
+
+                                TCOD_list_push(tile->items, equipment);
+                                TCOD_list_push(map->items, equipment);
+
+                                actor->equipment[i] = NULL;
+                            }
+                        }
+
+                        // move inventory to ground
+                        TCOD_LIST_FOREACH(actor->items)
+                        {
+                            struct item *const item = *iterator;
+                            item->floor = actor->floor;
+                            item->x = actor->x;
+                            item->y = actor->y;
+
+                            TCOD_list_push(tile->items, item);
+                            TCOD_list_push(map->items, item);
+
+                            iterator = TCOD_list_remove_iterator_fast(actor->items, iterator);
+
+                            if (!iterator)
+                            {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (actor == world->hero)
+                    {
+                        world->hero_dead = true;
+
+                        world_log(
+                            actor->floor,
+                            actor->x,
+                            actor->y,
+                            TCOD_green,
+                            "Game over! Press 'ESC' to return to the menu.");
+                    }
+                    else
+                    {
+                        actor_delete(actor);
+                    }
+                }
+
+                if (!iterator)
+                {
+                    break;
+                }
             }
             if (!controllable_exists)
             {
@@ -822,8 +851,8 @@ void world_update(float delta_time)
         }
 
         // get the current actor and figure out their turn(s), as long as they have energy
-        struct actor *actor = TCOD_list_get(map->actors, map->current_actor_index);
-        if (actor->energy >= 1.0f)
+        struct actor *const actor = TCOD_list_get(map->actors, map->current_actor_index);
+        if (actor_can_take_turn(actor))
         {
             // have we reached an actor that requires player input?
             if (actor->controllable)
@@ -857,24 +886,15 @@ void world_update(float delta_time)
                 // decrease energy
                 actor->energy -= 1.0f;
 
-                // check if the actor still has energy
-                if (actor->energy >= 1.0f)
+                // check if the actor can still take a turn
+                if (actor_can_take_turn(actor))
                 {
                     // reset took_turn status
                     actor->took_turn = false;
 
-                    // is this actor the player?
-                    if (actor == world->player)
-                    {
-                        // if so, return control to the UI because the player needs to see the newly rendered state as well as make another move
-                        break;
-                    }
-                    else
-                    {
-                        // if not, do not return control to the UI, but restart this loop and do not increment current_actor_index
-                        // non-player actors obviously don't need the UI to render in order to make another move
-                        continue;
-                    }
+                    // return control back to the UI to render the current state
+                    // but do not move current_actor_index to the next actor, since it is still this actor's turn
+                    break;
                 }
             }
             else

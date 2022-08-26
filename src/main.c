@@ -46,13 +46,25 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    TCOD_Tileset *tileset = TCOD_tileset_load(
+        tileset_filename,
+        tileset_columns,
+        tileset_rows,
+        tileset_columns * tileset_rows,
+        tileset_charmap);
+    if (!tileset)
+    {
+        printf("Error: Couldn't load tileset: \n%s\n", TCOD_get_error());
+        return 1;
+    }
+
     const TCOD_ContextParams params = {
         .tcod_version = TCOD_COMPILEDVERSION,
         .console = console,
         .window_title = TITLE,
         .sdl_window_flags = SDL_WINDOW_RESIZABLE,
         .renderer_type = TCOD_RENDERER_SDL2,
-        // .tileset = tileset,
+        .tileset = tileset,
         .vsync = true,
         .argc = argc,
         .argv = argv,
@@ -91,7 +103,8 @@ int main(int argc, char *argv[])
 
             if (scene)
             {
-                if (!(scene = scene->handle_event(&event)))
+                scene = scene->handle_event(&event);
+                if (!scene)
                 {
                     running = false;
                     break;
@@ -103,7 +116,8 @@ int main(int argc, char *argv[])
 
         if (scene)
         {
-            if (!(scene = scene->update(console, delta_time)))
+            scene = scene->update(console, delta_time);
+            if (!scene)
             {
                 running = false;
                 break;
@@ -118,6 +132,7 @@ int main(int argc, char *argv[])
         scene->uninit();
     }
 
+    TCOD_tileset_delete(tileset);
     TCOD_console_delete(console);
     TCOD_quit();
 

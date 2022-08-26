@@ -10,8 +10,6 @@
 #include <math.h>
 #include <stdio.h>
 
-// TODO: scale damage over distance?
-
 struct projectile *projectile_new(
     const enum projectile_type type,
     const uint8_t floor,
@@ -68,8 +66,8 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
     const float dy = ((float)projectile->target_y - (float)projectile->origin_y) / distance;
     const float next_x = projectile->x + dx * projectile_data[projectile->type].speed * delta_time;
     const float next_y = projectile->y + dy * projectile_data[projectile->type].speed * delta_time;
-    const int x = (int)roundf(next_x);
-    const int y = (int)roundf(next_y);
+    const uint8_t x = (uint8_t)roundf(next_x);
+    const uint8_t y = (uint8_t)roundf(next_y);
 
     if (!map_is_inside(x, y))
     {
@@ -150,7 +148,6 @@ done:
         // TODO: i'm actually not sure why reducing the energy needs to happen here
         // i would expect the game update loop to do it when took_turn is set to true
         // however, enemies seem to fire many more projectiles than they should if this isn't done, so leaving it for now
-        // tbh, enemies seem to be shooting too many projectiles anyways even with this, so idk whats going on
         projectile->shooter->energy -= 1.0f;
         projectile->shooter->took_turn = true;
     }
@@ -167,12 +164,14 @@ void projectile_calc_light(struct projectile *const projectile)
     }
 
     const struct projectile_datum *const projectile_datum = &projectile_data[projectile->type];
-    if (projectile_datum->light_radius >= 0)
+    const struct light_datum *const light_datum = &light_data[projectile_datum->light_type];
+
+    if (light_datum->radius >= 0)
     {
         projectile->light_fov = map_to_fov_map(
             &world->maps[projectile->floor],
             (int)projectile->x,
             (int)projectile->y,
-            projectile_datum->light_radius);
+            light_datum->radius);
     }
 }

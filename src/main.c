@@ -1,7 +1,7 @@
 #include "config.h"
 #include "game/assets.h"
 #include "scene.h"
-#include "scenes/menu.h"
+#include "scenes/menu_scene.h"
 #include <SDL2/SDL.h>
 #include <libtcod.h>
 #include <stdio.h>

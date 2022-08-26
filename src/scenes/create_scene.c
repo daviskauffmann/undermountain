@@ -1,12 +1,12 @@
-#include "create.h"
+#include "create_scene.h"
 
 #include "../config.h"
 #include "../game/actor.h"
 #include "../game/world.h"
 #include "../print.h"
 #include "../scene.h"
-#include "game.h"
-#include "menu.h"
+#include "game_scene.h"
+#include "menu_scene.h"
 #include <libtcod.h>
 
 struct actor *hero;
@@ -32,6 +32,26 @@ static void uninit(void)
 {
 }
 
+static struct scene *start()
+{
+    world_create(hero);
+
+    create_scene.uninit();
+    game_scene.init(&create_scene);
+    return &game_scene;
+}
+
+static struct scene *back()
+{
+    actor_delete(hero);
+
+    world_uninit();
+
+    create_scene.uninit();
+    menu_scene.init(&create_scene);
+    return &menu_scene;
+}
+
 static struct scene *handle_event(SDL_Event *event)
 {
     switch (event->type)
@@ -42,22 +62,12 @@ static struct scene *handle_event(SDL_Event *event)
         {
         case SDLK_RETURN:
         {
-            world_create(hero);
-
-            create_scene.uninit();
-            game_scene.init(&create_scene);
-            return &game_scene;
+            return start();
         }
         break;
         case SDLK_ESCAPE:
         {
-            actor_delete(hero);
-
-            world_uninit();
-
-            create_scene.uninit();
-            menu_scene.init(&create_scene);
-            return &menu_scene;
+            return back();
         }
         break;
         default:
@@ -69,21 +79,11 @@ static struct scene *handle_event(SDL_Event *event)
     {
         if (event->button.button == SDL_BUTTON_LEFT)
         {
-            world_create(hero);
-
-            create_scene.uninit();
-            game_scene.init(&create_scene);
-            return &game_scene;
+            return start();
         }
         else if (event->button.button == SDL_BUTTON_RIGHT)
         {
-            actor_delete(hero);
-
-            world_uninit();
-
-            create_scene.uninit();
-            menu_scene.init(&create_scene);
-            return &menu_scene;
+            return back();
         }
     }
     break;
@@ -97,6 +97,7 @@ static struct scene *handle_event(SDL_Event *event)
 static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
     int y = 1;
+
     console_print(
         console,
         1,
@@ -106,6 +107,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         TCOD_BKGND_NONE,
         TCOD_LEFT,
         "TODO: character creation.");
+
     console_print(
         console,
         1,
@@ -115,6 +117,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         TCOD_BKGND_NONE,
         TCOD_LEFT,
         "Press ENTER or L-Mouse to start.");
+
     console_print(
         console,
         1,

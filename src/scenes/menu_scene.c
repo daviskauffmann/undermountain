@@ -1,15 +1,17 @@
-#include "menu.h"
+#include "menu_scene.h"
 
 #include "../config.h"
 #include "../game/world.h"
 #include "../print.h"
 #include "../scene.h"
-#include "create.h"
-#include "game.h"
+#include "create_scene.h"
+#include "game_scene.h"
 #include <libtcod.h>
 
 enum option
 {
+    OPTION_NONE,
+
     OPTION_START,
     OPTION_QUIT,
 
@@ -26,10 +28,11 @@ static int mouse_y;
 
 static struct option_datum option_data[NUM_OPTIONS];
 
-static enum option get_selected_option(void)
+static enum option option_mouseover(void)
 {
     int y = 1;
-    for (enum option option = 0; option < NUM_OPTIONS; option++)
+
+    for (enum option option = 1; option < NUM_OPTIONS; option++)
     {
         if (mouse_y == y)
         {
@@ -38,13 +41,18 @@ static enum option get_selected_option(void)
 
         y++;
     }
-    return -1;
+
+    return OPTION_NONE;
 }
 
 static struct scene *select_option(enum option option)
 {
     switch (option)
     {
+    case OPTION_NONE:
+    {
+    }
+    break;
     case OPTION_START:
     {
         if (TCOD_sys_file_exists(SAVE_PATH))
@@ -132,8 +140,8 @@ static struct scene *handle_event(SDL_Event *event)
         case SDLK_y:
         case SDLK_z:
         {
-            int alpha = event->key.keysym.sym - SDLK_a;
-            enum option option = (enum option)alpha;
+            const int alpha = event->key.keysym.sym - SDLK_a;
+            const enum option option = (enum option)(alpha + 1);
             return select_option(option);
         }
         break;
@@ -146,7 +154,7 @@ static struct scene *handle_event(SDL_Event *event)
     {
         if (event->button.button == SDL_BUTTON_LEFT)
         {
-            enum option option = get_selected_option();
+            const enum option option = option_mouseover();
             return select_option(option);
         }
     }
@@ -167,18 +175,19 @@ static struct scene *handle_event(SDL_Event *event)
 static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
     int y = 1;
-    for (enum option option = 0; option < NUM_OPTIONS; option++)
+
+    for (enum option option = 1; option < NUM_OPTIONS; option++)
     {
         console_print(
             console,
             1,
             y++,
-            option == get_selected_option() ? &TCOD_yellow : &TCOD_white,
+            option == option_mouseover() ? &TCOD_yellow : &TCOD_white,
             &TCOD_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
             "%c) %s",
-            option + 'a',
+            option + 'a' - 1,
             option_data[option].text);
     }
 

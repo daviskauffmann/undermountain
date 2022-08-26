@@ -1,4 +1,4 @@
-#include "game.h"
+#include "game_scene.h"
 
 #include "../config.h"
 #include "../game/actor.h"
@@ -12,7 +12,7 @@
 #include "../game/world.h"
 #include "../print.h"
 #include "../scene.h"
-#include "menu.h"
+#include "menu_scene.h"
 #include <assert.h>
 #include <float.h>
 #include <libtcod.h>
@@ -43,17 +43,17 @@ static struct actor *automove_actor;
 
 /* Targeting */
 
-enum targeting
+enum targeting_action
 {
-    TARGETING_NONE,
-    TARGETING_LOOK,
-    TARGETING_EXAMINE,
-    TARGETING_READ,
-    TARGETING_SHOOT,
-    TARGETING_SPELL
+    TARGETING_ACTION_NONE,
+    TARGETING_ACTION_LOOK,
+    TARGETING_ACTION_EXAMINE,
+    TARGETING_ACTION_READ,
+    TARGETING_ACTION_SHOOT,
+    TARGETING_ACTION_SPELL
 };
 
-static enum targeting targeting;
+static enum targeting_action targeting_action;
 static int target_x;
 static int target_y;
 static struct item *targeting_item;
@@ -538,7 +538,7 @@ static bool do_inventory_action(struct item *const item)
 
         if (needs_target)
         {
-            targeting = TARGETING_READ;
+            targeting_action = TARGETING_ACTION_READ;
             target_x = world->player->x;
             target_y = world->player->y;
             targeting_item = item;
@@ -692,8 +692,7 @@ static void uninit(void)
 
     TCOD_LIST_FOREACH(tooltip_options)
     {
-        struct tooltip_option *tooltip_option = *iterator;
-        tooltip_option_delete(tooltip_option);
+        tooltip_option_delete(*iterator);
     }
     TCOD_list_delete(tooltip_options);
     TCOD_console_delete(tooltip_rect.console);
@@ -853,9 +852,9 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 panel_rect.visible = false;
             }
-            else if (targeting)
+            else if (targeting_action)
             {
-                targeting = false;
+                targeting_action = false;
             }
             else
             {
@@ -883,7 +882,7 @@ static struct scene *handle_event(SDL_Event *event)
         break;
         case SDLK_KP_1:
         {
-            if (targeting != TARGETING_NONE)
+            if (targeting_action != TARGETING_ACTION_NONE)
             {
                 target_x--;
                 target_y++;
@@ -897,7 +896,7 @@ static struct scene *handle_event(SDL_Event *event)
         case SDLK_KP_2:
         case SDLK_DOWN:
         {
-            if (targeting != TARGETING_NONE)
+            if (targeting_action != TARGETING_ACTION_NONE)
             {
                 target_y++;
             }
@@ -909,7 +908,7 @@ static struct scene *handle_event(SDL_Event *event)
         break;
         case SDLK_KP_3:
         {
-            if (targeting != TARGETING_NONE)
+            if (targeting_action != TARGETING_ACTION_NONE)
             {
                 target_x++;
                 target_y++;
@@ -923,7 +922,7 @@ static struct scene *handle_event(SDL_Event *event)
         case SDLK_KP_4:
         case SDLK_LEFT:
         {
-            if (targeting != TARGETING_NONE)
+            if (targeting_action != TARGETING_ACTION_NONE)
             {
                 target_x--;
             }
@@ -944,7 +943,7 @@ static struct scene *handle_event(SDL_Event *event)
         case SDLK_KP_6:
         case SDLK_RIGHT:
         {
-            if (targeting != TARGETING_NONE)
+            if (targeting_action != TARGETING_ACTION_NONE)
             {
                 target_x++;
             }
@@ -956,7 +955,7 @@ static struct scene *handle_event(SDL_Event *event)
         break;
         case SDLK_KP_7:
         {
-            if (targeting != TARGETING_NONE)
+            if (targeting_action != TARGETING_ACTION_NONE)
             {
                 target_x--;
                 target_y--;
@@ -970,7 +969,7 @@ static struct scene *handle_event(SDL_Event *event)
         case SDLK_KP_8:
         case SDLK_UP:
         {
-            if (targeting != TARGETING_NONE)
+            if (targeting_action != TARGETING_ACTION_NONE)
             {
                 target_y--;
             }
@@ -982,7 +981,7 @@ static struct scene *handle_event(SDL_Event *event)
         break;
         case SDLK_KP_9:
         {
-            if (targeting != TARGETING_NONE)
+            if (targeting_action != TARGETING_ACTION_NONE)
             {
                 target_x++;
                 target_y--;
@@ -1154,17 +1153,17 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_f:
             {
-                if (targeting == TARGETING_SHOOT)
+                if (targeting_action == TARGETING_ACTION_SHOOT)
                 {
                     if (world_player_can_take_turn())
                     {
                         actor_shoot(world->player, target_x, target_y);
-                        targeting = TARGETING_NONE;
+                        targeting_action = TARGETING_ACTION_NONE;
                     }
                 }
                 else
                 {
-                    targeting = TARGETING_SHOOT;
+                    targeting_action = TARGETING_ACTION_SHOOT;
 
                     struct actor *target = actor_find_closest_enemy(world->player);
                     if (!target)
@@ -1202,13 +1201,13 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_l:
             {
-                if (targeting == TARGETING_LOOK)
+                if (targeting_action == TARGETING_ACTION_LOOK)
                 {
-                    targeting = TARGETING_NONE;
+                    targeting_action = TARGETING_ACTION_NONE;
                 }
                 else
                 {
-                    targeting = TARGETING_LOOK;
+                    targeting_action = TARGETING_ACTION_LOOK;
                     target_x = world->player->x;
                     target_y = world->player->y;
                 }
@@ -1269,7 +1268,7 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_r:
             {
-                if (targeting == TARGETING_READ)
+                if (targeting_action == TARGETING_ACTION_READ)
                 {
                     if (world_player_can_take_turn())
                     {
@@ -1278,7 +1277,7 @@ static struct scene *handle_event(SDL_Event *event)
                             targeting_item,
                             target_x, target_y);
 
-                        targeting = TARGETING_NONE;
+                        targeting_action = TARGETING_ACTION_NONE;
                     }
                 }
                 else
@@ -1391,14 +1390,14 @@ static struct scene *handle_event(SDL_Event *event)
                     }
                     else
                     {
-                        if (targeting == TARGETING_EXAMINE)
+                        if (targeting_action == TARGETING_ACTION_EXAMINE)
                         {
                             panel_show(PANEL_EXAMINE); // TODO: send examine target to ui
-                            targeting = TARGETING_NONE;
+                            targeting_action = TARGETING_ACTION_NONE;
                         }
                         else
                         {
-                            targeting = TARGETING_EXAMINE;
+                            targeting_action = TARGETING_ACTION_EXAMINE;
                             target_x = world->player->x;
                             target_y = world->player->y;
                         }
@@ -1442,7 +1441,7 @@ static struct scene *handle_event(SDL_Event *event)
                         break;
                         case SPELL_RANGE_TARGET:
                         {
-                            if (targeting == TARGETING_SPELL)
+                            if (targeting_action == TARGETING_ACTION_SPELL)
                             {
                                 if (world_player_can_take_turn())
                                 {
@@ -1451,12 +1450,12 @@ static struct scene *handle_event(SDL_Event *event)
                                         world->player->readied_spell_type,
                                         target_x, target_y,
                                         true);
-                                    targeting = TARGETING_NONE;
+                                    targeting_action = TARGETING_ACTION_NONE;
                                 }
                             }
                             else
                             {
-                                targeting = TARGETING_SPELL;
+                                targeting_action = TARGETING_ACTION_SPELL;
                                 target_x = world->player->x;
                                 target_y = world->player->y;
                             }
@@ -2241,7 +2240,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw targeting reticle
-        if (targeting != TARGETING_NONE)
+        if (targeting_action != TARGETING_ACTION_NONE)
         {
             TCOD_console_set_char_foreground(
                 console,

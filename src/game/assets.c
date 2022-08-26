@@ -8,9 +8,11 @@ struct object_common object_common;
 struct object_datum object_data[NUM_OBJECT_TYPES];
 struct light_datum light_data[NUM_LIGHT_TYPES];
 struct actor_common actor_common;
+struct size_datum size_data[NUM_SIZES];
 struct race_datum race_data[NUM_RACES];
 struct class_datum class_data[NUM_CLASSES];
 struct actor_prototype monster_prototypes[NUM_MONSTERS];
+struct ability_datum ability_data[NUM_ABILITIES];
 struct corpse_common corpse_common;
 struct item_common item_common;
 struct equip_slot_datum equip_slot_data[NUM_EQUIP_SLOTS];
@@ -151,73 +153,132 @@ void assets_load(void)
         .turns_to_chase = 10,
     };
 
+    size_data[SIZE_TINY] = (struct size_datum){
+        .name = "Tiny",
+
+        .modifier = 2,
+    };
+    size_data[SIZE_SMALL] = (struct size_datum){
+        .name = "Small",
+
+        .modifier = 1,
+    };
+    size_data[SIZE_MEDIUM] = (struct size_datum){
+        .name = "Medium",
+
+        .modifier = 0,
+    };
+    size_data[SIZE_LARGE] = (struct size_datum){
+        .name = "Large",
+
+        .modifier = -1,
+    };
+    size_data[SIZE_HUGE] = (struct size_datum){
+        .name = "Huge",
+
+        .modifier = -2,
+    };
+
     race_data[RACE_HUMAN] = (struct race_datum){
         .name = "Human",
         .glyph = '@',
+
+        .size = SIZE_MEDIUM,
         .speed = 1.0f,
     };
     race_data[RACE_DWARF] = (struct race_datum){
         .name = "Dwarf",
         .glyph = '@',
+
+        .size = SIZE_SMALL,
         .speed = 0.8f,
     };
     race_data[RACE_ELF] = (struct race_datum){
         .name = "Elf",
         .glyph = '@',
+
+        .size = SIZE_MEDIUM,
         .speed = 1.2f,
     };
 
     race_data[RACE_BUGBEAR] = (struct race_datum){
         .name = "Bugbear",
         .glyph = 'b',
+
+        .size = SIZE_MEDIUM,
         .speed = 0.5f,
     };
     race_data[RACE_DOG] = (struct race_datum){
         .name = "Dog",
         .glyph = 'd',
+
+        .size = SIZE_SMALL,
         .speed = 0.7f,
     };
     race_data[RACE_JACKAL] = (struct race_datum){
         .name = "Jackal",
         .glyph = 'j',
+
+        .size = SIZE_SMALL,
         .speed = 1.8f,
     };
     race_data[RACE_ORC] = (struct race_datum){
         .name = "Orc",
         .glyph = 'o',
+
+        .size = SIZE_MEDIUM,
         .speed = 0.5f,
     };
     race_data[RACE_RAT] = (struct race_datum){
         .name = "Rat",
         .glyph = 'r',
+
+        .size = SIZE_TINY,
         .speed = 0.7f,
     };
     race_data[RACE_SLIME] = (struct race_datum){
         .name = "Slime",
         .glyph = 's',
+
+        .size = SIZE_SMALL,
         .speed = 0.3f,
     };
 
     class_data[CLASS_WARRIOR] = (struct class_datum){
         .name = "Warrior",
         .color = TCOD_brass,
+
+        .health_die = "1d10",
+        .mana_die = "1d4",
     };
     class_data[CLASS_MAGE] = (struct class_datum){
         .name = "Wizard",
         .color = TCOD_azure,
+
+        .health_die = "1d6",
+        .mana_die = "1d10",
     };
     class_data[CLASS_ROGUE] = (struct class_datum){
         .name = "Rogue",
         .color = TCOD_yellow,
+
+        .health_die = "1d8",
+        .mana_die = "1d4",
     };
 
     class_data[CLASS_ANIMAL] = (struct class_datum){
         .name = "Animal",
         .color = TCOD_lightest_grey,
+
+        .health_die = "1d8",
+        .mana_die = "1d8",
     };
     class_data[CLASS_SLIME] = (struct class_datum){
         .name = "Slime",
         .color = TCOD_light_green,
+
+        .health_die = "1d10",
+        .mana_die = "1d10",
     };
 
     monster_prototypes[MONSTER_BUGBEAR] = (struct actor_prototype){
@@ -244,6 +305,19 @@ void assets_load(void)
         .name = "Slime",
         .race = RACE_SLIME,
         .class = CLASS_SLIME,
+    };
+
+    ability_data[ABILITY_STRENGTH] = (struct ability_datum){
+        .name = "Strength",
+    };
+    ability_data[ABILITY_DEXTERITY] = (struct ability_datum){
+        .name = "Dexterity",
+    };
+    ability_data[ABILITY_CONSTITUTION] = (struct ability_datum){
+        .name = "Constitution",
+    };
+    ability_data[ABILITY_INTELLIGENCE] = (struct ability_datum){
+        .name = "Intelligence",
     };
 
     corpse_common = (struct corpse_common){
@@ -1032,17 +1106,17 @@ void assets_load(void)
     spell_data[SPELL_TYPE_MINOR_HEAL] = (struct spell_datum){
         .name = "Minor Heal",
         .range = SPELL_RANGE_SELF,
-        .mana_cost = 40,
+        .mana_cost = 4,
     };
     spell_data[SPELL_TYPE_LIGHTNING] = (struct spell_datum){
         .name = "Lightning",
         .range = SPELL_RANGE_TARGET,
-        .mana_cost = 50,
+        .mana_cost = 5,
     };
     spell_data[SPELL_TYPE_FIREBALL] = (struct spell_datum){
         .name = "Fireball",
         .range = SPELL_RANGE_TARGET,
-        .mana_cost = 70,
+        .mana_cost = 7,
     };
 
     projectile_data[PROJECTILE_TYPE_ARROW] = (struct projectile_datum){

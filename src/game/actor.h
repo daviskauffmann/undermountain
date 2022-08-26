@@ -62,10 +62,30 @@ struct actor_common
     int turns_to_chase;
 };
 
+enum size
+{
+    SIZE_TINY,
+    SIZE_SMALL,
+    SIZE_MEDIUM,
+    SIZE_LARGE,
+    SIZE_HUGE,
+
+    NUM_SIZES
+};
+
+struct size_datum
+{
+    const char *name;
+
+    int modifier;
+};
+
 struct race_datum
 {
     const char *name;
     unsigned char glyph;
+
+    enum size size;
     float speed;
 };
 
@@ -73,6 +93,11 @@ struct class_datum
 {
     const char *name;
     TCOD_color_t color;
+
+    const char *health_die;
+    const char *mana_die;
+
+    // TODO: base attack bonus
 };
 
 struct actor_prototype
@@ -84,6 +109,21 @@ struct actor_prototype
     // TODO: base equipment + inventory
 };
 
+enum ability
+{
+    ABILITY_STRENGTH,
+    ABILITY_DEXTERITY,
+    ABILITY_CONSTITUTION,
+    ABILITY_INTELLIGENCE,
+
+    NUM_ABILITIES
+};
+
+struct ability_datum
+{
+    const char *name;
+};
+
 struct actor
 {
     char *name;
@@ -93,6 +133,12 @@ struct actor
 
     uint8_t level;
     int experience;
+    int ability_points;
+
+    int ability_scores[NUM_ABILITIES];
+
+    int base_health;
+    int base_mana;
 
     int health;
     int mana;
@@ -141,15 +187,17 @@ struct actor *actor_new(
     enum light_type light_type);
 void actor_delete(struct actor *actor);
 
+int actor_calc_experience_for_level(int level);
+int actor_calc_ability_modifer(const struct actor *actor, enum ability ability);
 int actor_calc_max_health(const struct actor *actor);
 int actor_calc_max_mana(const struct actor *actor);
 int actor_calc_armor_class(const struct actor *actor);
+int actor_calc_base_attack_bonus(const struct actor *actor);
 int actor_calc_attack_bonus(const struct actor *actor);
 int actor_calc_threat_range(const struct actor *actor);
 int actor_calc_critical_multiplier(const struct actor *actor);
 const char *actor_calc_damage(const struct actor *actor);
 int actor_calc_damage_bonus(const struct actor *actor);
-int actor_calc_experience_to_level(const struct actor *actor);
 
 void actor_calc_light(struct actor *actor);
 void actor_calc_fade(struct actor *actor, float delta_time);
@@ -215,7 +263,7 @@ bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(
     struct actor *actor,
     int x, int y);
-bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition);
+bool actor_attack(struct actor *actor, struct actor *other, const struct item *ammunition);
 bool actor_cast_spell(
     struct actor *actor,
     enum spell_type spell_type,

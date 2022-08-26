@@ -192,6 +192,13 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, actor->faction);
             TCOD_zip_put_int(zip, actor->level);
             TCOD_zip_put_int(zip, actor->experience);
+            TCOD_zip_put_int(zip, actor->ability_points);
+            for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+            {
+                TCOD_zip_put_int(zip, actor->ability_scores[ability]);
+            }
+            TCOD_zip_put_int(zip, actor->base_health);
+            TCOD_zip_put_int(zip, actor->base_mana);
             TCOD_zip_put_int(zip, actor->health);
             TCOD_zip_put_int(zip, actor->mana);
             TCOD_zip_put_int(zip, actor->gold);
@@ -444,6 +451,13 @@ void world_load(const char *filename)
             enum faction faction = TCOD_zip_get_int(zip);
             uint8_t level = (uint8_t)TCOD_zip_get_int(zip);
             int experience = TCOD_zip_get_int(zip);
+            int ability_points = TCOD_zip_get_int(zip);
+            int strength = TCOD_zip_get_int(zip);
+            int dexterity = TCOD_zip_get_int(zip);
+            int constitution = TCOD_zip_get_int(zip);
+            int intelligence = TCOD_zip_get_int(zip);
+            int base_health = TCOD_zip_get_int(zip);
+            int base_mana = TCOD_zip_get_int(zip);
             int health = TCOD_zip_get_int(zip);
             int mana = TCOD_zip_get_int(zip);
             int gold = TCOD_zip_get_int(zip);
@@ -505,6 +519,13 @@ void world_load(const char *filename)
 
             struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y, light_type);
             actor->experience = experience;
+            actor->ability_points = ability_points;
+            actor->ability_scores[ABILITY_STRENGTH] = strength;
+            actor->ability_scores[ABILITY_DEXTERITY] = dexterity;
+            actor->ability_scores[ABILITY_CONSTITUTION] = constitution;
+            actor->ability_scores[ABILITY_INTELLIGENCE] = intelligence;
+            actor->base_health = base_health;
+            actor->base_mana = base_mana;
             actor->health = health;
             actor->mana = mana;
             actor->gold = gold;

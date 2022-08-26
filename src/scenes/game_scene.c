@@ -208,7 +208,6 @@ enum panel
 struct panel_state
 {
     int scroll;
-    bool selection_mode;
 };
 
 static struct rect panel_rect;
@@ -243,11 +242,33 @@ static void panel_show(enum panel panel)
     }
 }
 
+static enum ability panel_character_ability_mouseover(void)
+{
+    if (panel_rect.visible && current_panel == PANEL_CHARACTER && !tooltip_rect.visible)
+    {
+        int y = 9; // must be updated every time the layout of the character sheet changes
+
+        for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+        {
+            if (mouse_x > panel_rect.x &&
+                mouse_x < panel_rect.x + panel_rect.width &&
+                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
+            {
+                return ability;
+            }
+
+            y++;
+        }
+    }
+
+    return -1;
+}
+
 static enum equip_slot panel_character_equip_slot_mouseover(void)
 {
     if (panel_rect.visible && current_panel == PANEL_CHARACTER && !tooltip_rect.visible)
     {
-        int y = 8; // must be updated every time the layout of the character sheet changes
+        int y = 14; // must be updated every time the layout of the character sheet changes
 
         for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
         {
@@ -555,39 +576,75 @@ static bool do_inventory_action(struct item *const item)
     }
 
     inventory_action = INVENTORY_ACTION_NONE;
-    panel_state[PANEL_INVENTORY].selection_mode = false;
 
     return took_turn;
 }
 
 /* Character menu actions */
 
-enum equipment_action
+enum character_action
 {
-    EQUIPMENT_ACTION_NONE,
-    EQUIPMENT_ACTION_EXAMINE,
-    EQUIPMENT_ACTION_UNEQUIP
+    CHARACTER_ACTION_NONE,
+    CHARACTER_ACTION_ABILITY_ADD_POINT,
+    CHARACTER_ACTION_EQUIPMENT_EXAMINE,
+    CHARACTER_ACTION_EQUIPMENT_UNEQUIP
 };
 
-static enum equipment_action equipment_action;
+static enum character_action character_action;
 
-static bool do_equipment_action(const enum equip_slot equip_slot)
+static bool do_character_action_ability(const enum ability ability)
 {
     bool took_turn = false;
 
-    switch (equipment_action)
+    switch (character_action)
     {
-    case EQUIPMENT_ACTION_NONE:
+    case CHARACTER_ACTION_NONE:
     {
     }
     break;
-    case EQUIPMENT_ACTION_EXAMINE:
+    case CHARACTER_ACTION_ABILITY_ADD_POINT:
+    {
+        if (world->player->ability_points > 0)
+        {
+            world->player->ability_scores[ability]++;
+            world->player->ability_points--;
+        }
+    }
+    break;
+    case CHARACTER_ACTION_EQUIPMENT_EXAMINE:
+    {
+    }
+    break;
+    case CHARACTER_ACTION_EQUIPMENT_UNEQUIP:
+    {
+    }
+    break;
+    }
+
+    return took_turn;
+}
+
+static bool do_character_action_equipment(const enum equip_slot equip_slot)
+{
+    bool took_turn = false;
+
+    switch (character_action)
+    {
+    case CHARACTER_ACTION_NONE:
+    {
+    }
+    break;
+    case CHARACTER_ACTION_ABILITY_ADD_POINT:
+    {
+    }
+    break;
+    case CHARACTER_ACTION_EQUIPMENT_EXAMINE:
     {
         // TODO: send examine target to ui
         panel_show(PANEL_EXAMINE);
     }
     break;
-    case EQUIPMENT_ACTION_UNEQUIP:
+    case CHARACTER_ACTION_EQUIPMENT_UNEQUIP:
     {
         if (world_player_can_take_turn())
         {
@@ -597,8 +654,7 @@ static bool do_equipment_action(const enum equip_slot equip_slot)
     break;
     }
 
-    equipment_action = EQUIPMENT_ACTION_NONE;
-    panel_state[PANEL_CHARACTER].selection_mode = false;
+    character_action = CHARACTER_ACTION_NONE;
 
     return took_turn;
 }
@@ -639,7 +695,6 @@ static bool do_spellbook_action(const enum spell_type spell_type)
     }
 
     spellbook_action = SPELLBOOK_ACTION_NONE;
-    panel_state[PANEL_SPELLBOOK].selection_mode = false;
 
     return took_turn;
 }
@@ -828,18 +883,13 @@ static struct scene *handle_event(SDL_Event *event)
             }
             else if (directional_action != DIRECTIONAL_ACTION_NONE ||
                      inventory_action != INVENTORY_ACTION_NONE ||
-                     equipment_action != EQUIPMENT_ACTION_NONE ||
+                     character_action != CHARACTER_ACTION_NONE ||
                      spellbook_action != SPELLBOOK_ACTION_NONE)
             {
                 directional_action = DIRECTIONAL_ACTION_NONE;
                 inventory_action = INVENTORY_ACTION_NONE;
-                equipment_action = EQUIPMENT_ACTION_NONE;
+                character_action = CHARACTER_ACTION_NONE;
                 spellbook_action = SPELLBOOK_ACTION_NONE;
-
-                for (enum panel panel = 0; panel < NUM_PANELS; panel++)
-                {
-                    panel_state[panel].selection_mode = false;
-                }
 
                 world_log(
                     world->player->floor,
@@ -1052,11 +1102,22 @@ static struct scene *handle_event(SDL_Event *event)
 
                 handled = true;
             }
-            else if (equipment_action != EQUIPMENT_ACTION_NONE && alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
+            else if ((character_action == CHARACTER_ACTION_ABILITY_ADD_POINT) &&
+                     alpha >= 0 && alpha < NUM_ABILITIES)
+            {
+                enum ability_type ability = (enum ability)alpha;
+
+                world->player->took_turn = do_character_action_ability(ability);
+
+                handled = true;
+            }
+            else if ((character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
+                      character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP) &&
+                     alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
             {
                 enum equip_slot equip_slot = (enum equip_slot)(alpha + 1);
 
-                world->player->took_turn = do_equipment_action(equip_slot);
+                world->player->took_turn = do_character_action_equipment(equip_slot);
 
                 handled = true;
             }
@@ -1069,15 +1130,6 @@ static struct scene *handle_event(SDL_Event *event)
                 handled = true;
             }
 
-            for (enum panel panel = 0; panel < NUM_PANELS; panel++)
-            {
-                if (panel_state[panel].selection_mode)
-                {
-                    handled = true;
-                    break;
-                }
-            }
-
             if (handled)
             {
                 break;
@@ -1085,6 +1137,19 @@ static struct scene *handle_event(SDL_Event *event)
 
             switch (event->key.keysym.sym)
             {
+            case SDLK_a:
+            {
+                panel_show(PANEL_CHARACTER);
+                character_action = CHARACTER_ACTION_ABILITY_ADD_POINT;
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    TCOD_yellow,
+                    "Choose an ability to add points to. Press 'ESC' to cancel.");
+            }
+            break;
             case SDLK_b:
             {
                 panel_toggle(PANEL_SPELLBOOK);
@@ -1126,7 +1191,6 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     panel_show(PANEL_INVENTORY);
                     inventory_action = INVENTORY_ACTION_DROP;
-                    panel_state[PANEL_INVENTORY].selection_mode = true;
 
                     world_log(
                         world->player->floor,
@@ -1141,7 +1205,6 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 panel_show(PANEL_INVENTORY);
                 inventory_action = INVENTORY_ACTION_EQUIP;
-                panel_state[PANEL_INVENTORY].selection_mode = true;
 
                 world_log(
                     world->player->floor,
@@ -1254,9 +1317,7 @@ static struct scene *handle_event(SDL_Event *event)
             case SDLK_q:
             {
                 panel_show(PANEL_INVENTORY);
-
                 inventory_action = INVENTORY_ACTION_QUAFF;
-                panel_state[PANEL_INVENTORY].selection_mode = true;
 
                 world_log(
                     world->player->floor,
@@ -1283,9 +1344,7 @@ static struct scene *handle_event(SDL_Event *event)
                 else
                 {
                     panel_show(PANEL_INVENTORY);
-
                     inventory_action = INVENTORY_ACTION_READ;
-                    panel_state[PANEL_INVENTORY].selection_mode = true;
 
                     world_log(
                         world->player->floor,
@@ -1347,8 +1406,7 @@ static struct scene *handle_event(SDL_Event *event)
             case SDLK_u:
             {
                 panel_show(PANEL_CHARACTER);
-                equipment_action = EQUIPMENT_ACTION_UNEQUIP;
-                panel_state[PANEL_CHARACTER].selection_mode = true;
+                character_action = CHARACTER_ACTION_EQUIPMENT_UNEQUIP;
 
                 world_log(
                     world->player->floor,
@@ -1364,7 +1422,6 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     panel_show(PANEL_INVENTORY);
                     inventory_action = INVENTORY_ACTION_EXAMINE;
-                    panel_state[PANEL_INVENTORY].selection_mode = true;
 
                     world_log(
                         world->player->floor,
@@ -1378,8 +1435,7 @@ static struct scene *handle_event(SDL_Event *event)
                     if (event->key.keysym.mod & KMOD_CTRL)
                     {
                         panel_show(PANEL_CHARACTER);
-                        equipment_action = EQUIPMENT_ACTION_EXAMINE;
-                        panel_state[PANEL_CHARACTER].selection_mode = true;
+                        character_action = CHARACTER_ACTION_EQUIPMENT_EXAMINE;
 
                         world_log(
                             world->player->floor,
@@ -1411,7 +1467,6 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     panel_show(PANEL_SPELLBOOK);
                     spellbook_action = SPELLBOOK_ACTION_SELECT;
-                    panel_state[PANEL_SPELLBOOK].selection_mode = true;
 
                     world_log(
                         world->player->floor,
@@ -1514,13 +1569,26 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->took_turn = do_inventory_action(item);
                     }
                 }
-                else if (equipment_action != EQUIPMENT_ACTION_NONE)
+                else if (character_action != CHARACTER_ACTION_NONE)
                 {
-                    enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
-
-                    if (equip_slot != EQUIP_SLOT_NONE)
+                    if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
                     {
-                        world->player->took_turn = do_equipment_action(equip_slot);
+                        enum ability ability = panel_character_ability_mouseover();
+
+                        if (ability != -1)
+                        {
+                            world->player->took_turn = do_character_action_ability(ability);
+                        }
+                    }
+                    else if (character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
+                             character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP)
+                    {
+                        enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
+
+                        if (equip_slot != EQUIP_SLOT_NONE)
+                        {
+                            world->player->took_turn = do_character_action_equipment(equip_slot);
+                        }
                     }
                 }
                 else if (spellbook_action != SPELLBOOK_ACTION_NONE)
@@ -1595,8 +1663,17 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                 case PANEL_CHARACTER:
                 {
+                    enum ability ability = panel_character_ability_mouseover();
+                    if (ability != -1)
+                    {
+                        tooltip_show();
+                        tooltip_options_add("Add Point", NULL);
+                        // tooltip_data.ability = ability;
+                        tooltip_options_add("Cancel", NULL);
+                    }
+
                     enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
-                    if (equip_slot >= 1 && equip_slot < NUM_EQUIP_SLOTS)
+                    if (equip_slot != EQUIP_SLOT_NONE)
                     {
                         struct item *equipment = world->player->equipment[equip_slot];
                         if (equipment)
@@ -1633,8 +1710,6 @@ static struct scene *handle_event(SDL_Event *event)
                         tooltip_data.item = item;
                         tooltip_options_add("Cancel", NULL);
                     }
-
-                    break;
                 }
                 break;
                 case PANEL_SPELLBOOK:
@@ -2602,7 +2677,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_RIGHT,
                 "%d / %d",
                 world->player->experience,
-                actor_calc_experience_to_level(world->player));
+                actor_calc_experience_for_level(world->player->level + 1));
             y++;
 
             TCOD_console_printf(
@@ -2622,15 +2697,29 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             y++;
 
-            for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "Ability Points");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d",
+                world->player->ability_points);
+            y++;
+
+            for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
             {
                 const TCOD_color_t fg =
-                    equip_slot == panel_character_equip_slot_mouseover()
+                    ability == panel_character_ability_mouseover()
                         ? TCOD_yellow
                         : TCOD_white;
-                const struct equip_slot_datum equip_slot_datum = equip_slot_data[equip_slot];
 
-                if (current_panel_status->selection_mode)
+                if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
                 {
                     console_print(
                         panel_rect.console,
@@ -2641,7 +2730,60 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         "%c) %s",
-                        equip_slot + 'a' - 1,
+                        ability + SDLK_a,
+                        ability_data[ability].name);
+                }
+                else
+                {
+                    console_print(
+                        panel_rect.console,
+                        1,
+                        y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
+                        "%s",
+                        ability_data[ability].name);
+                }
+
+                console_print(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    &fg,
+                    NULL,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%d (%d)",
+                    world->player->ability_scores[ability],
+                    actor_calc_ability_modifer(world->player, ability));
+                y++;
+            }
+
+            y++;
+
+            for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+            {
+                const TCOD_color_t fg =
+                    equip_slot == panel_character_equip_slot_mouseover()
+                        ? TCOD_yellow
+                        : TCOD_white;
+                const struct equip_slot_datum equip_slot_datum = equip_slot_data[equip_slot];
+
+                if (character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
+                    character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP)
+                {
+                    console_print(
+                        panel_rect.console,
+                        1,
+                        y - current_panel_status->scroll,
+                        &fg,
+                        NULL,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
+                        "%c) %s",
+                        equip_slot + SDLK_a - 1,
                         equip_slot_datum.name);
                 }
                 else
@@ -2807,7 +2949,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         ? TCOD_yellow
                         : item_datum.color;
 
-                if (current_panel_status->selection_mode)
+                if (inventory_action == INVENTORY_ACTION_NONE)
                 {
                     console_print(
                         panel_rect.console,
@@ -2817,8 +2959,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        item->stack > 1 ? "%c) %s (%d)" : "%c) %s",
-                        y - 1 + 'a' - current_panel_status->scroll,
+                        item->stack > 1 ? "%s (%d)" : "%s",
                         item_datum.name,
                         item->stack);
                 }
@@ -2832,7 +2973,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        item->stack > 1 ? "%s (%d)" : "%s",
+                        item->stack > 1 ? "%c) %s (%d)" : "%c) %s",
+                        y - 1 + SDLK_a - current_panel_status->scroll,
                         item_datum.name,
                         item->stack);
                 }
@@ -2861,7 +3003,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         ? TCOD_yellow
                         : TCOD_white;
 
-                if (current_panel_status->selection_mode)
+                if (spellbook_action == SPELLBOOK_ACTION_NONE)
                 {
                     console_print(
                         panel_rect.console,
@@ -2871,8 +3013,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        world->player->readied_spell_type == spell_type ? "%c) %s (readied)" : "%c) %s",
-                        y - 1 + 'a' - current_panel_status->scroll,
+                        world->player->readied_spell_type == spell_type ? "%s (readied)" : "%s",
                         spell_datum->name);
                 }
                 else
@@ -2885,7 +3026,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        world->player->readied_spell_type == spell_type ? "%s (readied)" : "%s",
+                        world->player->readied_spell_type == spell_type ? "%c) %s (readied)" : "%c) %s",
+                        y - 1 + SDLK_a - current_panel_status->scroll,
                         spell_datum->name);
                 }
 

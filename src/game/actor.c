@@ -31,8 +31,17 @@ struct actor *actor_new(
     actor->class = class;
     actor->faction = faction;
 
-    actor->level = level;
-    actor->experience = (level - 1) * 1000;
+    actor->level = 1;
+    actor->experience = 0;
+    actor->ability_points = 5;
+
+    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+    {
+        actor->ability_scores[ability] = 10;
+    }
+
+    actor->base_health = TCOD_random_dice_roll_s(world->random, class_data[class].health_die);
+    actor->base_mana = TCOD_random_dice_roll_s(world->random, class_data[class].mana_die);
 
     actor->health = actor_calc_max_health(actor);
     actor->mana = actor_calc_max_mana(actor);
@@ -71,6 +80,11 @@ struct actor *actor_new(
 
     actor->dead = false;
 
+    for (int i = 0; i < level - 1; i++)
+    {
+        actor_level_up(actor);
+    }
+
     return actor;
 }
 
@@ -99,19 +113,32 @@ void actor_delete(struct actor *const actor)
     free(actor);
 }
 
+int actor_calc_experience_for_level(const int level)
+{
+    return level * (level - 1) / 2 * 1000;
+}
+
+int actor_calc_ability_modifer(const struct actor *const actor, const enum ability ability)
+{
+    return (actor->ability_scores[ability] - 10) / 2;
+}
+
 int actor_calc_max_health(const struct actor *actor)
 {
-    return 10 + (10 * (actor->level - 1));
+    return actor->base_health + actor_calc_ability_modifer(actor, ABILITY_CONSTITUTION);
 }
 
 int actor_calc_max_mana(const struct actor *actor)
 {
-    return 100 + (100 * (actor->level - 1));
+    return actor->base_mana + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
 }
 
 int actor_calc_armor_class(const struct actor *const actor)
 {
-    int armor_class = 10;
+    const int dexterity_modifer = actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+    const int size_modifer = size_data[race_data[actor->race].size].modifier;
+
+    int armor_class = 10 + dexterity_modifer + size_modifer;
 
     const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
     if (armor)
@@ -136,9 +163,17 @@ int actor_calc_armor_class(const struct actor *const actor)
     return armor_class;
 }
 
+int actor_calc_base_attack_bonus(const struct actor *actor)
+{
+    return actor->level - 1;
+}
+
 int actor_calc_attack_bonus(const struct actor *const actor)
 {
-    int attack_bonus = actor->level - 1;
+    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
+    const int size_modifer = size_data[race_data[actor->race].size].modifier;
+
+    int attack_bonus = base_attack_bonus + size_modifer;
 
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
@@ -150,6 +185,8 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
         if (base_weapon_datum->ranged)
         {
+            attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+
             const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
             if (ammunition)
             {
@@ -158,6 +195,14 @@ int actor_calc_attack_bonus(const struct actor *const actor)
                 attack_bonus += ammunition_datum->enhancement_bonus;
             }
         }
+        else
+        {
+            attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+        }
+    }
+    else
+    {
+        attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
     }
 
     return attack_bonus;
@@ -219,6 +264,17 @@ int actor_calc_damage_bonus(const struct actor *const actor)
         const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
         if (base_weapon_datum->ranged)
         {
+            const int strength_modifier = actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+
+            if (weapon_datum->type == BASE_ITEM_TYPE_SLING)
+            {
+                damage_bonus += strength_modifier;
+            }
+            else if (strength_modifier < 0) // TODO: if composite bows are added, then exclude them from the strength penalty
+            {
+                damage_bonus += strength_modifier;
+            }
+
             const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
             if (ammunition)
             {
@@ -227,15 +283,24 @@ int actor_calc_damage_bonus(const struct actor *const actor)
                 damage_bonus += ammunition_datum->enhancement_bonus;
             }
         }
+        else
+        {
+            if (base_weapon_datum->two_handed)
+            {
+                damage_bonus += (int)(actor_calc_ability_modifer(actor, ABILITY_STRENGTH) * 1.5f);
+            }
+            else
+            {
+                damage_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+            }
+        }
+    }
+    else
+    {
+        damage_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
     }
 
     return damage_bonus;
-}
-
-int actor_calc_experience_to_level(const struct actor *const actor)
-{
-    // TODO: progressive XP formula
-    return actor->level * 1000;
 }
 
 void actor_calc_light(struct actor *const actor)
@@ -350,32 +415,29 @@ void actor_give_experience(struct actor *const actor, const int experience)
         actor->name,
         experience);
 
-    while (actor->experience >= actor_calc_experience_to_level(actor))
+    while (actor->experience >= actor_calc_experience_for_level(actor->level + 1))
     {
         // TODO: do not automatically level up if it's the player character
         // notify the player instead and they can level up in a level up screen
         actor_level_up(actor);
+
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_yellow,
+            "%s has gained a level!",
+            actor->name);
     }
 }
 
 void actor_level_up(struct actor *const actor)
 {
-    // TODO: the player should not generally use this to level up
-    // this is an automatic level up that all non-player actors will use when their experience is high enough
-    // however, in the level up screen (to be implemented), the player can elect to auto-level their character
-    // in that case, use this function
-
     actor->level++;
-    actor->health = actor_calc_max_health(actor);
-    actor->mana = actor_calc_max_mana(actor);
+    actor->ability_points += 5;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        TCOD_yellow,
-        "%s has gained a level!",
-        actor->name);
+    actor->base_health += TCOD_random_dice_roll_s(world->random, class_data[actor->class].health_die);
+    actor->base_mana += TCOD_random_dice_roll_s(world->random, class_data[actor->class].mana_die);
 }
 
 bool actor_can_take_turn(const struct actor *const actor)
@@ -1742,7 +1804,7 @@ bool actor_shoot(
     return true;
 }
 
-bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunition)
+bool actor_attack(struct actor *const actor, struct actor *const other, const struct item *const ammunition)
 {
     // calculate other armor class
     const int armor_class = actor_calc_armor_class(other);
@@ -1796,6 +1858,11 @@ bool actor_attack(struct actor *actor, struct actor *other, struct item *ammunit
                 world->random,
                 actor_calc_damage(actor)) +
             damage_bonus;
+    }
+
+    if (damage < 1)
+    {
+        damage = 1;
     }
 
     // TODO: when projectiles come at the player from the dark, nothing gets logged
@@ -2093,10 +2160,9 @@ void actor_die(struct actor *const actor, struct actor *const killer)
         "%s dies.",
         actor->name);
 
-    // TODO: all actors involved in combat with the dead actor should gain XP
     if (killer)
     {
-        int experience = TCOD_random_get_int(world->random, 50, 100) * actor->level;
+        int experience = TCOD_random_get_int(world->random, 500, 1000) * actor->level;
         actor_give_experience(killer, experience);
     }
 }

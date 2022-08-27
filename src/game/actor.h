@@ -3,6 +3,7 @@
 
 #include "item.h"
 #include "light.h"
+#include "size.h"
 #include "spell.h"
 #include <libtcod.h>
 
@@ -29,9 +30,9 @@ enum race
 enum class
 {
     // player classes
-    CLASS_MAGE,
+    CLASS_FIGHTER,
     CLASS_ROGUE,
-    CLASS_WARRIOR,
+    CLASS_WIZARD,
 
     // monster classes
     CLASS_ANIMAL,
@@ -62,24 +63,6 @@ struct actor_common
     int turns_to_chase;
 };
 
-enum size
-{
-    SIZE_TINY,
-    SIZE_SMALL,
-    SIZE_MEDIUM,
-    SIZE_LARGE,
-    SIZE_HUGE,
-
-    NUM_SIZES
-};
-
-struct size_datum
-{
-    const char *name;
-
-    int modifier;
-};
-
 struct race_datum
 {
     const char *name;
@@ -94,7 +77,7 @@ struct class_datum
     const char *name;
     TCOD_color_t color;
 
-    const char *health_die;
+    const char *hit_die;
     const char *mana_die;
 
     // TODO: base attack bonus
@@ -124,6 +107,15 @@ struct ability_datum
     const char *name;
 };
 
+enum equippability
+{
+    EQUIPPABILITY_TOO_LARGE,
+    EQUIPPABILITY_BARELY,
+    EQUIPPABILITY_COMFORTABLY,
+    EQUIPPABILITY_EASILY,
+    EQUIPPABILITY_TOO_SMALL
+};
+
 struct actor
 {
     char *name;
@@ -137,11 +129,11 @@ struct actor
 
     int ability_scores[NUM_ABILITIES];
 
-    int base_health;
-    int base_mana;
+    int base_hit_points;
+    int base_mana_points;
 
-    int health;
-    int mana;
+    int hit_points;
+    int mana_points;
 
     int gold;
     struct item *equipment[NUM_EQUIP_SLOTS];
@@ -189,15 +181,17 @@ void actor_delete(struct actor *actor);
 
 int actor_calc_experience_for_level(int level);
 int actor_calc_ability_modifer(const struct actor *actor, enum ability ability);
-int actor_calc_max_health(const struct actor *actor);
-int actor_calc_max_mana(const struct actor *actor);
+int actor_calc_max_hit_points(const struct actor *actor);
+int actor_calc_max_mana_points(const struct actor *actor);
 int actor_calc_armor_class(const struct actor *actor);
 int actor_calc_base_attack_bonus(const struct actor *actor);
 int actor_calc_attack_bonus(const struct actor *actor);
 int actor_calc_threat_range(const struct actor *actor);
 int actor_calc_critical_multiplier(const struct actor *actor);
-const char *actor_calc_damage(const struct actor *actor);
 int actor_calc_damage_bonus(const struct actor *actor);
+const char *actor_calc_damage(const struct actor *actor);
+enum equippability actor_calc_item_equippability(const struct actor *actor, const struct item *item);
+float actor_calc_speed(const struct actor *actor);
 
 void actor_calc_light(struct actor *actor);
 void actor_calc_fade(struct actor *actor, float delta_time);
@@ -206,6 +200,7 @@ void actor_calc_fov(struct actor *actor);
 
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
+void actor_add_ability_point(struct actor *actor, enum ability ability);
 
 bool actor_can_take_turn(const struct actor *actor);
 
@@ -270,9 +265,9 @@ bool actor_cast_spell(
     int x, int y,
     bool from_memory);
 
-void actor_restore_health(struct actor *actor, int health);
-void actor_restore_mana(struct actor *actor, int mana);
-bool actor_take_damage(struct actor *actor, struct actor *attacker, int damage);
+void actor_restore_hit_points(struct actor *actor, int health);
+void actor_restore_mana_points(struct actor *actor, int mana);
+bool actor_damage_hit_points(struct actor *actor, struct actor *attacker, int damage);
 void actor_die(struct actor *actor, struct actor *killer);
 
 #endif

@@ -1,6 +1,7 @@
 #ifndef ITEM_H
 #define ITEM_H
 
+#include "size.h"
 #include "spell.h"
 #include <libtcod.h>
 
@@ -66,7 +67,7 @@ struct base_item_datum
     unsigned char glyph;
 
     enum equip_slot equip_slot;
-    bool two_handed;
+    enum size size;
 
     bool ranged;
     enum ammunition_type ammunition_type;

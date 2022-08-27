@@ -771,7 +771,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
         struct actor *const actor = actor_new(
             TCOD_namegen_generate(name, false),
             race,
-            TCOD_random_get_int(world->random, CLASS_MAGE, CLASS_WARRIOR),
+            TCOD_random_get_int(world->random, CLASS_FIGHTER, CLASS_WIZARD),
             FACTION_ADVENTURER,
             map->floor + 1,
             map->floor,

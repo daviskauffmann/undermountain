@@ -75,7 +75,7 @@ void explosion_deal_damage(const struct explosion *const explosion, struct actor
                     initiator->name,
                     tile->actor->name);
 
-                actor_take_damage(tile->actor, initiator, 5);
+                actor_damage_hit_points(tile->actor, initiator, 5);
             }
         }
     }

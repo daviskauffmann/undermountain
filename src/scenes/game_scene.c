@@ -606,8 +606,7 @@ static bool do_character_action_ability(const enum ability ability)
     {
         if (world->player->ability_points > 0)
         {
-            world->player->ability_scores[ability]++;
-            world->player->ability_points--;
+            actor_add_ability_point(world->player, ability);
         }
     }
     break;
@@ -1147,7 +1146,7 @@ static struct scene *handle_event(SDL_Event *event)
                     world->player->x,
                     world->player->y,
                     TCOD_yellow,
-                    "Choose an ability to add points to. Press 'ESC' to cancel.");
+                    "Choose abilities to add points to. Press 'ESC' to stop.");
             }
             break;
             case SDLK_b:
@@ -2120,13 +2119,13 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 0x2502, //  4 - S    = │
                                 0x2502, //  5 - NS   = │
                                 0x250C, //  6 - SE   = ┌
-                                0x2524, //  7 - NES  = ┤
+                                0x251C, //  7 - NES  = ├
                                 0x2500, //  8 - W    = ─
                                 0x2518, //  9 - NW   = ┘
                                 0x2500, // 10 - EW   = ─
                                 0x2534, // 11 - NEW  = ┴
                                 0x2510, // 12 - SW   = ┐
-                                0x251C, // 13 - NSW  = ├
+                                0x2524, // 13 - NSW  = ┤
                                 0x252C, // 14 - ESW  = ┬
                                 0x253C  // 15 - NESW = ┼
                             };
@@ -2460,11 +2459,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             int y = 1;
 
             {
-                const int max_health = actor_calc_max_health(world->player);
+                const int max_health = actor_calc_max_hit_points(world->player);
                 const TCOD_color_t fg =
-                    (float)world->player->health / max_health > 0.5f
-                        ? TCOD_color_lerp(TCOD_yellow, TCOD_green, world->player->health / (max_health * 0.5f))
-                        : TCOD_color_lerp(TCOD_red, TCOD_yellow, world->player->health / (max_health * 0.5f));
+                    (float)world->player->hit_points / max_health > 0.5f
+                        ? TCOD_color_lerp(TCOD_yellow, TCOD_green, world->player->hit_points / (max_health * 0.5f))
+                        : TCOD_color_lerp(TCOD_red, TCOD_yellow, world->player->hit_points / (max_health * 0.5f));
 
                 console_print(
                     status_rect.console,
@@ -2475,13 +2474,13 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_LEFT,
                     "HP: %d/%d",
-                    world->player->health,
+                    world->player->hit_points,
                     max_health);
             }
 
             {
-                const int max_mana = actor_calc_max_mana(world->player);
-                const TCOD_color_t fg = TCOD_color_lerp(TCOD_gray, TCOD_azure, (float)world->player->mana / max_mana);
+                const int max_mana = actor_calc_max_mana_points(world->player);
+                const TCOD_color_t fg = TCOD_color_lerp(TCOD_gray, TCOD_azure, (float)world->player->mana_points / max_mana);
 
                 console_print(
                     status_rect.console,
@@ -2492,7 +2491,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_LEFT,
                     "MP: %d/%d",
-                    world->player->mana,
+                    world->player->mana_points,
                     max_mana);
             }
 
@@ -2819,13 +2818,14 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                 y++;
             }
+
             y++;
 
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y - current_panel_status->scroll,
-                "Health");
+                "Hit Points");
             TCOD_console_printf_ex(
                 panel_rect.console,
                 panel_rect.width - 2,
@@ -2833,15 +2833,15 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 "%d / %d",
-                world->player->health,
-                actor_calc_max_health(world->player));
+                world->player->hit_points,
+                actor_calc_max_hit_points(world->player));
             y++;
 
             TCOD_console_printf(
                 panel_rect.console,
                 1,
                 y - current_panel_status->scroll,
-                "Mana");
+                "Mana Points");
             TCOD_console_printf_ex(
                 panel_rect.console,
                 panel_rect.width - 2,
@@ -2849,8 +2849,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 "%d / %d",
-                world->player->mana,
-                actor_calc_max_mana(world->player));
+                world->player->mana_points,
+                actor_calc_max_mana_points(world->player));
             y++;
 
             TCOD_console_printf(
@@ -2916,6 +2916,21 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     threat_range,
                     actor_calc_critical_multiplier(world->player));
             }
+            y++;
+
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "Speed");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%.1f",
+                actor_calc_speed(world->player));
             y++;
 
             TCOD_console_printf_frame(

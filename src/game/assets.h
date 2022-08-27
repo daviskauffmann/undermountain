@@ -7,6 +7,7 @@
 #include "light.h"
 #include "object.h"
 #include "projectile.h"
+#include "size.h"
 #include "spell.h"
 #include "tile.h"
 

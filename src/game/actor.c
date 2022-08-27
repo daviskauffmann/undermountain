@@ -33,18 +33,18 @@ struct actor *actor_new(
 
     actor->level = 1;
     actor->experience = 0;
-    actor->ability_points = 5;
+    actor->ability_points = 0;
 
     for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
     {
         actor->ability_scores[ability] = 10;
     }
 
-    actor->base_health = TCOD_random_dice_roll_s(world->random, class_data[class].health_die);
-    actor->base_mana = TCOD_random_dice_roll_s(world->random, class_data[class].mana_die);
+    actor->base_hit_points = TCOD_random_dice_new(class_data[actor->class].hit_die).nb_faces;
+    actor->base_mana_points = TCOD_random_dice_new(class_data[actor->class].mana_die).nb_faces;
 
-    actor->health = actor_calc_max_health(actor);
-    actor->mana = actor_calc_max_mana(actor);
+    actor->hit_points = actor_calc_max_hit_points(actor);
+    actor->mana_points = actor_calc_max_mana_points(actor);
 
     actor->gold = 0;
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
@@ -62,7 +62,7 @@ struct actor *actor_new(
     actor->fov = NULL;
 
     actor->took_turn = false;
-    actor->energy = race_data[race].speed;
+    actor->energy = actor_calc_speed(actor);
 
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
@@ -123,14 +123,14 @@ int actor_calc_ability_modifer(const struct actor *const actor, const enum abili
     return (actor->ability_scores[ability] - 10) / 2;
 }
 
-int actor_calc_max_health(const struct actor *actor)
+int actor_calc_max_hit_points(const struct actor *const actor)
 {
-    return actor->base_health + actor_calc_ability_modifer(actor, ABILITY_CONSTITUTION);
+    return actor->base_hit_points + (actor->level * actor_calc_ability_modifer(actor, ABILITY_CONSTITUTION));
 }
 
-int actor_calc_max_mana(const struct actor *actor)
+int actor_calc_max_mana_points(const struct actor *const actor)
 {
-    return actor->base_mana + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+    return actor->base_mana_points + (actor->level * actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE));
 }
 
 int actor_calc_armor_class(const struct actor *const actor)
@@ -165,7 +165,7 @@ int actor_calc_armor_class(const struct actor *const actor)
 
 int actor_calc_base_attack_bonus(const struct actor *actor)
 {
-    return actor->level - 1;
+    return (actor->level - 1) * 1;
 }
 
 int actor_calc_attack_bonus(const struct actor *const actor)
@@ -197,7 +197,14 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         }
         else
         {
-            attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+            if (actor->class == CLASS_ROGUE)
+            {
+                attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+            }
+            else
+            {
+                attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+            }
         }
     }
     else
@@ -236,20 +243,6 @@ int actor_calc_critical_multiplier(const struct actor *const actor)
     return 2;
 }
 
-const char *actor_calc_damage(const struct actor *const actor)
-{
-    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
-    if (weapon)
-    {
-        const struct item_datum *const weapon_datum = &item_data[weapon->type];
-        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
-
-        return base_weapon_datum->damage;
-    }
-
-    return "1d3";
-}
-
 int actor_calc_damage_bonus(const struct actor *const actor)
 {
     int damage_bonus = 0;
@@ -285,7 +278,9 @@ int actor_calc_damage_bonus(const struct actor *const actor)
         }
         else
         {
-            if (base_weapon_datum->two_handed)
+            const enum equippability equippability = actor_calc_item_equippability(actor, weapon);
+
+            if (equippability == EQUIPPABILITY_BARELY)
             {
                 damage_bonus += (int)(actor_calc_ability_modifer(actor, ABILITY_STRENGTH) * 1.5f);
             }
@@ -301,6 +296,72 @@ int actor_calc_damage_bonus(const struct actor *const actor)
     }
 
     return damage_bonus;
+}
+
+const char *actor_calc_damage(const struct actor *const actor)
+{
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+    if (weapon)
+    {
+        const struct item_datum *const weapon_datum = &item_data[weapon->type];
+        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+
+        return base_weapon_datum->damage;
+    }
+
+    return "1d3";
+}
+
+enum equippability actor_calc_item_equippability(const struct actor *const actor, const struct item *const item)
+{
+    const struct race_datum *const race_datum = &race_data[actor->race];
+    const struct item_datum *const item_datum = &item_data[item->type];
+    const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
+
+    const int difference = race_datum->size - base_item_datum->size;
+
+    if (difference < -1)
+    {
+        return EQUIPPABILITY_TOO_LARGE;
+    }
+    else if (difference == -1)
+    {
+        return EQUIPPABILITY_BARELY;
+    }
+    if (difference == 0)
+    {
+        return EQUIPPABILITY_COMFORTABLY;
+    }
+    if (difference == 1 || difference == 2)
+    {
+        return EQUIPPABILITY_EASILY;
+    }
+    else
+    {
+        return EQUIPPABILITY_TOO_SMALL;
+    }
+}
+
+float actor_calc_speed(const struct actor *actor)
+{
+    const float speed = race_data[actor->race].speed;
+
+    float encumbrance = 1.0f;
+
+    for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+    {
+        if (actor->equipment[equip_slot])
+        {
+            enum equippability equippability = actor_calc_item_equippability(actor, actor->equipment[equip_slot]);
+
+            if (equippability == EQUIPPABILITY_BARELY)
+            {
+                encumbrance -= 0.2f;
+            }
+        }
+    }
+
+    return speed * encumbrance;
 }
 
 void actor_calc_light(struct actor *const actor)
@@ -417,8 +478,6 @@ void actor_give_experience(struct actor *const actor, const int experience)
 
     while (actor->experience >= actor_calc_experience_for_level(actor->level + 1))
     {
-        // TODO: do not automatically level up if it's the player character
-        // notify the player instead and they can level up in a level up screen
         actor_level_up(actor);
 
         world_log(
@@ -433,11 +492,46 @@ void actor_give_experience(struct actor *const actor, const int experience)
 
 void actor_level_up(struct actor *const actor)
 {
-    actor->level++;
-    actor->ability_points += 5;
+    const float current_hit_points_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
+    const float current_mana_points_percent = (float)actor->mana_points / actor_calc_max_mana_points(actor);
 
-    actor->base_health += TCOD_random_dice_roll_s(world->random, class_data[actor->class].health_die);
-    actor->base_mana += TCOD_random_dice_roll_s(world->random, class_data[actor->class].mana_die);
+    actor->level++;
+    actor->ability_points++;
+    actor->base_hit_points += TCOD_random_dice_roll_s(world->random, class_data[actor->class].hit_die);
+    actor->base_mana_points += TCOD_random_dice_roll_s(world->random, class_data[actor->class].mana_die);
+
+    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
+    actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
+
+    if (actor->hit_points <= 0)
+    {
+        actor_die(actor, NULL);
+    }
+    if (actor->mana_points <= 0)
+    {
+        actor->mana_points = 0;
+    }
+}
+
+void actor_add_ability_point(struct actor *const actor, const enum ability ability)
+{
+    const float current_hit_points_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
+    const float current_mana_points_percent = (float)actor->mana_points / actor_calc_max_mana_points(actor);
+
+    actor->ability_scores[ability]++;
+    actor->ability_points--;
+
+    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
+    actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
+
+    if (actor->hit_points <= 0)
+    {
+        actor_die(actor, NULL);
+    }
+    if (actor->mana_points <= 0)
+    {
+        actor->mana_points = 0;
+    }
 }
 
 bool actor_can_take_turn(const struct actor *const actor)
@@ -473,11 +567,18 @@ struct actor *actor_find_closest_enemy(const struct actor *const actor)
 
 bool actor_ai(struct actor *const actor)
 {
+    while (actor->ability_points > 0)
+    {
+        const enum ability ability = TCOD_random_get_int(world->random, 0, NUM_ABILITIES - 1);
+
+        actor_add_ability_point(actor, ability);
+    }
+
     const struct map *const map = &world->maps[actor->floor];
     const struct tile *const tile = &map->tiles[actor->x][actor->y];
 
     // look for fountains to heal if low health
-    if (actor->health < actor_calc_max_health(actor) / 2)
+    if (actor->hit_points < actor_calc_max_hit_points(actor) / 2)
     {
         const struct object *target = NULL;
 
@@ -1261,8 +1362,8 @@ bool actor_drink(
         return false;
     }
 
-    actor_restore_health(actor, actor_calc_max_health(actor) - actor->health);
-    actor_restore_mana(actor, actor_calc_max_mana(actor) - actor->mana);
+    actor_restore_hit_points(actor, actor_calc_max_hit_points(actor) - actor->hit_points);
+    actor_restore_mana_points(actor, actor_calc_max_mana_points(actor) - actor->mana_points);
 
     TCOD_list_remove(map->objects, tile->object);
 
@@ -1432,7 +1533,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     const struct item_datum *const item_datum = &item_data[item->type];
     const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
 
-    // check if item is equippable
+    // is item equipment?
     enum equip_slot equip_slot = base_item_datum->equip_slot;
     if (equip_slot == EQUIP_SLOT_NONE)
     {
@@ -1448,31 +1549,63 @@ bool actor_equip(struct actor *const actor, struct item *const item)
         return false;
     }
 
+    // is item equippable
+    const enum equippability equippability = actor_calc_item_equippability(actor, item);
+    if (equippability == EQUIPPABILITY_TOO_LARGE)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s is too large for %s.",
+            item_datum->name,
+            actor->name);
+
+        return false;
+    }
+    if (equippability == EQUIPPABILITY_TOO_SMALL)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s is too small for %s.",
+            item_datum->name,
+            actor->name);
+
+        return false;
+    }
+
     // unequip the current item in the slot
     if (actor->equipment[equip_slot])
     {
         actor_unequip(actor, equip_slot);
     }
 
-    // if the item being equipped is two handed, also unequip the off hand
-    if (base_item_datum->two_handed)
+    // if the item being equipped is two handed weapon, also unequip the shield
+    if (equip_slot == EQUIP_SLOT_WEAPON)
     {
-        if (actor->equipment[EQUIP_SLOT_SHIELD])
+        if (equippability == EQUIPPABILITY_BARELY)
         {
-            actor_unequip(actor, EQUIP_SLOT_SHIELD);
+            if (actor->equipment[EQUIP_SLOT_SHIELD])
+            {
+                actor_unequip(actor, EQUIP_SLOT_SHIELD);
+            }
         }
     }
 
-    // if the item being equipped is an off hand and the equipped main hand is two handed, also unequip the main hand
+    // if the item being equipped is a shield and the equipped main hand is two handed, also unequip the main hand
     if (equip_slot == EQUIP_SLOT_SHIELD)
     {
         const struct item *const main_hand = actor->equipment[EQUIP_SLOT_WEAPON];
+
         if (main_hand)
         {
-            const struct item_datum *const main_hand_datum = &item_data[main_hand->type];
-            const struct base_item_datum *const base_main_hand_datum = &base_item_data[main_hand_datum->type];
+            const enum equippability main_hand_equippability = actor_calc_item_equippability(actor, main_hand);
 
-            if (base_main_hand_datum->two_handed)
+            if (main_hand_equippability == EQUIPPABILITY_BARELY)
             {
                 actor_unequip(actor, EQUIP_SLOT_WEAPON);
             }
@@ -1894,7 +2027,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
     }
 
     // deal damage
-    const bool killed = actor_take_damage(other, actor, damage);
+    const bool killed = actor_damage_hit_points(other, actor, damage);
 
     // if the other actor wasn't killed, perform any other effects
     if (!killed)
@@ -1947,7 +2080,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
                     actor->name,
                     spike_damage);
 
-                actor_take_damage(actor, other, spike_damage);
+                actor_damage_hit_points(actor, other, spike_damage);
             }
         }
     }
@@ -1988,7 +2121,7 @@ bool actor_cast_spell(
         }
 
         // does the actor have enough mana?
-        if (actor->mana < spell_datum->mana_cost)
+        if (actor->mana_points < spell_datum->mana_cost)
         {
             world_log(
                 actor->floor,
@@ -2014,7 +2147,7 @@ bool actor_cast_spell(
 
     if (from_memory)
     {
-        actor->mana -= spell_datum->mana_cost;
+        actor->mana_points -= spell_datum->mana_cost;
     }
 
     switch (spell_type)
@@ -2032,7 +2165,7 @@ bool actor_cast_spell(
             actor->name,
             health);
 
-        actor_restore_health(actor, health);
+        actor_restore_hit_points(actor, health);
     }
     break;
     case SPELL_TYPE_LIGHTNING:
@@ -2054,7 +2187,7 @@ bool actor_cast_spell(
                 other->name,
                 damage);
 
-            actor_take_damage(other, actor, damage);
+            actor_damage_hit_points(other, actor, damage);
         }
         else
         {
@@ -2103,39 +2236,39 @@ bool actor_cast_spell(
     return true;
 }
 
-void actor_restore_health(struct actor *const actor, const int health)
+void actor_restore_hit_points(struct actor *const actor, const int health)
 {
-    actor->health += health;
+    actor->hit_points += health;
     actor->flash_color = TCOD_green;
     actor->flash_fade_coef = 1.0f;
 
-    const int max_health = actor_calc_max_health(actor);
-    if (actor->health > max_health)
+    const int max_health = actor_calc_max_hit_points(actor);
+    if (actor->hit_points > max_health)
     {
-        actor->health = max_health;
+        actor->hit_points = max_health;
     }
 }
 
-void actor_restore_mana(struct actor *const actor, const int mana)
+void actor_restore_mana_points(struct actor *const actor, const int mana)
 {
-    actor->mana += mana;
+    actor->mana_points += mana;
 
-    const int max_mana = actor_calc_max_mana(actor);
-    if (actor->mana > max_mana)
+    const int max_mana = actor_calc_max_mana_points(actor);
+    if (actor->mana_points > max_mana)
     {
-        actor->mana = max_mana;
+        actor->mana_points = max_mana;
     }
 }
 
-bool actor_take_damage(struct actor *const actor, struct actor *const attacker, const int damage)
+bool actor_damage_hit_points(struct actor *const actor, struct actor *const attacker, const int damage)
 {
-    actor->health -= damage;
+    actor->hit_points -= damage;
     actor->flash_color = TCOD_red;
     actor->flash_fade_coef = 1.0f;
 
-    if (actor->health <= 0)
+    if (actor->hit_points <= 0)
     {
-        actor->health = 0;
+        actor->hit_points = 0;
 
         actor_die(actor, attacker);
 
@@ -2162,7 +2295,7 @@ void actor_die(struct actor *const actor, struct actor *const killer)
 
     if (killer)
     {
-        int experience = TCOD_random_get_int(world->random, 500, 1000) * actor->level;
+        const int experience = TCOD_random_get_int(world->random, 50, 100) * actor->level;
         actor_give_experience(killer, experience);
     }
 }

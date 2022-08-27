@@ -244,25 +244,25 @@ void assets_load(void)
         .speed = 0.3f,
     };
 
-    class_data[CLASS_WARRIOR] = (struct class_datum){
-        .name = "Warrior",
+    class_data[CLASS_FIGHTER] = (struct class_datum){
+        .name = "Fighter",
         .color = TCOD_brass,
 
-        .health_die = "1d10",
+        .hit_die = "1d10",
         .mana_die = "1d4",
     };
-    class_data[CLASS_MAGE] = (struct class_datum){
+    class_data[CLASS_WIZARD] = (struct class_datum){
         .name = "Wizard",
         .color = TCOD_azure,
 
-        .health_die = "1d6",
+        .hit_die = "1d4",
         .mana_die = "1d10",
     };
     class_data[CLASS_ROGUE] = (struct class_datum){
         .name = "Rogue",
         .color = TCOD_yellow,
 
-        .health_die = "1d8",
+        .hit_die = "1d6",
         .mana_die = "1d4",
     };
 
@@ -270,21 +270,21 @@ void assets_load(void)
         .name = "Animal",
         .color = TCOD_lightest_grey,
 
-        .health_die = "1d8",
-        .mana_die = "1d8",
+        .hit_die = "1d6",
+        .mana_die = "1d6",
     };
     class_data[CLASS_SLIME] = (struct class_datum){
         .name = "Slime",
         .color = TCOD_light_green,
 
-        .health_die = "1d10",
+        .hit_die = "1d10",
         .mana_die = "1d10",
     };
 
     monster_prototypes[MONSTER_BUGBEAR] = (struct actor_prototype){
         .name = "Bugbear",
         .race = RACE_BUGBEAR,
-        .class = CLASS_WARRIOR,
+        .class = CLASS_FIGHTER,
     };
     monster_prototypes[MONSTER_JACKAL] = (struct actor_prototype){
         .name = "Jackal",
@@ -294,7 +294,7 @@ void assets_load(void)
     monster_prototypes[MONSTER_ORC] = (struct actor_prototype){
         .name = "Orc",
         .race = RACE_ORC,
-        .class = CLASS_WARRIOR,
+        .class = CLASS_FIGHTER,
     };
     monster_prototypes[MONSTER_RAT] = (struct actor_prototype){
         .name = "Rat",
@@ -350,7 +350,7 @@ void assets_load(void)
         .glyph = '`',
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
-        .two_handed = false,
+        .size = SIZE_SMALL,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_ARROW,
@@ -370,7 +370,7 @@ void assets_load(void)
         .glyph = '`',
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
-        .two_handed = false,
+        .size = SIZE_SMALL,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_BOLT,
@@ -390,7 +390,7 @@ void assets_load(void)
         .glyph = '`',
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
-        .two_handed = false,
+        .size = SIZE_TINY,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_BULLET,
@@ -410,7 +410,7 @@ void assets_load(void)
         .glyph = '|',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = true,
+        .size = SIZE_TINY,
 
         .armor_class = 0,
 
@@ -430,7 +430,7 @@ void assets_load(void)
         .glyph = '[',
 
         .equip_slot = EQUIP_SLOT_ARMOR,
-        .two_handed = false,
+        .size = SIZE_LARGE,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -450,7 +450,7 @@ void assets_load(void)
         .glyph = '$',
 
         .equip_slot = EQUIP_SLOT_NONE,
-        .two_handed = false,
+        .size = SIZE_TINY,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -470,7 +470,7 @@ void assets_load(void)
         .glyph = '|',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = true,
+        .size = SIZE_LARGE,
 
         .armor_class = 0,
 
@@ -490,7 +490,7 @@ void assets_load(void)
         .glyph = 'T',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = true,
+        .size = SIZE_LARGE,
 
         .armor_class = 0,
 
@@ -510,7 +510,7 @@ void assets_load(void)
         .glyph = ')',
 
         .equip_slot = EQUIP_SLOT_SHIELD,
-        .two_handed = false,
+        .size = SIZE_MEDIUM,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -530,7 +530,7 @@ void assets_load(void)
         .glyph = '}',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = true,
+        .size = SIZE_LARGE,
 
         .ranged = true,
         .ammunition_type = AMMUNITION_TYPE_ARROW,
@@ -550,7 +550,7 @@ void assets_load(void)
         .glyph = '|',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = false,
+        .size = SIZE_MEDIUM,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -570,7 +570,7 @@ void assets_load(void)
         .glyph = '!',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = false,
+        .size = SIZE_SMALL,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -590,7 +590,7 @@ void assets_load(void)
         .glyph = '!',
 
         .equip_slot = EQUIP_SLOT_NONE,
-        .two_handed = false,
+        .size = SIZE_SMALL,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -610,7 +610,7 @@ void assets_load(void)
         .glyph = '%',
 
         .equip_slot = EQUIP_SLOT_NONE,
-        .two_handed = false,
+        .size = SIZE_SMALL,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -630,7 +630,7 @@ void assets_load(void)
         .glyph = '?',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = false,
+        .size = SIZE_SMALL,
 
         .armor_class = 0,
 
@@ -650,7 +650,7 @@ void assets_load(void)
         .glyph = ')',
 
         .equip_slot = EQUIP_SLOT_SHIELD,
-        .two_handed = false,
+        .size = SIZE_SMALL,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -670,7 +670,7 @@ void assets_load(void)
         .glyph = '|',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .two_handed = true,
+        .size = SIZE_LARGE,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -690,7 +690,7 @@ void assets_load(void)
         .glyph = '=',
 
         .equip_slot = EQUIP_SLOT_NONE,
-        .two_handed = false,
+        .size = SIZE_SMALL,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -710,7 +710,7 @@ void assets_load(void)
         .glyph = ')',
 
         .equip_slot = EQUIP_SLOT_SHIELD,
-        .two_handed = false,
+        .size = SIZE_LARGE,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -1106,17 +1106,17 @@ void assets_load(void)
     spell_data[SPELL_TYPE_MINOR_HEAL] = (struct spell_datum){
         .name = "Minor Heal",
         .range = SPELL_RANGE_SELF,
-        .mana_cost = 4,
+        .mana_cost = 1,
     };
     spell_data[SPELL_TYPE_LIGHTNING] = (struct spell_datum){
         .name = "Lightning",
         .range = SPELL_RANGE_TARGET,
-        .mana_cost = 5,
+        .mana_cost = 2,
     };
     spell_data[SPELL_TYPE_FIREBALL] = (struct spell_datum){
         .name = "Fireball",
         .range = SPELL_RANGE_TARGET,
-        .mana_cost = 7,
+        .mana_cost = 5,
     };
 
     projectile_data[PROJECTILE_TYPE_ARROW] = (struct projectile_datum){

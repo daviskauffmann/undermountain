@@ -197,10 +197,10 @@ void world_save(const char *filename)
             {
                 TCOD_zip_put_int(zip, actor->ability_scores[ability]);
             }
-            TCOD_zip_put_int(zip, actor->base_health);
-            TCOD_zip_put_int(zip, actor->base_mana);
-            TCOD_zip_put_int(zip, actor->health);
-            TCOD_zip_put_int(zip, actor->mana);
+            TCOD_zip_put_int(zip, actor->base_hit_points);
+            TCOD_zip_put_int(zip, actor->base_mana_points);
+            TCOD_zip_put_int(zip, actor->hit_points);
+            TCOD_zip_put_int(zip, actor->mana_points);
             TCOD_zip_put_int(zip, actor->gold);
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
@@ -456,10 +456,10 @@ void world_load(const char *filename)
             int dexterity = TCOD_zip_get_int(zip);
             int constitution = TCOD_zip_get_int(zip);
             int intelligence = TCOD_zip_get_int(zip);
-            int base_health = TCOD_zip_get_int(zip);
-            int base_mana = TCOD_zip_get_int(zip);
-            int health = TCOD_zip_get_int(zip);
-            int mana = TCOD_zip_get_int(zip);
+            int base_hit_points = TCOD_zip_get_int(zip);
+            int base_mana_points = TCOD_zip_get_int(zip);
+            int hit_points = TCOD_zip_get_int(zip);
+            int mana_points = TCOD_zip_get_int(zip);
             int gold = TCOD_zip_get_int(zip);
             struct item *equipment[NUM_EQUIP_SLOTS];
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
@@ -524,10 +524,10 @@ void world_load(const char *filename)
             actor->ability_scores[ABILITY_DEXTERITY] = dexterity;
             actor->ability_scores[ABILITY_CONSTITUTION] = constitution;
             actor->ability_scores[ABILITY_INTELLIGENCE] = intelligence;
-            actor->base_health = base_health;
-            actor->base_mana = base_mana;
-            actor->health = health;
-            actor->mana = mana;
+            actor->base_hit_points = base_hit_points;
+            actor->base_mana_points = base_mana_points;
+            actor->hit_points = hit_points;
+            actor->mana_points = mana_points;
             actor->gold = gold;
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
@@ -774,9 +774,9 @@ void world_update(float delta_time)
             {
                 struct actor *const actor = *iterator;
 
-                actor_restore_mana(actor, 1);
+                actor_restore_mana_points(actor, 1);
                 actor->took_turn = false;
-                actor->energy += race_data[actor->race].speed;
+                actor->energy += actor_calc_speed(actor);
 
                 if (actor->controllable)
                 {

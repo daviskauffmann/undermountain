@@ -101,15 +101,24 @@ void world_create(struct actor *hero)
             hero->controllable = true;
 
             TCOD_list_push(map->actors, hero);
+
             map->tiles[hero->x][hero->y].actor = hero;
         }
 
         // create pet
         {
-            struct actor *pet = actor_new("Spot", RACE_DOG, CLASS_ANIMAL, hero->faction, floor + 1, floor, map->stair_up_x + 1, map->stair_up_y + 1, LIGHT_TYPE_NONE);
+            struct actor *pet = actor_new(
+                "Spot",
+                RACE_DOG,
+                CLASS_DOG,
+                hero->faction,
+                floor,
+                map->stair_up_x + 1,
+                map->stair_up_y + 1);
             pet->leader = world->hero;
 
             TCOD_list_push(map->actors, pet);
+
             map->tiles[pet->x][pet->y].actor = pet;
         }
     }
@@ -406,6 +415,7 @@ void world_load(const char *filename)
             for (int y = 0; y < MAP_HEIGHT; y++)
             {
                 struct tile *tile = &map->tiles[x][y];
+
                 tile->type = TCOD_zip_get_int(zip);
                 tile->seen = TCOD_zip_get_int(zip);
             }
@@ -517,7 +527,8 @@ void world_load(const char *filename)
             float flash_fade_coef = TCOD_zip_get_float(zip);
             bool controllable = TCOD_zip_get_int(zip);
 
-            struct actor *actor = actor_new(name, race, class, faction, level, floor, x, y, light_type);
+            struct actor *actor = actor_new(name, race, class, faction, floor, x, y);
+            actor->level = level;
             actor->experience = experience;
             actor->ability_points = ability_points;
             actor->ability_scores[ABILITY_STRENGTH] = strength;
@@ -543,6 +554,7 @@ void world_load(const char *filename)
             actor->last_seen_x = last_seen_x;
             actor->last_seen_y = last_seen_y;
             actor->turns_chased = turns_chased;
+            actor->light_type = light_type;
             actor->flash_color = flash_color;
             actor->flash_fade_coef = flash_fade_coef;
             actor->controllable = controllable;

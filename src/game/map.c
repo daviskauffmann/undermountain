@@ -610,9 +610,9 @@ void map_generate(struct map *const map, const enum map_type map_type)
             0.0f,
             false);
 
-        map->tiles[stair_down->x][stair_down->y].object = stair_down;
-
         TCOD_list_push(map->objects, stair_down);
+
+        map->tiles[stair_down->x][stair_down->y].object = stair_down;
     }
 
     // create stairs up
@@ -637,9 +637,9 @@ void map_generate(struct map *const map, const enum map_type map_type)
             0.0f,
             false);
 
-        map->tiles[stair_up->x][stair_up->y].object = stair_up;
-
         TCOD_list_push(map->objects, stair_up);
+
+        map->tiles[stair_up->x][stair_up->y].object = stair_up;
     }
 
     // spawn objects
@@ -721,9 +721,9 @@ void map_generate(struct map *const map, const enum map_type map_type)
             light_intensity,
             light_flicker);
 
-        map->tiles[x][y].object = object;
-
         TCOD_list_push(map->objects, object);
+
+        map->tiles[x][y].object = object;
     }
 
     // spawn adventurers
@@ -736,7 +736,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
                 map_get_random_room(map),
                 &x, &y);
         } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                 map->tiles[x][y].actor != NULL && map->tiles[x][y].object != NULL);
+                 map->tiles[x][y].actor != NULL &&
+                 map->tiles[x][y].object != NULL);
 
         enum race race = TCOD_random_get_int(world->random, RACE_DWARF, RACE_HUMAN);
         char *name;
@@ -773,15 +774,13 @@ void map_generate(struct map *const map, const enum map_type map_type)
             race,
             TCOD_random_get_int(world->random, CLASS_FIGHTER, CLASS_WIZARD),
             FACTION_ADVENTURER,
-            map->floor + 1,
             map->floor,
             (uint8_t)x,
-            (uint8_t)y,
-            TCOD_random_get_int(world->random, 0, 20) == 0 ? LIGHT_TYPE_TORCH : LIGHT_TYPE_NONE);
-
-        map->tiles[x][y].actor = actor;
+            (uint8_t)y);
 
         TCOD_list_push(map->actors, actor);
+
+        map->tiles[x][y].actor = actor;
     }
 
     // spawn monsters
@@ -794,11 +793,12 @@ void map_generate(struct map *const map, const enum map_type map_type)
                 map_get_random_room(map),
                 &x, &y);
         } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                 map->tiles[x][y].actor != NULL && map->tiles[x][y].object != NULL);
+                 map->tiles[x][y].actor != NULL &&
+                 map->tiles[x][y].object != NULL);
 
         // TODO: leveled lists
-        enum monster monster = TCOD_random_get_int(world->random, 0, NUM_MONSTERS - 1);
-        struct actor_prototype *monster_prototype = &monster_prototypes[monster];
+        const enum monster monster = TCOD_random_get_int(world->random, 0, NUM_MONSTERS - 1);
+        const struct actor_prototype *const monster_prototype = &monster_prototypes[monster];
 
         // TODO: monster packs
         struct actor *const actor = actor_new(
@@ -806,15 +806,16 @@ void map_generate(struct map *const map, const enum map_type map_type)
             monster_prototype->race,
             monster_prototype->class,
             FACTION_MONSTER,
-            map->floor + 1,
             map->floor,
             (uint8_t)x,
-            (uint8_t)y,
-            TCOD_random_get_int(world->random, 0, 20) == 0 ? LIGHT_TYPE_TORCH : LIGHT_TYPE_NONE);
+            (uint8_t)y);
 
-        map->tiles[x][y].actor = actor;
+        actor->level = monster_prototype->level;
 
-        TCOD_list_push(map->actors, actor);
+        for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+        {
+            actor->ability_scores[ability] = monster_prototype->ability_scores[ability];
+        }
 
         // TODO: default inventory/equipment
         if (monster == MONSTER_BUGBEAR)
@@ -832,6 +833,10 @@ void map_generate(struct map *const map, const enum map_type map_type)
                 (uint8_t)y,
                 5);
         }
+
+        TCOD_list_push(map->actors, actor);
+
+        map->tiles[x][y].actor = actor;
     }
 
     // spawn items
@@ -861,9 +866,9 @@ void map_generate(struct map *const map, const enum map_type map_type)
                 ? TCOD_random_get_int(world->random, 1, 10 * map->floor)
                 : base_item_data[item_data[type].type].max_stack);
 
-        TCOD_list_push(map->tiles[x][y].items, item);
-
         TCOD_list_push(map->items, item);
+
+        TCOD_list_push(map->tiles[x][y].items, item);
     }
 }
 

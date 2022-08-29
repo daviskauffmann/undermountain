@@ -17,11 +17,9 @@ struct actor *actor_new(
     const enum race race,
     const enum class class,
     const enum faction faction,
-    const uint8_t level,
     const uint8_t floor,
     const uint8_t x,
-    const uint8_t y,
-    const enum light_type light_type)
+    const uint8_t y)
 {
     struct actor *const actor = malloc(sizeof(*actor));
     assert(actor);
@@ -70,7 +68,7 @@ struct actor *actor_new(
 
     actor->leader = NULL;
 
-    actor->light_type = light_type;
+    actor->light_type = LIGHT_TYPE_NONE;
     actor->light_fov = NULL;
 
     actor->flash_color = TCOD_white;
@@ -79,11 +77,6 @@ struct actor *actor_new(
     actor->controllable = false;
 
     actor->dead = false;
-
-    for (int i = 0; i < level - 1; i++)
-    {
-        actor_level_up(actor);
-    }
 
     return actor;
 }
@@ -726,30 +719,6 @@ bool actor_ai(struct actor *const actor)
             }
         }
     }
-
-    // TODO: move between floors (deferred until processing of inactive maps is figured out)
-    // if (tile->object)
-    // {
-    //     switch (tile->object->type)
-    //     {
-    //     case OBJECT_TYPE_STAIR_DOWN:
-    //     {
-    //         if (actor_descend(actor))
-    //         {
-    //             return true;
-    //         }
-    //     }
-    //     break;
-    //     case OBJECT_TYPE_STAIR_UP:
-    //     {
-    //         if (actor_ascend(actor))
-    //         {
-    //             return true;
-    //         }
-    //     }
-    //     break;
-    //     }
-    // }
 
     // TODO: look for objects to interact with if needed (fountains already done, but consider other types)
 
@@ -2154,7 +2123,7 @@ bool actor_cast_spell(
     {
     case SPELL_TYPE_MINOR_HEAL:
     {
-        const int health = TCOD_random_dice_roll_s(world->random, "1d4");
+        const int health = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
 
         world_log(
             actor->floor,
@@ -2175,7 +2144,7 @@ bool actor_cast_spell(
         struct actor *const other = tile->actor;
         if (other)
         {
-            const int damage = TCOD_random_dice_roll_s(world->random, "1d4");
+            const int damage = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
 
             world_log(
                 actor->floor,

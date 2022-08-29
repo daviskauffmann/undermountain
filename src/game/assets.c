@@ -266,45 +266,104 @@ void assets_load(void)
         .mana_die = "1d4",
     };
 
-    class_data[CLASS_ANIMAL] = (struct class_datum){
-        .name = "Animal",
+    class_data[CLASS_DOG] = (struct class_datum){
+        .name = "Dog",
         .color = TCOD_lightest_grey,
 
-        .hit_die = "1d6",
-        .mana_die = "1d6",
+        .hit_die = "1d2",
+        .mana_die = "0d0",
+    };
+    class_data[CLASS_JACKAL] = (struct class_datum){
+        .name = "Jackal",
+        .color = TCOD_lightest_grey,
+
+        .hit_die = "1d2",
+        .mana_die = "0d0",
+    };
+    class_data[CLASS_RAT] = (struct class_datum){
+        .name = "Jackal",
+        .color = TCOD_lightest_grey,
+
+        .hit_die = "1d1",
+        .mana_die = "0d0",
     };
     class_data[CLASS_SLIME] = (struct class_datum){
         .name = "Slime",
         .color = TCOD_light_green,
 
         .hit_die = "1d10",
-        .mana_die = "1d10",
+        .mana_die = "0d0",
     };
 
     monster_prototypes[MONSTER_BUGBEAR] = (struct actor_prototype){
         .name = "Bugbear",
         .race = RACE_BUGBEAR,
         .class = CLASS_FIGHTER,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 15,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 13,
+            [ABILITY_INTELLIGENCE] = 10,
+        },
     };
     monster_prototypes[MONSTER_JACKAL] = (struct actor_prototype){
         .name = "Jackal",
         .race = RACE_JACKAL,
-        .class = CLASS_ANIMAL,
+        .class = CLASS_JACKAL,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 13,
+            [ABILITY_DEXTERITY] = 11,
+            [ABILITY_CONSTITUTION] = 15,
+            [ABILITY_INTELLIGENCE] = 3,
+        },
     };
     monster_prototypes[MONSTER_ORC] = (struct actor_prototype){
         .name = "Orc",
         .race = RACE_ORC,
         .class = CLASS_FIGHTER,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 15,
+            [ABILITY_DEXTERITY] = 10,
+            [ABILITY_CONSTITUTION] = 11,
+            [ABILITY_INTELLIGENCE] = 9,
+        },
     };
     monster_prototypes[MONSTER_RAT] = (struct actor_prototype){
         .name = "Rat",
         .race = RACE_RAT,
-        .class = CLASS_ANIMAL,
+        .class = CLASS_RAT,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 3,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 10,
+            [ABILITY_INTELLIGENCE] = 3,
+        },
     };
     monster_prototypes[MONSTER_SLIME] = (struct actor_prototype){
         .name = "Slime",
         .race = RACE_SLIME,
         .class = CLASS_SLIME,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 12,
+            [ABILITY_DEXTERITY] = 3,
+            [ABILITY_CONSTITUTION] = 11,
+            [ABILITY_INTELLIGENCE] = 3,
+        },
     };
 
     ability_data[ABILITY_STRENGTH] = (struct ability_datum){
@@ -965,7 +1024,7 @@ void assets_load(void)
     item_data[ITEM_TYPE_POTION_MINOR_HEAL] = (struct item_datum){
         .type = BASE_ITEM_TYPE_POTION,
 
-        .name = "Potion of Minor Heal",
+        .name = "Potion of Minor Healing",
         .description = "",
         .color = TCOD_red,
 

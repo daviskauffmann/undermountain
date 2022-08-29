@@ -35,7 +35,9 @@ enum class
     CLASS_WIZARD,
 
     // monster classes
-    CLASS_ANIMAL,
+    CLASS_DOG,
+    CLASS_JACKAL,
+    CLASS_RAT,
     CLASS_SLIME,
 
     NUM_CLASSES
@@ -47,6 +49,16 @@ enum faction
     FACTION_MONSTER
 };
 
+enum ability
+{
+    ABILITY_STRENGTH,
+    ABILITY_DEXTERITY,
+    ABILITY_CONSTITUTION,
+    ABILITY_INTELLIGENCE,
+
+    NUM_ABILITIES
+};
+
 enum monster
 {
     MONSTER_BUGBEAR,
@@ -56,6 +68,15 @@ enum monster
     MONSTER_SLIME,
 
     NUM_MONSTERS
+};
+
+enum equippability
+{
+    EQUIPPABILITY_TOO_LARGE,
+    EQUIPPABILITY_BARELY,
+    EQUIPPABILITY_COMFORTABLY,
+    EQUIPPABILITY_EASILY,
+    EQUIPPABILITY_TOO_SMALL
 };
 
 struct actor_common
@@ -83,37 +104,24 @@ struct class_datum
     // TODO: base attack bonus
 };
 
-struct actor_prototype
-{
-    const char *name;
-    enum race race;
-    enum class class;
-    // TODO: level + stats
-    // TODO: base equipment + inventory
-};
-
-enum ability
-{
-    ABILITY_STRENGTH,
-    ABILITY_DEXTERITY,
-    ABILITY_CONSTITUTION,
-    ABILITY_INTELLIGENCE,
-
-    NUM_ABILITIES
-};
-
 struct ability_datum
 {
     const char *name;
 };
 
-enum equippability
+struct actor_prototype
 {
-    EQUIPPABILITY_TOO_LARGE,
-    EQUIPPABILITY_BARELY,
-    EQUIPPABILITY_COMFORTABLY,
-    EQUIPPABILITY_EASILY,
-    EQUIPPABILITY_TOO_SMALL
+    const char *name;
+    enum race race;
+    enum class class;
+
+    uint8_t level;
+
+    int ability_scores[NUM_ABILITIES];
+
+    enum item_type equipment[NUM_EQUIP_SLOTS];
+
+    // TODO: equipment/inventory/spells
 };
 
 struct actor
@@ -172,11 +180,9 @@ struct actor *actor_new(
     enum race race,
     enum class class,
     enum faction faction,
-    uint8_t level,
     uint8_t floor,
     uint8_t x,
-    uint8_t y,
-    enum light_type light_type);
+    uint8_t y);
 void actor_delete(struct actor *actor);
 
 int actor_calc_experience_for_level(int level);

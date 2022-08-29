@@ -15,11 +15,20 @@ static void init(struct scene *previous_scene)
 {
     world_init();
 
-    hero = actor_new("Jalina Feynolt", RACE_HUMAN, CLASS_FIGHTER, FACTION_ADVENTURER, 1, 0, 0, 0, LIGHT_TYPE_TORCH);
+    hero = actor_new(
+        "Jalina Feynolt",
+        RACE_HUMAN,
+        CLASS_FIGHTER,
+        FACTION_ADVENTURER,
+        0,
+        0,
+        0);
 
     hero->equipment[EQUIP_SLOT_WEAPON] = item_new(ITEM_TYPE_LONGSWORD, 0, 0, 0, 1);
     TCOD_list_push(hero->known_spell_types, (void *)SPELL_TYPE_MINOR_HEAL);
     hero->readied_spell_type = SPELL_TYPE_MINOR_HEAL;
+
+    hero->light_type = LIGHT_TYPE_TORCH;
 }
 
 static void uninit(void)

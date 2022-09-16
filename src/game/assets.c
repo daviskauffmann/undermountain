@@ -4,9 +4,9 @@
 
 struct tile_common tile_common;
 struct tile_datum tile_data[NUM_TILE_TYPES];
+struct light_datum light_data[NUM_LIGHT_TYPES];
 struct object_common object_common;
 struct object_datum object_data[NUM_OBJECT_TYPES];
-struct light_datum light_data[NUM_LIGHT_TYPES];
 struct actor_common actor_common;
 struct size_datum size_data[NUM_SIZES];
 struct race_datum race_data[NUM_RACES];
@@ -59,76 +59,29 @@ void assets_load(void)
         .is_transparent = false,
     };
 
-    object_common = (struct object_common){
-        .__placeholder = 0,
-    };
-
-    object_data[OBJECT_TYPE_ALTAR] = (struct object_datum){
-        .name = "Altar",
-        .glyph = '_',
-        .is_walkable = true,
-        .is_transparent = false,
-    };
-    object_data[OBJECT_TYPE_BRAZIER] = (struct object_datum){
-        .name = "Brazier",
-        .glyph = '*',
-        .is_walkable = true,
-        .is_transparent = false,
-    };
-    object_data[OBJECT_TYPE_CHEST] = (struct object_datum){
-        .name = "Chest",
-        .glyph = '~',
-        .is_walkable = true,
-        .is_transparent = false,
-    };
-    object_data[OBJECT_TYPE_DOOR_CLOSED] = (struct object_datum){
-        .name = "Closed Door",
-        .glyph = '+',
-        .is_walkable = false,
-        .is_transparent = false,
-    };
-    object_data[OBJECT_TYPE_DOOR_OPEN] = (struct object_datum){
-        .name = "Open Door",
-        .glyph = '-',
-        .is_walkable = true,
-        .is_transparent = true,
-    };
-    object_data[OBJECT_TYPE_FOUNTAIN] = (struct object_datum){
-        .name = "Fountain",
-        .glyph = '{',
-        .is_walkable = true,
-        .is_transparent = false,
-    };
-    object_data[OBJECT_TYPE_STAIR_DOWN] = (struct object_datum){
-        .name = "Stair Down",
-        .glyph = '>',
-        .is_walkable = true,
-        .is_transparent = true,
-    };
-    object_data[OBJECT_TYPE_STAIR_UP] = (struct object_datum){
-        .name = "Stair Up",
-        .glyph = '<',
-        .is_walkable = true,
-        .is_transparent = true,
-    };
-    object_data[OBJECT_TYPE_THRONE] = (struct object_datum){
-        .name = "Throne",
-        .glyph = '\\',
-        .is_walkable = true,
-        .is_transparent = false,
-    };
-    object_data[OBJECT_TYPE_TRAP] = (struct object_datum){
-        .name = "Trap",
-        .glyph = '^',
-        .is_walkable = true,
-        .is_transparent = true,
-    };
-
     light_data[LIGHT_TYPE_NONE] = (struct light_datum){
         .radius = -1,
         .color = TCOD_black,
         .intensity = 0,
         .flicker = false,
+    };
+    light_data[LIGHT_TYPE_ALTAR] = (struct light_datum){
+        .radius = 3,
+        .color = TCOD_white,
+        .intensity = 0.1f,
+        .flicker = false,
+    };
+    light_data[LIGHT_TYPE_BRAZIER] = (struct light_datum){
+        .radius = 10,
+        .color = TCOD_light_amber,
+        .intensity = 0.25f,
+        .flicker = true,
+    };
+    light_data[LIGHT_TYPE_FIREBALL] = (struct light_datum){
+        .radius = 5,
+        .color = TCOD_flame,
+        .intensity = 0.5f,
+        .flicker = true,
     };
     light_data[LIGHT_TYPE_GLOW] = (struct light_datum){
         .radius = 5,
@@ -142,11 +95,100 @@ void assets_load(void)
         .intensity = 0.25f,
         .flicker = true,
     };
-    light_data[LIGHT_TYPE_FIREBALL] = (struct light_datum){
-        .radius = 5,
-        .color = TCOD_flame,
-        .intensity = 0.5f,
-        .flicker = true,
+
+    object_common = (struct object_common){
+        .__placeholder = 0,
+    };
+
+    object_data[OBJECT_TYPE_ALTAR] = (struct object_datum){
+        .name = "Altar",
+        .glyph = '_',
+        .color = TCOD_white,
+        .light_type = LIGHT_TYPE_ALTAR,
+
+        .is_walkable = true,
+        .is_transparent = false,
+    };
+    object_data[OBJECT_TYPE_BRAZIER] = (struct object_datum){
+        .name = "Brazier",
+        .glyph = '*',
+        .color = TCOD_light_amber,
+        .light_type = LIGHT_TYPE_BRAZIER,
+
+        .is_walkable = true,
+        .is_transparent = false,
+    };
+    object_data[OBJECT_TYPE_CHEST] = (struct object_datum){
+        .name = "Chest",
+        .glyph = '~',
+        .color = TCOD_sepia,
+        .light_type = LIGHT_TYPE_NONE,
+
+        .is_walkable = true,
+        .is_transparent = false,
+    };
+    object_data[OBJECT_TYPE_DOOR_CLOSED] = (struct object_datum){
+        .name = "Closed Door",
+        .glyph = '+',
+        .color = TCOD_white,
+        .light_type = LIGHT_TYPE_NONE,
+
+        .is_walkable = false,
+        .is_transparent = false,
+    };
+    object_data[OBJECT_TYPE_DOOR_OPEN] = (struct object_datum){
+        .name = "Open Door",
+        .glyph = '-',
+        .color = TCOD_white,
+        .light_type = LIGHT_TYPE_NONE,
+
+        .is_walkable = true,
+        .is_transparent = true,
+    };
+    object_data[OBJECT_TYPE_FOUNTAIN] = (struct object_datum){
+        .name = "Fountain",
+        .glyph = '{',
+        .color = TCOD_light_azure,
+        .light_type = LIGHT_TYPE_NONE,
+
+        .is_walkable = true,
+        .is_transparent = false,
+    };
+    object_data[OBJECT_TYPE_STAIR_DOWN] = (struct object_datum){
+        .name = "Stair Down",
+        .glyph = '>',
+        .color = TCOD_white,
+        .light_type = LIGHT_TYPE_NONE,
+
+        .is_walkable = true,
+        .is_transparent = true,
+    };
+    object_data[OBJECT_TYPE_STAIR_UP] = (struct object_datum){
+        .name = "Stair Up",
+        .glyph = '<',
+        .color = TCOD_white,
+        .light_type = LIGHT_TYPE_NONE,
+
+        .is_walkable = true,
+        .is_transparent = true,
+    };
+    object_data[OBJECT_TYPE_THRONE] = (struct object_datum){
+        .name = "Throne",
+        .glyph = '\\',
+        .color = TCOD_gold,
+        .light_type = LIGHT_TYPE_NONE,
+
+        .is_walkable = true,
+        .is_transparent = false,
+    };
+    object_data[OBJECT_TYPE_TRAP] = (struct object_datum){
+        .name = "Trap",
+        .glyph = '^',
+        .color = TCOD_white,
+        .light_type = LIGHT_TYPE_NONE,
+
+        .is_walkable = true,
+        .is_transparent = true,
     };
 
     actor_common = (struct actor_common){

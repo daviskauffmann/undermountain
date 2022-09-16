@@ -17,7 +17,7 @@ else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-add_compile_definitions(TCOD_IGNORE_DEPRECATED=1)
+target_compile_definitions(${PROJECT_NAME} PRIVATE -DTCOD_IGNORE_DEPRECATED=1)
 
 find_package(libtcod CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)

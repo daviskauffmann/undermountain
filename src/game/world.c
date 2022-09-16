@@ -182,11 +182,6 @@ void world_save(const char *filename)
             TCOD_zip_put_int(zip, object->type);
             TCOD_zip_put_int(zip, object->x);
             TCOD_zip_put_int(zip, object->y);
-            TCOD_zip_put_color(zip, object->color);
-            TCOD_zip_put_int(zip, object->light_radius);
-            TCOD_zip_put_color(zip, object->light_color);
-            TCOD_zip_put_float(zip, object->light_intensity);
-            TCOD_zip_put_int(zip, object->light_flicker);
         }
 
         TCOD_zip_put_int(zip, TCOD_list_size(map->actors));
@@ -440,13 +435,8 @@ void world_load(const char *filename)
             enum object_type type = TCOD_zip_get_int(zip);
             uint8_t x = (uint8_t)TCOD_zip_get_int(zip);
             uint8_t y = (uint8_t)TCOD_zip_get_int(zip);
-            TCOD_color_t color = TCOD_zip_get_color(zip);
-            int light_radius = TCOD_zip_get_int(zip);
-            TCOD_color_t light_color = TCOD_zip_get_color(zip);
-            float light_intensity = TCOD_zip_get_float(zip);
-            bool light_flicker = TCOD_zip_get_int(zip);
 
-            struct object *object = object_new(type, floor, x, y, color, light_radius, light_color, light_intensity, light_flicker);
+            struct object *object = object_new(type, floor, x, y);
 
             map->tiles[x][y].object = object;
             TCOD_list_push(map->objects, object);
@@ -786,7 +776,6 @@ void world_update(float delta_time)
             {
                 struct actor *const actor = *iterator;
 
-                actor_restore_mana_points(actor, 1);
                 actor->took_turn = false;
                 actor->energy += actor_calc_speed(actor);
 

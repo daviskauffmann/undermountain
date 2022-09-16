@@ -13,9 +13,9 @@
 
 extern struct tile_common tile_common;
 extern struct tile_datum tile_data[NUM_TILE_TYPES];
+extern struct light_datum light_data[NUM_LIGHT_TYPES];
 extern struct object_common object_common;
 extern struct object_datum object_data[NUM_OBJECT_TYPES];
-extern struct light_datum light_data[NUM_LIGHT_TYPES];
 extern struct actor_common actor_common;
 extern struct size_datum size_data[NUM_SIZES];
 extern struct race_datum race_data[NUM_RACES];

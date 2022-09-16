@@ -1,6 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "light.h"
 #include <libtcod.h>
 
 struct object_common
@@ -28,6 +29,9 @@ struct object_datum
 {
     const char *name;
     unsigned char glyph;
+    TCOD_color_t color;
+    enum light_type light_type;
+
     bool is_walkable;
     bool is_transparent;
 };
@@ -40,12 +44,6 @@ struct object
     uint8_t x;
     uint8_t y;
 
-    TCOD_color_t color;
-
-    int light_radius;
-    TCOD_color_t light_color;
-    float light_intensity;
-    bool light_flicker;
     TCOD_map_t light_fov;
 };
 
@@ -53,12 +51,7 @@ struct object *object_new(
     enum object_type type,
     uint8_t floor,
     uint8_t x,
-    uint8_t y,
-    TCOD_color_t color,
-    int light_radius,
-    TCOD_color_t light_color,
-    float light_intensity,
-    bool light_flicker);
+    uint8_t y);
 void object_delete(struct object *object);
 void object_calc_light(struct object *object);
 

@@ -104,9 +104,9 @@ static struct rect tooltip_rect;
 static TCOD_list_t tooltip_options;
 static struct tooltip_data tooltip_data;
 
-struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
+static struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
 {
-    struct tooltip_option *tooltip_option = malloc(sizeof(*tooltip_option));
+    struct tooltip_option *const tooltip_option = malloc(sizeof(*tooltip_option));
     assert(tooltip_option);
 
     tooltip_option->text = TCOD_strdup(text);
@@ -115,15 +115,17 @@ struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
     return tooltip_option;
 }
 
-void tooltip_option_delete(struct tooltip_option *tooltip_option)
+static void tooltip_option_delete(struct tooltip_option *tooltip_option)
 {
     free(tooltip_option->text);
+
     free(tooltip_option);
 }
 
 static void tooltip_options_add(char *text, bool (*on_click)(void))
 {
-    struct tooltip_option *tooltip_option = tooltip_option_new(text, on_click);
+    const struct tooltip_option *const tooltip_option = tooltip_option_new(text, on_click);
+
     TCOD_list_push(tooltip_options, tooltip_option);
 }
 
@@ -146,6 +148,7 @@ static void tooltip_options_clear(void)
 static void tooltip_show(void)
 {
     tooltip_options_clear();
+
     tooltip_rect.visible = true;
     tooltip_rect.x = mouse_x;
     tooltip_rect.y = mouse_y;
@@ -154,6 +157,7 @@ static void tooltip_show(void)
 static void tooltip_hide(void)
 {
     tooltip_options_clear();
+
     tooltip_rect.visible = false;
 }
 
@@ -1995,21 +1999,24 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                             if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                             {
-                                const float radius_sq = powf((float)object->light_radius, 2);
+                                const struct object_datum *const object_datum = &object_data[object->type];
+                                const struct light_datum *const light_datum = &light_data[object_datum->light_type];
+
+                                const float radius_sq = powf((float)light_datum->radius, 2);
                                 const float distance_sq =
-                                    powf((float)(x - object->x + (object->light_flicker ? dx : 0)), 2) +
-                                    powf((float)(y - object->y + (object->light_flicker ? dy : 0)), 2);
+                                    powf((float)(x - object->x + (light_datum->flicker ? dx : 0)), 2) +
+                                    powf((float)(y - object->y + (light_datum->flicker ? dy : 0)), 2);
                                 const float attenuation = CLAMP(
                                     0.0f,
                                     1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (object->light_flicker ? di : 0));
+                                    (radius_sq - distance_sq) / radius_sq + (light_datum->flicker ? di : 0));
 
-                                fg_r += object->light_color.r * attenuation;
-                                fg_g += object->light_color.g * attenuation;
-                                fg_b += object->light_color.b * attenuation;
-                                bg_r += fg_r * object->light_intensity * attenuation;
-                                bg_g += fg_g * object->light_intensity * attenuation;
-                                bg_b += fg_b * object->light_intensity * attenuation;
+                                fg_r += light_datum->color.r * attenuation;
+                                fg_g += light_datum->color.g * attenuation;
+                                fg_b += light_datum->color.b * attenuation;
+                                bg_r += fg_r * light_datum->intensity * attenuation;
+                                bg_g += fg_g * light_datum->intensity * attenuation;
+                                bg_b += fg_b * light_datum->intensity * attenuation;
                             }
                         }
 
@@ -2044,10 +2051,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_LIST_FOREACH(map->projectiles)
                         {
                             struct projectile *projectile = *iterator;
-                            const struct projectile_datum *const projectile_datum = &projectile_data[projectile->type];
 
                             if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
                             {
+                                const struct projectile_datum *const projectile_datum = &projectile_data[projectile->type];
                                 const struct light_datum *const light_datum = &light_data[projectile_datum->light_type];
 
                                 const float radius_sq = powf((float)light_datum->radius, 2);
@@ -2095,14 +2102,22 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     }
 
                     // apply tonemapping
-                    float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
-                    float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
-                    TCOD_color_t fg_color = TCOD_color_RGB((uint8_t)(fg_r * fg_mult), (uint8_t)(fg_g * fg_mult), (uint8_t)(fg_b * fg_mult));
-                    fg_color = TCOD_color_multiply(fg_color, tile_datum.color);
-                    float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
-                    float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
-                    TCOD_color_t bg_color = TCOD_color_RGB((uint8_t)(bg_r * bg_mult), (uint8_t)(bg_g * bg_mult), (uint8_t)(bg_b * bg_mult));
-                    bg_color = TCOD_color_multiply(bg_color, tile_datum.color);
+                    const float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
+                    const float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
+                    const TCOD_color_t fg_color = TCOD_color_multiply(
+                        TCOD_color_RGB(
+                            (uint8_t)(fg_r * fg_mult),
+                            (uint8_t)(fg_g * fg_mult),
+                            (uint8_t)(fg_b * fg_mult)),
+                        tile_datum.color);
+                    const float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
+                    const float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
+                    const TCOD_color_t bg_color = TCOD_color_multiply(
+                        TCOD_color_RGB(
+                            (uint8_t)(bg_r * bg_mult),
+                            (uint8_t)(bg_g * bg_mult),
+                            (uint8_t)(bg_b * bg_mult)),
+                        tile_datum.color);
 
                     if (tile->seen)
                     {
@@ -2175,7 +2190,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         // draw corpses
         TCOD_LIST_FOREACH(map->corpses)
         {
-            struct corpse *corpse = *iterator;
+            const struct corpse *const corpse = *iterator;
+
             if (TCOD_map_is_in_fov(world->player->fov, corpse->x, corpse->y))
             {
                 TCOD_console_set_char_foreground(
@@ -2194,31 +2210,36 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         // draw objects (except stairs, they are drawn later)
         TCOD_LIST_FOREACH(map->objects)
         {
-            struct object *object = *iterator;
+            const struct object *const object = *iterator;
+
             if (object->type != OBJECT_TYPE_STAIR_DOWN && object->type != OBJECT_TYPE_STAIR_UP &&
                 TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
             {
+                const struct object_datum *const object_datum = &object_data[object->type];
+
                 TCOD_console_set_char_foreground(
                     console,
                     object->x - view_rect.x,
                     object->y - view_rect.y,
-                    object->color);
+                    object_datum->color);
                 TCOD_console_set_char(
                     console,
                     object->x - view_rect.x,
                     object->y - view_rect.y,
-                    object_data[object->type].glyph);
+                    object_datum->glyph);
             }
         }
 
         // draw items
         TCOD_LIST_FOREACH(map->items)
         {
-            struct item *item = *iterator;
+            const struct item *const item = *iterator;
+
             if (TCOD_map_is_in_fov(world->player->fov, item->x, item->y))
             {
                 const struct item_datum *const item_datum = &item_data[item->type];
                 const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
+
                 TCOD_console_set_char_foreground(
                     console,
                     item->x - view_rect.x,
@@ -2272,27 +2293,31 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         // draw stairs (to make sure they are drawn on top of other entities)
         TCOD_LIST_FOREACH(map->objects)
         {
-            struct object *object = *iterator;
+            const struct object *const object = *iterator;
+
             if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) &&
                 TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
             {
+                const struct object_datum *const object_datum = &object_data[object->type];
+
                 TCOD_console_set_char_foreground(
                     console,
                     object->x - view_rect.x,
                     object->y - view_rect.y,
-                    object->color);
+                    object_datum->color);
                 TCOD_console_set_char(
                     console,
                     object->x - view_rect.x,
                     object->y - view_rect.y,
-                    object_data[object->type].glyph);
+                    object_datum->glyph);
             }
         }
 
         // draw actors
         TCOD_LIST_FOREACH(map->actors)
         {
-            struct actor *actor = *iterator;
+            const struct actor *const actor = *iterator;
+
             if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y))
             {
                 TCOD_color_t color = class_data[actor->class].color;
@@ -2300,6 +2325,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 {
                     color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade_coef);
                 }
+
                 TCOD_console_set_char_foreground(
                     console,
                     actor->x - view_rect.x,
@@ -2340,7 +2366,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             // descriptive text of target
             if (map_is_inside(target_x, target_y))
             {
-                struct tile *tile = &map->tiles[target_x][target_y];
+                const struct tile *const tile = &map->tiles[target_x][target_y];
+
                 if (TCOD_map_is_in_fov(world->player->fov, target_x, target_y))
                 {
                     if (tile->actor)
@@ -2357,7 +2384,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                         goto done;
                     }
-                    struct corpse *corpse = TCOD_list_peek(tile->corpses);
+
+                    const struct corpse *const corpse = TCOD_list_peek(tile->corpses);
                     if (corpse)
                     {
                         TCOD_console_printf_ex(
@@ -2372,7 +2400,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                         goto done;
                     }
-                    struct item *item = TCOD_list_peek(tile->items);
+
+                    const struct item *const item = TCOD_list_peek(tile->items);
                     if (item)
                     {
                         if (TCOD_list_size(tile->items) > 1)
@@ -2399,6 +2428,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                         goto done;
                     }
+
                     if (tile->object)
                     {
                         TCOD_console_printf_ex(
@@ -2411,6 +2441,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                         goto done;
                     }
+
                     TCOD_console_printf_ex(
                         console,
                         view_rect.width / 2,
@@ -2430,7 +2461,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             view_rect.height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
-                            "%s (known)",
+                            "%s (hidden)",
                             tile_data[tile->type].name);
                     }
                     else

@@ -655,52 +655,31 @@ void map_generate(struct map *const map, const enum map_type map_type)
                  map->tiles[x][y].object != NULL);
 
         enum object_type type = 0;
-        TCOD_color_t color = TCOD_white;
-        int light_radius = -1;
-        TCOD_color_t light_color = TCOD_white;
-        float light_intensity = 0.0f;
-        bool light_flicker = false;
         switch (TCOD_random_get_int(world->random, 0, 5))
         {
         case 0:
         {
             type = OBJECT_TYPE_ALTAR;
-            light_radius = 3;
-            light_color = TCOD_white;
-            light_intensity = 0.1f;
-            light_flicker = false;
         }
         break;
         case 1:
         {
-            TCOD_color_t random_color = TCOD_color_RGB(
-                (uint8_t)TCOD_random_get_int(world->random, 0, 255),
-                (uint8_t)TCOD_random_get_int(world->random, 0, 255),
-                (uint8_t)TCOD_random_get_int(world->random, 0, 255));
             type = OBJECT_TYPE_BRAZIER;
-            color = random_color;
-            light_radius = TCOD_random_get_int(world->random, 5, 20);
-            light_color = random_color;
-            light_intensity = TCOD_random_get_float(world->random, 0.1f, 0.2f);
-            light_flicker = TCOD_random_get_int(world->random, 0, 1) == 0;
         }
         break;
         case 2:
         {
             type = OBJECT_TYPE_CHEST;
-            color = TCOD_sepia;
         }
         break;
         case 3:
         {
             type = OBJECT_TYPE_FOUNTAIN;
-            color = TCOD_blue;
         }
         break;
         case 4:
         {
             type = OBJECT_TYPE_THRONE;
-            color = TCOD_yellow;
         }
         break;
         case 5:
@@ -714,12 +693,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             type,
             map->floor,
             (uint8_t)x,
-            (uint8_t)y,
-            color,
-            light_radius,
-            light_color,
-            light_intensity,
-            light_flicker);
+            (uint8_t)y);
 
         TCOD_list_push(map->objects, object);
 

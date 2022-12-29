@@ -103,6 +103,7 @@ enum item_type
     ITEM_TYPE_LONGSWORD_1,
     ITEM_TYPE_MACE,
     ITEM_TYPE_POTION_MINOR_HEAL,
+    ITEM_TYPE_POTION_MINOR_MANA,
     ITEM_TYPE_SCEPTER_OF_UNITY,
     ITEM_TYPE_SCROLL_LIGHTNING,
     ITEM_TYPE_SLING,
@@ -127,6 +128,8 @@ struct item_datum
     int enhancement_bonus;
 
     enum spell_type spell_type;
+
+    uint8_t level;
 
     bool unique;
     bool spawned;

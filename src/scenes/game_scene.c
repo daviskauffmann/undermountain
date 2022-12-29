@@ -771,8 +771,10 @@ static bool player_swing(enum direction direction)
             const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
             if (base_weapon_datum->ranged)
             {
-                actor_shoot(world->player, x, y);
-                return false;
+                if (actor_shoot(world->player, x, y))
+                {
+                    return true;
+                }
             }
         }
 
@@ -989,7 +991,7 @@ static struct scene *handle_event(SDL_Event *event)
         {
             if (world_player_can_take_turn())
             {
-                world->player->took_turn = true;
+                world->player->took_turn = actor_rest(world->player);
             }
         }
         break;
@@ -1223,7 +1225,7 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     if (world_player_can_take_turn())
                     {
-                        actor_shoot(world->player, target_x, target_y);
+                        world->player->took_turn = actor_shoot(world->player, target_x, target_y);
                         targeting_action = TARGETING_ACTION_NONE;
                     }
                 }
@@ -1624,7 +1626,7 @@ static struct scene *handle_event(SDL_Event *event)
                     {
                         if (ranged)
                         {
-                            actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
+                            world->player->took_turn = actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
                         }
                         else
                         {
@@ -1640,7 +1642,7 @@ static struct scene *handle_event(SDL_Event *event)
                         {
                             if (ranged)
                             {
-                                actor_shoot(world->player, tile->actor->x, tile->actor->y);
+                                world->player->took_turn = actor_shoot(world->player, tile->actor->x, tile->actor->y);
                             }
                             else
                             {
@@ -2142,7 +2144,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 0x2510, // 12 - SW   = ┐
                                 0x2524, // 13 - NSW  = ┤
                                 0x252C, // 14 - ESW  = ┬
-                                0x253C  // 15 - NESW = ┼
+                                0x253C, // 15 - NESW = ┼
                             };
 
                             int index = 0;
@@ -2162,6 +2164,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             {
                                 index |= 1 << 3;
                             }
+
                             glyph = glyphs[index];
                         }
 

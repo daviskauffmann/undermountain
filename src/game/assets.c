@@ -257,12 +257,26 @@ void assets_load(void)
         .size = SIZE_SMALL,
         .speed = 0.7f,
     };
+    race_data[RACE_GOBLIN] = (struct race_datum){
+        .name = "Goblin",
+        .glyph = 'g',
+
+        .size = SIZE_SMALL,
+        .speed = 0.7f,
+    };
     race_data[RACE_JACKAL] = (struct race_datum){
         .name = "Jackal",
         .glyph = 'j',
 
         .size = SIZE_SMALL,
-        .speed = 1.8f,
+        .speed = 1.5f,
+    };
+    race_data[RACE_KOBOLD] = (struct race_datum){
+        .name = "Kobold",
+        .glyph = 'k',
+
+        .size = SIZE_SMALL,
+        .speed = 0.7f,
     };
     race_data[RACE_ORC] = (struct race_datum){
         .name = "Orc",
@@ -315,11 +329,25 @@ void assets_load(void)
         .hit_die = "1d2",
         .mana_die = "0d0",
     };
+    class_data[CLASS_GOBLIN] = (struct class_datum){
+        .name = "Goblin",
+        .color = TCOD_lightest_grey,
+
+        .hit_die = "1d1",
+        .mana_die = "0d0",
+    };
     class_data[CLASS_JACKAL] = (struct class_datum){
         .name = "Jackal",
         .color = TCOD_lightest_grey,
 
         .hit_die = "1d2",
+        .mana_die = "0d0",
+    };
+    class_data[CLASS_KOBOLD] = (struct class_datum){
+        .name = "Kobold",
+        .color = TCOD_lightest_grey,
+
+        .hit_die = "1d1",
         .mana_die = "0d0",
     };
     class_data[CLASS_RAT] = (struct class_datum){
@@ -342,7 +370,7 @@ void assets_load(void)
         .race = RACE_BUGBEAR,
         .class = CLASS_FIGHTER,
 
-        .level = 1,
+        .level = 5,
 
         .ability_scores = {
             [ABILITY_STRENGTH] = 15,
@@ -351,12 +379,26 @@ void assets_load(void)
             [ABILITY_INTELLIGENCE] = 10,
         },
     };
+    monster_prototypes[MONSTER_GOBLIN] = (struct actor_prototype){
+        .name = "Goblin",
+        .race = RACE_GOBLIN,
+        .class = CLASS_GOBLIN,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 8,
+            [ABILITY_DEXTERITY] = 8,
+            [ABILITY_CONSTITUTION] = 11,
+            [ABILITY_INTELLIGENCE] = 10,
+        },
+    };
     monster_prototypes[MONSTER_JACKAL] = (struct actor_prototype){
         .name = "Jackal",
         .race = RACE_JACKAL,
         .class = CLASS_JACKAL,
 
-        .level = 1,
+        .level = 3,
 
         .ability_scores = {
             [ABILITY_STRENGTH] = 13,
@@ -365,12 +407,26 @@ void assets_load(void)
             [ABILITY_INTELLIGENCE] = 3,
         },
     };
+    monster_prototypes[MONSTER_KOBOLD] = (struct actor_prototype){
+        .name = "Kobold",
+        .race = RACE_KOBOLD,
+        .class = CLASS_KOBOLD,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 6,
+            [ABILITY_DEXTERITY] = 13,
+            [ABILITY_CONSTITUTION] = 11,
+            [ABILITY_INTELLIGENCE] = 10,
+        },
+    };
     monster_prototypes[MONSTER_ORC] = (struct actor_prototype){
         .name = "Orc",
         .race = RACE_ORC,
         .class = CLASS_FIGHTER,
 
-        .level = 1,
+        .level = 3,
 
         .ability_scores = {
             [ABILITY_STRENGTH] = 15,
@@ -838,6 +894,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -849,6 +907,8 @@ void assets_load(void)
         .color = TCOD_white,
 
         .enhancement_bonus = 1,
+
+        .level = 3,
 
         .unique = false,
         .spawned = false,
@@ -864,6 +924,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -877,6 +939,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -892,6 +956,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 5,
+
         .unique = true,
         .spawned = false,
     };
@@ -905,6 +971,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -920,6 +988,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -933,6 +1003,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -948,6 +1020,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 3,
+
         .unique = false,
         .spawned = false,
     };
@@ -961,6 +1035,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -976,6 +1052,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -989,6 +1067,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -1004,6 +1084,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -1017,6 +1099,8 @@ void assets_load(void)
         .enhancement_bonus = 1,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 3,
 
         .unique = false,
         .spawned = false,
@@ -1032,6 +1116,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -1045,6 +1131,8 @@ void assets_load(void)
         .enhancement_bonus = 1,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 3,
 
         .unique = false,
         .spawned = false,
@@ -1060,6 +1148,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -1073,6 +1163,24 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_MINOR_HEAL,
+
+        .level = 1,
+
+        .unique = false,
+        .spawned = false,
+    };
+    item_data[ITEM_TYPE_POTION_MINOR_MANA] = (struct item_datum){
+        .type = BASE_ITEM_TYPE_POTION,
+
+        .name = "Potion of Minor Mana",
+        .description = "",
+        .color = TCOD_blue,
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_MINOR_MANA,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -1088,6 +1196,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 10,
+
         .unique = true,
         .spawned = false,
     };
@@ -1101,6 +1211,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_LIGHTNING,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -1116,6 +1228,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -1129,6 +1243,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -1144,6 +1260,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -1157,6 +1275,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
 
         .unique = true,
         .spawned = false,
@@ -1172,6 +1292,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_FIREBALL,
 
+        .level = 1,
+
         .unique = false,
         .spawned = false,
     };
@@ -1185,6 +1307,8 @@ void assets_load(void)
         .enhancement_bonus = 0,
 
         .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
 
         .unique = false,
         .spawned = false,
@@ -1200,6 +1324,8 @@ void assets_load(void)
 
         .spell_type = SPELL_TYPE_NONE,
 
+        .level = 3,
+
         .unique = false,
         .spawned = false,
     };
@@ -1208,6 +1334,11 @@ void assets_load(void)
         .name = "Minor Heal",
         .range = SPELL_RANGE_SELF,
         .mana_cost = 1,
+    };
+    spell_data[SPELL_TYPE_MINOR_MANA] = (struct spell_datum){
+        .name = "Minor Mana",
+        .range = SPELL_RANGE_SELF,
+        .mana_cost = 0,
     };
     spell_data[SPELL_TYPE_LIGHTNING] = (struct spell_datum){
         .name = "Lightning",

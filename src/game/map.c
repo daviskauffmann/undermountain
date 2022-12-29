@@ -10,10 +10,14 @@
 #include "world.h"
 
 #define DOOR_CHANCE 0.5f
-#define SPAWN_OBJECTS 2
-#define SPAWN_ADVENTURERS 1
-#define SPAWN_MONSTERS 10
-#define SPAWN_ITEMS 5
+#define MIN_OBJECTS 1
+#define MAX_OBJECTS 3
+#define MIN_ADVENTURERS 1
+#define MAX_ADVENTURERS 3
+#define MIN_MONSTERS 10
+#define MAX_MONSTERS 20
+#define MIN_ITEMS 2
+#define MAX_ITEMS 8
 
 void map_init(struct map *const map, const uint8_t floor)
 {
@@ -369,7 +373,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
         const int min_room_size = 5;
         const int max_room_size = 15;
         const int room_buffer = 3;
-        const float prevent_overlap_chance = 0.5f;
+        const float prevent_overlap_chance = 0.75f;
 
         for (int i = 0; i < num_room_attempts; i++)
         {
@@ -574,12 +578,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
                     OBJECT_TYPE_DOOR_CLOSED,
                     map->floor,
                     (uint8_t)x,
-                    (uint8_t)y,
-                    TCOD_white,
-                    -1,
-                    TCOD_white,
-                    0.0f,
-                    false);
+                    (uint8_t)y);
 
                 TCOD_list_push(map->objects, object);
 
@@ -603,12 +602,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             OBJECT_TYPE_STAIR_DOWN,
             map->floor,
             map->stair_down_x,
-            map->stair_down_y,
-            TCOD_white,
-            -1,
-            TCOD_white,
-            0.0f,
-            false);
+            map->stair_down_y);
 
         TCOD_list_push(map->objects, stair_down);
 
@@ -630,12 +624,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             OBJECT_TYPE_STAIR_UP,
             map->floor,
             map->stair_up_x,
-            map->stair_up_y,
-            TCOD_white,
-            -1,
-            TCOD_white,
-            0.0f,
-            false);
+            map->stair_up_y);
 
         TCOD_list_push(map->objects, stair_up);
 
@@ -643,7 +632,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
     }
 
     // spawn objects
-    for (int i = 0; i < SPAWN_OBJECTS; i++)
+    const int num_objects = TCOD_random_get_int(world->random, MIN_OBJECTS, MAX_OBJECTS);
+    for (int i = 0; i < num_objects; i++)
     {
         int x, y;
         do
@@ -701,7 +691,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
     }
 
     // spawn adventurers
-    for (int i = 0; i < SPAWN_ADVENTURERS; i++)
+    const int num_adventurers = TCOD_random_get_int(world->random, MIN_ADVENTURERS, MAX_ADVENTURERS);
+    for (int i = 0; i < num_adventurers; i++)
     {
         int x, y;
         do
@@ -752,13 +743,19 @@ void map_generate(struct map *const map, const enum map_type map_type)
             (uint8_t)x,
             (uint8_t)y);
 
+        for (size_t j = 0; j < map->floor; j++)
+        {
+            actor_level_up(actor);
+        }
+
         TCOD_list_push(map->actors, actor);
 
         map->tiles[x][y].actor = actor;
     }
 
     // spawn monsters
-    for (int i = 0; i < SPAWN_MONSTERS; i++)
+    const int num_monsters = TCOD_random_get_int(world->random, MIN_MONSTERS, MAX_MONSTERS);
+    for (int i = 0; i < num_monsters; i++)
     {
         int x, y;
         do
@@ -771,8 +768,13 @@ void map_generate(struct map *const map, const enum map_type map_type)
                  map->tiles[x][y].object != NULL);
 
         // TODO: leveled lists
-        const enum monster monster = TCOD_random_get_int(world->random, 0, NUM_MONSTERS - 1);
-        const struct actor_prototype *const monster_prototype = &monster_prototypes[monster];
+        enum monster monster;
+        const struct actor_prototype *monster_prototype;
+        do
+        {
+            monster = TCOD_random_get_int(world->random, 0, NUM_MONSTERS - 1);
+            monster_prototype = &monster_prototypes[monster];
+        } while (monster_prototype->level > map->floor + 1);
 
         // TODO: monster packs
         struct actor *const actor = actor_new(
@@ -784,14 +786,17 @@ void map_generate(struct map *const map, const enum map_type map_type)
             (uint8_t)x,
             (uint8_t)y);
 
-        actor->level = monster_prototype->level;
+        while (actor->level != monster_prototype->level)
+        {
+            actor_level_up(actor);
+        }
 
         for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
         {
             actor->ability_scores[ability] = monster_prototype->ability_scores[ability];
         }
 
-        // TODO: default inventory/equipment
+        // TODO: specify inventory/equipment on the prototype
         if (monster == MONSTER_BUGBEAR)
         {
             actor->equipment[EQUIP_SLOT_WEAPON] = item_new(
@@ -814,7 +819,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
     }
 
     // spawn items
-    for (int i = 0; i < SPAWN_ITEMS; i++)
+    const int num_items = TCOD_random_get_int(world->random, MIN_ITEMS, MAX_ITEMS);
+    for (int i = 0; i < num_items; i++)
     {
         int x, y;
         do
@@ -829,7 +835,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
         do
         {
             type = TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1);
-        } while (item_data[type].unique ? !item_data[type].spawned : false);
+        } while (item_data[type].level > map->floor + 1 &&
+                 (item_data[type].unique && !item_data[type].spawned));
 
         struct item *const item = item_new(
             type,

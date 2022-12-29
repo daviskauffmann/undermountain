@@ -19,7 +19,9 @@ enum race
     // monster races
     RACE_BUGBEAR,
     RACE_DOG,
+    RACE_GOBLIN,
     RACE_JACKAL,
+    RACE_KOBOLD,
     RACE_ORC,
     RACE_RAT,
     RACE_SLIME,
@@ -36,7 +38,9 @@ enum class
 
     // monster classes
     CLASS_DOG,
+    CLASS_GOBLIN,
     CLASS_JACKAL,
+    CLASS_KOBOLD,
     CLASS_RAT,
     CLASS_SLIME,
 
@@ -62,7 +66,9 @@ enum ability
 enum monster
 {
     MONSTER_BUGBEAR,
+    MONSTER_GOBLIN,
     MONSTER_JACKAL,
+    MONSTER_KOBOLD,
     MONSTER_ORC,
     MONSTER_RAT,
     MONSTER_SLIME,
@@ -202,6 +208,7 @@ float actor_calc_speed(const struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fade(struct actor *actor, float delta_time);
 
+int actor_calc_sight_radius(struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 
 void actor_give_experience(struct actor *actor, int experience);
@@ -213,6 +220,7 @@ bool actor_can_take_turn(const struct actor *actor);
 struct actor *actor_find_closest_enemy(const struct actor *actor);
 
 bool actor_ai(struct actor *actor);
+bool actor_rest(struct actor *actor);
 bool actor_path_towards(
     struct actor *actor,
     int target_x, int target_y);

@@ -391,6 +391,16 @@ void actor_calc_fade(struct actor *const actor, const float delta_time)
     }
 }
 
+int actor_calc_sight_radius(struct actor *actor)
+{
+    if (actor->race == RACE_ELF)
+    {
+        return 3;
+    }
+
+    return 1;
+}
+
 void actor_calc_fov(struct actor *const actor)
 {
     if (actor->fov)
@@ -398,8 +408,8 @@ void actor_calc_fov(struct actor *const actor)
         TCOD_map_delete(actor->fov);
     }
 
-    struct map *map = &world->maps[actor->floor];
-    actor->fov = map_to_fov_map(map, actor->x, actor->y, 1);
+    const struct map *const map = &world->maps[actor->floor];
+    actor->fov = map_to_fov_map(map, actor->x, actor->y, actor_calc_sight_radius(actor));
 
     TCOD_map_t los_map = map_to_fov_map(map, actor->x, actor->y, 0);
 
@@ -663,9 +673,7 @@ bool actor_ai(struct actor *const actor)
             {
                 if (actor_shoot(actor, target->x, target->y))
                 {
-                    // do not set took_turn to true
-                    // the turn is not complete until the projectile is done moving
-                    return false;
+                    return true;
                 }
             }
             else
@@ -720,6 +728,8 @@ bool actor_ai(struct actor *const actor)
         }
     }
 
+    // TODO: resting
+
     // TODO: look for objects to interact with if needed (fountains already done, but consider other types)
 
     // TODO: look for items to pick up
@@ -742,6 +752,14 @@ bool actor_ai(struct actor *const actor)
 
         return true;
     }
+
+    return true;
+}
+
+bool actor_rest(struct actor *const actor)
+{
+    actor_restore_hit_points(actor, 1);
+    actor_restore_mana_points(actor, 1);
 
     return true;
 }
@@ -2137,6 +2155,22 @@ bool actor_cast_spell(
         actor_restore_hit_points(actor, health);
     }
     break;
+    case SPELL_TYPE_MINOR_MANA:
+    {
+        const int mana = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            TCOD_white,
+            "%s recovers %d mana.",
+            actor->name,
+            mana);
+
+        actor_restore_mana_points(actor, mana);
+    }
+    break;
     case SPELL_TYPE_LIGHTNING:
     {
         struct map *const map = &world->maps[actor->floor];
@@ -2264,7 +2298,7 @@ void actor_die(struct actor *const actor, struct actor *const killer)
 
     if (killer)
     {
-        const int experience = TCOD_random_get_int(world->random, 50, 100) * actor->level;
+        const int experience = actor->level * 100;
         actor_give_experience(killer, experience);
     }
 }

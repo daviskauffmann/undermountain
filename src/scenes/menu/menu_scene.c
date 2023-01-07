@@ -1,27 +1,13 @@
 #include "menu_scene.h"
 
-#include "../config.h"
-#include "../game/world.h"
-#include "../print.h"
-#include "../scene.h"
-#include "create_scene.h"
-#include "game_scene.h"
+#include "../../config.h"
+#include "../../game/world.h"
+#include "../../print.h"
+#include "../../scene.h"
+#include "../create/create_scene.h"
+#include "../game/game_scene.h"
+#include "option.h"
 #include <libtcod.h>
-
-enum option
-{
-    OPTION_NONE,
-
-    OPTION_START,
-    OPTION_QUIT,
-
-    NUM_OPTIONS
-};
-
-struct option_datum
-{
-    char *text;
-};
 
 static int mouse_x;
 static int mouse_y;

@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.0.0)
 
 project(undermountain LANGUAGES C)
 
+find_package(libtcod CONFIG REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
+
 file(
     GLOB_RECURSE SOURCE_FILES
     CONFIGURE_DEPENDS
@@ -19,9 +22,8 @@ endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE -DTCOD_IGNORE_DEPRECATED=1)
 
-find_package(libtcod CONFIG REQUIRED)
-find_package(SDL2 CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE
     libtcod::libtcod
-    SDL2::SDL2 SDL2::SDL2main
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )

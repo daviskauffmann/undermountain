@@ -31,7 +31,7 @@ static enum option option_mouseover(void)
     return OPTION_NONE;
 }
 
-static struct scene *select_option(enum option option)
+static struct scene *select_option(const enum option option)
 {
     switch (option)
     {
@@ -73,10 +73,14 @@ static struct scene *select_option(enum option option)
     return &menu_scene;
 }
 
-static void init(struct scene *previous_scene)
+static void init(struct scene *const previous_scene)
 {
-    option_data[OPTION_START].text = "Start";
-    option_data[OPTION_QUIT].text = "Quit";
+    option_data[OPTION_START] = (struct option_datum){
+        .text = "Start",
+    };
+    option_data[OPTION_QUIT] = (struct option_datum){
+        .text = "Quit",
+    };
 
     mouse_x = -1;
     mouse_y = -1;
@@ -86,7 +90,7 @@ static void uninit(void)
 {
 }
 
-static struct scene *handle_event(SDL_Event *event)
+static struct scene *handle_event(SDL_Event *const event)
 {
     switch (event->type)
     {
@@ -127,7 +131,7 @@ static struct scene *handle_event(SDL_Event *event)
         case SDLK_z:
         {
             const int alpha = event->key.keysym.sym - SDLK_a;
-            const enum option option = (enum option)(alpha + 1);
+            const enum option option = (enum option)(OPTION_START + alpha);
             return select_option(option);
         }
         break;
@@ -162,7 +166,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
     int y = 1;
 
-    for (enum option option = 1; option < NUM_OPTIONS; option++)
+    for (enum option option = OPTION_START; option < NUM_OPTIONS; option++)
     {
         console_print(
             console,

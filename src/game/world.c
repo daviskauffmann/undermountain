@@ -889,9 +889,9 @@ void world_update(float delta_time)
                 // slow down the AI if the hero is dead
                 if (world->hero_dead)
                 {
-                    static float timer = 0.0f;
+                    static float timer = 0;
                     timer += delta_time;
-                    if (timer < 0.1f)
+                    if (timer < 1)
                     {
                         break;
                     }

@@ -80,8 +80,8 @@ int main(int argc, char *argv[])
     scene->init(NULL);
 
     uint64_t current_time = 0;
-    bool running = true;
-    while (running)
+
+    while (scene)
     {
         const uint64_t previous_time = current_time;
         current_time = SDL_GetTicks64();
@@ -96,7 +96,12 @@ int main(int argc, char *argv[])
             {
             case SDL_QUIT:
             {
-                running = false;
+                if (scene)
+                {
+                    scene->uninit();
+                }
+
+                scene = NULL;
             }
             break;
             }
@@ -104,11 +109,6 @@ int main(int argc, char *argv[])
             if (scene)
             {
                 scene = scene->handle_event(&event);
-                if (!scene)
-                {
-                    running = false;
-                    break;
-                }
             }
         }
 
@@ -117,11 +117,6 @@ int main(int argc, char *argv[])
         if (scene)
         {
             scene = scene->update(console, delta_time);
-            if (!scene)
-            {
-                running = false;
-                break;
-            }
         }
 
         TCOD_context_present(context, console, NULL);

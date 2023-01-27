@@ -15,7 +15,7 @@ enum light_type
     NUM_LIGHT_TYPES
 };
 
-struct light_datum
+struct light_data
 {
     int radius;
     TCOD_color_t color;

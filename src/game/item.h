@@ -1,14 +1,9 @@
-#ifndef ITEM_H
-#define ITEM_H
+#ifndef GAME_ITEM_H
+#define GAME_ITEM_H
 
 #include "size.h"
 #include "spell.h"
 #include <libtcod.h>
-
-struct item_common
-{
-    char __placeholder;
-};
 
 enum equip_slot
 {
@@ -22,7 +17,7 @@ enum equip_slot
     NUM_EQUIP_SLOTS
 };
 
-struct equip_slot_datum
+struct equip_slot_data
 {
     char *name;
 };
@@ -61,7 +56,7 @@ enum base_item_type
     NUM_BASE_ITEM_TYPES
 };
 
-struct base_item_datum
+struct base_item_data
 {
     const char *name;
     unsigned char glyph;
@@ -117,7 +112,7 @@ enum item_type
     NUM_ITEM_TYPES
 };
 
-struct item_datum
+struct item_data
 {
     enum base_item_type type;
 

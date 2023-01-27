@@ -1,5 +1,5 @@
-#ifndef EXPLOSION_H
-#define EXPLOSION_H
+#ifndef GAME_EXPLOSION_H
+#define GAME_EXPLOSION_H
 
 #include <libtcod.h>
 

@@ -1,5 +1,5 @@
-#ifndef ACTOR_H
-#define ACTOR_H
+#ifndef GAME_ACTOR_H
+#define GAME_ACTOR_H
 
 #include "item.h"
 #include "light.h"
@@ -90,7 +90,7 @@ struct actor_common
     int turns_to_chase;
 };
 
-struct race_datum
+struct race_data
 {
     const char *name;
     unsigned char glyph;
@@ -99,7 +99,7 @@ struct race_datum
     float speed;
 };
 
-struct class_datum
+struct class_data
 {
     const char *name;
     TCOD_color_t color;
@@ -110,7 +110,7 @@ struct class_datum
     // TODO: base attack bonus
 };
 
-struct ability_datum
+struct ability_data
 {
     const char *name;
 };
@@ -231,12 +231,16 @@ bool actor_move(
     struct actor *actor,
     int x, int y);
 bool actor_swap(struct actor *actor, struct actor *other);
+bool actor_interact(struct actor *actor, struct object *object);
 bool actor_open_door(
     struct actor *actor,
     int x, int y);
 bool actor_close_door(
     struct actor *actor,
     int x, int y);
+bool actor_change_floor(
+    struct actor *actor,
+    uint8_t floor);
 bool actor_descend(
     struct actor *actor,
     bool is_leader,

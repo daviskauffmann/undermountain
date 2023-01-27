@@ -13,6 +13,8 @@ struct actor *hero;
 
 static void init(struct scene *previous_scene)
 {
+    previous_scene;
+
     world_init();
 
     hero = actor_new(
@@ -99,6 +101,8 @@ static struct scene *handle_event(SDL_Event *event)
 
 static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
+    delta_time;
+
     int y = 1;
 
     console_print(

@@ -1,5 +1,5 @@
-#ifndef MESSAGE_H
-#define MESSAGE_H
+#ifndef GAME_MESSAGE_H
+#define GAME_MESSAGE_H
 
 #include <libtcod.h>
 

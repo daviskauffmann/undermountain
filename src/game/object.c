@@ -43,14 +43,14 @@ void object_calc_light(struct object *const object)
         object->light_fov = NULL;
     }
 
-    const struct light_datum *const light_datum = &light_data[object_data[object->type].light_type];
+    const struct light_data *const light_data = &light_database[object_database[object->type].light_type];
 
-    if (light_datum->radius >= 0)
+    if (light_data->radius >= 0)
     {
         object->light_fov = map_to_fov_map(
             &world->maps[object->floor],
             object->x,
             object->y,
-            light_datum->radius);
+            light_data->radius);
     }
 }

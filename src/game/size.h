@@ -12,7 +12,7 @@ enum size
     NUM_SIZES
 };
 
-struct size_datum
+struct size_data
 {
     const char *name;
 

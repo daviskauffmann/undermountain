@@ -20,14 +20,14 @@ struct item *item_new(
     item->x = x;
     item->y = y;
 
-    item->stack = CLAMP(0, base_item_data[item_data[type].type].max_stack, stack);
+    item->stack = CLAMP(0, base_item_database[item_database[type].type].max_stack, stack);
 
-    item->durability = base_item_data[item_data[type].type].max_durability;
+    item->durability = base_item_database[item_database[type].type].max_durability;
 
-    if (item_data[type].unique)
+    if (item_database[type].unique)
     {
         // assert(!item_data[type].spawned);
-        item_data[type].spawned = true;
+        item_database[type].spawned = true; // TODO: not super liking having the assets be stateful
     }
 
     return item;

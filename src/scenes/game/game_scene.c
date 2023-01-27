@@ -12,7 +12,18 @@
 #include "../../game/world.h"
 #include "../../print.h"
 #include "../../scene.h"
+#include "../../util.h"
 #include "../menu/menu_scene.h"
+#include "character_action.h"
+#include "direction.h"
+#include "directional_action.h"
+#include "inventory_action.h"
+#include "panel.h"
+#include "rect.h"
+#include "spellbook_action.h"
+#include "targeting_action.h"
+#include "tooltip_data.h"
+#include "tooltip_option.h"
 #include <assert.h>
 #include <float.h>
 #include <libtcod.h>
@@ -43,39 +54,10 @@ static struct actor *automove_actor;
 
 /* Targeting */
 
-enum targeting_action
-{
-    TARGETING_ACTION_NONE,
-    TARGETING_ACTION_LOOK,
-    TARGETING_ACTION_EXAMINE,
-    TARGETING_ACTION_READ,
-    TARGETING_ACTION_SHOOT,
-    TARGETING_ACTION_SPELL
-};
-
 static enum targeting_action targeting_action;
 static int target_x;
 static int target_y;
 static struct item *targeting_item;
-
-/* Generic rect */
-
-struct rect
-{
-    TCOD_console_t console;
-    bool visible;
-    int x;
-    int y;
-    int width;
-    int height;
-};
-
-static bool rect_is_inside(struct rect rect, int x, int y)
-{
-    return rect.visible &&
-           x >= rect.x && x < rect.x + rect.width &&
-           y >= rect.y && y < rect.y + rect.height;
-}
 
 /* Viewport */
 
@@ -83,80 +65,41 @@ static struct rect view_rect;
 
 /* Tooltips */
 
-struct tooltip_data
-{
-    int x;
-    int y;
-    struct object *object;
-    struct item *item;
-    struct actor *actor;
-    enum equip_slot equip_slot;
-    enum spell_type spell_type;
-};
-
-struct tooltip_option
-{
-    char *text;
-    bool (*on_click)(void);
-};
-
 static struct rect tooltip_rect;
 static TCOD_list_t tooltip_options;
 static struct tooltip_data tooltip_data;
 
-static struct tooltip_option *tooltip_option_new(char *text, bool (*on_click)(void))
-{
-    struct tooltip_option *const tooltip_option = malloc(sizeof(*tooltip_option));
-    assert(tooltip_option);
-
-    tooltip_option->text = TCOD_strdup(text);
-    tooltip_option->on_click = on_click;
-
-    return tooltip_option;
-}
-
-static void tooltip_option_delete(struct tooltip_option *tooltip_option)
-{
-    free(tooltip_option->text);
-
-    free(tooltip_option);
-}
-
-static void tooltip_options_add(char *text, bool (*on_click)(void))
+static void add_tooltip_option(char *const text, bool (*const on_click)(void))
 {
     const struct tooltip_option *const tooltip_option = tooltip_option_new(text, on_click);
 
     TCOD_list_push(tooltip_options, tooltip_option);
 }
 
-static void tooltip_options_clear(void)
+static void clear_tooltip_options(void)
 {
-    TCOD_LIST_FOREACH(tooltip_options)
+    TCOD_LIST_FOREACH(tooltip_options, iterator)
     {
-        struct tooltip_option *tooltip_option = *iterator;
+        struct tooltip_option *const tooltip_option = *iterator;
 
-        iterator = TCOD_list_remove_iterator_fast(tooltip_options, iterator);
         tooltip_option_delete(tooltip_option);
-
-        if (!iterator)
-        {
-            break;
-        }
     }
+
+    TCOD_list_clear(tooltip_options);
 }
 
-static void tooltip_show(void)
+static void show_tooltip(void)
 {
-    tooltip_options_clear();
+    clear_tooltip_options();
 
     tooltip_rect.visible = true;
     tooltip_rect.x = mouse_x;
     tooltip_rect.y = mouse_y;
 }
 
-static void tooltip_hide(void)
+static void hide_tooltip(void)
 {
-    tooltip_options_clear();
+    clear_tooltip_options();
 
     tooltip_rect.visible = false;
 }
@@ -167,9 +110,9 @@ static struct tooltip_option *tooltip_option_mouseover(void)
     {
         int y = 1;
 
-        TCOD_LIST_FOREACH(tooltip_options)
+        TCOD_LIST_FOREACH(tooltip_options, iterator)
         {
-            struct tooltip_option *option = *iterator;
+            struct tooltip_option *const option = *iterator;
 
             if (mouse_x > tooltip_rect.x &&
                 mouse_x < tooltip_rect.x + tooltip_rect.width &&
@@ -199,26 +142,11 @@ static struct rect status_rect;
 
 /* Side panel */
 
-enum panel
-{
-    PANEL_CHARACTER,
-    PANEL_EXAMINE,
-    PANEL_INVENTORY,
-    PANEL_SPELLBOOK,
-
-    NUM_PANELS
-};
-
-struct panel_state
-{
-    int scroll;
-};
-
 static struct rect panel_rect;
 static struct panel_state panel_state[NUM_PANELS];
 static enum panel current_panel;
 
-static void panel_toggle(enum panel panel)
+static void toggle_panel(const enum panel panel)
 {
     if (panel_rect.visible)
     {
@@ -238,11 +166,11 @@ static void panel_toggle(enum panel panel)
     }
 }
 
-static void panel_show(enum panel panel)
+static void show_panel(const enum panel panel)
 {
     if (!panel_rect.visible || current_panel != panel)
     {
-        panel_toggle(panel);
+        toggle_panel(panel);
     }
 }
 
@@ -296,7 +224,7 @@ static struct item *panel_inventory_item_mouseover(void)
     {
         int y = 1;
 
-        TCOD_LIST_FOREACH(world->player->items)
+        TCOD_LIST_FOREACH(world->player->items, iterator)
         {
             struct item *const item = *iterator;
 
@@ -320,7 +248,7 @@ static enum spell_type panel_spellbook_spell_type_mouseover(void)
     {
         int y = 1;
 
-        TCOD_LIST_FOREACH(world->player->known_spell_types)
+        TCOD_LIST_FOREACH(world->player->known_spell_types, iterator)
         {
             const enum spell_type spell_type = (size_t)(*iterator);
 
@@ -338,107 +266,7 @@ static enum spell_type panel_spellbook_spell_type_mouseover(void)
     return SPELL_TYPE_NONE;
 }
 
-/* Cardianl directions */
-
-enum direction
-{
-    DIRECTION_N,
-    DIRECTION_NE,
-    DIRECTION_E,
-    DIRECTION_SE,
-    DIRECTION_S,
-    DIRECTION_SW,
-    DIRECTION_W,
-    DIRECTION_NW,
-};
-
-enum direction get_direction_from_angle(float angle)
-{
-    if ((angle > 11 * PI / 6 && angle <= 2 * PI) || (angle >= 0 && angle < PI / 6))
-    {
-        return DIRECTION_E;
-    }
-    else if (angle >= PI / 6 && angle <= PI / 3)
-    {
-        return DIRECTION_NE;
-    }
-    else if (angle > PI / 3 && angle < 2 * PI / 3)
-    {
-        return DIRECTION_N;
-    }
-    else if (angle >= 2 * PI / 3 && angle <= 5 * PI / 6)
-    {
-        return DIRECTION_NW;
-    }
-    else if (angle > 5 * PI / 6 && angle < 7 * PI / 6)
-    {
-        return DIRECTION_W;
-    }
-    else if (angle >= 7 * PI / 6 && angle <= 4 * PI / 3)
-    {
-        return DIRECTION_SW;
-    }
-    else if (angle > 4 * PI / 3 && angle < 5 * PI / 3)
-    {
-        return DIRECTION_S;
-    }
-    else if (angle >= 5 * PI / 3 && angle <= 11 * PI / 6)
-    {
-        return DIRECTION_SE;
-    }
-    assert(false);
-    return -1;
-}
-
-void get_neighbor_by_direction(int x, int y, enum direction direction, int *nx, int *ny)
-{
-    *nx = x;
-    *ny = y;
-    switch (direction)
-    {
-    case DIRECTION_N:
-        (*ny)--;
-        break;
-    case DIRECTION_NE:
-        (*ny)--;
-        (*nx)++;
-        break;
-    case DIRECTION_E:
-        (*nx)++;
-        break;
-    case DIRECTION_SE:
-        (*nx)++;
-        (*ny)++;
-        break;
-    case DIRECTION_S:
-        (*ny)++;
-        break;
-    case DIRECTION_SW:
-        (*nx)--;
-        (*ny)++;
-        break;
-    case DIRECTION_W:
-        (*nx)--;
-        break;
-    case DIRECTION_NW:
-        (*nx)--;
-        (*ny)--;
-        break;
-    }
-}
-
 /* Directional actions */
-
-enum directional_action
-{
-    DIRECTIONAL_ACTION_NONE,
-    DIRECTIONAL_ACTION_CLOSE_DOOR,
-    DIRECTIONAL_ACTION_DRINK,
-    DIRECTIONAL_ACTION_OPEN_CHEST,
-    DIRECTIONAL_ACTION_OPEN_DOOR,
-    DIRECTIONAL_ACTION_PRAY,
-    DIRECTIONAL_ACTION_SIT
-};
 
 static enum directional_action directional_action;
 
@@ -495,16 +323,6 @@ static bool do_directional_action(enum direction direction)
 
 /* Inventory menu actions */
 
-enum inventory_action
-{
-    INVENTORY_ACTION_NONE,
-    INVENTORY_ACTION_DROP,
-    INVENTORY_ACTION_EQUIP,
-    INVENTORY_ACTION_EXAMINE,
-    INVENTORY_ACTION_QUAFF,
-    INVENTORY_ACTION_READ,
-};
-
 static enum inventory_action inventory_action;
 
 static bool do_inventory_action(struct item *const item)
@@ -536,7 +354,7 @@ static bool do_inventory_action(struct item *const item)
     case INVENTORY_ACTION_EXAMINE:
     {
         // TODO: send examine target to ui
-        panel_show(PANEL_EXAMINE);
+        show_panel(PANEL_EXAMINE);
     }
     break;
     case INVENTORY_ACTION_QUAFF:
@@ -551,11 +369,11 @@ static bool do_inventory_action(struct item *const item)
     {
         bool needs_target = false;
 
-        const struct item_datum *const item_datum = &item_data[item->type];
-        if (item_datum->type == BASE_ITEM_TYPE_SCROLL)
+        const struct item_data *const item_data = &item_database[item->type];
+        if (item_data->type == BASE_ITEM_TYPE_SCROLL)
         {
-            const struct spell_datum *const spell_datum = &spell_data[item_datum->spell_type];
-            if (spell_datum->range == SPELL_RANGE_TARGET)
+            const struct spell_data *const spell_data = &spell_database[item_data->spell_type];
+            if (spell_data->range == SPELL_RANGE_TARGET)
             {
                 needs_target = true;
             }
@@ -585,14 +403,6 @@ static bool do_inventory_action(struct item *const item)
 }
 
 /* Character menu actions */
-
-enum character_action
-{
-    CHARACTER_ACTION_NONE,
-    CHARACTER_ACTION_ABILITY_ADD_POINT,
-    CHARACTER_ACTION_EQUIPMENT_EXAMINE,
-    CHARACTER_ACTION_EQUIPMENT_UNEQUIP
-};
 
 static enum character_action character_action;
 
@@ -644,7 +454,7 @@ static bool do_character_action_equipment(const enum equip_slot equip_slot)
     case CHARACTER_ACTION_EQUIPMENT_EXAMINE:
     {
         // TODO: send examine target to ui
-        panel_show(PANEL_EXAMINE);
+        show_panel(PANEL_EXAMINE);
     }
     break;
     case CHARACTER_ACTION_EQUIPMENT_UNEQUIP:
@@ -663,12 +473,6 @@ static bool do_character_action_equipment(const enum equip_slot equip_slot)
 }
 
 /* Spellbook actions */
-
-enum spellbook_action
-{
-    SPELLBOOK_ACTION_NONE,
-    SPELLBOOK_ACTION_SELECT
-};
 
 static enum spellbook_action spellbook_action;
 
@@ -692,7 +496,7 @@ static bool do_spellbook_action(const enum spell_type spell_type)
             world->player->y,
             TCOD_yellow,
             "%s selected.",
-            spell_data[spell_type].name);
+            spell_database[spell_type].name);
     }
     break;
     }
@@ -709,6 +513,8 @@ static float noise_x;
 
 static void init(struct scene *previous_scene)
 {
+    previous_scene;
+
     view_rect.console = NULL;
     view_rect.visible = true;
 
@@ -748,7 +554,7 @@ static void uninit(void)
 
     TCOD_console_delete(hud_rect.console);
 
-    TCOD_LIST_FOREACH(tooltip_options)
+    TCOD_LIST_FOREACH(tooltip_options, iterator)
     {
         tooltip_option_delete(*iterator);
     }
@@ -764,12 +570,12 @@ static bool player_swing(enum direction direction)
 
     if (map_is_inside(x, y))
     {
-        struct item *weapon = world->player->equipment[EQUIP_SLOT_WEAPON];
+        const struct item *const weapon = world->player->equipment[EQUIP_SLOT_WEAPON];
         if (weapon)
         {
-            const struct item_datum *const weapon_datum = &item_data[weapon->type];
-            const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
-            if (base_weapon_datum->ranged)
+            const struct item_data *const weapon_data = &item_database[weapon->type];
+            const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+            if (base_weapon_data->ranged)
             {
                 if (actor_shoot(world->player, x, y))
                 {
@@ -779,8 +585,10 @@ static bool player_swing(enum direction direction)
         }
 
         bool hit = false;
-        struct map *map = &world->maps[world->player->floor];
-        struct tile *tile = &map->tiles[x][y];
+
+        const struct map *const map = &world->maps[world->player->floor];
+        const struct tile *const tile = &map->tiles[x][y];
+
         if (tile->actor && tile->actor != world->player)
         {
             hit = true;
@@ -789,6 +597,7 @@ static bool player_swing(enum direction direction)
                 return true;
             }
         }
+
         if (tile->object)
         {
             hit = true;
@@ -797,6 +606,7 @@ static bool player_swing(enum direction direction)
                 return true;
             }
         }
+
         if (!hit)
         {
             world_log(
@@ -832,7 +642,14 @@ static bool player_interact(SDL_Event *event, enum direction direction)
     }
 }
 
-static bool toolip_option_on_click_move(void)
+static bool on_click_add_point(void)
+{
+    actor_add_ability_point(world->player, tooltip_data.ability);
+
+    return false;
+}
+
+static bool on_click_move(void)
 {
     automoving = true;
 
@@ -851,14 +668,101 @@ static bool toolip_option_on_click_move(void)
     return false;
 }
 
-static bool toolip_option_on_click_equip(void)
+static bool on_click_shoot(void)
+{
+    return actor_shoot(world->player, tooltip_data.x, tooltip_data.y);
+}
+
+static bool on_click_examine(void)
+{
+    // TODO
+    return false;
+}
+
+static bool on_click_interact(void)
+{
+    // TODO: only if adjacent to object, if not, this should automove to the object
+    return actor_interact(world->player, tooltip_data.object);
+}
+
+static bool on_click_bash(void)
+{
+    return actor_bash(world->player, tooltip_data.object);
+}
+
+static bool on_click_swap(void)
+{
+    return actor_swap(world->player, tooltip_data.actor);
+}
+
+static bool on_click_attack(void)
+{
+    return actor_attack(world->player, tooltip_data.actor, NULL);
+}
+
+static bool on_click_character_sheet(void)
+{
+    show_panel(PANEL_CHARACTER);
+
+    return false;
+}
+
+static bool on_click_inventory(void)
+{
+    show_panel(PANEL_INVENTORY);
+
+    return false;
+}
+
+static bool on_click_spellbook(void)
+{
+    show_panel(PANEL_SPELLBOOK);
+
+    return false;
+}
+
+static bool on_click_drop(void)
+{
+    return actor_drop(world->player, tooltip_data.item);
+}
+
+static bool on_click_quaff(void)
+{
+    return actor_quaff(world->player, tooltip_data.item);
+}
+
+static bool on_click_equip(void)
 {
     return actor_equip(world->player, tooltip_data.item);
 }
 
-static bool toolip_option_on_click_unequip(void)
+static bool on_click_unequip(void)
 {
     return actor_unequip(world->player, tooltip_data.equip_slot);
+}
+
+static bool on_click_unready(void)
+{
+    world->player->readied_spell_type = SPELL_TYPE_NONE;
+
+    return false;
+}
+
+static bool on_click_ready(void)
+{
+    world->player->readied_spell_type = tooltip_data.spell_type;
+
+    return false;
+}
+
+static bool on_click_cast(void)
+{
+    return actor_cast_spell(
+        world->player,
+        tooltip_data.spell_type,
+        tooltip_data.x,
+        tooltip_data.y,
+        true);
 }
 
 static struct scene *handle_event(SDL_Event *event)
@@ -884,7 +788,7 @@ static struct scene *handle_event(SDL_Event *event)
         {
             if (tooltip_rect.visible)
             {
-                tooltip_hide();
+                hide_tooltip();
             }
             else if (directional_action != DIRECTIONAL_ACTION_NONE ||
                      inventory_action != INVENTORY_ACTION_NONE ||
@@ -1098,10 +1002,10 @@ static struct scene *handle_event(SDL_Event *event)
         {
             bool handled = false;
 
-            int alpha = event->key.keysym.sym - SDLK_a;
+            const int alpha = event->key.keysym.sym - SDLK_a;
             if (inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(world->player->items))
             {
-                struct item *item = TCOD_list_get(world->player->items, alpha);
+                struct item *const item = TCOD_list_get(world->player->items, alpha);
 
                 world->player->took_turn = do_inventory_action(item);
 
@@ -1110,7 +1014,7 @@ static struct scene *handle_event(SDL_Event *event)
             else if ((character_action == CHARACTER_ACTION_ABILITY_ADD_POINT) &&
                      alpha >= 0 && alpha < NUM_ABILITIES)
             {
-                enum ability_type ability = (enum ability)alpha;
+                const enum ability_type ability = alpha;
 
                 world->player->took_turn = do_character_action_ability(ability);
 
@@ -1120,7 +1024,7 @@ static struct scene *handle_event(SDL_Event *event)
                       character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP) &&
                      alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
             {
-                enum equip_slot equip_slot = (enum equip_slot)(alpha + 1);
+                const enum equip_slot equip_slot = alpha + 1;
 
                 world->player->took_turn = do_character_action_equipment(equip_slot);
 
@@ -1128,7 +1032,7 @@ static struct scene *handle_event(SDL_Event *event)
             }
             else if (spellbook_action != SPELLBOOK_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(world->player->known_spell_types))
             {
-                enum spell_type spell_type = (long long)TCOD_list_get(world->player->known_spell_types, alpha);
+                const enum spell_type spell_type = (size_t)TCOD_list_get(world->player->known_spell_types, alpha);
 
                 world->player->took_turn = do_spellbook_action(spell_type);
 
@@ -1144,7 +1048,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
             case SDLK_a:
             {
-                panel_show(PANEL_CHARACTER);
+                show_panel(PANEL_CHARACTER);
                 character_action = CHARACTER_ACTION_ABILITY_ADD_POINT;
 
                 world_log(
@@ -1157,14 +1061,14 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_b:
             {
-                panel_toggle(PANEL_SPELLBOOK);
+                toggle_panel(PANEL_SPELLBOOK);
             }
             break;
             case SDLK_c:
             {
                 if (event->key.keysym.mod & KMOD_SHIFT)
                 {
-                    panel_toggle(PANEL_CHARACTER);
+                    toggle_panel(PANEL_CHARACTER);
                 }
                 else
                 {
@@ -1194,7 +1098,7 @@ static struct scene *handle_event(SDL_Event *event)
                 }
                 else
                 {
-                    panel_show(PANEL_INVENTORY);
+                    show_panel(PANEL_INVENTORY);
                     inventory_action = INVENTORY_ACTION_DROP;
 
                     world_log(
@@ -1208,7 +1112,7 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_e:
             {
-                panel_show(PANEL_INVENTORY);
+                show_panel(PANEL_INVENTORY);
                 inventory_action = INVENTORY_ACTION_EQUIP;
 
                 world_log(
@@ -1233,7 +1137,7 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     targeting_action = TARGETING_ACTION_SHOOT;
 
-                    struct actor *target = actor_find_closest_enemy(world->player);
+                    const struct actor *target = actor_find_closest_enemy(world->player);
                     if (!target)
                     {
                         target = world->player;
@@ -1259,7 +1163,7 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_i:
             {
-                panel_toggle(PANEL_INVENTORY);
+                toggle_panel(PANEL_INVENTORY);
             }
             break;
             case SDLK_k:
@@ -1321,7 +1225,7 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_q:
             {
-                panel_show(PANEL_INVENTORY);
+                show_panel(PANEL_INVENTORY);
                 inventory_action = INVENTORY_ACTION_QUAFF;
 
                 world_log(
@@ -1348,7 +1252,7 @@ static struct scene *handle_event(SDL_Event *event)
                 }
                 else
                 {
-                    panel_show(PANEL_INVENTORY);
+                    show_panel(PANEL_INVENTORY);
                     inventory_action = INVENTORY_ACTION_READ;
 
                     world_log(
@@ -1410,7 +1314,7 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_u:
             {
-                panel_show(PANEL_CHARACTER);
+                show_panel(PANEL_CHARACTER);
                 character_action = CHARACTER_ACTION_EQUIPMENT_UNEQUIP;
 
                 world_log(
@@ -1425,7 +1329,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (event->key.keysym.mod & KMOD_SHIFT)
                 {
-                    panel_show(PANEL_INVENTORY);
+                    show_panel(PANEL_INVENTORY);
                     inventory_action = INVENTORY_ACTION_EXAMINE;
 
                     world_log(
@@ -1439,7 +1343,7 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     if (event->key.keysym.mod & KMOD_CTRL)
                     {
-                        panel_show(PANEL_CHARACTER);
+                        show_panel(PANEL_CHARACTER);
                         character_action = CHARACTER_ACTION_EQUIPMENT_EXAMINE;
 
                         world_log(
@@ -1453,7 +1357,7 @@ static struct scene *handle_event(SDL_Event *event)
                     {
                         if (targeting_action == TARGETING_ACTION_EXAMINE)
                         {
-                            panel_show(PANEL_EXAMINE); // TODO: send examine target to ui
+                            show_panel(PANEL_EXAMINE); // TODO: send examine target to ui
                             targeting_action = TARGETING_ACTION_NONE;
                         }
                         else
@@ -1470,7 +1374,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (event->key.keysym.mod & KMOD_SHIFT)
                 {
-                    panel_show(PANEL_SPELLBOOK);
+                    show_panel(PANEL_SPELLBOOK);
                     spellbook_action = SPELLBOOK_ACTION_SELECT;
 
                     world_log(
@@ -1484,7 +1388,7 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     if (world->player->readied_spell_type != SPELL_TYPE_NONE)
                     {
-                        enum spell_range spell_range = spell_data[world->player->readied_spell_type].range;
+                        const enum spell_range spell_range = spell_database[world->player->readied_spell_type].range;
                         switch (spell_range)
                         {
                         case SPELL_RANGE_SELF:
@@ -1546,8 +1450,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (rect_is_inside(tooltip_rect, mouse_x, mouse_y))
                 {
-                    struct tooltip_option *tooltip_option = tooltip_option_mouseover();
-
+                    const struct tooltip_option *const tooltip_option = tooltip_option_mouseover();
                     if (tooltip_option)
                     {
                         if (tooltip_option->on_click)
@@ -1555,20 +1458,19 @@ static struct scene *handle_event(SDL_Event *event)
                             world->player->took_turn = tooltip_option->on_click();
                         }
 
-                        tooltip_hide();
+                        hide_tooltip();
                     }
                 }
                 else
                 {
-                    tooltip_hide();
+                    hide_tooltip();
                 }
             }
             else if (rect_is_inside(panel_rect, mouse_x, mouse_y))
             {
                 if (inventory_action != INVENTORY_ACTION_NONE)
                 {
-                    struct item *item = panel_inventory_item_mouseover();
-
+                    struct item *const item = panel_inventory_item_mouseover();
                     if (item)
                     {
                         world->player->took_turn = do_inventory_action(item);
@@ -1578,8 +1480,7 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
                     {
-                        enum ability ability = panel_character_ability_mouseover();
-
+                        const enum ability ability = panel_character_ability_mouseover();
                         if (ability != -1)
                         {
                             world->player->took_turn = do_character_action_ability(ability);
@@ -1588,8 +1489,7 @@ static struct scene *handle_event(SDL_Event *event)
                     else if (character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
                              character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP)
                     {
-                        enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
-
+                        const enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
                         if (equip_slot != EQUIP_SLOT_NONE)
                         {
                             world->player->took_turn = do_character_action_equipment(equip_slot);
@@ -1598,8 +1498,7 @@ static struct scene *handle_event(SDL_Event *event)
                 }
                 else if (spellbook_action != SPELLBOOK_ACTION_NONE)
                 {
-                    enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
-
+                    const enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
                     if (spell_type != SPELL_TYPE_NONE)
                     {
                         world->player->took_turn = do_spellbook_action(spell_type);
@@ -1611,12 +1510,12 @@ static struct scene *handle_event(SDL_Event *event)
                 if (world_player_can_take_turn())
                 {
                     bool ranged = false;
-                    struct item *weapon = world->player->equipment[EQUIP_SLOT_WEAPON];
+                    const struct item *const weapon = world->player->equipment[EQUIP_SLOT_WEAPON];
                     if (weapon)
                     {
-                        const struct item_datum *const item_datum = &item_data[weapon->type];
-                        const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
-                        if (base_item_datum->ranged)
+                        const struct item_data *const item_data = &item_database[weapon->type];
+                        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+                        if (base_item_data->ranged)
                         {
                             ranged = true;
                         }
@@ -1630,14 +1529,14 @@ static struct scene *handle_event(SDL_Event *event)
                         }
                         else
                         {
-                            float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
-                            enum direction direction = get_direction_from_angle(angle);
+                            const float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
+                            const enum direction direction = get_direction_from_angle(angle);
                             world->player->took_turn = player_swing(direction);
                         }
                     }
                     else
                     {
-                        struct tile *tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
+                        const struct tile *const tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
                         if (tile->actor && tile->actor->faction != world->player->faction)
                         {
                             if (ranged)
@@ -1668,25 +1567,31 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                 case PANEL_CHARACTER:
                 {
-                    enum ability ability = panel_character_ability_mouseover();
+                    const enum ability ability = panel_character_ability_mouseover();
                     if (ability != -1)
                     {
-                        tooltip_show();
-                        tooltip_options_add("Add Point", NULL);
-                        // tooltip_data.ability = ability;
-                        tooltip_options_add("Cancel", NULL);
+                        show_tooltip();
+
+                        tooltip_data.ability = ability;
+
+                        add_tooltip_option("Add Point", &on_click_add_point);
+
+                        add_tooltip_option("Cancel", NULL);
                     }
 
-                    enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
+                    const enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
                     if (equip_slot != EQUIP_SLOT_NONE)
                     {
-                        struct item *equipment = world->player->equipment[equip_slot];
+                        const struct item *const equipment = world->player->equipment[equip_slot];
                         if (equipment)
                         {
-                            tooltip_show();
-                            tooltip_options_add("Unequip", &toolip_option_on_click_unequip);
+                            show_tooltip();
+
                             tooltip_data.equip_slot = equip_slot;
-                            tooltip_options_add("Cancel", NULL);
+
+                            add_tooltip_option("Unequip", &on_click_unequip);
+
+                            add_tooltip_option("Cancel", NULL);
                         }
                     }
                 }
@@ -1697,42 +1602,51 @@ static struct scene *handle_event(SDL_Event *event)
                 break;
                 case PANEL_INVENTORY:
                 {
-                    struct item *item = panel_inventory_item_mouseover();
+                    struct item *const item = panel_inventory_item_mouseover();
                     if (item)
                     {
-                        tooltip_show();
-                        tooltip_options_add("Drop", NULL);
-                        const struct item_datum *const item_datum = &item_data[item->type];
-                        const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
-                        if (base_item_datum->equip_slot != EQUIP_SLOT_NONE)
-                        {
-                            tooltip_options_add("Equip", &toolip_option_on_click_equip);
-                        }
-                        if (item_datum->type == BASE_ITEM_TYPE_POTION)
-                        {
-                            tooltip_options_add("Quaff", NULL);
-                        }
+                        show_tooltip();
+
                         tooltip_data.item = item;
-                        tooltip_options_add("Cancel", NULL);
+
+                        add_tooltip_option("Drop", &on_click_drop);
+
+                        const struct item_data *const item_data = &item_database[item->type];
+                        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                        if (base_item_data->equip_slot != EQUIP_SLOT_NONE)
+                        {
+                            add_tooltip_option("Equip", &on_click_equip);
+                        }
+
+                        if (item_data->type == BASE_ITEM_TYPE_POTION)
+                        {
+                            add_tooltip_option("Quaff", &on_click_quaff);
+                        }
+
+                        add_tooltip_option("Cancel", NULL);
                     }
                 }
                 break;
                 case PANEL_SPELLBOOK:
                 {
-                    enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
+                    const enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
                     if (spell_type != SPELL_TYPE_NONE)
                     {
-                        tooltip_show();
+                        show_tooltip();
+
+                        tooltip_data.spell_type = spell_type;
+
                         if (world->player->readied_spell_type == spell_type)
                         {
-                            tooltip_options_add("Unready", NULL);
+                            add_tooltip_option("Unready", &on_click_unready);
                         }
                         else
                         {
-                            tooltip_options_add("Ready", NULL);
+                            add_tooltip_option("Ready", &on_click_ready);
                         }
-                        tooltip_data.spell_type = spell_type;
-                        tooltip_options_add("Cancel", NULL);
+
+                        add_tooltip_option("Cancel", NULL);
                     }
                 }
                 break;
@@ -1742,45 +1656,58 @@ static struct scene *handle_event(SDL_Event *event)
             }
             else if (map_is_inside(mouse_tile_x, mouse_tile_y))
             {
-                struct map *map = &world->maps[world->player->floor];
-                struct tile *tile = &map->tiles[mouse_tile_x][mouse_tile_y];
-                tooltip_show();
-                tooltip_options_add("Move", &toolip_option_on_click_move);
-                tooltip_options_add("Shoot", NULL); // TODO: only if ranged weapon equipped
+                show_tooltip();
+
                 tooltip_data.x = mouse_tile_x;
                 tooltip_data.y = mouse_tile_y;
+
+                const struct map *const map = &world->maps[world->player->floor];
+                const struct tile *const tile = &map->tiles[mouse_tile_x][mouse_tile_y];
+
+                add_tooltip_option("Move", &on_click_move);
+
+                add_tooltip_option("Shoot", &on_click_shoot); // TODO: only if ranged weapon equipped
+
                 if (tile->object)
                 {
-                    tooltip_options_add("Examine Object", NULL);
-                    tooltip_options_add("Interact", NULL);
-                    tooltip_options_add("Bash", NULL);
                     tooltip_data.object = tile->object;
+
+                    add_tooltip_option("Examine Object", &on_click_examine);
+                    add_tooltip_option("Interact", &on_click_interact);
+                    add_tooltip_option("Bash", &on_click_bash);
                 }
+
                 if (tile->actor)
                 {
-                    tooltip_options_add("Examine Actor", NULL);
-                    tooltip_options_add("Talk", NULL);
-                    tooltip_options_add("Swap", NULL);
-                    tooltip_options_add("Attack", NULL);
+                    tooltip_data.actor = tile->actor;
+
+                    add_tooltip_option("Examine Actor", &on_click_examine);
+                    add_tooltip_option("Swap", &on_click_swap);
+                    add_tooltip_option("Attack", &on_click_attack);
+
                     if (tile->actor == world->player)
                     {
-                        tooltip_options_add("Character Sheet", NULL);
-                        tooltip_options_add("Inventory", NULL);
-                        tooltip_options_add("Spellbook", NULL);
+                        add_tooltip_option("Character Sheet", &on_click_character_sheet);
+                        add_tooltip_option("Inventory", &on_click_inventory);
+                        add_tooltip_option("Spellbook", &on_click_spellbook);
                     }
-                    tooltip_data.actor = tile->actor;
                 }
-                if (TCOD_list_peek(tile->items))
+
+                struct item *const item = TCOD_list_peek(tile->items);
+                if (item)
                 {
-                    tooltip_options_add("Examine Item", NULL);
-                    tooltip_options_add("Take Item", NULL);
-                    tooltip_data.item = TCOD_list_peek(tile->items);
+                    tooltip_data.item = item;
+
+                    add_tooltip_option("Examine Item", NULL);
+                    add_tooltip_option("Take Item", NULL);
                 }
+
                 if (TCOD_list_size(tile->items) > 1)
                 {
-                    tooltip_options_add("Take All", NULL);
+                    add_tooltip_option("Take All", NULL);
                 }
-                tooltip_options_add("Cancel", NULL);
+
+                add_tooltip_option("Cancel", NULL);
             }
         }
     }
@@ -1838,7 +1765,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         if (automoving)
         {
             const struct map *const map = &world->maps[world->player->floor];
-            TCOD_LIST_FOREACH(map->actors)
+            TCOD_LIST_FOREACH(map->actors, iterator)
             {
                 const struct actor *const actor = *iterator;
                 if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y) &&
@@ -1857,7 +1784,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
     world_update(delta_time);
 
     // delete save if hero died
-    if (world->hero_dead && TCOD_sys_file_exists(SAVE_PATH))
+    if (world->hero_dead && file_exists(SAVE_PATH))
     {
         TCOD_sys_delete_file(SAVE_PATH);
     }
@@ -1902,10 +1829,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
     {
         // tooltip should be as wide as the longest option, plus 2 for borders
         tooltip_rect.width = 0;
-        TCOD_LIST_FOREACH(tooltip_options)
+        TCOD_LIST_FOREACH(tooltip_options, iterator)
         {
-            struct tooltip_option *option = *iterator;
-            int len = (int)strlen(option->text) + 2;
+            const struct tooltip_option *const option = *iterator;
+            const int len = (int)strlen(option->text) + 2;
             if (len > tooltip_rect.width)
             {
                 tooltip_rect.width = len;
@@ -1963,13 +1890,13 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         // calculate random noise coefficients
         noise_x += delta_time * 10;
         float noise_dx = noise_x + 20;
-        float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+        const float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
         noise_dx += 30;
-        float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-        float di = 0.2f * TCOD_noise_get(noise, &noise_x);
+        const float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+        const float di = 0.2f * TCOD_noise_get(noise, &noise_x);
 
         // get map to draw
-        struct map *const map = &world->maps[world->player->floor];
+        const struct map *const map = &world->maps[world->player->floor];
 
         // draw tiles
         for (int x = view_rect.x; x < view_rect.x + view_rect.width; x++)
@@ -1978,8 +1905,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             {
                 if (map_is_inside(x, y))
                 {
-                    struct tile *const tile = &map->tiles[x][y];
-                    const struct tile_datum tile_datum = tile_data[tile->type];
+                    const struct tile *const tile = &map->tiles[x][y];
+                    const struct tile_data tile_data = tile_database[tile->type];
 
                     // ambient lighting
                     float fg_r = tile_common.ambient_light_color.r;
@@ -1991,96 +1918,93 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                     if (TCOD_map_is_in_fov(world->player->fov, x, y))
                     {
-                        // mark this tile as seen
-                        tile->seen = true;
-
                         // calculate object lighting
-                        TCOD_LIST_FOREACH(map->objects)
+                        TCOD_LIST_FOREACH(map->objects, iterator)
                         {
-                            struct object *object = *iterator;
+                            const struct object *const object = *iterator;
 
                             if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                             {
-                                const struct object_datum *const object_datum = &object_data[object->type];
-                                const struct light_datum *const light_datum = &light_data[object_datum->light_type];
+                                const struct object_data *const object_data = &object_database[object->type];
+                                const struct light_data *const light_data = &light_database[object_data->light_type];
 
-                                const float radius_sq = powf((float)light_datum->radius, 2);
+                                const float radius_sq = powf((float)light_data->radius, 2);
                                 const float distance_sq =
-                                    powf((float)(x - object->x + (light_datum->flicker ? dx : 0)), 2) +
-                                    powf((float)(y - object->y + (light_datum->flicker ? dy : 0)), 2);
+                                    powf((float)(x - object->x + (light_data->flicker ? dx : 0)), 2) +
+                                    powf((float)(y - object->y + (light_data->flicker ? dy : 0)), 2);
                                 const float attenuation = CLAMP(
                                     0.0f,
                                     1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (light_datum->flicker ? di : 0));
+                                    (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
 
-                                fg_r += light_datum->color.r * attenuation;
-                                fg_g += light_datum->color.g * attenuation;
-                                fg_b += light_datum->color.b * attenuation;
-                                bg_r += fg_r * light_datum->intensity * attenuation;
-                                bg_g += fg_g * light_datum->intensity * attenuation;
-                                bg_b += fg_b * light_datum->intensity * attenuation;
+                                fg_r += light_data->color.r * attenuation;
+                                fg_g += light_data->color.g * attenuation;
+                                fg_b += light_data->color.b * attenuation;
+                                bg_r += fg_r * light_data->intensity * attenuation;
+                                bg_g += fg_g * light_data->intensity * attenuation;
+                                bg_b += fg_b * light_data->intensity * attenuation;
                             }
                         }
 
                         // calculate actor lighting
-                        TCOD_LIST_FOREACH(map->actors)
+                        TCOD_LIST_FOREACH(map->actors, iterator)
                         {
-                            struct actor *actor = *iterator;
+                            const struct actor *const actor = *iterator;
 
                             if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
                             {
-                                const struct light_datum *const light_datum = &light_data[actor->light_type];
+                                const struct light_data *const light_data = &light_database[actor->light_type];
 
-                                const float radius_sq = powf((float)light_datum->radius, 2);
+                                const float radius_sq = powf((float)light_data->radius, 2);
                                 const float distance_sq =
-                                    powf((float)(x - actor->x + (light_datum->flicker ? dx : 0)), 2) +
-                                    powf((float)(y - actor->y + (light_datum->flicker ? dy : 0)), 2);
+                                    powf((float)(x - actor->x + (light_data->flicker ? dx : 0)), 2) +
+                                    powf((float)(y - actor->y + (light_data->flicker ? dy : 0)), 2);
                                 const float attenuation = CLAMP(
                                     0.0f,
                                     1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (light_datum->flicker ? di : 0));
+                                    (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
 
-                                fg_r += light_datum->color.r * attenuation;
-                                fg_g += light_datum->color.g * attenuation;
-                                fg_b += light_datum->color.b * attenuation;
-                                bg_r += light_datum->color.r * light_datum->intensity * attenuation;
-                                bg_g += light_datum->color.g * light_datum->intensity * attenuation;
-                                bg_b += light_datum->color.b * light_datum->intensity * attenuation;
+                                fg_r += light_data->color.r * attenuation;
+                                fg_g += light_data->color.g * attenuation;
+                                fg_b += light_data->color.b * attenuation;
+                                bg_r += light_data->color.r * light_data->intensity * attenuation;
+                                bg_g += light_data->color.g * light_data->intensity * attenuation;
+                                bg_b += light_data->color.b * light_data->intensity * attenuation;
                             }
                         }
 
                         // calculate projectile lighting
-                        TCOD_LIST_FOREACH(map->projectiles)
+                        TCOD_LIST_FOREACH(map->projectiles, iterator)
                         {
-                            struct projectile *projectile = *iterator;
+                            const struct projectile *const projectile = *iterator;
 
                             if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
                             {
-                                const struct projectile_datum *const projectile_datum = &projectile_data[projectile->type];
-                                const struct light_datum *const light_datum = &light_data[projectile_datum->light_type];
+                                const struct projectile_data *const projectile_data = &projectile_database[projectile->type];
+                                const struct light_data *const light_data = &light_database[projectile_data->light_type];
 
-                                const float radius_sq = powf((float)light_datum->radius, 2);
+                                const float radius_sq = powf((float)light_data->radius, 2);
                                 const float distance_sq =
-                                    powf((float)(x - projectile->x + (light_datum->flicker ? dx : 0)), 2) +
-                                    powf((float)(y - projectile->y + (light_datum->flicker ? dy : 0)), 2);
+                                    powf((float)(x - projectile->x + (light_data->flicker ? dx : 0)), 2) +
+                                    powf((float)(y - projectile->y + (light_data->flicker ? dy : 0)), 2);
                                 const float attenuation = CLAMP(
                                     0.0f,
                                     1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (light_datum->flicker ? di : 0));
+                                    (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
 
-                                fg_r += light_datum->color.r * attenuation;
-                                fg_g += light_datum->color.g * attenuation;
-                                fg_b += light_datum->color.b * attenuation;
-                                bg_r += light_datum->color.r * light_datum->intensity * attenuation;
-                                bg_g += light_datum->color.g * light_datum->intensity * attenuation;
-                                bg_b += light_datum->color.b * light_datum->intensity * attenuation;
+                                fg_r += light_data->color.r * attenuation;
+                                fg_g += light_data->color.g * attenuation;
+                                fg_b += light_data->color.b * attenuation;
+                                bg_r += light_data->color.r * light_data->intensity * attenuation;
+                                bg_g += light_data->color.g * light_data->intensity * attenuation;
+                                bg_b += light_data->color.b * light_data->intensity * attenuation;
                             }
                         }
 
                         // calculate explosion lighting
-                        TCOD_LIST_FOREACH(map->explosions)
+                        TCOD_LIST_FOREACH(map->explosions, iterator)
                         {
-                            struct explosion *explosion = *iterator;
+                            const struct explosion *const explosion = *iterator;
 
                             if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
                             {
@@ -2111,7 +2035,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             (uint8_t)(fg_r * fg_mult),
                             (uint8_t)(fg_g * fg_mult),
                             (uint8_t)(fg_b * fg_mult)),
-                        tile_datum.color);
+                        tile_data.color);
                     const float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
                     const float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
                     const TCOD_color_t bg_color = TCOD_color_multiply(
@@ -2119,11 +2043,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             (uint8_t)(bg_r * bg_mult),
                             (uint8_t)(bg_g * bg_mult),
                             (uint8_t)(bg_b * bg_mult)),
-                        tile_datum.color);
+                        tile_data.color);
 
-                    if (tile->seen)
+                    if (tile->explored)
                     {
-                        int glyph = tile_datum.glyph;
+                        int glyph = tile_data.glyph;
 
                         // select appropriate wall graphic
                         if (tile->type == TILE_TYPE_WALL)
@@ -2191,7 +2115,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw corpses
-        TCOD_LIST_FOREACH(map->corpses)
+        TCOD_LIST_FOREACH(map->corpses, iterator)
         {
             const struct corpse *const corpse = *iterator;
 
@@ -2211,60 +2135,63 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw objects (except stairs, they are drawn later)
-        TCOD_LIST_FOREACH(map->objects)
+        TCOD_LIST_FOREACH(map->objects, iterator)
         {
             const struct object *const object = *iterator;
 
             if (object->type != OBJECT_TYPE_STAIR_DOWN && object->type != OBJECT_TYPE_STAIR_UP &&
                 TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
             {
-                const struct object_datum *const object_datum = &object_data[object->type];
+                const struct object_data *const object_data = &object_database[object->type];
 
                 TCOD_console_set_char_foreground(
                     console,
                     object->x - view_rect.x,
                     object->y - view_rect.y,
-                    object_datum->color);
+                    object_data->color);
                 TCOD_console_set_char(
                     console,
                     object->x - view_rect.x,
                     object->y - view_rect.y,
-                    object_datum->glyph);
+                    object_data->glyph);
             }
         }
 
         // draw items
-        TCOD_LIST_FOREACH(map->items)
+        TCOD_LIST_FOREACH(map->items, iterator)
         {
             const struct item *const item = *iterator;
 
             if (TCOD_map_is_in_fov(world->player->fov, item->x, item->y))
             {
-                const struct item_datum *const item_datum = &item_data[item->type];
-                const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
+                const struct item_data *const item_data = &item_database[item->type];
+                const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
                 TCOD_console_set_char_foreground(
                     console,
                     item->x - view_rect.x,
                     item->y - view_rect.y,
-                    item_datum->color);
+                    item_data->color);
                 TCOD_console_set_char(
                     console,
                     item->x - view_rect.x,
                     item->y - view_rect.y,
-                    base_item_datum->glyph);
+                    base_item_data->glyph);
             }
         }
 
         // draw projectiles
-        TCOD_LIST_FOREACH(map->projectiles)
+        TCOD_LIST_FOREACH(map->projectiles, iterator)
         {
-            struct projectile *projectile = *iterator;
-            int x = (int)projectile->x;
-            int y = (int)projectile->y;
+            const struct projectile *const projectile = *iterator;
+
+            const int x = (int)projectile->x;
+            const int y = (int)projectile->y;
+
             if (TCOD_map_is_in_fov(world->player->fov, x, y))
             {
-                char glyph = projectile_data[projectile->type].glyph;
+                char glyph = projectile_database[projectile->type].glyph;
+
                 if (projectile->type == PROJECTILE_TYPE_ARROW)
                 {
                     const unsigned char glyphs[] = {
@@ -2276,15 +2203,18 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         '/',   // SW
                         '-',   // W
                         '\\'}; // NW
-                    float angle = angle_between(projectile->origin_x, projectile->origin_y, projectile->target_x, projectile->target_y);
-                    enum direction direction = get_direction_from_angle(angle);
+
+                    const float angle = angle_between(projectile->origin_x, projectile->origin_y, projectile->target_x, projectile->target_y);
+                    const enum direction direction = get_direction_from_angle(angle);
+
                     glyph = glyphs[direction];
                 }
+
                 TCOD_console_set_char_foreground(
                     console,
                     x - view_rect.x,
                     y - view_rect.y,
-                    projectile_data[projectile->type].color);
+                    projectile_database[projectile->type].color);
                 TCOD_console_set_char(
                     console,
                     x - view_rect.x,
@@ -2294,36 +2224,36 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw stairs (to make sure they are drawn on top of other entities)
-        TCOD_LIST_FOREACH(map->objects)
+        TCOD_LIST_FOREACH(map->objects, iterator)
         {
             const struct object *const object = *iterator;
 
             if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) &&
                 TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
             {
-                const struct object_datum *const object_datum = &object_data[object->type];
+                const struct object_data *const object_data = &object_database[object->type];
 
                 TCOD_console_set_char_foreground(
                     console,
                     object->x - view_rect.x,
                     object->y - view_rect.y,
-                    object_datum->color);
+                    object_data->color);
                 TCOD_console_set_char(
                     console,
                     object->x - view_rect.x,
                     object->y - view_rect.y,
-                    object_datum->glyph);
+                    object_data->glyph);
             }
         }
 
         // draw actors
-        TCOD_LIST_FOREACH(map->actors)
+        TCOD_LIST_FOREACH(map->actors, iterator)
         {
             const struct actor *const actor = *iterator;
 
             if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y))
             {
-                TCOD_color_t color = class_data[actor->class].color;
+                TCOD_color_t color = class_database[actor->class].color;
                 if (actor->flash_fade_coef > 0)
                 {
                     color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade_coef);
@@ -2338,7 +2268,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     console,
                     actor->x - view_rect.x,
                     actor->y - view_rect.y,
-                    race_data[actor->race].glyph);
+                    race_database[actor->race].glyph);
             }
         }
 
@@ -2416,7 +2346,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 TCOD_BKGND_NONE,
                                 TCOD_CENTER,
                                 "%s (multiple)",
-                                item_data[item->type].name);
+                                item_database[item->type].name);
                         }
                         else
                         {
@@ -2426,7 +2356,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 view_rect.height - 2,
                                 TCOD_BKGND_NONE,
                                 TCOD_CENTER,
-                                item_data[item->type].name);
+                                item_database[item->type].name);
                         }
 
                         goto done;
@@ -2440,7 +2370,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             view_rect.height - 2,
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
-                            object_data[tile->object->type].name);
+                            object_database[tile->object->type].name);
 
                         goto done;
                     }
@@ -2451,12 +2381,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         view_rect.height - 2,
                         TCOD_BKGND_NONE,
                         TCOD_CENTER,
-                        tile_data[tile->type].name);
+                        tile_database[tile->type].name);
                 done:;
                 }
                 else
                 {
-                    if (tile->seen)
+                    if (tile->explored)
                     {
                         TCOD_console_printf_ex(
                             console,
@@ -2465,7 +2395,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
                             "%s (hidden)",
-                            tile_data[tile->type].name);
+                            tile_database[tile->type].name);
                     }
                     else
                     {
@@ -2633,7 +2563,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
     {
         TCOD_console_clear(panel_rect.console);
 
-        struct panel_state *current_panel_status = &panel_state[current_panel];
+        const struct panel_state *const current_panel_status = &panel_state[current_panel];
         switch (current_panel)
         {
         case PANEL_CHARACTER:
@@ -2665,7 +2595,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 y - current_panel_status->scroll,
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
-                race_data[world->player->race].name);
+                race_database[world->player->race].name);
             y++;
 
             TCOD_console_printf(
@@ -2679,7 +2609,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 y - current_panel_status->scroll,
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
-                class_data[world->player->class].name);
+                class_database[world->player->class].name);
             y++;
 
             TCOD_console_printf(
@@ -2764,7 +2694,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_LEFT,
                         "%c) %s",
                         ability + SDLK_a,
-                        ability_data[ability].name);
+                        ability_database[ability].name);
                 }
                 else
                 {
@@ -2777,7 +2707,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         "%s",
-                        ability_data[ability].name);
+                        ability_database[ability].name);
                 }
 
                 console_print(
@@ -2802,7 +2732,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     equip_slot == panel_character_equip_slot_mouseover()
                         ? TCOD_yellow
                         : TCOD_white;
-                const struct equip_slot_datum equip_slot_datum = equip_slot_data[equip_slot];
+                const struct equip_slot_data equip_slot_data = equip_slot_database[equip_slot];
 
                 if (character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
                     character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP)
@@ -2817,7 +2747,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_LEFT,
                         "%c) %s",
                         equip_slot + SDLK_a - 1,
-                        equip_slot_datum.name);
+                        equip_slot_data.name);
                 }
                 else
                 {
@@ -2829,13 +2759,13 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
-                        equip_slot_datum.name);
+                        equip_slot_data.name);
                 }
 
                 if (world->player->equipment[equip_slot])
                 {
-                    struct item *equipment = world->player->equipment[equip_slot];
-                    struct item_datum item_datum = item_data[equipment->type];
+                    const struct item *const equipment = world->player->equipment[equip_slot];
+                    const struct item_data equipment_data = item_database[equipment->type];
 
                     console_print(
                         panel_rect.console,
@@ -2846,7 +2776,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_RIGHT,
                         equipment->stack > 1 ? "%s (%d)" : "%s",
-                        item_datum.name,
+                        equipment_data.name,
                         equipment->stack);
                 }
 
@@ -2987,16 +2917,17 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         break;
         case PANEL_INVENTORY:
         {
-            struct item *mouseover_item = panel_inventory_item_mouseover();
+            const struct item *const mouseover_item = panel_inventory_item_mouseover();
             int y = 1;
-            TCOD_LIST_FOREACH(world->player->items)
+            TCOD_LIST_FOREACH(world->player->items, iterator)
             {
-                struct item *item = *iterator;
-                struct item_datum item_datum = item_data[item->type];
+                const struct item *const item = *iterator;
+                const struct item_data item_data = item_database[item->type];
+
                 const TCOD_color_t fg =
                     item == mouseover_item
                         ? TCOD_yellow
-                        : item_datum.color;
+                        : item_data.color;
 
                 if (inventory_action == INVENTORY_ACTION_NONE)
                 {
@@ -3009,7 +2940,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         item->stack > 1 ? "%s (%d)" : "%s",
-                        item_datum.name,
+                        item_data.name,
                         item->stack);
                 }
                 else
@@ -3024,7 +2955,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_LEFT,
                         item->stack > 1 ? "%c) %s (%d)" : "%c) %s",
                         y - 1 + SDLK_a - current_panel_status->scroll,
-                        item_datum.name,
+                        item_data.name,
                         item->stack);
                 }
 
@@ -3041,12 +2972,14 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         break;
         case PANEL_SPELLBOOK:
         {
-            enum spell_type mouseover_spell_type = panel_spellbook_spell_type_mouseover();
+            const enum spell_type mouseover_spell_type = panel_spellbook_spell_type_mouseover();
+
             int y = 1;
-            TCOD_LIST_FOREACH(world->player->known_spell_types)
+            TCOD_LIST_FOREACH(world->player->known_spell_types, iterator)
             {
                 const enum spell_type spell_type = (size_t)(*iterator);
-                const struct spell_datum *const spell_datum = &spell_data[spell_type];
+                const struct spell_data *const spell_data = &spell_database[spell_type];
+
                 const TCOD_color_t fg =
                     spell_type == mouseover_spell_type
                         ? TCOD_yellow
@@ -3063,7 +2996,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         world->player->readied_spell_type == spell_type ? "%s (readied)" : "%s",
-                        spell_datum->name);
+                        spell_data->name);
                 }
                 else
                 {
@@ -3077,7 +3010,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_LEFT,
                         world->player->readied_spell_type == spell_type ? "%c) %s (readied)" : "%c) %s",
                         y - 1 + SDLK_a - current_panel_status->scroll,
-                        spell_datum->name);
+                        spell_data->name);
                 }
 
                 console_print(
@@ -3089,7 +3022,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
                     "%d",
-                    spell_datum->mana_cost);
+                    spell_data->mana_cost);
 
                 y++;
             }
@@ -3121,10 +3054,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         TCOD_console_clear(tooltip_rect.console);
 
         const struct tooltip_option *const mouseover_tooltip_option = tooltip_option_mouseover();
+
         int y = 1;
-        TCOD_LIST_FOREACH(tooltip_options)
+        TCOD_LIST_FOREACH(tooltip_options, iterator)
         {
             const struct tooltip_option *const option = *iterator;
+
             const TCOD_color_t fg =
                 option == mouseover_tooltip_option
                     ? TCOD_yellow

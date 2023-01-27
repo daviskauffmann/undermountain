@@ -1,5 +1,5 @@
-#ifndef SPELL_H
-#define SPELL_H
+#ifndef GAME_SPELL_H
+#define GAME_SPELL_H
 
 enum spell_type
 {
@@ -19,7 +19,7 @@ enum spell_range
     SPELL_RANGE_TARGET
 };
 
-struct spell_datum
+struct spell_data
 {
     const char *name;
     enum spell_range range;

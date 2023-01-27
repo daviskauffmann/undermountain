@@ -23,4 +23,5 @@ In `data`, copy `config.cfg` and rename to `config.local.cfg` to make local chan
 
 ## Resources Used
 
+[Coding a Classic Roguelike in C](https://www.youtube.com/playlist?list=PLnjvY7knqLad8seP1ZIMQZ354buAmXMax)
 [A Turn-Based Game Loop](http://journal.stuffwithstuff.com/2014/07/15/a-turn-based-game-loop/)

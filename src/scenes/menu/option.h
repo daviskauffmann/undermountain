@@ -1,3 +1,6 @@
+#ifndef SCENES_MENU_OPTION_H
+#define SCENES_MENU_OPTION_H
+
 enum option
 {
     OPTION_NONE,
@@ -8,7 +11,9 @@ enum option
     NUM_OPTIONS
 };
 
-struct option_datum
+struct option_data
 {
     char *text;
 };
+
+#endif

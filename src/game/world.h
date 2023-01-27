@@ -1,5 +1,5 @@
-#ifndef WORLD_H
-#define WORLD_H
+#ifndef GAME_WORLD_H
+#define GAME_WORLD_H
 
 #include "map.h"
 #include "spell.h"

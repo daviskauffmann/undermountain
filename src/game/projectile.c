@@ -64,8 +64,8 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
     const float distance = distance_between(projectile->origin_x, projectile->origin_y, projectile->target_x, projectile->target_y);
     const float dx = ((float)projectile->target_x - (float)projectile->origin_x) / distance;
     const float dy = ((float)projectile->target_y - (float)projectile->origin_y) / distance;
-    const float next_x = projectile->x + dx * projectile_data[projectile->type].speed * delta_time;
-    const float next_y = projectile->y + dy * projectile_data[projectile->type].speed * delta_time;
+    const float next_x = projectile->x + dx * projectile_database[projectile->type].speed * delta_time;
+    const float next_y = projectile->y + dy * projectile_database[projectile->type].speed * delta_time;
     const uint8_t x = (uint8_t)roundf(next_x);
     const uint8_t y = (uint8_t)roundf(next_y);
 
@@ -78,7 +78,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
 
     const struct map *const map = &world->maps[projectile->floor];
     const struct tile *const tile = &map->tiles[x][y];
-    if (!tile_data[tile->type].is_walkable)
+    if (!tile_database[tile->type].is_walkable)
     {
         should_move = false;
     }
@@ -96,7 +96,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
         }
 
         if (tile->object &&
-            !object_data[tile->object->type].is_walkable &&
+            !object_database[tile->object->type].is_walkable &&
             tile->object->type != OBJECT_TYPE_DOOR_OPEN)
         {
             actor_bash(projectile->shooter, tile->object);
@@ -114,7 +114,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
         }
 
         if (tile->object &&
-            !object_data[tile->object->type].is_walkable &&
+            !object_database[tile->object->type].is_walkable &&
             tile->object->type != OBJECT_TYPE_DOOR_OPEN)
         {
             should_move = false;
@@ -127,7 +127,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                 x,
                 y,
                 10,
-                projectile_data[projectile->type].color,
+                projectile_database[projectile->type].color,
                 projectile->shooter);
             TCOD_list_push(map->explosions, explosion);
         }
@@ -155,15 +155,15 @@ void projectile_calc_light(struct projectile *const projectile)
         projectile->light_fov = NULL;
     }
 
-    const struct projectile_datum *const projectile_datum = &projectile_data[projectile->type];
-    const struct light_datum *const light_datum = &light_data[projectile_datum->light_type];
+    const struct projectile_data *const projectile_data = &projectile_database[projectile->type];
+    const struct light_data *const light_data = &light_database[projectile_data->light_type];
 
-    if (light_datum->radius >= 0)
+    if (light_data->radius >= 0)
     {
         projectile->light_fov = map_to_fov_map(
             &world->maps[projectile->floor],
             (int)projectile->x,
             (int)projectile->y,
-            light_datum->radius);
+            light_data->radius);
     }
 }

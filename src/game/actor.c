@@ -38,8 +38,8 @@ struct actor *actor_new(
         actor->ability_scores[ability] = 10;
     }
 
-    actor->base_hit_points = TCOD_random_dice_new(class_data[actor->class].hit_die).nb_faces;
-    actor->base_mana_points = TCOD_random_dice_new(class_data[actor->class].mana_die).nb_faces;
+    actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
+    actor->base_mana_points = TCOD_random_dice_new(class_database[actor->class].mana_die).nb_faces;
 
     actor->hit_points = actor_calc_max_hit_points(actor);
     actor->mana_points = actor_calc_max_mana_points(actor);
@@ -95,7 +95,7 @@ void actor_delete(struct actor *const actor)
 
     TCOD_list_delete(actor->known_spell_types);
 
-    TCOD_LIST_FOREACH(actor->items)
+    TCOD_LIST_FOREACH(actor->items, iterator)
     {
         item_delete(*iterator);
     }
@@ -129,28 +129,28 @@ int actor_calc_max_mana_points(const struct actor *const actor)
 int actor_calc_armor_class(const struct actor *const actor)
 {
     const int dexterity_modifer = actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
-    const int size_modifer = size_data[race_data[actor->race].size].modifier;
+    const int size_modifer = size_database[race_database[actor->race].size].modifier;
 
     int armor_class = 10 + dexterity_modifer + size_modifer;
 
     const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
     if (armor)
     {
-        const struct item_datum *const armor_datum = &item_data[armor->type];
-        const struct base_item_datum *const base_armor_datum = &base_item_data[armor_datum->type];
+        const struct item_data *const armor_data = &item_database[armor->type];
+        const struct base_item_data *const base_armor_data = &base_item_database[armor_data->type];
 
-        armor_class += base_armor_datum->armor_class;
-        armor_class += armor_datum->enhancement_bonus;
+        armor_class += base_armor_data->armor_class;
+        armor_class += armor_data->enhancement_bonus;
     }
 
     const struct item *const shield = actor->equipment[EQUIP_SLOT_SHIELD];
     if (shield)
     {
-        const struct item_datum *const shield_datum = &item_data[shield->type];
-        const struct base_item_datum *const base_shield_datum = &base_item_data[shield_datum->type];
+        const struct item_data *const shield_data = &item_database[shield->type];
+        const struct base_item_data *const base_shield_data = &base_item_database[shield_data->type];
 
-        armor_class += base_shield_datum->armor_class;
-        armor_class += shield_datum->enhancement_bonus;
+        armor_class += base_shield_data->armor_class;
+        armor_class += shield_data->enhancement_bonus;
     }
 
     return armor_class;
@@ -164,28 +164,28 @@ int actor_calc_base_attack_bonus(const struct actor *actor)
 int actor_calc_attack_bonus(const struct actor *const actor)
 {
     const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
-    const int size_modifer = size_data[race_data[actor->race].size].modifier;
+    const int size_modifer = size_database[race_database[actor->race].size].modifier;
 
     int attack_bonus = base_attack_bonus + size_modifer;
 
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
     {
-        const struct item_datum *const weapon_datum = &item_data[weapon->type];
+        const struct item_data *const weapon_data = &item_database[weapon->type];
 
-        attack_bonus += weapon_datum->enhancement_bonus;
+        attack_bonus += weapon_data->enhancement_bonus;
 
-        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
-        if (base_weapon_datum->ranged)
+        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+        if (base_weapon_data->ranged)
         {
             attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
 
             const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
             if (ammunition)
             {
-                const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
+                const struct item_data *const ammunition_data = &item_database[ammunition->type];
 
-                attack_bonus += ammunition_datum->enhancement_bonus;
+                attack_bonus += ammunition_data->enhancement_bonus;
             }
         }
         else
@@ -213,10 +213,10 @@ int actor_calc_threat_range(const struct actor *const actor)
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
     {
-        const struct item_datum *const weapon_datum = &item_data[weapon->type];
-        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+        const struct item_data *const weapon_data = &item_database[weapon->type];
+        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
-        return base_weapon_datum->threat_range;
+        return base_weapon_data->threat_range;
     }
 
     return 20;
@@ -227,10 +227,10 @@ int actor_calc_critical_multiplier(const struct actor *const actor)
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
     {
-        const struct item_datum *const weapon_datum = &item_data[weapon->type];
-        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+        const struct item_data *const weapon_data = &item_database[weapon->type];
+        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
-        return base_weapon_datum->critical_multiplier;
+        return base_weapon_data->critical_multiplier;
     }
 
     return 2;
@@ -243,16 +243,16 @@ int actor_calc_damage_bonus(const struct actor *const actor)
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
     {
-        const struct item_datum *const weapon_datum = &item_data[weapon->type];
+        const struct item_data *const weapon_data = &item_database[weapon->type];
 
-        damage_bonus += weapon_datum->enhancement_bonus;
+        damage_bonus += weapon_data->enhancement_bonus;
 
-        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
-        if (base_weapon_datum->ranged)
+        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+        if (base_weapon_data->ranged)
         {
             const int strength_modifier = actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
 
-            if (weapon_datum->type == BASE_ITEM_TYPE_SLING)
+            if (weapon_data->type == BASE_ITEM_TYPE_SLING)
             {
                 damage_bonus += strength_modifier;
             }
@@ -264,9 +264,9 @@ int actor_calc_damage_bonus(const struct actor *const actor)
             const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
             if (ammunition)
             {
-                const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
+                const struct item_data *const ammunition_data = &item_database[ammunition->type];
 
-                damage_bonus += ammunition_datum->enhancement_bonus;
+                damage_bonus += ammunition_data->enhancement_bonus;
             }
         }
         else
@@ -296,10 +296,10 @@ const char *actor_calc_damage(const struct actor *const actor)
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
     if (weapon)
     {
-        const struct item_datum *const weapon_datum = &item_data[weapon->type];
-        const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+        const struct item_data *const weapon_data = &item_database[weapon->type];
+        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
-        return base_weapon_datum->damage;
+        return base_weapon_data->damage;
     }
 
     return "1d3";
@@ -307,11 +307,11 @@ const char *actor_calc_damage(const struct actor *const actor)
 
 enum equippability actor_calc_item_equippability(const struct actor *const actor, const struct item *const item)
 {
-    const struct race_datum *const race_datum = &race_data[actor->race];
-    const struct item_datum *const item_datum = &item_data[item->type];
-    const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
+    const struct race_data *const race_data = &race_database[actor->race];
+    const struct item_data *const item_data = &item_database[item->type];
+    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
-    const int difference = race_datum->size - base_item_datum->size;
+    const int difference = race_data->size - base_item_data->size;
 
     if (difference < -1)
     {
@@ -337,7 +337,7 @@ enum equippability actor_calc_item_equippability(const struct actor *const actor
 
 float actor_calc_speed(const struct actor *actor)
 {
-    const float speed = race_data[actor->race].speed;
+    const float speed = race_database[actor->race].speed;
 
     float encumbrance = 1.0f;
 
@@ -365,15 +365,15 @@ void actor_calc_light(struct actor *const actor)
         actor->light_fov = NULL;
     }
 
-    const struct light_datum *const light_datum = &light_data[actor->light_type];
+    const struct light_data *const light_data = &light_database[actor->light_type];
 
-    if (light_datum->radius >= 0)
+    if (light_data->radius >= 0)
     {
         actor->light_fov = map_to_fov_map(
             &world->maps[actor->floor],
             actor->x,
             actor->y,
-            light_datum->radius);
+            light_data->radius);
     }
 }
 
@@ -408,7 +408,7 @@ void actor_calc_fov(struct actor *const actor)
         TCOD_map_delete(actor->fov);
     }
 
-    const struct map *const map = &world->maps[actor->floor];
+    struct map *const map = &world->maps[actor->floor];
     actor->fov = map_to_fov_map(map, actor->x, actor->y, actor_calc_sight_radius(actor));
 
     TCOD_map_t los_map = map_to_fov_map(map, actor->x, actor->y, 0);
@@ -420,7 +420,7 @@ void actor_calc_fov(struct actor *const actor)
             if (!TCOD_map_is_in_fov(actor->fov, x, y) &&
                 TCOD_map_is_in_fov(los_map, x, y))
             {
-                TCOD_LIST_FOREACH(map->objects)
+                TCOD_LIST_FOREACH(map->objects, iterator)
                 {
                     const struct object *const object = *iterator;
                     if (object->light_fov &&
@@ -430,7 +430,7 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                TCOD_LIST_FOREACH(map->actors)
+                TCOD_LIST_FOREACH(map->actors, iterator)
                 {
                     const struct actor *const other = *iterator;
                     if (other->light_fov &&
@@ -440,7 +440,7 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                TCOD_LIST_FOREACH(map->projectiles)
+                TCOD_LIST_FOREACH(map->projectiles, iterator)
                 {
                     const struct projectile *const projectile = *iterator;
                     if (projectile->light_fov &&
@@ -450,7 +450,7 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                TCOD_LIST_FOREACH(map->explosions)
+                TCOD_LIST_FOREACH(map->explosions, iterator)
                 {
                     const struct explosion *const explosion = *iterator;
                     if (explosion->fov &&
@@ -458,6 +458,20 @@ void actor_calc_fov(struct actor *const actor)
                     {
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
                     }
+                }
+            }
+        }
+    }
+
+    if (actor == world->player)
+    {
+        for (int x = 0; x < MAP_WIDTH; x++)
+        {
+            for (int y = 0; y < MAP_HEIGHT; y++)
+            {
+                if (TCOD_map_is_in_fov(actor->fov, x, y))
+                {
+                    map->tiles[x][y].explored = true;
                 }
             }
         }
@@ -500,8 +514,8 @@ void actor_level_up(struct actor *const actor)
 
     actor->level++;
     actor->ability_points++;
-    actor->base_hit_points += TCOD_random_dice_roll_s(world->random, class_data[actor->class].hit_die);
-    actor->base_mana_points += TCOD_random_dice_roll_s(world->random, class_data[actor->class].mana_die);
+    actor->base_hit_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].hit_die);
+    actor->base_mana_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].mana_die);
 
     actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
     actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
@@ -548,7 +562,7 @@ struct actor *actor_find_closest_enemy(const struct actor *const actor)
 
     float min_distance = FLT_MAX;
     struct map *map = &world->maps[world->player->floor];
-    TCOD_LIST_FOREACH(map->actors)
+    TCOD_LIST_FOREACH(map->actors, iterator)
     {
         struct actor *const other = *iterator;
         if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
@@ -586,7 +600,7 @@ bool actor_ai(struct actor *const actor)
         const struct object *target = NULL;
 
         float min_distance = FLT_MAX;
-        TCOD_LIST_FOREACH(map->objects)
+        TCOD_LIST_FOREACH(map->objects, iterator)
         {
             const struct object *const object = *iterator;
             if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
@@ -640,19 +654,19 @@ bool actor_ai(struct actor *const actor)
             const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
             if (weapon)
             {
-                const struct item_datum *const weapon_datum = &item_data[weapon->type];
-                const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+                const struct item_data *const weapon_data = &item_database[weapon->type];
+                const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
-                if (base_weapon_datum->ranged)
+                if (base_weapon_data->ranged)
                 {
                     // does the actor have ammo?
                     struct item *ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
                     if (ammunition)
                     {
                         // is it the correct ammo?
-                        const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
-                        const struct base_item_datum *const base_ammunition_datum = &base_item_data[ammunition_datum->type];
-                        if (base_weapon_datum->ammunition_type == base_ammunition_datum->ammunition_type)
+                        const struct item_data *const ammunition_data = &item_database[ammunition->type];
+                        const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
+                        if (base_weapon_data->ammunition_type == base_ammunition_data->ammunition_type)
                         {
                             ranged = true;
                         }
@@ -834,59 +848,24 @@ bool actor_move(
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
 
-    if (!tile_data[tile->type].is_walkable)
+    if (!tile_database[tile->type].is_walkable)
     {
         return false;
     }
 
     if (tile->object)
     {
-        const enum object_type object_type = tile->object->type;
+        if (actor_interact(actor, tile->object))
+        {
+            return true;
+        }
 
-        switch (object_type)
+        if (!object_database[tile->object->type].is_walkable)
         {
-        case OBJECT_TYPE_ALTAR:
-        {
-            return actor_pray(actor, x, y);
+            return false;
         }
-        break;
-        case OBJECT_TYPE_BRAZIER:
-        {
-        }
-        break;
-        case OBJECT_TYPE_CHEST:
-        {
-            return actor_open_chest(actor, x, y);
-        }
-        break;
-        case OBJECT_TYPE_DOOR_CLOSED:
-        {
-            return actor_open_door(actor, x, y);
-        }
-        break;
-        case OBJECT_TYPE_DOOR_OPEN:
-        {
-        }
-        break;
-        case OBJECT_TYPE_FOUNTAIN:
-        {
-            return actor_drink(actor, x, y);
-        }
-        break;
-        case OBJECT_TYPE_STAIR_DOWN:
-        {
-        }
-        break;
-        case OBJECT_TYPE_STAIR_UP:
-        {
-        }
-        break;
-        case OBJECT_TYPE_THRONE:
-        {
-            return actor_sit(actor, x, y);
-        }
-        break;
-        case OBJECT_TYPE_TRAP:
+
+        if (tile->object->type == OBJECT_TYPE_TRAP)
         {
             // TODO: trap effects
 
@@ -903,15 +882,6 @@ bool actor_move(
                 "%s triggers a trap!",
                 actor->name);
         }
-        break;
-        case NUM_OBJECT_TYPES:
-            break;
-        }
-
-        if (!object_data[object_type].is_walkable)
-        {
-            return false;
-        }
     }
 
     if (tile->actor && tile->actor != actor)
@@ -927,10 +897,10 @@ bool actor_move(
             const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
             if (weapon)
             {
-                const struct item_datum *const weapon_datum = &item_data[weapon->type];
-                const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
+                const struct item_data *const weapon_data = &item_database[weapon->type];
+                const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
-                ranged = base_weapon_datum->ranged;
+                ranged = base_weapon_data->ranged;
             }
 
             if (ranged)
@@ -986,6 +956,63 @@ bool actor_swap(struct actor *const actor, struct actor *const other)
         other->name);
 
     return true;
+}
+
+bool actor_interact(struct actor *actor, struct object *object)
+{
+    switch (object->type)
+    {
+    case OBJECT_TYPE_ALTAR:
+    {
+        return actor_pray(actor, object->x, object->y);
+    }
+    break;
+    case OBJECT_TYPE_BRAZIER:
+    {
+    }
+    break;
+    case OBJECT_TYPE_CHEST:
+    {
+        return actor_open_chest(actor, object->x, object->y);
+    }
+    break;
+    case OBJECT_TYPE_DOOR_CLOSED:
+    {
+        return actor_open_door(actor, object->x, object->y);
+    }
+    break;
+    case OBJECT_TYPE_DOOR_OPEN:
+    {
+    }
+    break;
+    case OBJECT_TYPE_FOUNTAIN:
+    {
+        return actor_drink(actor, object->x, object->y);
+    }
+    break;
+    case OBJECT_TYPE_STAIR_DOWN:
+    {
+    }
+    break;
+    case OBJECT_TYPE_STAIR_UP:
+    {
+    }
+    break;
+    case OBJECT_TYPE_THRONE:
+    {
+        return actor_sit(actor, object->x, object->y);
+    }
+    break;
+    case OBJECT_TYPE_TRAP:
+    {
+        // TODO: disarm
+    }
+    break;
+    case NUM_OBJECT_TYPES:
+        break;
+    }
+
+    return false;
 }
 
 bool actor_open_door(
@@ -1062,6 +1089,13 @@ bool actor_close_door(
     return true;
 }
 
+bool actor_change_floor(
+    struct actor *const actor,
+    const uint8_t floor)
+{
+    return false;
+}
+
 bool actor_descend(
     struct actor *const actor,
     const bool is_leader,
@@ -1127,14 +1161,14 @@ bool actor_descend(
     // find all followers and move them to the next map as well
     if (is_leader)
     {
-        TCOD_LIST_FOREACH(map->actors)
+        TCOD_LIST_FOREACH(map->actors, other_iterator)
         {
-            struct actor *other = *iterator;
+            struct actor *other = *other_iterator;
             if (other && other->leader == actor)
             {
-                actor_descend(other, false, &iterator);
+                actor_descend(other, false, &other_iterator);
 
-                if (!iterator)
+                if (!other_iterator)
                 {
                     break;
                 }
@@ -1215,14 +1249,14 @@ bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator)
     // find all followers and move them to the next map as well
     if (is_leader)
     {
-        TCOD_LIST_FOREACH(map->actors)
+        TCOD_LIST_FOREACH(map->actors, other_iterator)
         {
-            struct actor *other = *iterator;
+            struct actor *other = *other_iterator;
             if (other && other->leader == actor)
             {
-                actor_ascend(other, false, &iterator);
+                actor_ascend(other, false, &other_iterator);
 
-                if (!iterator)
+                if (!other_iterator)
                 {
                     break;
                 }
@@ -1479,7 +1513,7 @@ bool actor_grab(
             TCOD_white,
             "%s picks up %s.",
             actor->name,
-            item_data[item->type].name);
+            item_database[item->type].name);
     }
 
     return true;
@@ -1510,18 +1544,18 @@ bool actor_drop(struct actor *const actor, struct item *const item)
         TCOD_white,
         "%s drops %s.",
         actor->name,
-        item_data[item->type].name);
+        item_database[item->type].name);
 
     return true;
 }
 
 bool actor_equip(struct actor *const actor, struct item *const item)
 {
-    const struct item_datum *const item_datum = &item_data[item->type];
-    const struct base_item_datum *const base_item_datum = &base_item_data[item_datum->type];
+    const struct item_data *const item_data = &item_database[item->type];
+    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
     // is item equipment?
-    enum equip_slot equip_slot = base_item_datum->equip_slot;
+    enum equip_slot equip_slot = base_item_data->equip_slot;
     if (equip_slot == EQUIP_SLOT_NONE)
     {
         world_log(
@@ -1531,7 +1565,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
             TCOD_white,
             "%s cannot equip %s.",
             actor->name,
-            item_datum->name);
+            item_data->name);
 
         return false;
     }
@@ -1546,7 +1580,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
             actor->y,
             TCOD_white,
             "%s is too large for %s.",
-            item_datum->name,
+            item_data->name,
             actor->name);
 
         return false;
@@ -1559,7 +1593,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
             actor->y,
             TCOD_white,
             "%s is too small for %s.",
-            item_datum->name,
+            item_data->name,
             actor->name);
 
         return false;
@@ -1612,7 +1646,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
         TCOD_white,
         "%s equips %s.",
         actor->name,
-        item_datum->name);
+        item_data->name);
 
     return true;
 }
@@ -1630,7 +1664,7 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
             TCOD_white,
             "%s is not equipping anything their %s slot.",
             actor->name,
-            equip_slot_data[equip_slot].name);
+            equip_slot_database[equip_slot].name);
 
         return false;
     }
@@ -1648,7 +1682,7 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
         TCOD_white,
         "%s unequips %s.",
         actor->name,
-        item_data[equipment->type].name);
+        item_database[equipment->type].name);
 
     return true;
 }
@@ -1656,8 +1690,8 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
 bool actor_quaff(struct actor *const actor, struct item *const item)
 {
     // is the item quaffable?
-    const struct item_datum *const item_datum = &item_data[item->type];
-    if (item_datum->type != BASE_ITEM_TYPE_POTION)
+    const struct item_data *const item_data = &item_database[item->type];
+    if (item_data->type != BASE_ITEM_TYPE_POTION)
     {
         world_log(
             actor->floor,
@@ -1666,7 +1700,7 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
             TCOD_white,
             "%s cannot quaff %s.",
             actor->name,
-            item_datum->name);
+            item_data->name);
 
         return false;
     }
@@ -1678,12 +1712,12 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
         TCOD_white,
         "%s quaffs %s.",
         actor->name,
-        item_datum->name);
+        item_data->name);
 
     // cast the stored spell
     actor_cast_spell(
         actor,
-        item_datum->spell_type,
+        item_data->spell_type,
         actor->x, actor->y,
         false);
 
@@ -1706,9 +1740,9 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
 bool actor_read(struct actor *actor, struct item *item, int x, int y)
 {
     // is the item readable?
-    const struct item_datum *const item_datum = &item_data[item->type];
-    if (item_datum->type != BASE_ITEM_TYPE_SCROLL &&
-        item_datum->type != BASE_ITEM_TYPE_TOME)
+    const struct item_data *const item_data = &item_database[item->type];
+    if (item_data->type != BASE_ITEM_TYPE_SCROLL &&
+        item_data->type != BASE_ITEM_TYPE_TOME)
     {
         world_log(
             actor->floor,
@@ -1717,7 +1751,7 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
             TCOD_white,
             "%s cannot read %s.",
             actor->name,
-            item_datum->name);
+            item_data->name);
 
         return false;
     }
@@ -1729,14 +1763,14 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
         TCOD_white,
         "%s reads %s.",
         actor->name,
-        item_datum->name);
+        item_data->name);
 
-    if (item_datum->type == BASE_ITEM_TYPE_SCROLL)
+    if (item_data->type == BASE_ITEM_TYPE_SCROLL)
     {
         // cast the stored spell
         actor_cast_spell(
             actor,
-            item_datum->spell_type,
+            item_data->spell_type,
             x, y,
             false);
 
@@ -1753,10 +1787,10 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
             item_delete(item);
         }
     }
-    else if (item_datum->type == BASE_ITEM_TYPE_TOME)
+    else if (item_data->type == BASE_ITEM_TYPE_TOME)
     {
         // add spell to known spells
-        TCOD_list_push(actor->known_spell_types, (void *)(size_t)item_datum->spell_type);
+        TCOD_list_push(actor->known_spell_types, (void *)(size_t)item_data->spell_type);
 
         // remove from inventory
         TCOD_list_remove(actor->items, item);
@@ -1770,10 +1804,10 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
 
 bool actor_bash(struct actor *const actor, struct object *const object)
 {
-    const struct object_datum *const object_datum = &object_data[object->type];
+    const struct object_data *const object_data = &object_database[object->type];
 
     // is the object destroyable?
-    // TODO: make this a property on the object_datum?
+    // TODO: make this a property on the object_data?
     if (object->type == OBJECT_TYPE_STAIR_DOWN ||
         object->type == OBJECT_TYPE_STAIR_UP)
     {
@@ -1784,7 +1818,7 @@ bool actor_bash(struct actor *const actor, struct object *const object)
             TCOD_white,
             "%s cannot destroy the %s.",
             actor->name,
-            object_datum->name);
+            object_data->name);
 
         return false;
     }
@@ -1811,7 +1845,7 @@ bool actor_bash(struct actor *const actor, struct object *const object)
         TCOD_white,
         "%s destroys the %s.",
         actor->name,
-        object_datum->name);
+        object_data->name);
 
     return true;
 }
@@ -1842,9 +1876,9 @@ bool actor_shoot(
     }
 
     // is the weapon ranged?
-    const struct item_datum *const weapon_datum = &item_data[weapon->type];
-    const struct base_item_datum *const base_weapon_datum = &base_item_data[weapon_datum->type];
-    if (!base_weapon_datum->ranged)
+    const struct item_data *const weapon_data = &item_database[weapon->type];
+    const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+    if (!base_weapon_data->ranged)
     {
         world_log(
             actor->floor,
@@ -1873,9 +1907,9 @@ bool actor_shoot(
     }
 
     // is it the right ammo?
-    const struct item_datum *const ammunition_datum = &item_data[ammunition->type];
-    const struct base_item_datum *const base_ammunition_datum = &base_item_data[ammunition_datum->type];
-    if (base_ammunition_datum->ammunition_type != base_weapon_datum->ammunition_type)
+    const struct item_data *const ammunition_data = &item_database[ammunition->type];
+    const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
+    if (base_ammunition_data->ammunition_type != base_weapon_data->ammunition_type)
     {
         world_log(
             actor->floor,
@@ -2086,7 +2120,7 @@ bool actor_cast_spell(
         return false;
     }
 
-    const struct spell_datum *const spell_datum = &spell_data[spell_type];
+    const struct spell_data *const spell_data = &spell_database[spell_type];
 
     if (from_memory)
     {
@@ -2102,13 +2136,13 @@ bool actor_cast_spell(
                 TCOD_white,
                 "%s does not know %s.",
                 actor->name,
-                spell_datum->name);
+                spell_data->name);
 
             return false;
         }
 
         // does the actor have enough mana?
-        if (actor->mana_points < spell_datum->mana_cost)
+        if (actor->mana_points < spell_data->mana_cost)
         {
             world_log(
                 actor->floor,
@@ -2117,7 +2151,7 @@ bool actor_cast_spell(
                 TCOD_white,
                 "%s does not have enough mana.",
                 actor->name,
-                spell_datum->name);
+                spell_data->name);
 
             return false;
         }
@@ -2130,11 +2164,11 @@ bool actor_cast_spell(
         TCOD_purple,
         "%s casts %s.",
         actor->name,
-        spell_datum->name);
+        spell_data->name);
 
     if (from_memory)
     {
-        actor->mana_points -= spell_datum->mana_cost;
+        actor->mana_points -= spell_data->mana_cost;
     }
 
     switch (spell_type)
@@ -2201,7 +2235,7 @@ bool actor_cast_spell(
                 TCOD_white,
                 "%s cannot cast %s here.",
                 actor->name,
-                spell_datum->name);
+                spell_data->name);
 
             return false;
         }

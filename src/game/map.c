@@ -30,8 +30,7 @@ void map_init(struct map *const map, const uint8_t floor)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
-            struct tile *tile = &map->tiles[x][y];
-            tile_init(tile, TILE_TYPE_EMPTY, false);
+            tile_init(&map->tiles[x][y], TILE_TYPE_EMPTY, false);
         }
     }
     map->rooms = TCOD_list_new();
@@ -46,43 +45,43 @@ void map_init(struct map *const map, const uint8_t floor)
 
 void map_uninit(struct map *const map)
 {
-    TCOD_LIST_FOREACH(map->explosions)
+    TCOD_LIST_FOREACH(map->explosions, iterator)
     {
         explosion_delete(*iterator);
     }
     TCOD_list_delete(map->explosions);
 
-    TCOD_LIST_FOREACH(map->projectiles)
+    TCOD_LIST_FOREACH(map->projectiles, iterator)
     {
         projectile_delete(*iterator);
     }
     TCOD_list_delete(map->projectiles);
 
-    TCOD_LIST_FOREACH(map->items)
+    TCOD_LIST_FOREACH(map->items, iterator)
     {
         item_delete(*iterator);
     }
     TCOD_list_delete(map->items);
 
-    TCOD_LIST_FOREACH(map->corpses)
+    TCOD_LIST_FOREACH(map->corpses, iterator)
     {
         corpse_delete(*iterator);
     }
     TCOD_list_delete(map->corpses);
 
-    TCOD_LIST_FOREACH(map->actors)
+    TCOD_LIST_FOREACH(map->actors, iterator)
     {
         actor_delete(*iterator);
     }
     TCOD_list_delete(map->actors);
 
-    TCOD_LIST_FOREACH(map->objects)
+    TCOD_LIST_FOREACH(map->objects, iterator)
     {
         object_delete(*iterator);
     }
     TCOD_list_delete(map->objects);
 
-    TCOD_LIST_FOREACH(map->rooms)
+    TCOD_LIST_FOREACH(map->rooms, iterator)
     {
         room_delete(*iterator);
     }
@@ -835,8 +834,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
         do
         {
             type = TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1);
-        } while (item_data[type].level > map->floor + 1 &&
-                 (item_data[type].unique && !item_data[type].spawned));
+        } while (item_database[type].level > map->floor + 1 &&
+                 (item_database[type].unique && !item_database[type].spawned));
 
         struct item *const item = item_new(
             type,
@@ -844,8 +843,8 @@ void map_generate(struct map *const map, const enum map_type map_type)
             (uint8_t)x,
             (uint8_t)y,
             type == ITEM_TYPE_GOLD
-                ? TCOD_random_get_int(world->random, 1, 10 * map->floor)
-                : base_item_data[item_data[type].type].max_stack);
+                ? TCOD_random_get_int(world->random, 1, 10 * (map->floor + 1))
+                : base_item_database[item_database[type].type].max_stack);
 
         TCOD_list_push(map->items, item);
 
@@ -871,12 +870,12 @@ bool map_is_transparent(
 {
     const struct tile *const tile = &map->tiles[x][y];
 
-    if (tile->object && !object_data[tile->object->type].is_transparent)
+    if (tile->object && !object_database[tile->object->type].is_transparent)
     {
         return false;
     }
 
-    return tile_data[tile->type].is_transparent;
+    return tile_database[tile->type].is_transparent;
 }
 
 bool map_is_walkable(
@@ -887,7 +886,7 @@ bool map_is_walkable(
     const struct tile *const tile = &map->tiles[x][y];
 
     if (tile->object &&
-        !object_data[tile->object->type].is_walkable &&
+        !object_database[tile->object->type].is_walkable &&
         tile->object->type != OBJECT_TYPE_DOOR_CLOSED)
     {
         return false;
@@ -898,7 +897,7 @@ bool map_is_walkable(
         return false;
     }
 
-    return tile_data[tile->type].is_walkable;
+    return tile_database[tile->type].is_walkable;
 }
 
 TCOD_map_t map_to_TCOD_map(const struct map *const map)

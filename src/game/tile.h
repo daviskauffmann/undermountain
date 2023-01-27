@@ -1,5 +1,5 @@
-#ifndef TILE_H
-#define TILE_H
+#ifndef GAME_TILE_H
+#define GAME_TILE_H
 
 #include <libtcod.h>
 
@@ -19,7 +19,7 @@ struct tile_common
     float ambient_light_intensity;
 };
 
-struct tile_datum
+struct tile_data
 {
     const char *name;
     unsigned char glyph;
@@ -31,7 +31,7 @@ struct tile_datum
 struct tile
 {
     enum tile_type type;
-    bool seen;
+    bool explored;
     struct object *object;
     struct actor *actor;
     TCOD_list_t corpses;

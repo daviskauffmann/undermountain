@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include "util.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -14,7 +15,7 @@ const int *tileset_charmap;
 void config_load(void)
 {
     const char *config_file = "data/config.cfg";
-    if (TCOD_sys_file_exists("data/config.local.cfg"))
+    if (file_exists("data/config.local.cfg"))
     {
         config_file = "data/config.local.cfg";
     }

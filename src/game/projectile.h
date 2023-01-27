@@ -1,5 +1,5 @@
-#ifndef PROJECTILE_H
-#define PROJECTILE_H
+#ifndef GAME_PROJECTILE_H
+#define GAME_PROJECTILE_H
 
 #include "light.h"
 #include <libtcod.h>
@@ -12,7 +12,7 @@ enum projectile_type
     NUM_PROJECTILE_TYPES
 };
 
-struct projectile_datum
+struct projectile_data
 {
     unsigned char glyph;
     TCOD_color_t color;

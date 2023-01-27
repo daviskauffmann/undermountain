@@ -6,7 +6,7 @@ void tile_init(
     const bool seen)
 {
     tile->type = type;
-    tile->seen = seen;
+    tile->explored = seen;
     tile->object = NULL;
     tile->actor = NULL;
     tile->corpses = TCOD_list_new();

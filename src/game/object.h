@@ -1,13 +1,8 @@
-#ifndef OBJECT_H
-#define OBJECT_H
+#ifndef GAME_OBJECT_H
+#define GAME_OBJECT_H
 
 #include "light.h"
 #include <libtcod.h>
-
-struct object_common
-{
-    char __placeholder;
-};
 
 enum object_type
 {
@@ -25,7 +20,7 @@ enum object_type
     NUM_OBJECT_TYPES
 };
 
-struct object_datum
+struct object_data
 {
     const char *name;
     unsigned char glyph;

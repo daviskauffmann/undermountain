@@ -4,6 +4,7 @@
 #include "../../game/world.h"
 #include "../../print.h"
 #include "../../scene.h"
+#include "../../util.h"
 #include "../create/create_scene.h"
 #include "../game/game_scene.h"
 #include "option.h"
@@ -12,7 +13,7 @@
 static int mouse_x;
 static int mouse_y;
 
-static struct option_datum option_data[NUM_OPTIONS];
+static struct option_data option_data[NUM_OPTIONS];
 
 static enum option option_mouseover(void)
 {
@@ -41,7 +42,7 @@ static struct scene *select_option(const enum option option)
     break;
     case OPTION_START:
     {
-        if (TCOD_sys_file_exists(SAVE_PATH))
+        if (file_exists(SAVE_PATH))
         {
             // TODO: prompt whether the player wants to overwrite the save with a new character
             // if so, go to character creation
@@ -75,10 +76,12 @@ static struct scene *select_option(const enum option option)
 
 static void init(struct scene *const previous_scene)
 {
-    option_data[OPTION_START] = (struct option_datum){
+    previous_scene;
+
+    option_data[OPTION_START] = (struct option_data){
         .text = "Start",
     };
-    option_data[OPTION_QUIT] = (struct option_datum){
+    option_data[OPTION_QUIT] = (struct option_data){
         .text = "Quit",
     };
 
@@ -164,6 +167,8 @@ static struct scene *handle_event(SDL_Event *const event)
 
 static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
+    delta_time;
+
     int y = 1;
 
     for (enum option option = OPTION_START; option < NUM_OPTIONS; option++)

@@ -1,11 +1,11 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef GAME_UTIL_H
+#define GAME_UTIL_H
 
 #include <libtcod.h>
 
 #define PI 3.14f
 
-#define TCOD_LIST_FOREACH(list) for (void **iterator = TCOD_list_begin(list); iterator != NULL && iterator != TCOD_list_end(list); iterator++)
+#define TCOD_LIST_FOREACH(list, iterator) for (void **iterator = TCOD_list_begin(list); iterator != NULL && iterator != TCOD_list_end(list); iterator++)
 
 float distance_between_sq(
     int x1, int y1,

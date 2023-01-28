@@ -1,6 +1,7 @@
 #include "menu_scene.h"
 
 #include "../../config.h"
+#include "../../game/color.h"
 #include "../../game/world.h"
 #include "../../print.h"
 #include "../../scene.h"
@@ -177,8 +178,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             console,
             1,
             y++,
-            option == option_mouseover() ? &TCOD_yellow : &TCOD_white,
-            &TCOD_black,
+            option == option_mouseover() ? &color_yellow : &color_white,
+            &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
             "%c) %s",

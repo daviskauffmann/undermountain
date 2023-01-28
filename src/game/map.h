@@ -50,8 +50,8 @@ bool map_is_walkable(
     const struct map *map,
     int x,
     int y);
-TCOD_map_t map_to_TCOD_map(const struct map *map);
-TCOD_map_t map_to_fov_map(
+TCOD_Map * map_to_TCOD_map(const struct map *map);
+TCOD_Map * map_to_fov_map(
     const struct map *map,
     int x,
     int y,

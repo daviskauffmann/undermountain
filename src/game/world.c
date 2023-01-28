@@ -2,6 +2,7 @@
 
 #include "actor.h"
 #include "assets.h"
+#include "color.h"
 #include "corpse.h"
 #include "explosion.h"
 #include "message.h"
@@ -127,19 +128,21 @@ void world_create(struct actor *hero)
         -1,
         -1,
         -1,
-        TCOD_white,
+        color_white,
         "Hail, %s!",
         world->hero->name);
 
     printf("World created.\n");
 }
 
+// TODO: maybe this function should just take in a stream instead of loading the file
+// call it world_serialize? and world_deserialize?
 void world_save(const char *filename)
 {
-    TCOD_zip_t zip = TCOD_zip_new();
+    FILE *file = fopen(filename, "wb");
 
-    TCOD_zip_put_random(zip, world->random);
-    TCOD_zip_put_int(zip, world->time);
+    fwrite(world->random, sizeof(world->random->mt_cmwc), 1, file);
+    fwrite(&world->time, sizeof(world->time), 1, file);
 
     uint8_t player_floor = 0;
     size_t player_index = 0;
@@ -150,10 +153,10 @@ void world_save(const char *filename)
     {
         const struct map *const map = &world->maps[floor];
 
-        TCOD_zip_put_int(zip, map->stair_down_x);
-        TCOD_zip_put_int(zip, map->stair_down_y);
-        TCOD_zip_put_int(zip, map->stair_up_x);
-        TCOD_zip_put_int(zip, map->stair_up_y);
+        fwrite(&map->stair_down_x, sizeof(map->stair_down_x), 1, file);
+        fwrite(&map->stair_down_y, sizeof(map->stair_down_y), 1, file);
+        fwrite(&map->stair_up_x, sizeof(map->stair_up_x), 1, file);
+        fwrite(&map->stair_up_y, sizeof(map->stair_up_y), 1, file);
 
         for (int x = 0; x < MAP_WIDTH; x++)
         {
@@ -161,59 +164,61 @@ void world_save(const char *filename)
             {
                 const struct tile *const tile = &map->tiles[x][y];
 
-                TCOD_zip_put_int(zip, tile->type);
-                TCOD_zip_put_int(zip, tile->explored);
+                fwrite(&tile->type, sizeof(tile->type), 1, file);
+                fwrite(&tile->explored, sizeof(tile->explored), 1, file);
             }
         }
 
-        TCOD_zip_put_int(zip, (int)map->rooms->size);
+        fwrite(&map->rooms->size, sizeof(map->rooms->size), 1, file);
         for (size_t room_index = 0; room_index < map->rooms->size; room_index++)
         {
             const struct room *const room = list_get(map->rooms, room_index);
 
-            TCOD_zip_put_int(zip, room->x);
-            TCOD_zip_put_int(zip, room->y);
-            TCOD_zip_put_int(zip, room->w);
-            TCOD_zip_put_int(zip, room->h);
+            fwrite(&room->x, sizeof(room->x), 1, file);
+            fwrite(&room->y, sizeof(room->y), 1, file);
+            fwrite(&room->w, sizeof(room->w), 1, file);
+            fwrite(&room->h, sizeof(room->h), 1, file);
         }
 
-        TCOD_zip_put_int(zip, (int)map->objects->size);
+        fwrite(&map->objects->size, sizeof(map->objects->size), 1, file);
         for (size_t object_index = 0; object_index < map->objects->size; object_index++)
         {
             const struct object *const object = list_get(map->objects, object_index);
 
-            TCOD_zip_put_int(zip, object->type);
+            fwrite(&object->type, sizeof(object->type), 1, file);
 
-            TCOD_zip_put_int(zip, object->x);
-            TCOD_zip_put_int(zip, object->y);
+            fwrite(&object->x, sizeof(object->x), 1, file);
+            fwrite(&object->y, sizeof(object->y), 1, file);
         }
 
-        TCOD_zip_put_int(zip, (int)map->actors->size);
+        fwrite(&map->actors->size, sizeof(map->actors->size), 1, file);
         for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
         {
             const struct actor *const actor = list_get(map->actors, actor_index);
 
-            TCOD_zip_put_string(zip, actor->name);
-            TCOD_zip_put_int(zip, actor->race);
-            TCOD_zip_put_int(zip, actor->class);
-            TCOD_zip_put_int(zip, actor->faction);
+            const size_t actor_name_length = strlen(actor->name);
+            fwrite(&actor_name_length, sizeof(actor_name_length), 1, file);
+            fwrite(actor->name, actor_name_length, 1, file);
+            fwrite(&actor->race, sizeof(actor->race), 1, file);
+            fwrite(&actor->class, sizeof(actor->class), 1, file);
+            fwrite(&actor->faction, sizeof(actor->faction), 1, file);
 
-            TCOD_zip_put_int(zip, actor->level);
-            TCOD_zip_put_int(zip, actor->experience);
-            TCOD_zip_put_int(zip, actor->ability_points);
+            fwrite(&actor->level, sizeof(actor->level), 1, file);
+            fwrite(&actor->experience, sizeof(actor->experience), 1, file);
+            fwrite(&actor->ability_points, sizeof(actor->ability_points), 1, file);
 
             for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
             {
-                TCOD_zip_put_int(zip, actor->ability_scores[ability]);
+                fwrite(&actor->ability_scores[ability], sizeof(actor->ability_scores[ability]), 1, file);
             }
 
-            TCOD_zip_put_int(zip, actor->base_hit_points);
-            TCOD_zip_put_int(zip, actor->base_mana_points);
+            fwrite(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
+            fwrite(&actor->base_mana_points, sizeof(actor->base_mana_points), 1, file);
 
-            TCOD_zip_put_int(zip, actor->hit_points);
-            TCOD_zip_put_int(zip, actor->mana_points);
+            fwrite(&actor->hit_points, sizeof(actor->hit_points), 1, file);
+            fwrite(&actor->mana_points, sizeof(actor->mana_points), 1, file);
 
-            TCOD_zip_put_int(zip, actor->gold);
+            fwrite(&actor->gold, sizeof(actor->gold), 1, file);
 
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
@@ -221,64 +226,68 @@ void world_save(const char *filename)
 
                 if (item)
                 {
-                    TCOD_zip_put_int(zip, 1);
+                    const bool exists = true;
+                    fwrite(&exists, sizeof(exists), 1, file);
 
-                    TCOD_zip_put_int(zip, item->type);
+                    fwrite(&item->type, sizeof(item->type), 1, file);
 
-                    TCOD_zip_put_int(zip, item->x);
-                    TCOD_zip_put_int(zip, item->y);
+                    fwrite(&item->x, sizeof(item->x), 1, file);
+                    fwrite(&item->y, sizeof(item->y), 1, file);
 
-                    TCOD_zip_put_int(zip, item->stack);
+                    fwrite(&item->stack, sizeof(item->stack), 1, file);
 
-                    TCOD_zip_put_int(zip, item->durability);
+                    fwrite(&item->durability, sizeof(item->durability), 1, file);
                 }
                 else
                 {
-                    TCOD_zip_put_int(zip, 0);
+                    const bool exists = false;
+                    fwrite(&exists, sizeof(exists), 1, file);
                 }
             }
 
-            TCOD_zip_put_int(zip, (int)actor->items->size);
+            fwrite(&actor->items->size, sizeof(actor->items->size), 1, file);
             for (size_t item_index = 0; item_index < actor->items->size; item_index++)
             {
                 const struct item *const item = list_get(map->items, item_index);
 
-                TCOD_zip_put_int(zip, item->type);
+                fwrite(&item->type, sizeof(item->type), 1, file);
 
-                TCOD_zip_put_int(zip, item->x);
-                TCOD_zip_put_int(zip, item->y);
+                fwrite(&item->x, sizeof(item->x), 1, file);
+                fwrite(&item->y, sizeof(item->y), 1, file);
 
-                TCOD_zip_put_int(zip, item->stack);
+                fwrite(&item->stack, sizeof(item->stack), 1, file);
 
-                TCOD_zip_put_int(zip, item->durability);
+                fwrite(&item->durability, sizeof(item->durability), 1, file);
             }
 
-            TCOD_zip_put_int(zip, (int)actor->known_spell_types->size);
+            fwrite(&actor->known_spell_types->size, sizeof(actor->known_spell_types->size), 1, file);
             for (size_t known_spell_type_index = 0; known_spell_type_index < actor->known_spell_types->size; known_spell_type_index++)
             {
                 const enum spell_type spell_type = (size_t)(list_get(actor->known_spell_types, known_spell_type_index));
 
-                TCOD_zip_put_int(zip, spell_type);
+                fwrite(&spell_type, sizeof(spell_type), 1, file);
             }
 
-            TCOD_zip_put_int(zip, actor->readied_spell_type);
+            fwrite(&actor->readied_spell_type, sizeof(actor->readied_spell_type), 1, file);
 
-            TCOD_zip_put_int(zip, actor->x);
-            TCOD_zip_put_int(zip, actor->y);
+            fwrite(&actor->x, sizeof(actor->x), 1, file);
+            fwrite(&actor->y, sizeof(actor->y), 1, file);
 
-            TCOD_zip_put_int(zip, actor->took_turn);
-            TCOD_zip_put_float(zip, actor->energy);
+            fwrite(&actor->took_turn, sizeof(actor->took_turn), 1, file);
+            fwrite(&actor->energy, sizeof(actor->energy), 1, file);
 
-            TCOD_zip_put_int(zip, actor->last_seen_x);
-            TCOD_zip_put_int(zip, actor->last_seen_y);
-            TCOD_zip_put_int(zip, actor->turns_chased);
+            fwrite(&actor->last_seen_x, sizeof(actor->last_seen_x), 1, file);
+            fwrite(&actor->last_seen_y, sizeof(actor->last_seen_y), 1, file);
+            fwrite(&actor->turns_chased, sizeof(actor->turns_chased), 1, file);
 
-            TCOD_zip_put_int(zip, actor->light_type);
+            fwrite(&actor->light_type, sizeof(actor->light_type), 1, file);
 
-            TCOD_zip_put_color(zip, actor->flash_color);
-            TCOD_zip_put_float(zip, actor->flash_fade_coef);
+            fwrite(&actor->flash_color, sizeof(actor->flash_color), 1, file);
+            fwrite(&actor->flash_fade_coef, sizeof(actor->flash_fade_coef), 1, file);
 
-            TCOD_zip_put_int(zip, actor->controllable);
+            fwrite(&actor->controllable, sizeof(actor->controllable), 1, file);
+
+            fwrite(&actor->dead, sizeof(actor->dead), 1, file);
 
             if (actor == world->player)
             {
@@ -297,79 +306,73 @@ void world_save(const char *filename)
         {
             const struct actor *const actor = list_get(map->actors, actor_index);
 
-            if (actor->leader)
-            {
-                size_t leader_index = map->actors->size;
-
-                for (size_t other_actor_index = 0; other_actor_index < map->actors->size; other_actor_index++)
-                {
-                    const struct actor *const other = list_get(map->actors, other_actor_index);
-
-                    if (other == actor->leader)
-                    {
-                        leader_index = other_actor_index;
-
-                        break;
-                    }
-                }
-
-                TCOD_zip_put_int(zip, (int)leader_index);
-            }
-            else
-            {
-                TCOD_zip_put_int(zip, -1);
-            }
+            const size_t leader_index = list_index_of(map->actors, actor->leader);
+            fwrite(&leader_index, sizeof(leader_index), 1, file);
         }
 
-        TCOD_zip_put_int(zip, (int)map->corpses->size);
+        fwrite(&map->corpses->size, sizeof(map->corpses->size), 1, file);
         for (size_t corpse_index = 0; corpse_index < map->corpses->size; corpse_index++)
         {
             const struct corpse *const corpse = list_get(map->corpses, corpse_index);
 
-            TCOD_zip_put_string(zip, corpse->name);
-            TCOD_zip_put_int(zip, corpse->level);
-            TCOD_zip_put_int(zip, corpse->x);
-            TCOD_zip_put_int(zip, corpse->y);
+            const size_t corpse_name_length = strlen(corpse->name);
+            fwrite(&corpse_name_length, sizeof(corpse_name_length), 1, file);
+            fwrite(corpse->name, corpse_name_length, 1, file);
+            fwrite(&corpse->level, sizeof(corpse->level), 1, file);
+
+            fwrite(&corpse->x, sizeof(corpse->x), 1, file);
+            fwrite(&corpse->y, sizeof(corpse->y), 1, file);
         }
 
-        TCOD_zip_put_int(zip, (int)map->items->size);
+        fwrite(&map->items->size, sizeof(map->items->size), 1, file);
         for (size_t item_index = 0; item_index < map->items->size; item_index++)
         {
             const struct item *const item = list_get(map->items, item_index);
 
-            TCOD_zip_put_int(zip, item->type);
-            TCOD_zip_put_int(zip, item->x);
-            TCOD_zip_put_int(zip, item->y);
-            TCOD_zip_put_int(zip, item->stack);
-            TCOD_zip_put_int(zip, item->durability);
+            fwrite(&item->type, sizeof(item->type), 1, file);
+
+            fwrite(&item->x, sizeof(item->x), 1, file);
+            fwrite(&item->y, sizeof(item->y), 1, file);
+
+            fwrite(&item->stack, sizeof(item->stack), 1, file);
+
+            fwrite(&item->durability, sizeof(item->durability), 1, file);
         }
 
-        TCOD_zip_put_int(zip, (int)map->projectiles->size);
+        fwrite(&map->projectiles->size, sizeof(map->projectiles->size), 1, file);
         for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
         {
             const struct projectile *const projectile = list_get(map->projectiles, projectile_index);
 
-            TCOD_zip_put_int(zip, projectile->type);
+            fwrite(&projectile->type, sizeof(projectile->type), 1, file);
 
-            TCOD_zip_put_int(zip, projectile->origin_x);
-            TCOD_zip_put_int(zip, projectile->origin_y);
-            TCOD_zip_put_int(zip, projectile->target_x);
-            TCOD_zip_put_int(zip, projectile->target_x);
-            TCOD_zip_put_float(zip, projectile->x);
-            TCOD_zip_put_float(zip, projectile->y);
+            fwrite(&projectile->origin_x, sizeof(projectile->origin_x), 1, file);
+            fwrite(&projectile->origin_y, sizeof(projectile->origin_y), 1, file);
+            fwrite(&projectile->target_x, sizeof(projectile->target_x), 1, file);
+            fwrite(&projectile->target_x, sizeof(projectile->target_x), 1, file);
+            fwrite(&projectile->x, sizeof(projectile->x), 1, file);
+            fwrite(&projectile->y, sizeof(projectile->y), 1, file);
 
             if (projectile->ammunition)
             {
-                TCOD_zip_put_int(zip, 1);
-                TCOD_zip_put_int(zip, projectile->ammunition->type);
-                TCOD_zip_put_int(zip, projectile->ammunition->x);
-                TCOD_zip_put_int(zip, projectile->ammunition->y);
-                TCOD_zip_put_int(zip, projectile->ammunition->durability);
-                TCOD_zip_put_int(zip, projectile->ammunition->stack);
+                const bool has_ammunition = true;
+                fwrite(&has_ammunition, sizeof(has_ammunition), 1, file);
+
+                const struct item *const item = projectile->ammunition;
+
+                fwrite(&item->type, sizeof(item->type), 1, file);
+
+                fwrite(&item->x, sizeof(item->x), 1, file);
+                fwrite(&item->y, sizeof(item->y), 1, file);
+
+                fwrite(&item->stack, sizeof(item->stack), 1, file);
+
+                fwrite(&item->durability, sizeof(item->durability), 1, file);
             }
             else
             {
-                TCOD_zip_put_int(zip, 0);
+                const bool has_ammunition = false;
+                fwrite(&has_ammunition, sizeof(has_ammunition), 1, file);
             }
         }
 
@@ -377,76 +380,66 @@ void world_save(const char *filename)
         {
             const struct projectile *const projectile = list_get(map->projectiles, projectile_index);
 
-            size_t shooter_index = map->actors->size;
-
-            for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
-            {
-                const struct actor *const actor = list_get(map->actors, actor_index);
-
-                if (actor == projectile->shooter)
-                {
-                    shooter_index = actor_index;
-
-                    break;
-                }
-            }
-
-            TCOD_zip_put_int(zip, (int)shooter_index);
+            const size_t shooter_index = list_index_of(map->actors, projectile->shooter);
+            fwrite(&shooter_index, sizeof(shooter_index), 1, file);
         }
 
-        TCOD_zip_put_int(zip, (int)map->explosions->size);
+        fwrite(&map->explosions->size, sizeof(map->explosions->size), 1, file);
         for (size_t explosion_index = 0; explosion_index < map->explosions->size; explosion_index++)
         {
             const struct explosion *const explosion = list_get(map->explosions, explosion_index);
 
-            TCOD_zip_put_int(zip, explosion->x);
-            TCOD_zip_put_int(zip, explosion->y);
-            TCOD_zip_put_int(zip, explosion->radius);
-            TCOD_zip_put_color(zip, explosion->color);
-            TCOD_zip_put_float(zip, explosion->lifetime);
+            fwrite(&explosion->x, sizeof(explosion->x), 1, file);
+            fwrite(&explosion->y, sizeof(explosion->y), 1, file);
+
+            fwrite(&explosion->radius, sizeof(explosion->radius), 1, file);
+            fwrite(&explosion->color, sizeof(explosion->color), 1, file);
+            fwrite(&explosion->lifetime, sizeof(explosion->lifetime), 1, file);
         }
 
-        TCOD_zip_put_int(zip, map->current_actor_index);
+        fwrite(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
     }
 
-    TCOD_zip_put_int(zip, player_floor);
-    TCOD_zip_put_int(zip, (int)player_index);
-    TCOD_zip_put_int(zip, hero_floor);
-    TCOD_zip_put_int(zip, (int)hero_index);
+    fwrite(&player_floor, sizeof(player_floor), 1, file);
+    fwrite(&player_index, sizeof(player_index), 1, file);
+    fwrite(&hero_floor, sizeof(hero_floor), 1, file);
+    fwrite(&hero_index, sizeof(hero_index), 1, file);
 
-    TCOD_zip_put_int(zip, (int)world->messages->size);
+    fwrite(&world->messages->size, sizeof(world->messages->size), 1, file);
     for (size_t message_index = 0; message_index < world->messages->size; message_index++)
     {
         const struct message *const message = list_get(world->messages, message_index);
 
-        TCOD_zip_put_string(zip, message->text);
-        TCOD_zip_put_color(zip, message->color);
+        const size_t message_length = strlen(message->text);
+        fwrite(&message_length, sizeof(message_length), 1, file);
+        fwrite(message->text, sizeof(char), message_length, file);
+        fwrite(&message->color, sizeof(message->color), 1, file);
     }
 
-    TCOD_zip_save_to_file(zip, filename);
-
-    TCOD_zip_delete(zip);
+    fclose(file);
 
     printf("World saved.\n");
 }
 
 void world_load(const char *filename)
 {
-    TCOD_zip_t zip = TCOD_zip_new();
-    TCOD_zip_load_from_file(zip, filename);
+    FILE *file = fopen(filename, "rb");
 
-    world->random = TCOD_zip_get_random(zip);
+    world->random = TCOD_random_new(TCOD_RNG_MT);
+    fread(world->random, sizeof(world->random->mt_cmwc), 1, file);
+
     TCOD_namegen_parse("data/namegen.cfg", world->random);
-    world->time = TCOD_zip_get_int(zip);
+
+    fread(&world->time, sizeof(world->time), 1, file);
 
     for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *const map = &world->maps[floor];
 
-        map->stair_down_x = (uint8_t)TCOD_zip_get_int(zip);
-        map->stair_down_y = (uint8_t)TCOD_zip_get_int(zip);
-        map->stair_up_x = (uint8_t)TCOD_zip_get_int(zip);
-        map->stair_up_y = (uint8_t)TCOD_zip_get_int(zip);
+        fread(&map->stair_down_x, sizeof(map->stair_down_x), 1, file);
+        fread(&map->stair_down_y, sizeof(map->stair_down_y), 1, file);
+        fread(&map->stair_up_x, sizeof(map->stair_up_x), 1, file);
+        fread(&map->stair_up_y, sizeof(map->stair_up_y), 1, file);
 
         for (size_t x = 0; x < MAP_WIDTH; x++)
         {
@@ -454,36 +447,38 @@ void world_load(const char *filename)
             {
                 struct tile *const tile = &map->tiles[x][y];
 
-                tile->type = TCOD_zip_get_int(zip);
-                tile->explored = TCOD_zip_get_int(zip);
+                fread(&tile->type, sizeof(tile->type), 1, file);
+                fread(&tile->explored, sizeof(tile->explored), 1, file);
             }
         }
 
-        const size_t num_rooms = TCOD_zip_get_int(zip);
+        size_t num_rooms;
+        fread(&num_rooms, sizeof(num_rooms), 1, file);
         for (size_t room_index = 0; room_index < num_rooms; room_index++)
         {
             struct room *const room = malloc(sizeof(struct room));
             assert(room);
 
-            room->x = (uint8_t)TCOD_zip_get_int(zip);
-            room->y = (uint8_t)TCOD_zip_get_int(zip);
-            room->w = (uint8_t)TCOD_zip_get_int(zip);
-            room->h = (uint8_t)TCOD_zip_get_int(zip);
+            fread(&room->x, sizeof(room->x), 1, file);
+            fread(&room->y, sizeof(room->y), 1, file);
+            fread(&room->w, sizeof(room->w), 1, file);
+            fread(&room->h, sizeof(room->h), 1, file);
 
             list_add(map->rooms, room);
         }
 
-        const size_t num_objects = TCOD_zip_get_int(zip);
+        size_t num_objects;
+        fread(&num_objects, sizeof(num_objects), 1, file);
         for (size_t i = 0; i < num_objects; i++)
         {
             struct object *const object = malloc(sizeof(struct object));
             assert(object);
 
-            object->type = TCOD_zip_get_int(zip);
+            fread(&object->type, sizeof(object->type), 1, file);
 
             object->floor = floor;
-            object->x = (uint8_t)TCOD_zip_get_int(zip);
-            object->y = (uint8_t)TCOD_zip_get_int(zip);
+            fread(&object->x, sizeof(object->x), 1, file);
+            fread(&object->y, sizeof(object->y), 1, file);
 
             object->light_fov = NULL;
 
@@ -491,52 +486,58 @@ void world_load(const char *filename)
             map->tiles[object->x][object->y].object = object;
         }
 
-        const size_t num_actors = TCOD_zip_get_int(zip);
+        size_t num_actors;
+        fread(&num_actors, sizeof(num_actors), 1, file);
         for (size_t actor_index = 0; actor_index < num_actors; actor_index++)
         {
             struct actor *const actor = malloc(sizeof(struct actor));
             assert(actor);
 
-            actor->name = TCOD_strdup(TCOD_zip_get_string(zip));
-            actor->race = TCOD_zip_get_int(zip);
-            actor->class = TCOD_zip_get_int(zip);
-            actor->faction = TCOD_zip_get_int(zip);
+            size_t actor_name_length;
+            fread(&actor_name_length, sizeof(actor_name_length), 1, file);
+            actor->name = malloc(actor_name_length + 1);
+            fread(actor->name, actor_name_length, 1, file);
+            actor->name[actor_name_length] = '\0';
+            fread(&actor->race, sizeof(actor->race), 1, file);
+            fread(&actor->class, sizeof(actor->class), 1, file);
+            fread(&actor->faction, sizeof(actor->faction), 1, file);
 
-            actor->level = (uint8_t)TCOD_zip_get_int(zip);
-            actor->experience = TCOD_zip_get_int(zip);
-            actor->ability_points = TCOD_zip_get_int(zip);
+            fread(&actor->level, sizeof(actor->level), 1, file);
+            fread(&actor->experience, sizeof(actor->experience), 1, file);
+            fread(&actor->ability_points, sizeof(actor->ability_points), 1, file);
 
             for (enum ability ability_score = 0; ability_score < NUM_ABILITIES; ability_score++)
             {
-                actor->ability_scores[ability_score] = TCOD_zip_get_int(zip);
+                fread(&actor->ability_scores[ability_score], sizeof(actor->ability_scores[ability_score]), 1, file);
             }
 
-            actor->base_hit_points = TCOD_zip_get_int(zip);
-            actor->base_mana_points = TCOD_zip_get_int(zip);
+            fread(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
+            fread(&actor->base_mana_points, sizeof(actor->base_mana_points), 1, file);
 
-            actor->hit_points = TCOD_zip_get_int(zip);
-            actor->mana_points = TCOD_zip_get_int(zip);
+            fread(&actor->hit_points, sizeof(actor->hit_points), 1, file);
+            fread(&actor->mana_points, sizeof(actor->mana_points), 1, file);
 
-            actor->gold = TCOD_zip_get_int(zip);
+            fread(&actor->gold, sizeof(actor->gold), 1, file);
 
             for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
-                const bool exists = TCOD_zip_get_int(zip);
+                bool exists;
+                fread(&exists, sizeof(exists), 1, file);
 
                 if (exists)
                 {
                     struct item *const item = malloc(sizeof(*item));
                     assert(item);
 
-                    item->type = TCOD_zip_get_int(zip);
+                    fread(&item->type, sizeof(item->type), 1, file);
 
                     item->floor = floor;
-                    item->x = (uint8_t)TCOD_zip_get_int(zip);
-                    item->y = (uint8_t)TCOD_zip_get_int(zip);
+                    fread(&item->x, sizeof(item->x), 1, file);
+                    fread(&item->y, sizeof(item->y), 1, file);
 
-                    item->stack = TCOD_zip_get_int(zip);
+                    fread(&item->stack, sizeof(item->stack), 1, file);
 
-                    item->durability = TCOD_zip_get_int(zip);
+                    fread(&item->durability, sizeof(item->durability), 1, file);
 
                     actor->equipment[equip_slot] = item;
                 }
@@ -547,59 +548,63 @@ void world_load(const char *filename)
             }
 
             actor->items = list_new();
-            const size_t num_items = TCOD_zip_get_int(zip);
+            size_t num_items;
+            fread(&num_items, sizeof(num_items), 1, file);
             for (size_t item_index = 0; item_index < num_items; item_index++)
             {
                 struct item *const item = malloc(sizeof(struct item));
                 assert(item);
 
-                item->type = TCOD_zip_get_int(zip);
+                fread(&item->type, sizeof(item->type), 1, file);
 
-                item->x = (uint8_t)TCOD_zip_get_int(zip);
-                item->y = (uint8_t)TCOD_zip_get_int(zip);
+                item->floor = floor;
+                fread(&item->x, sizeof(item->x), 1, file);
+                fread(&item->y, sizeof(item->y), 1, file);
 
-                item->stack = TCOD_zip_get_int(zip);
+                fread(&item->stack, sizeof(item->stack), 1, file);
 
-                item->durability = TCOD_zip_get_int(zip);
+                fread(&item->durability, sizeof(item->durability), 1, file);
 
                 list_add(actor->items, item);
             }
 
             actor->known_spell_types = list_new();
-            const size_t num_known_spell_types = TCOD_zip_get_int(zip);
+            size_t num_known_spell_types;
+            fread(&num_known_spell_types, sizeof(num_known_spell_types), 1, file);
             for (size_t known_spell_type_index = 0; known_spell_type_index < num_known_spell_types; known_spell_type_index++)
             {
-                const enum spell_type spell_type = TCOD_zip_get_int(zip);
+                enum spell_type spell_type;
+                fread(&spell_type, sizeof(spell_type), 1, file);
 
                 list_add(actor->known_spell_types, (void *)(size_t)spell_type);
             }
 
-            actor->readied_spell_type = TCOD_zip_get_int(zip);
+            fread(&actor->readied_spell_type, sizeof(actor->readied_spell_type), 1, file);
 
             actor->floor = floor;
-            actor->x = (uint8_t)TCOD_zip_get_int(zip);
-            actor->y = (uint8_t)TCOD_zip_get_int(zip);
+            fread(&actor->x, sizeof(actor->x), 1, file);
+            fread(&actor->y, sizeof(actor->y), 1, file);
 
             actor->fov = NULL;
 
-            actor->took_turn = TCOD_zip_get_int(zip);
-            actor->energy = TCOD_zip_get_float(zip);
+            fread(&actor->took_turn, sizeof(actor->took_turn), 1, file);
+            fread(&actor->energy, sizeof(actor->energy), 1, file);
 
-            actor->last_seen_x = TCOD_zip_get_int(zip);
-            actor->last_seen_y = TCOD_zip_get_int(zip);
-            actor->turns_chased = TCOD_zip_get_int(zip);
+            fread(&actor->last_seen_x, sizeof(actor->last_seen_x), 1, file);
+            fread(&actor->last_seen_y, sizeof(actor->last_seen_y), 1, file);
+            fread(&actor->turns_chased, sizeof(actor->turns_chased), 1, file);
 
             actor->leader = NULL;
 
-            actor->light_type = TCOD_zip_get_int(zip);
+            fread(&actor->light_type, sizeof(actor->light_type), 1, file);
             actor->light_fov = NULL;
 
-            actor->flash_color = TCOD_zip_get_color(zip);
-            actor->flash_fade_coef = TCOD_zip_get_float(zip);
+            fread(&actor->flash_color, sizeof(actor->flash_color), 1, file);
+            fread(&actor->flash_fade_coef, sizeof(actor->flash_fade_coef), 1, file);
 
-            actor->controllable = TCOD_zip_get_int(zip);
+            fread(&actor->controllable, sizeof(actor->controllable), 1, file);
 
-            actor->dead = false;
+            fread(&actor->dead, sizeof(actor->dead), 1, file);
 
             list_add(map->actors, actor);
             map->tiles[actor->x][actor->y].actor = actor;
@@ -609,82 +614,90 @@ void world_load(const char *filename)
         {
             struct actor *const actor = list_get(map->actors, actor_index);
 
-            const size_t leader_index = TCOD_zip_get_int(zip);
-
-            if (leader_index < map->actors->size)
-            {
-                actor->leader = list_get(map->actors, leader_index);
-            }
+            size_t leader_index;
+            fread(&leader_index, sizeof(leader_index), 1, file);
+            actor->leader = list_get(map->actors, leader_index);
         }
 
-        const size_t num_corpses = TCOD_zip_get_int(zip);
+        size_t num_corpses;
+        fread(&num_corpses, sizeof(num_corpses), 1, file);
         for (size_t corpse_index = 0; corpse_index < num_corpses; corpse_index++)
         {
             struct corpse *corpse = malloc(sizeof(*corpse));
             assert(corpse);
 
-            corpse->name = TCOD_strdup(TCOD_zip_get_string(zip));
-            corpse->level = (uint8_t)TCOD_zip_get_int(zip);
+            size_t corpse_name_length;
+            fread(&corpse_name_length, sizeof(corpse_name_length), 1, file);
+            corpse->name = malloc(corpse_name_length + 1);
+            fread(corpse->name, corpse_name_length, 1, file);
+            corpse->name[corpse_name_length] = '\0';
+            fread(&corpse->level, sizeof(corpse->level), 1, file);
 
             corpse->floor = floor;
-            corpse->x = (uint8_t)TCOD_zip_get_int(zip);
-            corpse->y = (uint8_t)TCOD_zip_get_int(zip);
+            fread(&corpse->x, sizeof(corpse->x), 1, file);
+            fread(&corpse->y, sizeof(corpse->y), 1, file);
 
             list_add(map->corpses, corpse);
             list_add(map->tiles[corpse->x][corpse->y].corpses, corpse);
         }
 
-        const size_t num_items = TCOD_zip_get_int(zip);
+        size_t num_items;
+        fread(&num_items, sizeof(num_items), 1, file);
         for (size_t i = 0; i < num_items; i++)
         {
             struct item *const item = malloc(sizeof(struct item));
             assert(item);
 
-            item->type = TCOD_zip_get_int(zip);
+            fread(&item->type, sizeof(item->type), 1, file);
 
-            item->x = (uint8_t)TCOD_zip_get_int(zip);
-            item->y = (uint8_t)TCOD_zip_get_int(zip);
+            item->floor = floor;
+            fread(&item->x, sizeof(item->x), 1, file);
+            fread(&item->y, sizeof(item->y), 1, file);
 
-            item->stack = TCOD_zip_get_int(zip);
+            fread(&item->stack, sizeof(item->stack), 1, file);
 
-            item->durability = TCOD_zip_get_int(zip);
+            fread(&item->durability, sizeof(item->durability), 1, file);
 
             list_add(map->items, item);
             list_add(map->tiles[item->x][item->y].items, item);
         }
 
-        const size_t num_projectiles = TCOD_zip_get_int(zip);
+        size_t num_projectiles;
+        fread(&num_projectiles, sizeof(num_projectiles), 1, file);
         for (size_t projectile_index = 0; projectile_index < num_projectiles; projectile_index++)
         {
             struct projectile *const projectile = malloc(sizeof(struct projectile));
             assert(projectile);
 
-            projectile->type = TCOD_zip_get_int(zip);
+            fread(&projectile->type, sizeof(projectile->type), 1, file);
 
             projectile->floor = floor;
-            projectile->origin_x = TCOD_zip_get_int(zip);
-            projectile->origin_y = TCOD_zip_get_int(zip);
-            projectile->target_x = TCOD_zip_get_int(zip);
-            projectile->target_y = TCOD_zip_get_int(zip);
-            projectile->x = TCOD_zip_get_float(zip);
-            projectile->y = TCOD_zip_get_float(zip);
+            fread(&projectile->origin_x, sizeof(projectile->origin_x), 1, file);
+            fread(&projectile->origin_y, sizeof(projectile->origin_y), 1, file);
+            fread(&projectile->target_x, sizeof(projectile->target_x), 1, file);
+            fread(&projectile->target_y, sizeof(projectile->target_y), 1, file);
+            fread(&projectile->x, sizeof(projectile->x), 1, file);
+            fread(&projectile->y, sizeof(projectile->y), 1, file);
 
             projectile->shooter = NULL;
 
-            bool ammunition_exists = TCOD_zip_get_int(zip);
+            bool ammunition_exists;
+            fread(&ammunition_exists, sizeof(ammunition_exists), 1, file);
+
             if (ammunition_exists)
             {
                 struct item *const item = malloc(sizeof(struct item));
                 assert(item);
 
-                item->type = TCOD_zip_get_int(zip);
+                fread(&item->type, sizeof(item->type), 1, file);
 
-                item->x = (uint8_t)TCOD_zip_get_int(zip);
-                item->y = (uint8_t)TCOD_zip_get_int(zip);
+                item->floor = floor;
+                fread(&item->x, sizeof(item->x), 1, file);
+                fread(&item->y, sizeof(item->y), 1, file);
 
-                item->stack = TCOD_zip_get_int(zip);
+                fread(&item->stack, sizeof(item->stack), 1, file);
 
-                item->durability = TCOD_zip_get_int(zip);
+                fread(&item->durability, sizeof(item->durability), 1, file);
 
                 projectile->ammunition = item;
             }
@@ -702,8 +715,8 @@ void world_load(const char *filename)
         {
             struct projectile *const projectile = list_get(map->projectiles, projectile_index);
 
-            const size_t shooter_index = TCOD_zip_get_int(zip);
-
+            size_t shooter_index;
+            fread(&shooter_index, sizeof(shooter_index), 1, file);
             projectile->shooter = list_get(map->actors, shooter_index);
 
             if (projectile->type == PROJECTILE_TYPE_ARROW)
@@ -712,53 +725,63 @@ void world_load(const char *filename)
             }
         }
 
-        const size_t num_explosions = TCOD_zip_get_int(zip);
+        size_t num_explosions;
+        fread(&num_explosions, sizeof(num_explosions), 1, file);
         for (size_t explosion_index = 0; explosion_index < num_explosions; explosion_index++)
         {
             struct explosion *const explosion = malloc(sizeof(struct explosion));
             assert(explosion);
 
             explosion->floor = floor;
-            explosion->x = (uint8_t)TCOD_zip_get_int(zip);
-            explosion->y = (uint8_t)TCOD_zip_get_int(zip);
+            fread(&explosion->x, sizeof(explosion->x), 1, file);
+            fread(&explosion->y, sizeof(explosion->y), 1, file);
 
-            explosion->radius = TCOD_zip_get_int(zip);
-            explosion->color = TCOD_zip_get_color(zip);
-            explosion->lifetime = TCOD_zip_get_float(zip);
+            fread(&explosion->radius, sizeof(explosion->radius), 1, file);
+            fread(&explosion->color, sizeof(explosion->color), 1, file);
+            fread(&explosion->lifetime, sizeof(explosion->lifetime), 1, file);
 
             list_add(map->explosions, explosion);
         }
 
-        map->current_actor_index = TCOD_zip_get_int(zip);
+        fread(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
     }
 
-    const size_t player_floor = TCOD_zip_get_int(zip);
-    const size_t player_index = TCOD_zip_get_int(zip);
+    uint8_t player_floor;
+    fread(&player_floor, sizeof(player_floor), 1, file);
+    size_t player_index;
+    fread(&player_index, sizeof(player_index), 1, file);
     world->player = list_get(world->maps[player_floor].actors, player_index);
 
-    const size_t hero_floor = TCOD_zip_get_int(zip);
-    const size_t hero_index = TCOD_zip_get_int(zip);
+    uint8_t hero_floor;
+    fread(&hero_floor, sizeof(hero_floor), 1, file);
+    size_t hero_index;
+    fread(&hero_index, sizeof(hero_index), 1, file);
     world->hero = list_get(world->maps[hero_floor].actors, hero_index);
 
-    const size_t num_messages = TCOD_zip_get_int(zip);
+    size_t num_messages;
+    fread(&num_messages, sizeof(num_messages), 1, file);
     for (int message_index = 0; message_index < num_messages; message_index++)
     {
-        struct message *message = malloc(sizeof(struct message));
+        struct message *const message = malloc(sizeof(struct message));
         assert(message);
 
-        message->text = TCOD_strdup(TCOD_zip_get_string(zip));
-        message->color = TCOD_zip_get_color(zip);
+        size_t message_text_length;
+        fread(&message_text_length, sizeof(message_text_length), 1, file);
+        message->text = malloc(message_text_length + 1);
+        fread(message->text, message_text_length, 1, file);
+        message->text[message_text_length] = '\0';
+        fread(&message->color, sizeof(message->color), 1, file);
 
         list_add(world->messages, message);
     }
 
-    TCOD_zip_delete(zip);
+    fclose(file);
 
     world_log(
         -1,
         -1,
         -1,
-        TCOD_white,
+        color_white,
         "Welcome back, %s!",
         world->hero->name);
 
@@ -929,7 +952,7 @@ void world_update(float delta_time)
                             actor->floor,
                             actor->x,
                             actor->y,
-                            TCOD_green,
+                            color_green,
                             "Game over! Press 'ESC' to return to the menu.");
                     }
                     else
@@ -1031,7 +1054,7 @@ bool world_player_can_take_turn(void)
     return true;
 }
 
-void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...)
+void world_log(int floor, int x, int y, TCOD_ColorRGB color, char *fmt, ...)
 {
     if (floor != -1 &&
         (!world->player ||

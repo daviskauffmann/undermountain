@@ -16,7 +16,9 @@ void list_delete(struct list *list);
 
 void *list_get(const struct list *list, size_t index);
 
-bool list_contains(struct list *list, void *data);
+bool list_contains(const struct list *list, void *data);
+
+size_t list_index_of(const struct list *list, void *data);
 
 void list_add(struct list *list, void *data);
 void list_remove(struct list *list, const void *data);

@@ -118,7 +118,7 @@ struct item_data
 
     const char *name;
     const char *description;
-    TCOD_color_t color;
+    TCOD_ColorRGB color;
 
     int enhancement_bonus;
 

@@ -1,6 +1,7 @@
 #include "actor.h"
 
 #include "assets.h"
+#include "color.h"
 #include "explosion.h"
 #include "item.h"
 #include "projectile.h"
@@ -71,7 +72,7 @@ struct actor *actor_new(
     actor->light_type = LIGHT_TYPE_NONE;
     actor->light_fov = NULL;
 
-    actor->flash_color = TCOD_white;
+    actor->flash_color = color_white;
     actor->flash_fade_coef = 0.0f;
 
     actor->controllable = false;
@@ -411,7 +412,7 @@ void actor_calc_fov(struct actor *const actor)
     struct map *const map = &world->maps[actor->floor];
     actor->fov = map_to_fov_map(map, actor->x, actor->y, actor_calc_sight_radius(actor));
 
-    TCOD_map_t los_map = map_to_fov_map(map, actor->x, actor->y, 0);
+    TCOD_Map *los_map = map_to_fov_map(map, actor->x, actor->y, 0);
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -488,7 +489,7 @@ void actor_give_experience(struct actor *const actor, const int experience)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_azure,
+        color_azure,
         "%s gains %d experience.",
         actor->name,
         experience);
@@ -501,7 +502,7 @@ void actor_give_experience(struct actor *const actor, const int experience)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_yellow,
+            color_yellow,
             "%s has gained a level!",
             actor->name);
     }
@@ -782,14 +783,14 @@ bool actor_path_towards(
     struct actor *const actor,
     const int target_x, const int target_y)
 {
-    TCOD_map_t TCOD_map = map_to_TCOD_map(&world->maps[actor->floor]);
+    TCOD_Map *const TCOD_map = map_to_TCOD_map(&world->maps[actor->floor]);
     TCOD_map_set_properties(
         TCOD_map,
         target_x, target_y,
         TCOD_map_is_transparent(TCOD_map, target_x, target_y),
         true);
 
-    TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
+    const TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
     TCOD_path_compute(
         path,
         actor->x, actor->y,
@@ -878,7 +879,7 @@ bool actor_move(
                 actor->floor,
                 actor->x,
                 actor->y,
-                TCOD_white,
+                color_white,
                 "%s triggers a trap!",
                 actor->name);
         }
@@ -950,7 +951,7 @@ bool actor_swap(struct actor *const actor, struct actor *const other)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s swaps with %s.",
         actor->name,
         other->name);
@@ -1032,7 +1033,7 @@ bool actor_open_door(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't open the door.",
             actor->name);
 
@@ -1045,7 +1046,7 @@ bool actor_open_door(
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_orange,
+        color_orange,
         "%s opens the door.",
         actor->name);
 
@@ -1069,7 +1070,7 @@ bool actor_close_door(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't close the door.",
             actor->name);
 
@@ -1082,7 +1083,7 @@ bool actor_close_door(
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_orange,
+        color_orange,
         "%s closes the door.",
         actor->name);
 
@@ -1098,7 +1099,7 @@ bool actor_descend(struct actor *const actor)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s has reached the end.",
             actor->name);
 
@@ -1114,7 +1115,7 @@ bool actor_descend(struct actor *const actor)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't descend here.",
             actor->name);
 
@@ -1146,7 +1147,7 @@ bool actor_descend(struct actor *const actor)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s descends.",
         actor->name);
 
@@ -1162,7 +1163,7 @@ bool actor_ascend(struct actor *actor)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't go any higher.",
             actor->name);
 
@@ -1178,7 +1179,7 @@ bool actor_ascend(struct actor *actor)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't ascend here.",
             actor->name);
 
@@ -1210,7 +1211,7 @@ bool actor_ascend(struct actor *actor)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s ascends.",
         actor->name);
 
@@ -1234,7 +1235,7 @@ bool actor_open_chest(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't open the chest.",
             actor->name);
 
@@ -1252,7 +1253,7 @@ bool actor_open_chest(
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_orange,
+        color_orange,
         "%s opens the chest.",
         actor->name);
 
@@ -1276,7 +1277,7 @@ bool actor_pray(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't pray here.",
             actor->name);
 
@@ -1294,7 +1295,7 @@ bool actor_pray(
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_orange,
+        color_orange,
         "%s prays at the altar.",
         actor->name);
 
@@ -1318,7 +1319,7 @@ bool actor_drink(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't drink here.",
             actor->name);
 
@@ -1337,7 +1338,7 @@ bool actor_drink(
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_orange,
+        color_orange,
         "%s drinks from the fountain.",
         actor->name);
 
@@ -1361,7 +1362,7 @@ bool actor_sit(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s can't sit here",
             actor->name);
 
@@ -1380,7 +1381,7 @@ bool actor_sit(
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_orange,
+        color_orange,
         "%s sits on the throne.",
         actor->name);
 
@@ -1404,7 +1405,7 @@ bool actor_grab(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s cannot find anything to pick up.",
             actor->name);
 
@@ -1417,7 +1418,7 @@ bool actor_grab(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s is carrying too many items.",
             actor->name);
 
@@ -1439,7 +1440,7 @@ bool actor_grab(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s picks up %d gold.",
             actor->name,
             gold);
@@ -1452,7 +1453,7 @@ bool actor_grab(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s picks up %s.",
             actor->name,
             item_database[item->type].name);
@@ -1483,7 +1484,7 @@ bool actor_drop(struct actor *const actor, struct item *const item)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s drops %s.",
         actor->name,
         item_database[item->type].name);
@@ -1504,7 +1505,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s cannot equip %s.",
             actor->name,
             item_data->name);
@@ -1520,7 +1521,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s is too large for %s.",
             item_data->name,
             actor->name);
@@ -1533,7 +1534,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s is too small for %s.",
             item_data->name,
             actor->name);
@@ -1585,7 +1586,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s equips %s.",
         actor->name,
         item_data->name);
@@ -1603,7 +1604,7 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s is not equipping anything their %s slot.",
             actor->name,
             equip_slot_database[equip_slot].name);
@@ -1621,7 +1622,7 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s unequips %s.",
         actor->name,
         item_database[equipment->type].name);
@@ -1639,7 +1640,7 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s cannot quaff %s.",
             actor->name,
             item_data->name);
@@ -1651,7 +1652,7 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s quaffs %s.",
         actor->name,
         item_data->name);
@@ -1690,7 +1691,7 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s cannot read %s.",
             actor->name,
             item_data->name);
@@ -1702,7 +1703,7 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s reads %s.",
         actor->name,
         item_data->name);
@@ -1757,7 +1758,7 @@ bool actor_bash(struct actor *const actor, struct object *const object)
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s cannot destroy the %s.",
             actor->name,
             object_data->name);
@@ -1784,7 +1785,7 @@ bool actor_bash(struct actor *const actor, struct object *const object)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_white,
+        color_white,
         "%s destroys the %s.",
         actor->name,
         object_data->name);
@@ -1810,7 +1811,7 @@ bool actor_shoot(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s cannot shoot without a weapon!",
             actor->name);
 
@@ -1826,7 +1827,7 @@ bool actor_shoot(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s cannot shoot without a ranged weapon!",
             actor->name);
 
@@ -1841,7 +1842,7 @@ bool actor_shoot(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s has no ammunition equipped!",
             actor->name);
 
@@ -1857,7 +1858,7 @@ bool actor_shoot(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s has unsuitable ammunition equipped!",
             actor->name);
 
@@ -1916,7 +1917,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_light_gray,
+            color_light_gray,
             "%s misses %s.",
             actor->name,
             other->name);
@@ -1969,7 +1970,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
             actor->floor,
             actor->x,
             actor->y,
-            crit ? TCOD_light_red : TCOD_white,
+            crit ? color_light_red : color_white,
             "%s %s %s for %d.",
             actor->name,
             crit ? "crits" : "hits",
@@ -1982,7 +1983,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s hits %s for %d.",
             actor->name,
             other->name,
@@ -2006,7 +2007,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
                     actor->floor,
                     actor->x,
                     actor->y,
-                    TCOD_white,
+                    color_white,
                     "%s has been slowed!",
                     other->name);
             }
@@ -2019,7 +2020,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
                     actor->floor,
                     actor->x,
                     actor->y,
-                    TCOD_white,
+                    color_white,
                     "%s has become friendly to %s!",
                     other->name,
                     actor->name);
@@ -2037,7 +2038,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
                     actor->floor,
                     actor->x,
                     actor->y,
-                    TCOD_white,
+                    color_white,
                     "%s's shield spike hits %s for %d.",
                     other->name,
                     actor->name,
@@ -2075,7 +2076,7 @@ bool actor_cast_spell(
                 actor->floor,
                 actor->x,
                 actor->y,
-                TCOD_white,
+                color_white,
                 "%s does not know %s.",
                 actor->name,
                 spell_data->name);
@@ -2090,7 +2091,7 @@ bool actor_cast_spell(
                 actor->floor,
                 actor->x,
                 actor->y,
-                TCOD_white,
+                color_white,
                 "%s does not have enough mana.",
                 actor->name,
                 spell_data->name);
@@ -2103,7 +2104,7 @@ bool actor_cast_spell(
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_purple,
+        color_purple,
         "%s casts %s.",
         actor->name,
         spell_data->name);
@@ -2123,7 +2124,7 @@ bool actor_cast_spell(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s heals for %d.",
             actor->name,
             health);
@@ -2139,7 +2140,7 @@ bool actor_cast_spell(
             actor->floor,
             actor->x,
             actor->y,
-            TCOD_white,
+            color_white,
             "%s recovers %d mana.",
             actor->name,
             mana);
@@ -2160,7 +2161,7 @@ bool actor_cast_spell(
                 actor->floor,
                 actor->x,
                 actor->y,
-                TCOD_white,
+                color_white,
                 "%s zaps %s for %d.",
                 actor->name,
                 other->name,
@@ -2174,7 +2175,7 @@ bool actor_cast_spell(
                 actor->floor,
                 actor->x,
                 actor->y,
-                TCOD_white,
+                color_white,
                 "%s cannot cast %s here.",
                 actor->name,
                 spell_data->name);
@@ -2218,7 +2219,7 @@ bool actor_cast_spell(
 void actor_restore_hit_points(struct actor *const actor, const int health)
 {
     actor->hit_points += health;
-    actor->flash_color = TCOD_green;
+    actor->flash_color = color_green;
     actor->flash_fade_coef = 1.0f;
 
     const int max_health = actor_calc_max_hit_points(actor);
@@ -2242,7 +2243,7 @@ void actor_restore_mana_points(struct actor *const actor, const int mana)
 bool actor_damage_hit_points(struct actor *const actor, struct actor *const attacker, const int damage)
 {
     actor->hit_points -= damage;
-    actor->flash_color = TCOD_red;
+    actor->flash_color = color_red;
     actor->flash_fade_coef = 1.0f;
 
     if (actor->hit_points <= 0)
@@ -2268,7 +2269,7 @@ void actor_die(struct actor *const actor, struct actor *const killer)
         actor->floor,
         actor->x,
         actor->y,
-        TCOD_red,
+        color_red,
         "%s dies.",
         actor->name);
 

@@ -20,7 +20,7 @@ struct world
     struct actor *hero;
     bool hero_dead;
 
-    struct list * messages;
+    struct list *messages;
 };
 
 extern struct world *world;
@@ -32,6 +32,6 @@ void world_save(const char *filename);
 void world_load(const char *filename);
 void world_update(float delta_time);
 bool world_player_can_take_turn(void);
-void world_log(int floor, int x, int y, TCOD_color_t color, char *fmt, ...);
+void world_log(int floor, int x, int y, TCOD_ColorRGB color, char *fmt, ...);
 
 #endif

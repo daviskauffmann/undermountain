@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    TCOD_Tileset *tileset = TCOD_tileset_load(
+    TCOD_Tileset *const tileset = TCOD_tileset_load(
         tileset_filename,
         tileset_columns,
         tileset_rows,

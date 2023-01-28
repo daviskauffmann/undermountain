@@ -31,7 +31,7 @@ void *list_get(const struct list *const list, const size_t index)
     return list->data[index];
 }
 
-bool list_contains(struct list *list, void *data)
+bool list_contains(const struct list *list, void *data)
 {
     for (size_t i = 0; i < list->size; ++i)
     {
@@ -42,6 +42,19 @@ bool list_contains(struct list *list, void *data)
     }
 
     return false;
+}
+
+size_t list_index_of(const struct list *list, void *data)
+{
+    for (size_t i = 0; i < list->size; ++i)
+    {
+        if (list->data[i] == data)
+        {
+            return i;
+        }
+    }
+
+    return (size_t)-1;
 }
 
 void list_add(struct list *const list, void *const data)

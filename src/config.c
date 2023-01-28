@@ -21,13 +21,13 @@ void config_load(void)
     }
     printf("Parsing %s.\n", config_file);
 
-    const TCOD_parser_t parser = TCOD_parser_new();
+    TCOD_Parser *const parser = TCOD_parser_new();
 
-    const TCOD_parser_struct_t console_struct = TCOD_parser_new_struct(parser, "console");
+    TCOD_ParserStruct *const console_struct = TCOD_parser_new_struct(parser, "console");
     TCOD_struct_add_property(console_struct, "columns", TCOD_TYPE_INT, true);
     TCOD_struct_add_property(console_struct, "rows", TCOD_TYPE_INT, true);
 
-    const TCOD_parser_struct_t tileset_struct = TCOD_parser_new_struct(parser, "tileset");
+    TCOD_ParserStruct *const tileset_struct = TCOD_parser_new_struct(parser, "tileset");
     TCOD_struct_add_property(tileset_struct, "filename", TCOD_TYPE_STRING, true);
     TCOD_struct_add_property(tileset_struct, "columns", TCOD_TYPE_INT, true);
     TCOD_struct_add_property(tileset_struct, "rows", TCOD_TYPE_INT, true);
@@ -41,7 +41,7 @@ void config_load(void)
     tileset_filename = TCOD_parser_get_string_property(parser, "tileset.filename");
     tileset_columns = TCOD_parser_get_int_property(parser, "tileset.columns");
     tileset_rows = TCOD_parser_get_int_property(parser, "tileset.rows");
-    const char *tileset_charmap_str = TCOD_parser_get_string_property(parser, "tileset.charmap");
+    const char *const tileset_charmap_str = TCOD_parser_get_string_property(parser, "tileset.charmap");
     if (strcmp(tileset_charmap_str, "cp437") == 0)
     {
         tileset_charmap = TCOD_CHARMAP_CP437;

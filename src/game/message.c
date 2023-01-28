@@ -5,7 +5,7 @@
 
 struct message *message_new(
     const char *const text,
-    const TCOD_color_t color)
+    const TCOD_ColorRGB color)
 {
     struct message *const message = malloc(sizeof(*message));
     assert(message);

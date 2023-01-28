@@ -18,7 +18,7 @@ enum light_type
 struct light_data
 {
     int radius;
-    TCOD_color_t color;
+    TCOD_ColorRGB color;
     float intensity;
     bool flicker;
 };

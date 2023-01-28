@@ -16,7 +16,7 @@ enum tile_type
 
 struct tile_common
 {
-    TCOD_color_t ambient_light_color;
+    TCOD_ColorRGB ambient_light_color;
     float ambient_light_intensity;
 };
 
@@ -24,7 +24,7 @@ struct tile_data
 {
     const char *name;
     unsigned char glyph;
-    TCOD_color_t color;
+    TCOD_ColorRGB color;
     bool is_walkable;
     bool is_transparent;
 };

@@ -2,6 +2,7 @@
 
 #include "../../config.h"
 #include "../../game/actor.h"
+#include "../../game/color.h"
 #include "../../game/world.h"
 #include "../../print.h"
 #include "../../scene.h"
@@ -109,8 +110,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         console,
         1,
         y++,
-        &TCOD_white,
-        &TCOD_black,
+        &color_white,
+        &color_black,
         TCOD_BKGND_NONE,
         TCOD_LEFT,
         "TODO: character creation.");
@@ -119,8 +120,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         console,
         1,
         y++,
-        &TCOD_white,
-        &TCOD_black,
+        &color_white,
+        &color_black,
         TCOD_BKGND_NONE,
         TCOD_LEFT,
         "Press ENTER or L-Mouse to start.");
@@ -129,8 +130,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         console,
         1,
         y++,
-        &TCOD_white,
-        &TCOD_black,
+        &color_white,
+        &color_black,
         TCOD_BKGND_NONE,
         TCOD_LEFT,
         "Press ESC or R-Mouse to return.");
@@ -140,8 +141,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         0, 0, console_width, console_height,
         sizeof(TITLE),
         TITLE,
-        &TCOD_white,
-        &TCOD_black,
+        &color_white,
+        &color_black,
         TCOD_BKGND_NONE,
         false);
 

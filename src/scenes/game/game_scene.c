@@ -3,6 +3,7 @@
 #include "../../config.h"
 #include "../../game/actor.h"
 #include "../../game/assets.h"
+#include "../../game/color.h"
 #include "../../game/explosion.h"
 #include "../../game/item.h"
 #include "../../game/list.h"
@@ -493,7 +494,7 @@ static bool do_spellbook_action(const enum spell_type spell_type)
             world->player->floor,
             world->player->x,
             world->player->y,
-            TCOD_yellow,
+            color_yellow,
             "%s selected.",
             spell_database[spell_type].name);
     }
@@ -612,7 +613,7 @@ static bool player_swing(enum direction direction)
                 world->player->floor,
                 world->player->x,
                 world->player->y,
-                TCOD_white,
+                color_white,
                 "%s swings at the air!",
                 world->player->name);
         }
@@ -803,7 +804,7 @@ static struct scene *handle_event(SDL_Event *event)
                     world->player->floor,
                     world->player->x,
                     world->player->y,
-                    TCOD_yellow,
+                    color_yellow,
                     "Action cancelled.");
             }
             else if (panel_rect.visible)
@@ -1054,7 +1055,7 @@ static struct scene *handle_event(SDL_Event *event)
                     world->player->floor,
                     world->player->x,
                     world->player->y,
-                    TCOD_yellow,
+                    color_yellow,
                     "Choose abilities to add points to. Press 'ESC' to stop.");
             }
             break;
@@ -1077,7 +1078,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_yellow,
+                        color_yellow,
                         "Choose a direction. Press 'ESC' to cancel.");
                 }
             }
@@ -1092,7 +1093,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_yellow,
+                        color_yellow,
                         "Choose a direction. Press 'ESC' to cancel.");
                 }
                 else
@@ -1104,7 +1105,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_yellow,
+                        color_yellow,
                         "Choose an item to drop. Press 'ESC' to cancel.");
                 }
             }
@@ -1118,7 +1119,7 @@ static struct scene *handle_event(SDL_Event *event)
                     world->player->floor,
                     world->player->x,
                     world->player->y,
-                    TCOD_yellow,
+                    color_yellow,
                     "Choose an item to equip. Press 'ESC' to cancel.");
             }
             break;
@@ -1194,7 +1195,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_yellow,
+                        color_yellow,
                         "Choose a direction. Press 'ESC' to cancel.");
                 }
                 else
@@ -1205,7 +1206,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_yellow,
+                        color_yellow,
                         "Choose a direction. Press 'ESC' to cancel.");
                 }
             }
@@ -1218,7 +1219,7 @@ static struct scene *handle_event(SDL_Event *event)
                     world->player->floor,
                     world->player->x,
                     world->player->y,
-                    TCOD_yellow,
+                    color_yellow,
                     "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
@@ -1231,7 +1232,7 @@ static struct scene *handle_event(SDL_Event *event)
                     world->player->floor,
                     world->player->x,
                     world->player->y,
-                    TCOD_yellow,
+                    color_yellow,
                     "Choose an item to quaff. Press 'ESC' to cancel.");
             }
             break;
@@ -1258,7 +1259,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_yellow,
+                        color_yellow,
                         "Choose an item to read. Press 'ESC' to cancel.");
                 }
             }
@@ -1271,7 +1272,7 @@ static struct scene *handle_event(SDL_Event *event)
                     world->player->floor,
                     world->player->x,
                     world->player->y,
-                    TCOD_yellow,
+                    color_yellow,
                     "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
@@ -1320,7 +1321,7 @@ static struct scene *handle_event(SDL_Event *event)
                     world->player->floor,
                     world->player->x,
                     world->player->y,
-                    TCOD_yellow,
+                    color_yellow,
                     "Choose an item to unequip. Press 'ESC' to cancel.");
             }
             break;
@@ -1335,7 +1336,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_yellow,
+                        color_yellow,
                         "Choose an item to examine. Press 'ESC' to cancel.");
                 }
                 else
@@ -1349,7 +1350,7 @@ static struct scene *handle_event(SDL_Event *event)
                             world->player->floor,
                             world->player->x,
                             world->player->y,
-                            TCOD_yellow,
+                            color_yellow,
                             "Choose an equipment to examine. Press 'ESC' to cancel.");
                     }
                     else
@@ -1380,7 +1381,7 @@ static struct scene *handle_event(SDL_Event *event)
                         world->player->floor,
                         world->player->x,
                         world->player->y,
-                        TCOD_yellow,
+                        color_yellow,
                         "Choose a spell. Press 'ESC' to cancel.");
                 }
                 else
@@ -1786,7 +1787,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
     // delete save if hero died
     if (world->hero_dead && file_exists(SAVE_PATH))
     {
-        TCOD_sys_delete_file(SAVE_PATH);
+        file_delete(SAVE_PATH);
     }
 
     // calculate ui sizes
@@ -2031,7 +2032,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     // apply tonemapping
                     const float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
                     const float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
-                    const TCOD_color_t fg_color = TCOD_color_multiply(
+                    const TCOD_ColorRGB fg_color = TCOD_color_multiply(
                         TCOD_color_RGB(
                             (uint8_t)(fg_r * fg_mult),
                             (uint8_t)(fg_g * fg_mult),
@@ -2039,7 +2040,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         tile_data.color);
                     const float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
                     const float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
-                    const TCOD_color_t bg_color = TCOD_color_multiply(
+                    const TCOD_ColorRGB bg_color = TCOD_color_multiply(
                         TCOD_color_RGB(
                             (uint8_t)(bg_r * bg_mult),
                             (uint8_t)(bg_g * bg_mult),
@@ -2254,7 +2255,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y))
             {
-                TCOD_color_t color = class_database[actor->class].color;
+                TCOD_ColorRGB color = class_database[actor->class].color;
                 if (actor->flash_fade_coef > 0)
                 {
                     color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade_coef);
@@ -2280,7 +2281,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 console,
                 target_x - 1 - view_rect.x,
                 target_y - view_rect.y,
-                TCOD_red);
+                color_red);
             TCOD_console_set_char(
                 console,
                 target_x - 1 - view_rect.x,
@@ -2290,7 +2291,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 console,
                 target_x + 1 - view_rect.x,
                 target_y - view_rect.y,
-                TCOD_red);
+                color_red);
             TCOD_console_set_char(
                 console,
                 target_x + 1 - view_rect.x,
@@ -2425,10 +2426,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             {
                 const int max_health = actor_calc_max_hit_points(world->player);
-                const TCOD_color_t fg =
+                const TCOD_ColorRGB fg =
                     (float)world->player->hit_points / max_health > 0.5f
-                        ? TCOD_color_lerp(TCOD_yellow, TCOD_green, world->player->hit_points / (max_health * 0.5f))
-                        : TCOD_color_lerp(TCOD_red, TCOD_yellow, world->player->hit_points / (max_health * 0.5f));
+                        ? TCOD_color_lerp(color_yellow, color_green, world->player->hit_points / (max_health * 0.5f))
+                        : TCOD_color_lerp(color_red, color_yellow, world->player->hit_points / (max_health * 0.5f));
 
                 console_print(
                     status_rect.console,
@@ -2445,7 +2446,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             {
                 const int max_mana = actor_calc_max_mana_points(world->player);
-                const TCOD_color_t fg = TCOD_color_lerp(TCOD_gray, TCOD_azure, (float)world->player->mana_points / max_mana);
+                const TCOD_ColorRGB fg = TCOD_color_lerp(color_gray, color_azure, (float)world->player->mana_points / max_mana);
 
                 console_print(
                     status_rect.console,
@@ -2464,7 +2465,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 status_rect.console,
                 1,
                 y++,
-                &TCOD_white,
+                &color_white,
                 NULL,
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
@@ -2475,7 +2476,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 status_rect.console,
                 1,
                 y++,
-                &TCOD_white,
+                &color_white,
                 NULL,
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
@@ -2525,7 +2526,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     break;
                 }
 
-                const TCOD_color_t fg = TCOD_color_lerp(TCOD_gray, message->color, (float)y / (message_log_rect.height - 2));
+                const TCOD_ColorRGB fg = TCOD_color_lerp(color_gray, message->color, (float)y / (message_log_rect.height - 2));
 
                 console_print(
                     message_log_rect.console,
@@ -2681,10 +2682,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
             {
-                const TCOD_color_t fg =
+                const TCOD_ColorRGB fg =
                     ability == panel_character_ability_mouseover()
-                        ? TCOD_yellow
-                        : TCOD_white;
+                        ? color_yellow
+                        : color_white;
 
                 if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
                 {
@@ -2732,10 +2733,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
-                const TCOD_color_t fg =
+                const TCOD_ColorRGB fg =
                     equip_slot == panel_character_equip_slot_mouseover()
-                        ? TCOD_yellow
-                        : TCOD_white;
+                        ? color_yellow
+                        : color_white;
                 const struct equip_slot_data equip_slot_data = equip_slot_database[equip_slot];
 
                 if (character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
@@ -2928,9 +2929,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 const struct item *const item = list_get(world->player->items, item_index);
                 const struct item_data item_data = item_database[item->type];
 
-                const TCOD_color_t fg =
+                const TCOD_ColorRGB fg =
                     item == mouseover_item
-                        ? TCOD_yellow
+                        ? color_yellow
                         : item_data.color;
 
                 if (inventory_action == INVENTORY_ACTION_NONE)
@@ -2984,10 +2985,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, known_spell_type_index);
                 const struct spell_data *const spell_data = &spell_database[spell_type];
 
-                const TCOD_color_t fg =
+                const TCOD_ColorRGB fg =
                     spell_type == mouseover_spell_type
-                        ? TCOD_yellow
-                        : TCOD_white;
+                        ? color_yellow
+                        : color_white;
 
                 if (spellbook_action == SPELLBOOK_ACTION_NONE)
                 {
@@ -3064,10 +3065,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         {
             const struct tooltip_option *const option = list_get(tooltip_options, tooltip_option_index);
 
-            const TCOD_color_t fg =
+            const TCOD_ColorRGB fg =
                 option == mouseover_tooltip_option
-                    ? TCOD_yellow
-                    : TCOD_white;
+                    ? color_yellow
+                    : color_white;
 
             console_print(
                 tooltip_rect.console,
@@ -3110,7 +3111,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             y = automove_actor->y;
         }
 
-        TCOD_console_set_char_background(console, x - view_rect.x, y - view_rect.y, TCOD_red, TCOD_BKGND_SET);
+        TCOD_console_set_char_background(console, x - view_rect.x, y - view_rect.y, color_red, TCOD_BKGND_SET);
     }
 
     if (!world->hero_dead && !world_player_can_take_turn())
@@ -3118,7 +3119,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         console_print(
             console,
             0, 0,
-            &TCOD_white,
+            &color_white,
             NULL,
             TCOD_BKGND_NONE,
             TCOD_LEFT,

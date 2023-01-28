@@ -12,10 +12,10 @@ struct explosion
     uint8_t y;
 
     int radius;
-    TCOD_color_t color;
+    TCOD_ColorRGB color;
     float lifetime;
 
-    TCOD_map_t fov;
+    TCOD_Map *fov;
 };
 
 struct explosion *explosion_new(
@@ -23,7 +23,7 @@ struct explosion *explosion_new(
     uint8_t x,
     uint8_t y,
     int radius,
-    TCOD_color_t color,
+    TCOD_ColorRGB color,
     struct actor *initiator);
 void explosion_delete(struct explosion *explosion);
 void explosion_deal_damage(const struct explosion *explosion, struct actor *initiator);

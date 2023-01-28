@@ -103,7 +103,7 @@ struct race_data
 struct class_data
 {
     const char *name;
-    TCOD_color_t color;
+    TCOD_ColorRGB color;
 
     const char *hit_die;
     const char *mana_die;
@@ -160,7 +160,7 @@ struct actor
     uint8_t x;
     uint8_t y;
 
-    TCOD_map_t fov;
+    TCOD_Map *fov;
 
     bool took_turn;
     float energy;
@@ -172,9 +172,9 @@ struct actor
     struct actor *leader;
 
     enum light_type light_type;
-    TCOD_map_t light_fov;
+    TCOD_Map *light_fov;
 
-    TCOD_color_t flash_color;
+    TCOD_ColorRGB flash_color;
     float flash_fade_coef;
 
     bool controllable;

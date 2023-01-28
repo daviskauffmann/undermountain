@@ -902,9 +902,9 @@ bool map_is_walkable(
     return tile_database[tile->type].is_walkable;
 }
 
-TCOD_map_t map_to_TCOD_map(const struct map *const map)
+TCOD_Map * map_to_TCOD_map(const struct map *const map)
 {
-    TCOD_map_t TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
+    TCOD_Map * TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -922,13 +922,13 @@ TCOD_map_t map_to_TCOD_map(const struct map *const map)
     return TCOD_map;
 }
 
-TCOD_map_t map_to_fov_map(
+TCOD_Map * map_to_fov_map(
     const struct map *const map,
     const int x,
     const int y,
     const int radius)
 {
-    TCOD_map_t fov_map = map_to_TCOD_map(map);
+    TCOD_Map * fov_map = map_to_TCOD_map(map);
     TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_RESTRICTIVE);
     return fov_map;
 }

@@ -15,7 +15,7 @@ enum projectile_type
 struct projectile_data
 {
     unsigned char glyph;
-    TCOD_color_t color;
+    TCOD_ColorRGB color;
 
     enum light_type light_type;
 
@@ -38,7 +38,7 @@ struct projectile
 
     struct item *ammunition;
 
-    TCOD_map_t light_fov;
+    TCOD_Map * light_fov;
 };
 
 struct projectile *projectile_new(

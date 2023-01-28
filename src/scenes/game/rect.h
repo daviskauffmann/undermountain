@@ -5,7 +5,7 @@
 
 struct rect
 {
-    TCOD_console_t console;
+    TCOD_Console *console;
     bool visible;
     int x;
     int y;

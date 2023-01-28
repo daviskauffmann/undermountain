@@ -5,7 +5,7 @@
 
 #define TITLE "Undermountain"
 #define VERSION "0.0.1"
-#define SAVE_PATH "data/save.gz"
+#define SAVE_PATH "data/save"
 
 extern int console_width;
 extern int console_height;

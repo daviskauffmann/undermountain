@@ -6,7 +6,7 @@
 struct corpse_common
 {
     unsigned char glyph;
-    TCOD_color_t color;
+    TCOD_ColorRGB color;
 };
 
 struct corpse

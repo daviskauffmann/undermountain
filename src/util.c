@@ -1,6 +1,7 @@
 #include "util.h"
 
 #include <SDL2/SDL.h>
+#include <stdio.h>
 
 bool file_exists(const char *const filename)
 {
@@ -14,4 +15,9 @@ bool file_exists(const char *const filename)
     SDL_RWclose(file);
 
     return true;
+}
+
+void file_delete(const char *filename)
+{
+    remove(filename);
 }

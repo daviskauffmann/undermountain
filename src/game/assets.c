@@ -1,5 +1,6 @@
 #include "assets.h"
 
+#include "color.h"
 #include <libtcod.h>
 
 struct tile_common tile_common;
@@ -31,65 +32,65 @@ void assets_load(void)
     tile_database[TILE_TYPE_EMPTY] = (struct tile_data){
         .name = "Empty",
         .glyph = ' ',
-        .color = TCOD_white,
+        .color = color_white,
         .is_walkable = true,
         .is_transparent = true,
     };
     tile_database[TILE_TYPE_FLOOR] = (struct tile_data){
         .name = "Floor",
         .glyph = '.',
-        .color = TCOD_white,
+        .color = color_white,
         .is_walkable = true,
         .is_transparent = true,
     };
     tile_database[TILE_TYPE_GRASS] = (struct tile_data){
         .name = "Grass",
         .glyph = '.',
-        .color = TCOD_light_green,
+        .color = color_light_green,
         .is_walkable = true,
         .is_transparent = true,
     };
     tile_database[TILE_TYPE_WALL] = (struct tile_data){
         .name = "Wall",
         .glyph = '#',
-        .color = TCOD_white,
+        .color = color_white,
         .is_walkable = false,
         .is_transparent = false,
     };
 
     light_database[LIGHT_TYPE_NONE] = (struct light_data){
         .radius = -1,
-        .color = TCOD_black,
+        .color = color_black,
         .intensity = 0,
         .flicker = false,
     };
     light_database[LIGHT_TYPE_ALTAR] = (struct light_data){
         .radius = 3,
-        .color = TCOD_white,
+        .color = color_white,
         .intensity = 0.1f,
         .flicker = false,
     };
     light_database[LIGHT_TYPE_BRAZIER] = (struct light_data){
         .radius = 10,
-        .color = TCOD_light_amber,
+        .color = color_light_amber,
         .intensity = 0.25f,
         .flicker = true,
     };
     light_database[LIGHT_TYPE_FIREBALL] = (struct light_data){
         .radius = 5,
-        .color = TCOD_flame,
+        .color = color_flame,
         .intensity = 0.5f,
         .flicker = true,
     };
     light_database[LIGHT_TYPE_GLOW] = (struct light_data){
         .radius = 5,
-        .color = TCOD_white,
+        .color = color_white,
         .intensity = 0.1f,
         .flicker = false,
     };
     light_database[LIGHT_TYPE_TORCH] = (struct light_data){
         .radius = 10,
-        .color = TCOD_light_amber,
+        .color = color_light_amber,
         .intensity = 0.25f,
         .flicker = true,
     };
@@ -97,7 +98,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_ALTAR] = (struct object_data){
         .name = "Altar",
         .glyph = '_',
-        .color = TCOD_white,
+        .color = color_white,
         .light_type = LIGHT_TYPE_ALTAR,
 
         .is_walkable = true,
@@ -106,7 +107,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_BRAZIER] = (struct object_data){
         .name = "Brazier",
         .glyph = '*',
-        .color = TCOD_light_amber,
+        .color = color_light_amber,
         .light_type = LIGHT_TYPE_BRAZIER,
 
         .is_walkable = true,
@@ -115,7 +116,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_CHEST] = (struct object_data){
         .name = "Chest",
         .glyph = '~',
-        .color = TCOD_sepia,
+        .color = color_sepia,
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
@@ -124,7 +125,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_DOOR_CLOSED] = (struct object_data){
         .name = "Closed Door",
         .glyph = '+',
-        .color = TCOD_white,
+        .color = color_white,
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = false,
@@ -133,7 +134,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_DOOR_OPEN] = (struct object_data){
         .name = "Open Door",
         .glyph = '-',
-        .color = TCOD_white,
+        .color = color_white,
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
@@ -142,7 +143,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_FOUNTAIN] = (struct object_data){
         .name = "Fountain",
         .glyph = '{',
-        .color = TCOD_light_azure,
+        .color = color_light_azure,
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
@@ -151,7 +152,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_STAIR_DOWN] = (struct object_data){
         .name = "Stair Down",
         .glyph = '>',
-        .color = TCOD_white,
+        .color = color_white,
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
@@ -160,7 +161,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_STAIR_UP] = (struct object_data){
         .name = "Stair Up",
         .glyph = '<',
-        .color = TCOD_white,
+        .color = color_white,
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
@@ -169,7 +170,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_THRONE] = (struct object_data){
         .name = "Throne",
         .glyph = '\\',
-        .color = TCOD_gold,
+        .color = color_gold,
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
@@ -178,7 +179,7 @@ void assets_load(void)
     object_database[OBJECT_TYPE_TRAP] = (struct object_data){
         .name = "Trap",
         .glyph = '^',
-        .color = TCOD_white,
+        .color = color_white,
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
@@ -296,21 +297,21 @@ void assets_load(void)
 
     class_database[CLASS_FIGHTER] = (struct class_data){
         .name = "Fighter",
-        .color = TCOD_brass,
+        .color = color_brass,
 
         .hit_die = "1d10",
         .mana_die = "1d4",
     };
     class_database[CLASS_WIZARD] = (struct class_data){
         .name = "Wizard",
-        .color = TCOD_azure,
+        .color = color_azure,
 
         .hit_die = "1d4",
         .mana_die = "1d10",
     };
     class_database[CLASS_ROGUE] = (struct class_data){
         .name = "Rogue",
-        .color = TCOD_yellow,
+        .color = color_yellow,
 
         .hit_die = "1d6",
         .mana_die = "1d4",
@@ -318,42 +319,42 @@ void assets_load(void)
 
     class_database[CLASS_DOG] = (struct class_data){
         .name = "Dog",
-        .color = TCOD_lightest_grey,
+        .color = color_lightest_grey,
 
         .hit_die = "1d2",
         .mana_die = "0d0",
     };
     class_database[CLASS_GOBLIN] = (struct class_data){
         .name = "Goblin",
-        .color = TCOD_lightest_grey,
+        .color = color_lightest_grey,
 
         .hit_die = "1d1",
         .mana_die = "0d0",
     };
     class_database[CLASS_JACKAL] = (struct class_data){
         .name = "Jackal",
-        .color = TCOD_lightest_grey,
+        .color = color_lightest_grey,
 
         .hit_die = "1d2",
         .mana_die = "0d0",
     };
     class_database[CLASS_KOBOLD] = (struct class_data){
         .name = "Kobold",
-        .color = TCOD_lightest_grey,
+        .color = color_lightest_grey,
 
         .hit_die = "1d1",
         .mana_die = "0d0",
     };
     class_database[CLASS_RAT] = (struct class_data){
         .name = "Jackal",
-        .color = TCOD_lightest_grey,
+        .color = color_lightest_grey,
 
         .hit_die = "1d1",
         .mana_die = "0d0",
     };
     class_database[CLASS_SLIME] = (struct class_data){
         .name = "Slime",
-        .color = TCOD_light_green,
+        .color = color_light_green,
 
         .hit_die = "1d10",
         .mana_die = "0d0",
@@ -473,7 +474,7 @@ void assets_load(void)
 
     corpse_common = (struct corpse_common){
         .glyph = '%',
-        .color = TCOD_dark_red,
+        .color = color_dark_red,
     };
 
     equip_slot_database[EQUIP_SLOT_NONE] = (struct equip_slot_data){
@@ -878,7 +879,7 @@ void assets_load(void)
 
         .name = "Arrow",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -894,7 +895,7 @@ void assets_load(void)
 
         .name = "Arrow + 1",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 1,
 
@@ -908,7 +909,7 @@ void assets_load(void)
 
         .name = "Bolt",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -924,7 +925,7 @@ void assets_load(void)
 
         .name = "Bullet",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -940,7 +941,7 @@ void assets_load(void)
 
         .name = "Cold Iron Blade",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 1,
 
@@ -956,7 +957,7 @@ void assets_load(void)
 
         .name = "Crossbow",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -972,7 +973,7 @@ void assets_load(void)
 
         .name = "Dagger",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -988,7 +989,7 @@ void assets_load(void)
 
         .name = "Full Plate",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1004,7 +1005,7 @@ void assets_load(void)
 
         .name = "Full Plate + 1",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 1,
 
@@ -1020,7 +1021,7 @@ void assets_load(void)
 
         .name = "Gold",
         .description = "",
-        .color = TCOD_gold,
+        .color = color_gold,
 
         .enhancement_bonus = 0,
 
@@ -1036,7 +1037,7 @@ void assets_load(void)
 
         .name = "Greatsword",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1052,7 +1053,7 @@ void assets_load(void)
 
         .name = "Large Shield",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1068,7 +1069,7 @@ void assets_load(void)
 
         .name = "Longbow",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1084,7 +1085,7 @@ void assets_load(void)
 
         .name = "Longbow + 1",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 1,
 
@@ -1100,7 +1101,7 @@ void assets_load(void)
 
         .name = "Longsword",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1116,7 +1117,7 @@ void assets_load(void)
 
         .name = "Longsword + 1",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 1,
 
@@ -1132,7 +1133,7 @@ void assets_load(void)
 
         .name = "Mace",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1148,7 +1149,7 @@ void assets_load(void)
 
         .name = "Potion of Minor Healing",
         .description = "",
-        .color = TCOD_red,
+        .color = color_red,
 
         .enhancement_bonus = 0,
 
@@ -1164,7 +1165,7 @@ void assets_load(void)
 
         .name = "Potion of Minor Mana",
         .description = "",
-        .color = TCOD_blue,
+        .color = color_blue,
 
         .enhancement_bonus = 0,
 
@@ -1180,7 +1181,7 @@ void assets_load(void)
 
         .name = "Scepter of Unity",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1196,7 +1197,7 @@ void assets_load(void)
 
         .name = "Scroll of Lightning",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1212,7 +1213,7 @@ void assets_load(void)
 
         .name = "Sling",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1228,7 +1229,7 @@ void assets_load(void)
 
         .name = "Small Shield",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1244,7 +1245,7 @@ void assets_load(void)
 
         .name = "Spear",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1260,7 +1261,7 @@ void assets_load(void)
 
         .name = "Spiked Shield",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1276,7 +1277,7 @@ void assets_load(void)
 
         .name = "Tome of Fireball",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1292,7 +1293,7 @@ void assets_load(void)
 
         .name = "Tower Shield",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 0,
 
@@ -1308,7 +1309,7 @@ void assets_load(void)
 
         .name = "Tower Shield + 1",
         .description = "",
-        .color = TCOD_white,
+        .color = color_white,
 
         .enhancement_bonus = 1,
 
@@ -1343,7 +1344,7 @@ void assets_load(void)
 
     projectile_database[PROJECTILE_TYPE_ARROW] = (struct projectile_data){
         .glyph = '`',
-        .color = TCOD_white,
+        .color = color_white,
 
         .light_type = LIGHT_TYPE_NONE,
 
@@ -1351,7 +1352,7 @@ void assets_load(void)
     };
     projectile_database[PROJECTILE_TYPE_FIREBALL] = (struct projectile_data){
         .glyph = '*',
-        .color = TCOD_flame,
+        .color = color_flame,
 
         .light_type = LIGHT_TYPE_FIREBALL,
 

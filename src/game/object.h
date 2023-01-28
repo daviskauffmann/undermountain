@@ -24,7 +24,7 @@ struct object_data
 {
     const char *name;
     unsigned char glyph;
-    TCOD_color_t color;
+    TCOD_ColorRGB color;
     enum light_type light_type;
 
     bool is_walkable;
@@ -39,7 +39,7 @@ struct object
     uint8_t x;
     uint8_t y;
 
-    TCOD_map_t light_fov;
+    TCOD_Map * light_fov;
 };
 
 struct object *object_new(

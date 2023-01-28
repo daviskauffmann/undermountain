@@ -1,6 +1,7 @@
 #include "explosion.h"
 
 #include "actor.h"
+#include "color.h"
 #include "world.h"
 #include <assert.h>
 #include <malloc.h>
@@ -11,7 +12,7 @@ struct explosion *explosion_new(
     const uint8_t x,
     const uint8_t y,
     const int radius,
-    const TCOD_color_t color,
+    const TCOD_ColorRGB color,
     struct actor *const initiator)
 {
     struct explosion *const explosion = malloc(sizeof(*explosion));
@@ -70,7 +71,7 @@ void explosion_deal_damage(const struct explosion *const explosion, struct actor
                     initiator->floor,
                     initiator->x,
                     initiator->y,
-                    TCOD_white,
+                    color_white,
                     "%s hits %s for 5.",
                     initiator->name,
                     tile->actor->name);

@@ -33,7 +33,7 @@ void map_init(struct map *const map, const uint8_t floor)
             tile_init(&map->tiles[x][y], TILE_TYPE_EMPTY, false);
         }
     }
-    map->rooms = TCOD_list_new();
+    map->rooms = list_new();
     map->objects = TCOD_list_new();
     map->actors = TCOD_list_new();
     map->corpses = TCOD_list_new();
@@ -81,11 +81,10 @@ void map_uninit(struct map *const map)
     }
     TCOD_list_delete(map->objects);
 
-    TCOD_LIST_FOREACH(map->rooms, iterator)
+    for (size_t i = 0; i < map->rooms->size; i++)
     {
-        room_delete(*iterator);
+        room_delete(list_get(map->rooms, i));
     }
-    TCOD_list_delete(map->rooms);
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -248,12 +247,13 @@ static bool traverse_node(TCOD_bsp_t *const node, void *const data)
             }
         }
 
-        struct room *const room = room_new(
-            (uint8_t)node->x,
-            (uint8_t)node->y,
-            (uint8_t)node->w,
-            (uint8_t)node->h);
-        TCOD_list_push(map->rooms, room);
+        list_add(
+            map->rooms,
+            room_new(
+                (uint8_t)node->x,
+                (uint8_t)node->y,
+                (uint8_t)node->w,
+                (uint8_t)node->h));
     }
     else
     {
@@ -417,24 +417,25 @@ void map_generate(struct map *const map, const enum map_type map_type)
                 }
             }
 
-            struct room *const room = room_new(
-                (uint8_t)room_x,
-                (uint8_t)room_y,
-                (uint8_t)room_w,
-                (uint8_t)room_h);
-            TCOD_list_push(map->rooms, room);
+            list_add(
+                map->rooms,
+                room_new(
+                    (uint8_t)room_x,
+                    (uint8_t)room_y,
+                    (uint8_t)room_w,
+                    (uint8_t)room_h));
         }
 
-        for (int i = 0; i < TCOD_list_size(map->rooms) - 1; i++)
+        for (size_t i = 0; i < map->rooms->size - 1; i++)
         {
             int x1, y1;
             room_get_random_pos(
-                TCOD_list_get(map->rooms, i),
+                list_get(map->rooms, i),
                 &x1, &y1);
 
             int x2, y2;
             room_get_random_pos(
-                TCOD_list_get(map->rooms, i + 1),
+                list_get(map->rooms, i + 1),
                 &x2, &y2);
 
             if (TCOD_random_get_int(world->random, 0, 1) == 0)
@@ -508,19 +509,19 @@ void map_generate(struct map *const map, const enum map_type map_type)
     case MAP_TYPE_CAVES:
     {
         struct room *const room = room_new(0, 0, MAP_WIDTH, MAP_HEIGHT);
-        TCOD_list_push(map->rooms, room);
+        list_add(map->rooms, room);
     }
     break;
     case MAP_TYPE_GRASSY_CAVES:
     {
         struct room *const room = room_new(0, 0, MAP_WIDTH, MAP_HEIGHT);
-        TCOD_list_push(map->rooms, room);
+        list_add(map->rooms, room);
     }
     break;
     case MAP_TYPE_RUINS:
     {
         struct room *const room = room_new(0, 0, MAP_WIDTH, MAP_HEIGHT);
-        TCOD_list_push(map->rooms, room);
+        list_add(map->rooms, room);
     }
     break;
     case NUM_MAP_TYPES:
@@ -860,7 +861,7 @@ bool map_is_inside(const int x, const int y)
 
 struct room *map_get_random_room(const struct map *const map)
 {
-    return TCOD_list_get(map->rooms, TCOD_random_get_int(world->random, 0, TCOD_list_size(map->rooms) - 1));
+    return list_get(map->rooms, TCOD_random_get_int(world->random, 0, (int)map->rooms->size - 1));
 }
 
 bool map_is_transparent(

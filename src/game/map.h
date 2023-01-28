@@ -1,6 +1,7 @@
 #ifndef GAME_MAP_H
 #define GAME_MAP_H
 
+#include "list.h"
 #include "tile.h"
 #include <libtcod.h>
 
@@ -26,7 +27,7 @@ struct map
     uint8_t stair_up_x;
     uint8_t stair_up_y;
     struct tile tiles[MAP_WIDTH][MAP_HEIGHT];
-    TCOD_list_t rooms;
+    struct list *rooms;
     TCOD_list_t objects;
     TCOD_list_t actors;
     TCOD_list_t corpses;

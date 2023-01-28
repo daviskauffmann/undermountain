@@ -165,10 +165,10 @@ void world_save(const char *filename)
             }
         }
 
-        TCOD_zip_put_int(zip, TCOD_list_size(map->rooms));
-        TCOD_LIST_FOREACH(map->rooms, iterator)
+        TCOD_zip_put_int(zip, (int)map->rooms->size);
+        for (size_t i = 0; i < map->rooms->size; i++)
         {
-            struct room *room = *iterator;
+            struct room *room = list_get(map->rooms, i);
             TCOD_zip_put_int(zip, room->x);
             TCOD_zip_put_int(zip, room->y);
             TCOD_zip_put_int(zip, room->w);
@@ -426,7 +426,7 @@ void world_load(const char *filename)
 
             struct room *room = room_new(x, y, w, h);
 
-            TCOD_list_push(map->rooms, room);
+            list_add(map->rooms, room);
         }
 
         int num_objects = TCOD_zip_get_int(zip);

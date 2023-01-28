@@ -5,8 +5,6 @@
 
 #define PI 3.14f
 
-#define TCOD_LIST_FOREACH(list, iterator) for (void **iterator = TCOD_list_begin(list); iterator != NULL && iterator != TCOD_list_end(list); iterator++)
-
 float distance_between_sq(
     int x1, int y1,
     int x2, int y2);

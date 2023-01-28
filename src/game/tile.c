@@ -9,12 +9,12 @@ void tile_init(
     tile->explored = seen;
     tile->object = NULL;
     tile->actor = NULL;
-    tile->corpses = TCOD_list_new();
-    tile->items = TCOD_list_new();
+    tile->corpses = list_new();
+    tile->items = list_new();
 }
 
 void tile_uninit(struct tile *const tile)
 {
-    TCOD_list_delete(tile->items);
-    TCOD_list_delete(tile->corpses);
+    list_delete(tile->items);
+    list_delete(tile->corpses);
 }

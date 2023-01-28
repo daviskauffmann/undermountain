@@ -1,6 +1,7 @@
 #ifndef GAME_TILE_H
 #define GAME_TILE_H
 
+#include "list.h"
 #include <libtcod.h>
 
 enum tile_type
@@ -34,8 +35,8 @@ struct tile
     bool explored;
     struct object *object;
     struct actor *actor;
-    TCOD_list_t corpses;
-    TCOD_list_t items;
+    struct list *corpses;
+    struct list *items;
 };
 
 void tile_init(

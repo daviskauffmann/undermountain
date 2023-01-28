@@ -5,6 +5,7 @@
 #include "../../game/assets.h"
 #include "../../game/explosion.h"
 #include "../../game/item.h"
+#include "../../game/list.h"
 #include "../../game/message.h"
 #include "../../game/projectile.h"
 #include "../../game/spell.h"
@@ -66,26 +67,24 @@ static struct rect view_rect;
 /* Tooltips */
 
 static struct rect tooltip_rect;
-static TCOD_list_t tooltip_options;
+static struct list *tooltip_options;
 static struct tooltip_data tooltip_data;
 
 static void add_tooltip_option(char *const text, bool (*const on_click)(void))
 {
-    const struct tooltip_option *const tooltip_option = tooltip_option_new(text, on_click);
+    struct tooltip_option *const tooltip_option = tooltip_option_new(text, on_click);
 
-    TCOD_list_push(tooltip_options, tooltip_option);
+    list_add(tooltip_options, tooltip_option);
 }
 
 static void clear_tooltip_options(void)
 {
-    TCOD_LIST_FOREACH(tooltip_options, iterator)
+    for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; tooltip_option_index++)
     {
-        struct tooltip_option *const tooltip_option = *iterator;
-
-        tooltip_option_delete(tooltip_option);
+        tooltip_option_delete(list_get(tooltip_options, tooltip_option_index));
     }
 
-    TCOD_list_clear(tooltip_options);
+    list_clear(tooltip_options);
 }
 
 static void show_tooltip(void)
@@ -110,9 +109,9 @@ static struct tooltip_option *tooltip_option_mouseover(void)
     {
         int y = 1;
 
-        TCOD_LIST_FOREACH(tooltip_options, iterator)
+        for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; tooltip_option_index++)
         {
-            struct tooltip_option *const option = *iterator;
+            struct tooltip_option *const option = list_get(tooltip_options, tooltip_option_index);
 
             if (mouse_x > tooltip_rect.x &&
                 mouse_x < tooltip_rect.x + tooltip_rect.width &&
@@ -224,9 +223,9 @@ static struct item *panel_inventory_item_mouseover(void)
     {
         int y = 1;
 
-        TCOD_LIST_FOREACH(world->player->items, iterator)
+        for (size_t item_index = 0; item_index < world->player->items->size; item_index++)
         {
-            struct item *const item = *iterator;
+            struct item *const item = list_get(world->player->items, item_index);
 
             if (mouse_x > panel_rect.x &&
                 mouse_x < panel_rect.x + panel_rect.width &&
@@ -248,9 +247,9 @@ static enum spell_type panel_spellbook_spell_type_mouseover(void)
     {
         int y = 1;
 
-        TCOD_LIST_FOREACH(world->player->known_spell_types, iterator)
+        for (size_t spell_type_index = 0; spell_type_index < world->player->known_spell_types->size; spell_type_index++)
         {
-            const enum spell_type spell_type = (size_t)(*iterator);
+            const enum spell_type spell_type = (size_t)(list_get(world->player->known_spell_types, spell_type_index));
 
             if (mouse_x > panel_rect.x &&
                 mouse_x < panel_rect.x + panel_rect.width &&
@@ -519,7 +518,7 @@ static void init(struct scene *previous_scene)
     view_rect.visible = true;
 
     tooltip_rect.console = TCOD_console_new(console_width, console_height);
-    tooltip_options = TCOD_list_new();
+    tooltip_options = list_new();
 
     hud_rect.console = TCOD_console_new(console_width, console_height);
     hud_rect.visible = true;
@@ -554,11 +553,11 @@ static void uninit(void)
 
     TCOD_console_delete(hud_rect.console);
 
-    TCOD_LIST_FOREACH(tooltip_options, iterator)
+    for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; tooltip_option_index++)
     {
-        tooltip_option_delete(*iterator);
+        tooltip_option_delete(list_get(tooltip_options, tooltip_option_index));
     }
-    TCOD_list_delete(tooltip_options);
+    list_delete(tooltip_options);
     TCOD_console_delete(tooltip_rect.console);
 }
 
@@ -957,7 +956,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (world_player_can_take_turn())
                 {
-                    world->player->took_turn = actor_descend(world->player, true, NULL);
+                    world->player->took_turn = actor_descend(world->player);
                 }
             }
         }
@@ -968,7 +967,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (world_player_can_take_turn())
                 {
-                    world->player->took_turn = actor_ascend(world->player, true, NULL);
+                    world->player->took_turn = actor_ascend(world->player);
                 }
             }
         }
@@ -1003,9 +1002,9 @@ static struct scene *handle_event(SDL_Event *event)
             bool handled = false;
 
             const int alpha = event->key.keysym.sym - SDLK_a;
-            if (inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(world->player->items))
+            if (inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < world->player->items->size)
             {
-                struct item *const item = TCOD_list_get(world->player->items, alpha);
+                struct item *const item = list_get(world->player->items, alpha);
 
                 world->player->took_turn = do_inventory_action(item);
 
@@ -1030,9 +1029,9 @@ static struct scene *handle_event(SDL_Event *event)
 
                 handled = true;
             }
-            else if (spellbook_action != SPELLBOOK_ACTION_NONE && alpha >= 0 && alpha < TCOD_list_size(world->player->known_spell_types))
+            else if (spellbook_action != SPELLBOOK_ACTION_NONE && alpha >= 0 && alpha < world->player->known_spell_types->size)
             {
-                const enum spell_type spell_type = (size_t)TCOD_list_get(world->player->known_spell_types, alpha);
+                const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, alpha);
 
                 world->player->took_turn = do_spellbook_action(spell_type);
 
@@ -1693,7 +1692,7 @@ static struct scene *handle_event(SDL_Event *event)
                     }
                 }
 
-                struct item *const item = TCOD_list_peek(tile->items);
+                struct item *const item = list_get(tile->items, 0);
                 if (item)
                 {
                     tooltip_data.item = item;
@@ -1702,7 +1701,7 @@ static struct scene *handle_event(SDL_Event *event)
                     add_tooltip_option("Take Item", NULL);
                 }
 
-                if (TCOD_list_size(tile->items) > 1)
+                if (tile->items->size > 1)
                 {
                     add_tooltip_option("Take All", NULL);
                 }
@@ -1765,9 +1764,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         if (automoving)
         {
             const struct map *const map = &world->maps[world->player->floor];
-            TCOD_LIST_FOREACH(map->actors, iterator)
+            for (size_t actor_index = 0; actor_index < map->actors->size; ++actor_index)
             {
-                const struct actor *const actor = *iterator;
+                const struct actor *const actor = list_get(map->actors, actor_index);
+
                 if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y) &&
                     actor->faction != world->player->faction)
                 {
@@ -1829,9 +1829,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
     {
         // tooltip should be as wide as the longest option, plus 2 for borders
         tooltip_rect.width = 0;
-        TCOD_LIST_FOREACH(tooltip_options, iterator)
+        for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; ++tooltip_option_index)
         {
-            const struct tooltip_option *const option = *iterator;
+            const struct tooltip_option *const option = list_get(tooltip_options, tooltip_option_index);
+
             const int len = (int)strlen(option->text) + 2;
             if (len > tooltip_rect.width)
             {
@@ -1841,7 +1842,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
         // tooltip should be as tall as the number of options, plus 2 for borders
         // TODO: multi-line options?
-        tooltip_rect.height = TCOD_list_size(tooltip_options) + 2;
+        tooltip_rect.height = (int)tooltip_options->size + 2;
 
         // make sure the tooltip does not go off screen
         if (tooltip_rect.x + tooltip_rect.width > console_width)
@@ -1919,9 +1920,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     if (TCOD_map_is_in_fov(world->player->fov, x, y))
                     {
                         // calculate object lighting
-                        TCOD_LIST_FOREACH(map->objects, iterator)
+                        for (size_t object_index = 0; object_index < map->objects->size; object_index++)
                         {
-                            const struct object *const object = *iterator;
+                            const struct object *const object = list_get(map->objects, object_index);
 
                             if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
                             {
@@ -1947,9 +1948,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         }
 
                         // calculate actor lighting
-                        TCOD_LIST_FOREACH(map->actors, iterator)
+                        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
                         {
-                            const struct actor *const actor = *iterator;
+                            const struct actor *const actor = list_get(map->actors, actor_index);
 
                             if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
                             {
@@ -1974,9 +1975,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         }
 
                         // calculate projectile lighting
-                        TCOD_LIST_FOREACH(map->projectiles, iterator)
+                        for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
                         {
-                            const struct projectile *const projectile = *iterator;
+                            const struct projectile *const projectile = list_get(map->projectiles, projectile_index);
 
                             if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
                             {
@@ -2002,9 +2003,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         }
 
                         // calculate explosion lighting
-                        TCOD_LIST_FOREACH(map->explosions, iterator)
+                        for (size_t explosion_index = 0; explosion_index < map->explosions->size; explosion_index++)
                         {
-                            const struct explosion *const explosion = *iterator;
+                            const struct explosion *const explosion = list_get(map->explosions, explosion_index);
 
                             if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
                             {
@@ -2115,9 +2116,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw corpses
-        TCOD_LIST_FOREACH(map->corpses, iterator)
+        for (size_t corpse_index = 0; corpse_index < map->corpses->size; corpse_index++)
         {
-            const struct corpse *const corpse = *iterator;
+            const struct corpse *const corpse = list_get(map->corpses, corpse_index);
 
             if (TCOD_map_is_in_fov(world->player->fov, corpse->x, corpse->y))
             {
@@ -2135,9 +2136,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw objects (except stairs, they are drawn later)
-        TCOD_LIST_FOREACH(map->objects, iterator)
+        for (size_t object_index = 0; object_index < map->objects->size; object_index++)
         {
-            const struct object *const object = *iterator;
+            const struct object *const object = list_get(map->objects, object_index);
 
             if (object->type != OBJECT_TYPE_STAIR_DOWN && object->type != OBJECT_TYPE_STAIR_UP &&
                 TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
@@ -2158,9 +2159,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw items
-        TCOD_LIST_FOREACH(map->items, iterator)
+        for (size_t item_index = 0; item_index < map->items->size; item_index++)
         {
-            const struct item *const item = *iterator;
+            const struct item *const item = list_get(map->items, item_index);
 
             if (TCOD_map_is_in_fov(world->player->fov, item->x, item->y))
             {
@@ -2181,9 +2182,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw projectiles
-        TCOD_LIST_FOREACH(map->projectiles, iterator)
+        for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
         {
-            const struct projectile *const projectile = *iterator;
+            const struct projectile *const projectile = list_get(map->projectiles, projectile_index);
 
             const int x = (int)projectile->x;
             const int y = (int)projectile->y;
@@ -2224,9 +2225,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw stairs (to make sure they are drawn on top of other entities)
-        TCOD_LIST_FOREACH(map->objects, iterator)
+        for (size_t object_index = 0; object_index < map->objects->size; object_index++)
         {
-            const struct object *const object = *iterator;
+            const struct object *const object = list_get(map->objects, object_index);
 
             if ((object->type == OBJECT_TYPE_STAIR_DOWN || object->type == OBJECT_TYPE_STAIR_UP) &&
                 TCOD_map_is_in_fov(world->player->fov, object->x, object->y))
@@ -2247,9 +2248,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
 
         // draw actors
-        TCOD_LIST_FOREACH(map->actors, iterator)
+        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
         {
-            const struct actor *const actor = *iterator;
+            const struct actor *const actor = list_get(map->actors, actor_index);
 
             if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y))
             {
@@ -2318,7 +2319,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         goto done;
                     }
 
-                    const struct corpse *const corpse = TCOD_list_peek(tile->corpses);
+                    const struct corpse *const corpse = list_get(tile->corpses, 0);
                     if (corpse)
                     {
                         TCOD_console_printf_ex(
@@ -2334,10 +2335,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         goto done;
                     }
 
-                    const struct item *const item = TCOD_list_peek(tile->items);
+                    const struct item *const item = list_get(tile->items, 0);
                     if (item)
                     {
-                        if (TCOD_list_size(tile->items) > 1)
+                        if (tile->items->size > 1)
                         {
                             TCOD_console_printf_ex(
                                 console,
@@ -2501,28 +2502,31 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             TCOD_console_clear(message_log_rect.console);
 
             int y = message_log_rect.height - 2;
-            int message_index = TCOD_list_size(world->messages) - 1;
+            int message_index = (int)world->messages->size - 1;
             while (message_index >= 0)
             {
-                struct message *message = TCOD_list_get(world->messages, message_index--);
+                const struct message *const message = list_get(world->messages, message_index--);
+
                 if (!message)
                 {
                     break;
                 }
 
-                int lines = TCOD_console_get_height_rect_fmt(
+                const int lines = TCOD_console_get_height_rect_fmt(
                     message_log_rect.console,
                     1,
                     y,
                     message_log_rect.width - 2,
                     message_log_rect.height - 2,
                     message->text);
+
                 if (y - lines < 0)
                 {
                     break;
                 }
 
                 const TCOD_color_t fg = TCOD_color_lerp(TCOD_gray, message->color, (float)y / (message_log_rect.height - 2));
+
                 console_print(
                     message_log_rect.console,
                     1,
@@ -2919,9 +2923,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         {
             const struct item *const mouseover_item = panel_inventory_item_mouseover();
             int y = 1;
-            TCOD_LIST_FOREACH(world->player->items, iterator)
+            for (size_t item_index = 0; item_index < world->player->items->size; item_index++)
             {
-                const struct item *const item = *iterator;
+                const struct item *const item = list_get(world->player->items, item_index);
                 const struct item_data item_data = item_database[item->type];
 
                 const TCOD_color_t fg =
@@ -2975,9 +2979,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             const enum spell_type mouseover_spell_type = panel_spellbook_spell_type_mouseover();
 
             int y = 1;
-            TCOD_LIST_FOREACH(world->player->known_spell_types, iterator)
+            for (size_t known_spell_type_index = 0; known_spell_type_index < world->player->known_spell_types->size; known_spell_type_index++)
             {
-                const enum spell_type spell_type = (size_t)(*iterator);
+                const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, known_spell_type_index);
                 const struct spell_data *const spell_data = &spell_database[spell_type];
 
                 const TCOD_color_t fg =
@@ -3056,9 +3060,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         const struct tooltip_option *const mouseover_tooltip_option = tooltip_option_mouseover();
 
         int y = 1;
-        TCOD_LIST_FOREACH(tooltip_options, iterator)
+        for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; tooltip_option_index++)
         {
-            const struct tooltip_option *const option = *iterator;
+            const struct tooltip_option *const option = list_get(tooltip_options, tooltip_option_index);
 
             const TCOD_color_t fg =
                 option == mouseover_tooltip_option

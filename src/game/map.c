@@ -26,69 +26,70 @@ void map_init(struct map *const map, const uint8_t floor)
     map->stair_down_y = 0;
     map->stair_up_x = 0;
     map->stair_up_y = 0;
-    for (int x = 0; x < MAP_WIDTH; x++)
+    for (size_t x = 0; x < MAP_WIDTH; x++)
     {
-        for (int y = 0; y < MAP_HEIGHT; y++)
+        for (size_t y = 0; y < MAP_HEIGHT; y++)
         {
             tile_init(&map->tiles[x][y], TILE_TYPE_EMPTY, false);
         }
     }
     map->rooms = list_new();
-    map->objects = TCOD_list_new();
-    map->actors = TCOD_list_new();
-    map->corpses = TCOD_list_new();
-    map->items = TCOD_list_new();
-    map->projectiles = TCOD_list_new();
-    map->explosions = TCOD_list_new();
+    map->objects = list_new();
+    map->actors = list_new();
+    map->corpses = list_new();
+    map->items = list_new();
+    map->projectiles = list_new();
+    map->explosions = list_new();
     map->current_actor_index = 0;
 }
 
 void map_uninit(struct map *const map)
 {
-    TCOD_LIST_FOREACH(map->explosions, iterator)
+    for (size_t i = 0; i < map->explosions->size; i++)
     {
-        explosion_delete(*iterator);
+        explosion_delete(list_get(map->explosions, i));
     }
-    TCOD_list_delete(map->explosions);
+    list_delete(map->explosions);
 
-    TCOD_LIST_FOREACH(map->projectiles, iterator)
+    for (size_t i = 0; i < map->projectiles->size; i++)
     {
-        projectile_delete(*iterator);
+        projectile_delete(list_get(map->projectiles, i));
     }
-    TCOD_list_delete(map->projectiles);
+    list_delete(map->projectiles);
 
-    TCOD_LIST_FOREACH(map->items, iterator)
+    for (size_t i = 0; i < map->items->size; i++)
     {
-        item_delete(*iterator);
+        item_delete(list_get(map->items, i));
     }
-    TCOD_list_delete(map->items);
+    list_delete(map->items);
 
-    TCOD_LIST_FOREACH(map->corpses, iterator)
+    for (size_t i = 0; i < map->corpses->size; i++)
     {
-        corpse_delete(*iterator);
+        corpse_delete(list_get(map->corpses, i));
     }
-    TCOD_list_delete(map->corpses);
+    list_delete(map->corpses);
 
-    TCOD_LIST_FOREACH(map->actors, iterator)
+    for (size_t i = 0; i < map->actors->size; i++)
     {
-        actor_delete(*iterator);
+        actor_delete(list_get(map->actors, i));
     }
-    TCOD_list_delete(map->actors);
+    list_delete(map->actors);
 
-    TCOD_LIST_FOREACH(map->objects, iterator)
+    for (size_t i = 0; i < map->objects->size; i++)
     {
-        object_delete(*iterator);
+        object_delete(list_get(map->objects, i));
     }
-    TCOD_list_delete(map->objects);
+    list_delete(map->objects);
 
     for (size_t i = 0; i < map->rooms->size; i++)
     {
         room_delete(list_get(map->rooms, i));
     }
+    list_delete(map->rooms);
 
-    for (int x = 0; x < MAP_WIDTH; x++)
+    for (size_t x = 0; x < MAP_WIDTH; x++)
     {
-        for (int y = 0; y < MAP_HEIGHT; y++)
+        for (size_t y = 0; y < MAP_HEIGHT; y++)
         {
             tile_uninit(&map->tiles[x][y]);
         }
@@ -580,7 +581,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
                     (uint8_t)x,
                     (uint8_t)y);
 
-                TCOD_list_push(map->objects, object);
+                list_add(map->objects, object);
 
                 tile->object = object;
             }
@@ -604,7 +605,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             map->stair_down_x,
             map->stair_down_y);
 
-        TCOD_list_push(map->objects, stair_down);
+        list_add(map->objects, stair_down);
 
         map->tiles[stair_down->x][stair_down->y].object = stair_down;
     }
@@ -626,7 +627,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             map->stair_up_x,
             map->stair_up_y);
 
-        TCOD_list_push(map->objects, stair_up);
+        list_add(map->objects, stair_up);
 
         map->tiles[stair_up->x][stair_up->y].object = stair_up;
     }
@@ -685,7 +686,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             (uint8_t)x,
             (uint8_t)y);
 
-        TCOD_list_push(map->objects, object);
+        list_add(map->objects, object);
 
         map->tiles[x][y].object = object;
     }
@@ -748,7 +749,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             actor_level_up(actor);
         }
 
-        TCOD_list_push(map->actors, actor);
+        list_add(map->actors, actor);
 
         map->tiles[x][y].actor = actor;
     }
@@ -813,7 +814,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
                 5);
         }
 
-        TCOD_list_push(map->actors, actor);
+        list_add(map->actors, actor);
 
         map->tiles[x][y].actor = actor;
     }
@@ -847,9 +848,9 @@ void map_generate(struct map *const map, const enum map_type map_type)
                 ? TCOD_random_get_int(world->random, 1, 10 * (map->floor + 1))
                 : base_item_database[item_database[type].type].max_stack);
 
-        TCOD_list_push(map->items, item);
+        list_add(map->items, item);
 
-        TCOD_list_push(map->tiles[x][y].items, item);
+        list_add(map->tiles[x][y].items, item);
     }
 }
 

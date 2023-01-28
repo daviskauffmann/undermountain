@@ -20,7 +20,7 @@ struct world
     struct actor *hero;
     bool hero_dead;
 
-    TCOD_list_t messages;
+    struct list * messages;
 };
 
 extern struct world *world;

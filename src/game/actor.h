@@ -3,6 +3,7 @@
 
 #include "item.h"
 #include "light.h"
+#include "list.h"
 #include "size.h"
 #include "spell.h"
 #include <libtcod.h>
@@ -151,8 +152,8 @@ struct actor
 
     int gold;
     struct item *equipment[NUM_EQUIP_SLOTS];
-    TCOD_list_t items;
-    TCOD_list_t known_spell_types;
+    struct list *items;
+    struct list *known_spell_types;
     enum spell_type readied_spell_type;
 
     uint8_t floor;
@@ -238,17 +239,8 @@ bool actor_open_door(
 bool actor_close_door(
     struct actor *actor,
     int x, int y);
-bool actor_change_floor(
-    struct actor *actor,
-    uint8_t floor);
-bool actor_descend(
-    struct actor *actor,
-    bool is_leader,
-    void ***iterator);
-bool actor_ascend(
-    struct actor *actor,
-    bool is_leader,
-    void ***iterator);
+bool actor_descend(struct actor *actor);
+bool actor_ascend(struct actor *actor);
 bool actor_open_chest(
     struct actor *actor,
     int x, int y);

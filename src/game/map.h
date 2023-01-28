@@ -28,12 +28,12 @@ struct map
     uint8_t stair_up_y;
     struct tile tiles[MAP_WIDTH][MAP_HEIGHT];
     struct list *rooms;
-    TCOD_list_t objects;
-    TCOD_list_t actors;
-    TCOD_list_t corpses;
-    TCOD_list_t items;
-    TCOD_list_t projectiles;
-    TCOD_list_t explosions;
+    struct list *objects;
+    struct list *actors;
+    struct list *corpses;
+    struct list *items;
+    struct list *projectiles;
+    struct list *explosions;
     int current_actor_index;
 };
 

@@ -122,14 +122,15 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
 
         if (!should_move)
         {
-            const struct explosion *const explosion = explosion_new(
-                projectile->floor,
-                x,
-                y,
-                10,
-                projectile_database[projectile->type].color,
-                projectile->shooter);
-            TCOD_list_push(map->explosions, explosion);
+            list_add(
+                map->explosions,
+                explosion_new(
+                    projectile->floor,
+                    x,
+                    y,
+                    10,
+                    projectile_database[projectile->type].color,
+                    projectile->shooter));
         }
     }
     break;

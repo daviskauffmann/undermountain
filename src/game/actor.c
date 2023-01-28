@@ -49,8 +49,8 @@ struct actor *actor_new(
     {
         actor->equipment[equip_slot] = NULL;
     }
-    actor->items = TCOD_list_new();
-    actor->known_spell_types = TCOD_list_new();
+    actor->items = list_new();
+    actor->known_spell_types = list_new();
     actor->readied_spell_type = SPELL_TYPE_NONE;
 
     actor->floor = floor;
@@ -93,13 +93,13 @@ void actor_delete(struct actor *const actor)
         TCOD_map_delete(actor->fov);
     }
 
-    TCOD_list_delete(actor->known_spell_types);
+    list_delete(actor->known_spell_types);
 
-    TCOD_LIST_FOREACH(actor->items, iterator)
+    for (size_t i = 0; i < actor->items->size; i++)
     {
-        item_delete(*iterator);
+        item_delete(list_get(actor->items, i));
     }
-    TCOD_list_delete(actor->items);
+    list_delete(actor->items);
 
     free(actor->name);
 
@@ -420,9 +420,9 @@ void actor_calc_fov(struct actor *const actor)
             if (!TCOD_map_is_in_fov(actor->fov, x, y) &&
                 TCOD_map_is_in_fov(los_map, x, y))
             {
-                TCOD_LIST_FOREACH(map->objects, iterator)
+                for (size_t i = 0; i < map->objects->size; i++)
                 {
-                    const struct object *const object = *iterator;
+                    const struct object *const object = list_get(map->objects, i);
                     if (object->light_fov &&
                         TCOD_map_is_in_fov(object->light_fov, x, y))
                     {
@@ -430,9 +430,9 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                TCOD_LIST_FOREACH(map->actors, iterator)
+                for (size_t i = 0; i < map->actors->size; i++)
                 {
-                    const struct actor *const other = *iterator;
+                    const struct actor *const other = list_get(map->actors, i);
                     if (other->light_fov &&
                         TCOD_map_is_in_fov(other->light_fov, x, y))
                     {
@@ -440,9 +440,9 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                TCOD_LIST_FOREACH(map->projectiles, iterator)
+                for (size_t i = 0; i < map->projectiles->size; i++)
                 {
-                    const struct projectile *const projectile = *iterator;
+                    const struct projectile *const projectile = list_get(map->projectiles, i);
                     if (projectile->light_fov &&
                         TCOD_map_is_in_fov(projectile->light_fov, x, y))
                     {
@@ -450,9 +450,9 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                TCOD_LIST_FOREACH(map->explosions, iterator)
+                for (size_t i = 0; i < map->explosions->size; i++)
                 {
-                    const struct explosion *const explosion = *iterator;
+                    const struct explosion *const explosion = list_get(map->explosions, i);
                     if (explosion->fov &&
                         TCOD_map_is_in_fov(explosion->fov, x, y))
                     {
@@ -562,9 +562,9 @@ struct actor *actor_find_closest_enemy(const struct actor *const actor)
 
     float min_distance = FLT_MAX;
     struct map *map = &world->maps[world->player->floor];
-    TCOD_LIST_FOREACH(map->actors, iterator)
+    for (size_t i = 0; i < map->actors->size; i++)
     {
-        struct actor *const other = *iterator;
+        struct actor *const other = list_get(map->actors, i);
         if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
             other->faction != actor->faction)
         {
@@ -600,9 +600,9 @@ bool actor_ai(struct actor *const actor)
         const struct object *target = NULL;
 
         float min_distance = FLT_MAX;
-        TCOD_LIST_FOREACH(map->objects, iterator)
+        for (size_t i = 0; i < map->objects->size; i++)
         {
-            const struct object *const object = *iterator;
+            const struct object *const object = list_get(map->objects, i);
             if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
                 object->type == OBJECT_TYPE_FOUNTAIN)
             {
@@ -749,7 +749,7 @@ bool actor_ai(struct actor *const actor)
     // TODO: look for items to pick up
 
     // pick up items on ground
-    if (TCOD_list_size(tile->items) > 0)
+    if (tile->items->size > 0)
     {
         if (actor_grab(actor, actor->x, actor->y))
         {
@@ -869,7 +869,7 @@ bool actor_move(
         {
             // TODO: trap effects
 
-            TCOD_list_remove(map->objects, tile->object);
+            list_remove(map->objects, tile->object);
 
             object_delete(tile->object);
             tile->object = NULL;
@@ -1089,17 +1089,7 @@ bool actor_close_door(
     return true;
 }
 
-bool actor_change_floor(
-    struct actor *const actor,
-    const uint8_t floor)
-{
-    return false;
-}
-
-bool actor_descend(
-    struct actor *const actor,
-    const bool is_leader,
-    void ***const iterator)
+bool actor_descend(struct actor *const actor)
 {
     // is there a next map?
     if (actor->floor >= NUM_MAPS - 1)
@@ -1118,8 +1108,7 @@ bool actor_descend(
     // is the actor on stairs down?
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[actor->x][actor->y];
-    if (is_leader &&
-        (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_DOWN))
+    if (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_DOWN)
     {
         world_log(
             actor->floor,
@@ -1133,21 +1122,14 @@ bool actor_descend(
     }
 
     // remove actor from current map
-    if (iterator)
-    {
-        *iterator = TCOD_list_remove_iterator_fast(map->actors, *iterator);
-    }
-    else
-    {
-        TCOD_list_remove(map->actors, actor);
-    }
+    list_remove(map->actors, actor);
 
     // remove actor from current tile
     tile->actor = NULL;
 
     // add actor to next map
     struct map *const next_map = &world->maps[actor->floor + 1];
-    TCOD_list_push(next_map->actors, actor);
+    list_add(next_map->actors, actor);
 
     // add actor to next tile
     struct tile *const next_tile = &next_map->tiles[next_map->stair_up_x][next_map->stair_up_y];
@@ -1158,23 +1140,7 @@ bool actor_descend(
     actor->x = next_map->stair_up_x;
     actor->y = next_map->stair_up_y;
 
-    // find all followers and move them to the next map as well
-    if (is_leader)
-    {
-        TCOD_LIST_FOREACH(map->actors, other_iterator)
-        {
-            struct actor *other = *other_iterator;
-            if (other && other->leader == actor)
-            {
-                actor_descend(other, false, &other_iterator);
-
-                if (!other_iterator)
-                {
-                    break;
-                }
-            }
-        }
-    }
+    // TODO: find all followers and move them to the next map as well
 
     world_log(
         actor->floor,
@@ -1187,7 +1153,7 @@ bool actor_descend(
     return true;
 }
 
-bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator)
+bool actor_ascend(struct actor *actor)
 {
     // is there a previous map?
     if (actor->floor == 0)
@@ -1204,10 +1170,9 @@ bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator)
     }
 
     // is the actor on stairs up?
-    struct map *map = &world->maps[actor->floor];
-    struct tile *tile = &map->tiles[actor->x][actor->y];
-    if (is_leader &&
-        (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_UP))
+    struct map *const map = &world->maps[actor->floor];
+    struct tile *const tile = &map->tiles[actor->x][actor->y];
+    if (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_UP)
     {
         world_log(
             actor->floor,
@@ -1221,21 +1186,14 @@ bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator)
     }
 
     // remove actor from current map
-    if (iterator)
-    {
-        *iterator = TCOD_list_remove_iterator_fast(map->actors, *iterator);
-    }
-    else
-    {
-        TCOD_list_remove(map->actors, actor);
-    }
+    list_remove(map->actors, actor);
 
     // remove actor from current tile
     tile->actor = NULL;
 
     // add actor to next map
     struct map *const next_map = &world->maps[actor->floor - 1];
-    TCOD_list_push(next_map->actors, actor);
+    list_add(next_map->actors, actor);
 
     // add actor to next tile
     struct tile *const next_tile = &next_map->tiles[next_map->stair_down_x][next_map->stair_down_y];
@@ -1246,23 +1204,7 @@ bool actor_ascend(struct actor *actor, bool is_leader, void ***iterator)
     actor->x = next_map->stair_down_x;
     actor->y = next_map->stair_down_y;
 
-    // find all followers and move them to the next map as well
-    if (is_leader)
-    {
-        TCOD_LIST_FOREACH(map->actors, other_iterator)
-        {
-            struct actor *other = *other_iterator;
-            if (other && other->leader == actor)
-            {
-                actor_ascend(other, false, &other_iterator);
-
-                if (!other_iterator)
-                {
-                    break;
-                }
-            }
-        }
-    }
+    // TODO: find all followers and move them to the next map as well
 
     world_log(
         actor->floor,
@@ -1301,7 +1243,7 @@ bool actor_open_chest(
 
     // TODO: give item
 
-    TCOD_list_remove(map->objects, tile->object);
+    list_remove(map->objects, tile->object);
 
     object_delete(tile->object);
     tile->object = NULL;
@@ -1343,7 +1285,7 @@ bool actor_pray(
 
     // TODO: prayer effects
 
-    TCOD_list_remove(map->objects, tile->object);
+    list_remove(map->objects, tile->object);
 
     object_delete(tile->object);
     tile->object = NULL;
@@ -1386,7 +1328,7 @@ bool actor_drink(
     actor_restore_hit_points(actor, actor_calc_max_hit_points(actor) - actor->hit_points);
     actor_restore_mana_points(actor, actor_calc_max_mana_points(actor) - actor->mana_points);
 
-    TCOD_list_remove(map->objects, tile->object);
+    list_remove(map->objects, tile->object);
 
     object_delete(tile->object);
     tile->object = NULL;
@@ -1429,7 +1371,7 @@ bool actor_sit(
     // TODO: throne effects
     // donate gold for a reward?
 
-    TCOD_list_remove(map->objects, tile->object);
+    list_remove(map->objects, tile->object);
 
     object_delete(tile->object);
     tile->object = NULL;
@@ -1456,7 +1398,7 @@ bool actor_grab(
 
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
-    if (TCOD_list_size(tile->items) == 0)
+    if (tile->items->size == 0)
     {
         world_log(
             actor->floor,
@@ -1469,7 +1411,7 @@ bool actor_grab(
         return false;
     }
 
-    if (TCOD_list_size(actor->items) >= 26)
+    if (actor->items->size >= 26)
     {
         world_log(
             actor->floor,
@@ -1482,9 +1424,9 @@ bool actor_grab(
         return false;
     }
 
-    struct item *const item = TCOD_list_pop(tile->items);
-
-    TCOD_list_remove(map->items, item);
+    struct item *const item = list_get(tile->items, 0);
+    list_remove(map->items, item);
+    list_remove(tile->items, item);
 
     if (item->type == ITEM_TYPE_GOLD)
     {
@@ -1504,7 +1446,7 @@ bool actor_grab(
     }
     else
     {
-        TCOD_list_push(actor->items, item);
+        list_add(actor->items, item);
 
         world_log(
             actor->floor,
@@ -1522,7 +1464,7 @@ bool actor_grab(
 bool actor_drop(struct actor *const actor, struct item *const item)
 {
     // remove from actor's inventory
-    TCOD_list_remove(actor->items, item);
+    list_remove(actor->items, item);
 
     // change item coordinates
     item->floor = actor->floor;
@@ -1531,11 +1473,11 @@ bool actor_drop(struct actor *const actor, struct item *const item)
 
     // add item to map
     struct map *const map = &world->maps[item->floor];
-    TCOD_list_push(map->items, item);
+    list_add(map->items, item);
 
     // add item to tile
     struct tile *const tile = &map->tiles[item->x][item->y];
-    TCOD_list_push(tile->items, item);
+    list_add(tile->items, item);
 
     world_log(
         actor->floor,
@@ -1634,7 +1576,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     }
 
     // remove from inventory
-    TCOD_list_remove(actor->items, item);
+    list_remove(actor->items, item);
 
     // add to slot
     actor->equipment[equip_slot] = item;
@@ -1670,7 +1612,7 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
     }
 
     // add to inventory
-    TCOD_list_push(actor->items, equipment);
+    list_add(actor->items, equipment);
 
     // remove from slot
     actor->equipment[equip_slot] = NULL;
@@ -1728,7 +1670,7 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
     if (item->stack <= 0)
     {
         // remove from inventory
-        TCOD_list_remove(actor->items, item);
+        list_remove(actor->items, item);
 
         // delete the item
         item_delete(item);
@@ -1781,7 +1723,7 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
         if (item->stack <= 0)
         {
             // remove from inventory
-            TCOD_list_remove(actor->items, item);
+            list_remove(actor->items, item);
 
             // delete the item
             item_delete(item);
@@ -1790,10 +1732,10 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
     else if (item_data->type == BASE_ITEM_TYPE_TOME)
     {
         // add spell to known spells
-        TCOD_list_push(actor->known_spell_types, (void *)(size_t)item_data->spell_type);
+        list_add(actor->known_spell_types, (void *)(size_t)item_data->spell_type);
 
         // remove from inventory
-        TCOD_list_remove(actor->items, item);
+        list_remove(actor->items, item);
 
         // delete the item
         item_delete(item);
@@ -1829,7 +1771,7 @@ bool actor_bash(struct actor *const actor, struct object *const object)
 
     // remove from map
     struct map *const map = &world->maps[actor->floor];
-    TCOD_list_remove(map->objects, object);
+    list_remove(map->objects, object);
 
     // remove from tile
     struct tile *const tile = &map->tiles[object->x][object->y];
@@ -1937,7 +1879,7 @@ bool actor_shoot(
 
     // add the projectile to the map
     struct map *map = &world->maps[actor->floor];
-    TCOD_list_push(map->projectiles, projectile);
+    list_add(map->projectiles, projectile);
 
     // decrement the actor's ammunition
     ammunition->stack--;
@@ -1946,7 +1888,7 @@ bool actor_shoot(
     if (ammunition->stack <= 0)
     {
         // remove from inventory
-        TCOD_list_remove(actor->items, ammunition);
+        list_remove(actor->items, ammunition);
 
         // remove from slot
         actor->equipment[EQUIP_SLOT_AMMUNITION] = NULL;
@@ -2127,7 +2069,7 @@ bool actor_cast_spell(
         // does the actor know the spell?
         // this should never happen, but just in case
         // an actor should only be able to "ready" a spell they know
-        if (!TCOD_list_contains(actor->known_spell_types, (void *)(size_t)spell_type))
+        if (!list_contains(actor->known_spell_types, (void *)(size_t)spell_type))
         {
             world_log(
                 actor->floor,
@@ -2261,7 +2203,7 @@ bool actor_cast_spell(
 
         // add the projectile to the map
         struct map *const map = &world->maps[actor->floor];
-        TCOD_list_push(map->projectiles, projectile);
+        list_add(map->projectiles, projectile);
 
         return false;
     }

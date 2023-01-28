@@ -27,7 +27,7 @@ static void init(struct scene *previous_scene)
         0);
 
     hero->equipment[EQUIP_SLOT_WEAPON] = item_new(ITEM_TYPE_LONGSWORD, 0, 0, 0, 1);
-    TCOD_list_push(hero->known_spell_types, (void *)SPELL_TYPE_MINOR_HEAL);
+    list_add(hero->known_spell_types, (void *)SPELL_TYPE_MINOR_HEAL);
     hero->readied_spell_type = SPELL_TYPE_MINOR_HEAL;
 
     hero->light_type = LIGHT_TYPE_TORCH;

@@ -15,6 +15,12 @@ struct list *list_new()
     return list;
 }
 
+void list_delete(struct list *list)
+{
+    free(list->data);
+    free(list);
+}
+
 void *list_get(const struct list *const list, const size_t index)
 {
     if (index >= list->size)
@@ -23,6 +29,19 @@ void *list_get(const struct list *const list, const size_t index)
     }
 
     return list->data[index];
+}
+
+bool list_contains(struct list *list, void *data)
+{
+    for (size_t i = 0; i < list->size; ++i)
+    {
+        if (list->data[i] == data)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void list_add(struct list *const list, void *const data)
@@ -37,8 +56,34 @@ void list_add(struct list *const list, void *const data)
     list->data[list->size++] = data;
 }
 
-void list_delete(struct list *list)
+void list_remove(struct list *const list, const void *const data)
 {
-    free(list->data);
-    free(list);
+    for (size_t i = 0; i < list->size; ++i)
+    {
+        if (list->data[i] == data)
+        {
+            list_remove_at(list, i);
+            break;
+        }
+    }
+}
+
+void list_remove_at(struct list *const list, const size_t index)
+{
+    if (index >= list->size)
+    {
+        return;
+    }
+
+    for (size_t i = index; i < list->size - 1; ++i)
+    {
+        list->data[i] = list->data[i + 1];
+    }
+
+    --list->size;
+}
+
+void list_clear(struct list *const list)
+{
+    list->size = 0;
 }

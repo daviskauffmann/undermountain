@@ -3,7 +3,6 @@
 #include "actor.h"
 #include "color.h"
 #include "world.h"
-#include <assert.h>
 #include <malloc.h>
 #include <math.h>
 
@@ -16,7 +15,6 @@ struct explosion *explosion_new(
     struct actor *const initiator)
 {
     struct explosion *const explosion = malloc(sizeof(*explosion));
-    assert(explosion);
 
     explosion->floor = floor;
     explosion->x = x;

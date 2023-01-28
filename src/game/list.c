@@ -1,12 +1,10 @@
 #include "list.h"
 
-#include <assert.h>
 #include <malloc.h>
 
 struct list *list_new()
 {
     struct list *const list = malloc(sizeof(struct list));
-    assert(list);
 
     list->data = NULL;
     list->size = 0;
@@ -31,7 +29,7 @@ void *list_get(const struct list *const list, const size_t index)
     return list->data[index];
 }
 
-bool list_contains(const struct list *list, void *data)
+bool list_contains(const struct list *list, const void *const data)
 {
     for (size_t i = 0; i < list->size; ++i)
     {
@@ -44,7 +42,7 @@ bool list_contains(const struct list *list, void *data)
     return false;
 }
 
-size_t list_index_of(const struct list *list, void *data)
+size_t list_index_of(const struct list *list, const void *const data)
 {
     for (size_t i = 0; i < list->size; ++i)
     {
@@ -63,7 +61,6 @@ void list_add(struct list *const list, void *const data)
     {
         list->capacity = list->capacity ? list->capacity * 2 : 1;
         list->data = realloc(list->data, list->capacity * sizeof(void *));
-        assert(list->data);
     }
 
     list->data[list->size++] = data;

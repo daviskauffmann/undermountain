@@ -1,6 +1,5 @@
 #include "message.h"
 
-#include <assert.h>
 #include <malloc.h>
 
 struct message *message_new(
@@ -8,7 +7,6 @@ struct message *message_new(
     const TCOD_ColorRGB color)
 {
     struct message *const message = malloc(sizeof(*message));
-    assert(message);
 
     message->text = TCOD_strdup(text);
     message->color = color;

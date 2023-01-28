@@ -1,7 +1,6 @@
 #include "direction.h"
 
 #include "../../game/util.h"
-#include <assert.h>
 
 enum direction get_direction_from_angle(const float angle)
 {
@@ -37,8 +36,6 @@ enum direction get_direction_from_angle(const float angle)
     {
         return DIRECTION_SE;
     }
-
-    assert(false);
 
     return -1;
 }

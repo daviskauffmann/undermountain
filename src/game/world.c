@@ -11,7 +11,6 @@
 #include "room.h"
 #include "spell.h"
 #include "util.h"
-#include <assert.h>
 #include <malloc.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -24,7 +23,6 @@ struct world *world;
 void world_init(void)
 {
     world = malloc(sizeof(*world));
-    assert(world);
 
     world->random = NULL;
 
@@ -457,7 +455,6 @@ void world_load(const char *filename)
         for (size_t room_index = 0; room_index < num_rooms; room_index++)
         {
             struct room *const room = malloc(sizeof(struct room));
-            assert(room);
 
             fread(&room->x, sizeof(room->x), 1, file);
             fread(&room->y, sizeof(room->y), 1, file);
@@ -472,7 +469,6 @@ void world_load(const char *filename)
         for (size_t i = 0; i < num_objects; i++)
         {
             struct object *const object = malloc(sizeof(struct object));
-            assert(object);
 
             fread(&object->type, sizeof(object->type), 1, file);
 
@@ -491,7 +487,6 @@ void world_load(const char *filename)
         for (size_t actor_index = 0; actor_index < num_actors; actor_index++)
         {
             struct actor *const actor = malloc(sizeof(struct actor));
-            assert(actor);
 
             size_t actor_name_length;
             fread(&actor_name_length, sizeof(actor_name_length), 1, file);
@@ -527,7 +522,6 @@ void world_load(const char *filename)
                 if (exists)
                 {
                     struct item *const item = malloc(sizeof(*item));
-                    assert(item);
 
                     fread(&item->type, sizeof(item->type), 1, file);
 
@@ -553,7 +547,6 @@ void world_load(const char *filename)
             for (size_t item_index = 0; item_index < num_items; item_index++)
             {
                 struct item *const item = malloc(sizeof(struct item));
-                assert(item);
 
                 fread(&item->type, sizeof(item->type), 1, file);
 
@@ -624,7 +617,6 @@ void world_load(const char *filename)
         for (size_t corpse_index = 0; corpse_index < num_corpses; corpse_index++)
         {
             struct corpse *corpse = malloc(sizeof(*corpse));
-            assert(corpse);
 
             size_t corpse_name_length;
             fread(&corpse_name_length, sizeof(corpse_name_length), 1, file);
@@ -646,7 +638,6 @@ void world_load(const char *filename)
         for (size_t i = 0; i < num_items; i++)
         {
             struct item *const item = malloc(sizeof(struct item));
-            assert(item);
 
             fread(&item->type, sizeof(item->type), 1, file);
 
@@ -667,7 +658,6 @@ void world_load(const char *filename)
         for (size_t projectile_index = 0; projectile_index < num_projectiles; projectile_index++)
         {
             struct projectile *const projectile = malloc(sizeof(struct projectile));
-            assert(projectile);
 
             fread(&projectile->type, sizeof(projectile->type), 1, file);
 
@@ -687,7 +677,6 @@ void world_load(const char *filename)
             if (ammunition_exists)
             {
                 struct item *const item = malloc(sizeof(struct item));
-                assert(item);
 
                 fread(&item->type, sizeof(item->type), 1, file);
 
@@ -730,7 +719,6 @@ void world_load(const char *filename)
         for (size_t explosion_index = 0; explosion_index < num_explosions; explosion_index++)
         {
             struct explosion *const explosion = malloc(sizeof(struct explosion));
-            assert(explosion);
 
             explosion->floor = floor;
             fread(&explosion->x, sizeof(explosion->x), 1, file);
@@ -763,7 +751,6 @@ void world_load(const char *filename)
     for (int message_index = 0; message_index < num_messages; message_index++)
     {
         struct message *const message = malloc(sizeof(struct message));
-        assert(message);
 
         size_t message_text_length;
         fread(&message_text_length, sizeof(message_text_length), 1, file);
@@ -1070,7 +1057,6 @@ void world_log(int floor, int x, int y, TCOD_ColorRGB color, char *fmt, ...)
 
     size_t size = vsnprintf(NULL, 0, fmt, args);
     char *string = malloc(size + 1);
-    assert(string);
     vsprintf_s(string, size + 1, fmt, args);
 
     va_end(args);

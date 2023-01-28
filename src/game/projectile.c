@@ -5,7 +5,6 @@
 #include "explosion.h"
 #include "util.h"
 #include "world.h"
-#include <assert.h>
 #include <malloc.h>
 #include <math.h>
 #include <stdio.h>
@@ -21,7 +20,6 @@ struct projectile *projectile_new(
     struct item *const ammunition)
 {
     struct projectile *const projectile = malloc(sizeof(*projectile));
-    assert(projectile);
 
     projectile->type = type;
 

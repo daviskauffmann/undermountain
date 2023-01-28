@@ -2,4 +2,4 @@ build
 
 config.local.cfg
 
-save.gz
+data/save

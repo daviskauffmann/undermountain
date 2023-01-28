@@ -2,7 +2,6 @@
 
 #include "assets.h"
 #include "world.h"
-#include <assert.h>
 #include <malloc.h>
 
 struct object *object_new(
@@ -12,7 +11,6 @@ struct object *object_new(
     const uint8_t y)
 {
     struct object *const object = malloc(sizeof(*object));
-    assert(object);
 
     object->type = type;
 

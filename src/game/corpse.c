@@ -1,6 +1,5 @@
 #include "corpse.h"
 
-#include <assert.h>
 #include <malloc.h>
 
 struct corpse *corpse_new(
@@ -11,7 +10,6 @@ struct corpse *corpse_new(
     const uint8_t y)
 {
     struct corpse *const corpse = malloc(sizeof(*corpse));
-    assert(corpse);
 
     corpse->name = TCOD_strdup(name);
     corpse->level = level;

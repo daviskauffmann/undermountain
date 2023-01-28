@@ -26,7 +26,6 @@
 #include "targeting_action.h"
 #include "tooltip_data.h"
 #include "tooltip_option.h"
-#include <assert.h>
 #include <float.h>
 #include <libtcod.h>
 #include <malloc.h>

@@ -8,7 +8,6 @@
 #include "room.h"
 #include "util.h"
 #include "world.h"
-#include <assert.h>
 #include <float.h>
 #include <malloc.h>
 #include <math.h>
@@ -23,7 +22,6 @@ struct actor *actor_new(
     const uint8_t y)
 {
     struct actor *const actor = malloc(sizeof(*actor));
-    assert(actor);
 
     actor->name = TCOD_strdup(name);
     actor->race = race;
@@ -1926,15 +1924,13 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
     }
 
     // calculate critical hit
-    int threat_roll = 0;
-    int crit_challenge = 0;
     bool crit = false;
 
     if (attack_roll >= actor_calc_threat_range(actor))
     {
-        threat_roll =
-            TCOD_random_dice_roll_s(world->random, "1d20");
-        crit_challenge = threat_roll + attack_bonus;
+        const int threat_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+        const int crit_challenge = threat_roll + attack_bonus;
+
         if (crit_challenge >= armor_class)
         {
             crit = true;
@@ -1964,31 +1960,16 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
 
     // TODO: when projectiles come at the player from the dark, nothing gets logged
     // it'd be nice if there were a way to do something like "someone attacks <player> for <damage>"
-    if (threat_roll)
-    {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            crit ? color_light_red : color_white,
-            "%s %s %s for %d.",
-            actor->name,
-            crit ? "crits" : "hits",
-            other->name,
-            damage);
-    }
-    else
-    {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s hits %s for %d.",
-            actor->name,
-            other->name,
-            damage);
-    }
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        crit ? color_light_red : color_white,
+        "%s %s %s for %d.",
+        actor->name,
+        crit ? "crits" : "hits",
+        other->name,
+        damage);
 
     // deal damage
     const bool killed = actor_damage_hit_points(other, actor, damage);

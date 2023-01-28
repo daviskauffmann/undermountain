@@ -1,7 +1,6 @@
 #include "item.h"
 
 #include "assets.h"
-#include <assert.h>
 #include <malloc.h>
 
 struct item *item_new(
@@ -12,7 +11,6 @@ struct item *item_new(
     const int stack)
 {
     struct item *const item = malloc(sizeof(*item));
-    assert(item);
 
     item->type = type;
 
@@ -26,7 +24,6 @@ struct item *item_new(
 
     if (item_database[type].unique)
     {
-        // assert(!item_data[type].spawned);
         item_database[type].spawned = true; // TODO: not super liking having the assets be stateful
     }
 

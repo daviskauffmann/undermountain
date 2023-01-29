@@ -1,6 +1,7 @@
 #include "message.h"
 
 #include <malloc.h>
+#include <string.h>
 
 struct message *message_new(
     const char *const text,
@@ -8,7 +9,8 @@ struct message *message_new(
 {
     struct message *const message = malloc(sizeof(*message));
 
-    message->text = TCOD_strdup(text);
+    message->text = strdup(text);
+
     message->color = color;
 
     return message;

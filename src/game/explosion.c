@@ -24,39 +24,19 @@ struct explosion *explosion_new(
     explosion->color = color;
     explosion->lifetime = 0.0f;
 
+    const struct map *const map = &world->maps[explosion->floor];
+
     explosion->fov = map_to_fov_map(
-        &world->maps[explosion->floor],
+        map,
         explosion->x,
         explosion->y,
         explosion->radius);
 
-    if (initiator)
+    for (size_t tile_x = 0; tile_x < MAP_WIDTH; tile_x++)
     {
-        explosion_deal_damage(explosion, initiator);
-    }
-
-    return explosion;
-}
-
-void explosion_delete(struct explosion *const explosion)
-{
-    if (explosion->fov)
-    {
-        TCOD_map_delete(explosion->fov);
-    }
-
-    free(explosion);
-}
-
-void explosion_deal_damage(const struct explosion *const explosion, struct actor *const initiator)
-{
-    const struct map *const map = &world->maps[explosion->floor];
-
-    for (int x = 0; x < MAP_WIDTH; x++)
-    {
-        for (int y = 0; y < MAP_HEIGHT; y++)
+        for (size_t tile_y = 0; tile_y < MAP_HEIGHT; tile_y++)
         {
-            const struct tile *const tile = &map->tiles[x][y];
+            const struct tile *const tile = &map->tiles[tile_x][tile_y];
 
             if (tile->actor &&
                 tile->actor != initiator &&
@@ -78,6 +58,18 @@ void explosion_deal_damage(const struct explosion *const explosion, struct actor
             }
         }
     }
+
+    return explosion;
+}
+
+void explosion_delete(struct explosion *const explosion)
+{
+    if (explosion->fov)
+    {
+        TCOD_map_delete(explosion->fov);
+    }
+
+    free(explosion);
 }
 
 bool explosion_update(struct explosion *const explosion, const float delta_time)

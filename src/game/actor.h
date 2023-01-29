@@ -134,6 +134,7 @@ struct actor_prototype
 struct actor
 {
     char *name;
+
     enum race race;
     enum class class;
     enum faction faction;

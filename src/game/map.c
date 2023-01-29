@@ -837,7 +837,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
         {
             type = TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1);
         } while (item_database[type].level > map->floor + 1 &&
-                 (item_database[type].unique && !item_database[type].spawned));
+                 (item_database[type].unique && list_contains(world->spawned_unique_item_types, (void *)(size_t)type)));
 
         struct item *const item = item_new(
             type,
@@ -847,6 +847,11 @@ void map_generate(struct map *const map, const enum map_type map_type)
             type == ITEM_TYPE_GOLD
                 ? TCOD_random_get_int(world->random, 1, 10 * (map->floor + 1))
                 : base_item_database[item_database[type].type].max_stack);
+
+        if (item_database[type].unique)
+        {
+            list_add(world->spawned_unique_item_types, (void *)(size_t)type);
+        }
 
         list_add(map->items, item);
 
@@ -902,9 +907,9 @@ bool map_is_walkable(
     return tile_database[tile->type].is_walkable;
 }
 
-TCOD_Map * map_to_TCOD_map(const struct map *const map)
+TCOD_Map *map_to_TCOD_map(const struct map *const map)
 {
-    TCOD_Map * TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
+    TCOD_Map *TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -922,13 +927,13 @@ TCOD_Map * map_to_TCOD_map(const struct map *const map)
     return TCOD_map;
 }
 
-TCOD_Map * map_to_fov_map(
+TCOD_Map *map_to_fov_map(
     const struct map *const map,
     const int x,
     const int y,
     const int radius)
 {
-    TCOD_Map * fov_map = map_to_TCOD_map(map);
+    TCOD_Map *fov_map = map_to_TCOD_map(map);
     TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_RESTRICTIVE);
     return fov_map;
 }

@@ -28,10 +28,8 @@ void world_init(void)
 
     world->time = 0;
 
-    for (enum item_type item_type = 0; item_type < NUM_ITEM_TYPES; item_type++)
-    {
-        item_database[item_type].spawned = false;
-    }
+    world->spawned_unique_item_types = list_new();
+
     for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *map = &world->maps[floor];
@@ -59,6 +57,8 @@ void world_uninit(void)
         struct map *map = &world->maps[i];
         map_uninit(map);
     }
+
+    list_delete(world->spawned_unique_item_types);
 
     if (world->random)
     {
@@ -139,7 +139,16 @@ void world_save(const char *filename)
 {
     FILE *file = fopen(filename, "wb");
 
-    fwrite(world->random, sizeof(world->random->mt_cmwc), 1, file);
+    fwrite(world->random, sizeof(*world->random), 1, file);
+
+    fwrite(&world->spawned_unique_item_types->size, sizeof(world->spawned_unique_item_types->size), 1, file);
+    for (size_t spawned_unique_item_type_index = 0; spawned_unique_item_type_index < world->spawned_unique_item_types->size; spawned_unique_item_type_index++)
+    {
+        const enum item_type type = (size_t)list_get(world->spawned_unique_item_types, spawned_unique_item_type_index);
+
+        fwrite(&type, sizeof(type), 1, file);
+    }
+
     fwrite(&world->time, sizeof(world->time), 1, file);
 
     uint8_t player_floor = 0;
@@ -197,6 +206,7 @@ void world_save(const char *filename)
             const size_t actor_name_length = strlen(actor->name);
             fwrite(&actor_name_length, sizeof(actor_name_length), 1, file);
             fwrite(actor->name, actor_name_length, 1, file);
+
             fwrite(&actor->race, sizeof(actor->race), 1, file);
             fwrite(&actor->class, sizeof(actor->class), 1, file);
             fwrite(&actor->faction, sizeof(actor->faction), 1, file);
@@ -205,10 +215,7 @@ void world_save(const char *filename)
             fwrite(&actor->experience, sizeof(actor->experience), 1, file);
             fwrite(&actor->ability_points, sizeof(actor->ability_points), 1, file);
 
-            for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-            {
-                fwrite(&actor->ability_scores[ability], sizeof(actor->ability_scores[ability]), 1, file);
-            }
+            fwrite(&actor->ability_scores, sizeof(actor->ability_scores), 1, file);
 
             fwrite(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
             fwrite(&actor->base_mana_points, sizeof(actor->base_mana_points), 1, file);
@@ -246,7 +253,7 @@ void world_save(const char *filename)
             fwrite(&actor->items->size, sizeof(actor->items->size), 1, file);
             for (size_t item_index = 0; item_index < actor->items->size; item_index++)
             {
-                const struct item *const item = list_get(map->items, item_index);
+                const struct item *const item = list_get(actor->items, item_index);
 
                 fwrite(&item->type, sizeof(item->type), 1, file);
 
@@ -316,6 +323,7 @@ void world_save(const char *filename)
             const size_t corpse_name_length = strlen(corpse->name);
             fwrite(&corpse_name_length, sizeof(corpse_name_length), 1, file);
             fwrite(corpse->name, corpse_name_length, 1, file);
+
             fwrite(&corpse->level, sizeof(corpse->level), 1, file);
 
             fwrite(&corpse->x, sizeof(corpse->x), 1, file);
@@ -351,6 +359,9 @@ void world_save(const char *filename)
             fwrite(&projectile->x, sizeof(projectile->x), 1, file);
             fwrite(&projectile->y, sizeof(projectile->y), 1, file);
 
+            const size_t shooter_index = list_index_of(map->actors, projectile->shooter);
+            fwrite(&shooter_index, sizeof(shooter_index), 1, file);
+
             if (projectile->ammunition)
             {
                 const bool has_ammunition = true;
@@ -372,14 +383,6 @@ void world_save(const char *filename)
                 const bool has_ammunition = false;
                 fwrite(&has_ammunition, sizeof(has_ammunition), 1, file);
             }
-        }
-
-        for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
-        {
-            const struct projectile *const projectile = list_get(map->projectiles, projectile_index);
-
-            const size_t shooter_index = list_index_of(map->actors, projectile->shooter);
-            fwrite(&shooter_index, sizeof(shooter_index), 1, file);
         }
 
         fwrite(&map->explosions->size, sizeof(map->explosions->size), 1, file);
@@ -410,7 +413,8 @@ void world_save(const char *filename)
 
         const size_t message_length = strlen(message->text);
         fwrite(&message_length, sizeof(message_length), 1, file);
-        fwrite(message->text, sizeof(char), message_length, file);
+        fwrite(message->text, message_length, 1, file);
+
         fwrite(&message->color, sizeof(message->color), 1, file);
     }
 
@@ -424,9 +428,19 @@ void world_load(const char *filename)
     FILE *file = fopen(filename, "rb");
 
     world->random = TCOD_random_new(TCOD_RNG_MT);
-    fread(world->random, sizeof(world->random->mt_cmwc), 1, file);
+    fread(world->random, sizeof(*world->random), 1, file);
 
     TCOD_namegen_parse("data/namegen.cfg", world->random);
+
+    size_t spawned_unique_item_types;
+    fread(&spawned_unique_item_types, sizeof(spawned_unique_item_types), 1, file);
+    for (size_t spawned_unique_item_type_index = 0; spawned_unique_item_type_index < spawned_unique_item_types; spawned_unique_item_type_index++)
+    {
+        enum item_type type;
+        fread(&type, sizeof(type), 1, file);
+
+        list_add(world->spawned_unique_item_types, (void *)(size_t)type);
+    }
 
     fread(&world->time, sizeof(world->time), 1, file);
 
@@ -454,7 +468,7 @@ void world_load(const char *filename)
         fread(&num_rooms, sizeof(num_rooms), 1, file);
         for (size_t room_index = 0; room_index < num_rooms; room_index++)
         {
-            struct room *const room = malloc(sizeof(struct room));
+            struct room *const room = malloc(sizeof(*room));
 
             fread(&room->x, sizeof(room->x), 1, file);
             fread(&room->y, sizeof(room->y), 1, file);
@@ -468,7 +482,7 @@ void world_load(const char *filename)
         fread(&num_objects, sizeof(num_objects), 1, file);
         for (size_t i = 0; i < num_objects; i++)
         {
-            struct object *const object = malloc(sizeof(struct object));
+            struct object *const object = malloc(sizeof(*object));
 
             fread(&object->type, sizeof(object->type), 1, file);
 
@@ -486,13 +500,14 @@ void world_load(const char *filename)
         fread(&num_actors, sizeof(num_actors), 1, file);
         for (size_t actor_index = 0; actor_index < num_actors; actor_index++)
         {
-            struct actor *const actor = malloc(sizeof(struct actor));
+            struct actor *const actor = malloc(sizeof(*actor));
 
             size_t actor_name_length;
             fread(&actor_name_length, sizeof(actor_name_length), 1, file);
             actor->name = malloc(actor_name_length + 1);
             fread(actor->name, actor_name_length, 1, file);
             actor->name[actor_name_length] = '\0';
+
             fread(&actor->race, sizeof(actor->race), 1, file);
             fread(&actor->class, sizeof(actor->class), 1, file);
             fread(&actor->faction, sizeof(actor->faction), 1, file);
@@ -501,10 +516,7 @@ void world_load(const char *filename)
             fread(&actor->experience, sizeof(actor->experience), 1, file);
             fread(&actor->ability_points, sizeof(actor->ability_points), 1, file);
 
-            for (enum ability ability_score = 0; ability_score < NUM_ABILITIES; ability_score++)
-            {
-                fread(&actor->ability_scores[ability_score], sizeof(actor->ability_scores[ability_score]), 1, file);
-            }
+            fread(&actor->ability_scores, sizeof(actor->ability_scores), 1, file);
 
             fread(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
             fread(&actor->base_mana_points, sizeof(actor->base_mana_points), 1, file);
@@ -546,7 +558,7 @@ void world_load(const char *filename)
             fread(&num_items, sizeof(num_items), 1, file);
             for (size_t item_index = 0; item_index < num_items; item_index++)
             {
-                struct item *const item = malloc(sizeof(struct item));
+                struct item *const item = malloc(sizeof(*item));
 
                 fread(&item->type, sizeof(item->type), 1, file);
 
@@ -623,6 +635,7 @@ void world_load(const char *filename)
             corpse->name = malloc(corpse_name_length + 1);
             fread(corpse->name, corpse_name_length, 1, file);
             corpse->name[corpse_name_length] = '\0';
+
             fread(&corpse->level, sizeof(corpse->level), 1, file);
 
             corpse->floor = floor;
@@ -637,7 +650,7 @@ void world_load(const char *filename)
         fread(&num_items, sizeof(num_items), 1, file);
         for (size_t i = 0; i < num_items; i++)
         {
-            struct item *const item = malloc(sizeof(struct item));
+            struct item *const item = malloc(sizeof(*item));
 
             fread(&item->type, sizeof(item->type), 1, file);
 
@@ -657,7 +670,7 @@ void world_load(const char *filename)
         fread(&num_projectiles, sizeof(num_projectiles), 1, file);
         for (size_t projectile_index = 0; projectile_index < num_projectiles; projectile_index++)
         {
-            struct projectile *const projectile = malloc(sizeof(struct projectile));
+            struct projectile *const projectile = malloc(sizeof(*projectile));
 
             fread(&projectile->type, sizeof(projectile->type), 1, file);
 
@@ -669,14 +682,16 @@ void world_load(const char *filename)
             fread(&projectile->x, sizeof(projectile->x), 1, file);
             fread(&projectile->y, sizeof(projectile->y), 1, file);
 
-            projectile->shooter = NULL;
+            size_t shooter_index;
+            fread(&shooter_index, sizeof(shooter_index), 1, file);
+            projectile->shooter = list_get(map->actors, shooter_index);
 
             bool ammunition_exists;
             fread(&ammunition_exists, sizeof(ammunition_exists), 1, file);
 
             if (ammunition_exists)
             {
-                struct item *const item = malloc(sizeof(struct item));
+                struct item *const item = malloc(sizeof(*item));
 
                 fread(&item->type, sizeof(item->type), 1, file);
 
@@ -700,25 +715,11 @@ void world_load(const char *filename)
             list_add(map->projectiles, projectile);
         }
 
-        for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
-        {
-            struct projectile *const projectile = list_get(map->projectiles, projectile_index);
-
-            size_t shooter_index;
-            fread(&shooter_index, sizeof(shooter_index), 1, file);
-            projectile->shooter = list_get(map->actors, shooter_index);
-
-            if (projectile->type == PROJECTILE_TYPE_ARROW)
-            {
-                projectile->ammunition = projectile->shooter->equipment[EQUIP_SLOT_AMMUNITION];
-            }
-        }
-
         size_t num_explosions;
         fread(&num_explosions, sizeof(num_explosions), 1, file);
         for (size_t explosion_index = 0; explosion_index < num_explosions; explosion_index++)
         {
-            struct explosion *const explosion = malloc(sizeof(struct explosion));
+            struct explosion *const explosion = malloc(sizeof(*explosion));
 
             explosion->floor = floor;
             fread(&explosion->x, sizeof(explosion->x), 1, file);
@@ -727,6 +728,12 @@ void world_load(const char *filename)
             fread(&explosion->radius, sizeof(explosion->radius), 1, file);
             fread(&explosion->color, sizeof(explosion->color), 1, file);
             fread(&explosion->lifetime, sizeof(explosion->lifetime), 1, file);
+
+            explosion->fov = map_to_fov_map(
+                map,
+                explosion->x,
+                explosion->y,
+                explosion->radius);
 
             list_add(map->explosions, explosion);
         }
@@ -750,13 +757,14 @@ void world_load(const char *filename)
     fread(&num_messages, sizeof(num_messages), 1, file);
     for (int message_index = 0; message_index < num_messages; message_index++)
     {
-        struct message *const message = malloc(sizeof(struct message));
+        struct message *const message = malloc(sizeof(*message));
 
         size_t message_text_length;
         fread(&message_text_length, sizeof(message_text_length), 1, file);
         message->text = malloc(message_text_length + 1);
         fread(message->text, message_text_length, 1, file);
         message->text[message_text_length] = '\0';
+
         fread(&message->color, sizeof(message->color), 1, file);
 
         list_add(world->messages, message);
@@ -1055,7 +1063,7 @@ void world_log(int floor, int x, int y, TCOD_ColorRGB color, char *fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    size_t size = vsnprintf(NULL, 0, fmt, args);
+    const size_t size = vsnprintf(NULL, 0, fmt, args);
     char *string = malloc(size + 1);
     vsprintf_s(string, size + 1, fmt, args);
 

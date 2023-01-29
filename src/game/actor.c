@@ -11,6 +11,7 @@
 #include <float.h>
 #include <malloc.h>
 #include <math.h>
+#include <string.h>
 
 struct actor *actor_new(
     const char *const name,
@@ -23,7 +24,8 @@ struct actor *actor_new(
 {
     struct actor *const actor = malloc(sizeof(*actor));
 
-    actor->name = TCOD_strdup(name);
+    actor->name = strdup(name);
+
     actor->race = race;
     actor->class = class;
     actor->faction = faction;
@@ -408,6 +410,7 @@ void actor_calc_fov(struct actor *const actor)
     }
 
     struct map *const map = &world->maps[actor->floor];
+
     actor->fov = map_to_fov_map(map, actor->x, actor->y, actor_calc_sight_radius(actor));
 
     TCOD_Map *los_map = map_to_fov_map(map, actor->x, actor->y, 0);
@@ -419,9 +422,10 @@ void actor_calc_fov(struct actor *const actor)
             if (!TCOD_map_is_in_fov(actor->fov, x, y) &&
                 TCOD_map_is_in_fov(los_map, x, y))
             {
-                for (size_t i = 0; i < map->objects->size; i++)
+                for (size_t object_index = 0; object_index < map->objects->size; object_index++)
                 {
-                    const struct object *const object = list_get(map->objects, i);
+                    const struct object *const object = list_get(map->objects, object_index);
+
                     if (object->light_fov &&
                         TCOD_map_is_in_fov(object->light_fov, x, y))
                     {
@@ -429,9 +433,10 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                for (size_t i = 0; i < map->actors->size; i++)
+                for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
                 {
-                    const struct actor *const other = list_get(map->actors, i);
+                    const struct actor *const other = list_get(map->actors, actor_index);
+
                     if (other->light_fov &&
                         TCOD_map_is_in_fov(other->light_fov, x, y))
                     {
@@ -439,9 +444,10 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                for (size_t i = 0; i < map->projectiles->size; i++)
+                for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
                 {
-                    const struct projectile *const projectile = list_get(map->projectiles, i);
+                    const struct projectile *const projectile = list_get(map->projectiles, projectile_index);
+
                     if (projectile->light_fov &&
                         TCOD_map_is_in_fov(projectile->light_fov, x, y))
                     {
@@ -449,9 +455,10 @@ void actor_calc_fov(struct actor *const actor)
                     }
                 }
 
-                for (size_t i = 0; i < map->explosions->size; i++)
+                for (size_t explosion_index = 0; explosion_index < map->explosions->size; explosion_index++)
                 {
-                    const struct explosion *const explosion = list_get(map->explosions, i);
+                    const struct explosion *const explosion = list_get(map->explosions, explosion_index);
+
                     if (explosion->fov &&
                         TCOD_map_is_in_fov(explosion->fov, x, y))
                     {
@@ -1866,7 +1873,7 @@ bool actor_shoot(
     // create a projectile
     // the projectile gets a copy of the ammunition with the stack size set to 1
     // this is so that if the actor deletes its ammunition item (e.g. if it runs out), the projectile can still use the data
-    struct projectile *projectile = projectile_new(
+    struct projectile *const projectile = projectile_new(
         PROJECTILE_TYPE_ARROW,
         actor->floor,
         actor->x,
@@ -1874,10 +1881,15 @@ bool actor_shoot(
         x,
         y,
         actor,
-        item_new(ammunition->type, ammunition->floor, ammunition->x, ammunition->y, 1));
+        item_new(
+            ammunition->type,
+            ammunition->floor,
+            ammunition->x,
+            ammunition->y,
+            1));
 
     // add the projectile to the map
-    struct map *map = &world->maps[actor->floor];
+    struct map *const map = &world->maps[actor->floor];
     list_add(map->projectiles, projectile);
 
     // decrement the actor's ammunition

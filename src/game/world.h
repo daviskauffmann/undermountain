@@ -13,6 +13,8 @@ struct world
 
     unsigned int time;
 
+    struct list *spawned_unique_item_types;
+
     struct map maps[NUM_MAPS];
 
     struct actor *player;

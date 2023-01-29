@@ -4,7 +4,7 @@
 
 struct list *list_new()
 {
-    struct list *const list = malloc(sizeof(struct list));
+    struct list *const list = malloc(sizeof(*list));
 
     list->data = NULL;
     list->size = 0;
@@ -60,7 +60,7 @@ void list_add(struct list *const list, void *const data)
     if (list->size == list->capacity)
     {
         list->capacity = list->capacity ? list->capacity * 2 : 1;
-        list->data = realloc(list->data, list->capacity * sizeof(void *));
+        list->data = realloc(list->data, list->capacity * sizeof(*list->data));
     }
 
     list->data[list->size++] = data;

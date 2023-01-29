@@ -26,7 +26,6 @@ struct explosion *explosion_new(
     TCOD_ColorRGB color,
     struct actor *initiator);
 void explosion_delete(struct explosion *explosion);
-void explosion_deal_damage(const struct explosion *explosion, struct actor *initiator);
 bool explosion_update(struct explosion *explosion, float delta_time);
 
 #endif

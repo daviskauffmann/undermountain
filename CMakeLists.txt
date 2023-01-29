@@ -20,7 +20,10 @@ else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
+target_compile_definitions(${PROJECT_NAME} PRIVATE 
+    -D_CRT_NONSTDC_NO_WARNINGS
+    -D_CRT_SECURE_NO_WARNINGS
+)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     libtcod::libtcod

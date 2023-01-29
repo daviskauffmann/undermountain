@@ -1,5 +1,4 @@
 #include "config.h"
-#include "game/assets.h"
 #include "scene.h"
 #include "scenes/menu/menu_scene.h"
 #include <SDL2/SDL.h>
@@ -11,7 +10,6 @@
 int main(int argc, char *argv[])
 {
     config_load();
-    assets_load();
 
     for (int i = 1; i < argc; i++)
     {

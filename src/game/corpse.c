@@ -1,6 +1,7 @@
 #include "corpse.h"
 
 #include <malloc.h>
+#include <string.h>
 
 struct corpse *corpse_new(
     const char *const name,
@@ -11,7 +12,8 @@ struct corpse *corpse_new(
 {
     struct corpse *const corpse = malloc(sizeof(*corpse));
 
-    corpse->name = TCOD_strdup(name);
+    corpse->name = strdup(name);
+
     corpse->level = level;
 
     corpse->floor = floor;
@@ -24,5 +26,6 @@ struct corpse *corpse_new(
 void corpse_delete(struct corpse *const corpse)
 {
     free(corpse->name);
+
     free(corpse);
 }

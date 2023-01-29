@@ -3,364 +3,360 @@
 #include "color.h"
 #include <libtcod.h>
 
-struct tile_common tile_common;
-struct tile_data tile_database[NUM_TILE_TYPES];
-struct light_data light_database[NUM_LIGHT_TYPES];
-struct object_data object_database[NUM_OBJECT_TYPES];
-struct actor_common actor_common;
-struct size_data size_database[NUM_SIZES];
-struct race_data race_database[NUM_RACES];
-struct class_data class_database[NUM_CLASSES];
-struct actor_prototype monster_prototypes[NUM_MONSTERS];
-struct ability_data ability_database[NUM_ABILITIES];
-struct corpse_common corpse_common;
-struct equip_slot_data equip_slot_database[NUM_EQUIP_SLOTS];
-struct base_item_data base_item_database[NUM_BASE_ITEM_TYPES];
-struct item_data item_database[NUM_ITEM_TYPES];
-struct spell_data spell_database[NUM_SPELL_TYPES];
-struct projectile_data projectile_database[NUM_PROJECTILE_TYPES];
+const struct tile_common tile_common = {
+    .ambient_light_color = {16, 16, 32},
+    .ambient_light_intensity = 0.05f,
+};
 
-void assets_load(void)
-{
-    // TODO: load from file
-
-    tile_common = (struct tile_common){
-        .ambient_light_color = TCOD_color_RGB(16, 16, 32),
-        .ambient_light_intensity = 0.05f,
-    };
-
-    tile_database[TILE_TYPE_EMPTY] = (struct tile_data){
+const struct tile_data tile_database[NUM_TILE_TYPES] = {
+    [TILE_TYPE_EMPTY] = {
         .name = "Empty",
         .glyph = ' ',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .is_walkable = true,
         .is_transparent = true,
-    };
-    tile_database[TILE_TYPE_FLOOR] = (struct tile_data){
+    },
+    [TILE_TYPE_FLOOR] = {
         .name = "Floor",
         .glyph = '.',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .is_walkable = true,
         .is_transparent = true,
-    };
-    tile_database[TILE_TYPE_GRASS] = (struct tile_data){
+    },
+    [TILE_TYPE_GRASS] = {
         .name = "Grass",
         .glyph = '.',
-        .color = color_light_green,
+        .color = {COLOR_LIGHT_GREEN},
         .is_walkable = true,
         .is_transparent = true,
-    };
-    tile_database[TILE_TYPE_WALL] = (struct tile_data){
+    },
+    [TILE_TYPE_WALL] = {
         .name = "Wall",
         .glyph = '#',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .is_walkable = false,
         .is_transparent = false,
-    };
+    },
+};
 
-    light_database[LIGHT_TYPE_NONE] = (struct light_data){
+const struct light_data light_database[NUM_LIGHT_TYPES] = {
+    [LIGHT_TYPE_NONE] = {
         .radius = -1,
-        .color = color_black,
+        .color = {COLOR_BLACK},
         .intensity = 0,
         .flicker = false,
-    };
-    light_database[LIGHT_TYPE_ALTAR] = (struct light_data){
+    },
+    [LIGHT_TYPE_ALTAR] = {
         .radius = 3,
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .intensity = 0.1f,
         .flicker = false,
-    };
-    light_database[LIGHT_TYPE_BRAZIER] = (struct light_data){
+    },
+    [LIGHT_TYPE_BRAZIER] = {
         .radius = 10,
-        .color = color_light_amber,
+        .color = {COLOR_LIGHT_AMBER},
         .intensity = 0.25f,
         .flicker = true,
-    };
-    light_database[LIGHT_TYPE_FIREBALL] = (struct light_data){
+    },
+    [LIGHT_TYPE_FIREBALL] = {
         .radius = 5,
-        .color = color_flame,
+        .color = {COLOR_FLAME},
         .intensity = 0.5f,
         .flicker = true,
-    };
-    light_database[LIGHT_TYPE_GLOW] = (struct light_data){
+    },
+    [LIGHT_TYPE_GLOW] = {
         .radius = 5,
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .intensity = 0.1f,
         .flicker = false,
-    };
-    light_database[LIGHT_TYPE_TORCH] = (struct light_data){
+    },
+    [LIGHT_TYPE_TORCH] = {
         .radius = 10,
-        .color = color_light_amber,
+        .color = {COLOR_LIGHT_AMBER},
         .intensity = 0.25f,
         .flicker = true,
-    };
+    },
+};
 
-    object_database[OBJECT_TYPE_ALTAR] = (struct object_data){
+const struct object_data object_database[NUM_OBJECT_TYPES] = {
+    [OBJECT_TYPE_ALTAR] = {
         .name = "Altar",
         .glyph = '_',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .light_type = LIGHT_TYPE_ALTAR,
 
         .is_walkable = true,
         .is_transparent = false,
-    };
-    object_database[OBJECT_TYPE_BRAZIER] = (struct object_data){
+    },
+    [OBJECT_TYPE_BRAZIER] = {
         .name = "Brazier",
         .glyph = '*',
-        .color = color_light_amber,
+        .color = {COLOR_LIGHT_AMBER},
         .light_type = LIGHT_TYPE_BRAZIER,
 
         .is_walkable = true,
         .is_transparent = false,
-    };
-    object_database[OBJECT_TYPE_CHEST] = (struct object_data){
+    },
+    [OBJECT_TYPE_CHEST] = {
         .name = "Chest",
         .glyph = '~',
-        .color = color_sepia,
+        .color = {COLOR_SEPIA},
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = false,
-    };
-    object_database[OBJECT_TYPE_DOOR_CLOSED] = (struct object_data){
+    },
+    [OBJECT_TYPE_DOOR_CLOSED] = {
         .name = "Closed Door",
         .glyph = '+',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = false,
         .is_transparent = false,
-    };
-    object_database[OBJECT_TYPE_DOOR_OPEN] = (struct object_data){
+    },
+    [OBJECT_TYPE_DOOR_OPEN] = {
         .name = "Open Door",
         .glyph = '-',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
-    };
-    object_database[OBJECT_TYPE_FOUNTAIN] = (struct object_data){
+    },
+    [OBJECT_TYPE_FOUNTAIN] = {
         .name = "Fountain",
         .glyph = '{',
-        .color = color_light_azure,
+        .color = {COLOR_LIGHT_AZURE},
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = false,
-    };
-    object_database[OBJECT_TYPE_STAIR_DOWN] = (struct object_data){
+    },
+    [OBJECT_TYPE_STAIR_DOWN] = {
         .name = "Stair Down",
         .glyph = '>',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
-    };
-    object_database[OBJECT_TYPE_STAIR_UP] = (struct object_data){
+    },
+    [OBJECT_TYPE_STAIR_UP] = {
         .name = "Stair Up",
         .glyph = '<',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
-    };
-    object_database[OBJECT_TYPE_THRONE] = (struct object_data){
+    },
+    [OBJECT_TYPE_THRONE] = {
         .name = "Throne",
         .glyph = '\\',
-        .color = color_gold,
+        .color = {COLOR_GOLD},
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = false,
-    };
-    object_database[OBJECT_TYPE_TRAP] = (struct object_data){
+    },
+    [OBJECT_TYPE_TRAP] = {
         .name = "Trap",
         .glyph = '^',
-        .color = color_white,
+        .color = {COLOR_WHITE},
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
-    };
+    },
+};
 
-    actor_common = (struct actor_common){
-        .turns_to_chase = 10,
-    };
+const struct actor_common actor_common = {
+    .turns_to_chase = 10,
+};
 
-    size_database[SIZE_TINY] = (struct size_data){
+const struct size_data size_database[NUM_SIZES] = {
+    [SIZE_TINY] = {
         .name = "Tiny",
 
         .modifier = 2,
-    };
-    size_database[SIZE_SMALL] = (struct size_data){
+    },
+    [SIZE_SMALL] = {
         .name = "Small",
 
         .modifier = 1,
-    };
-    size_database[SIZE_MEDIUM] = (struct size_data){
+    },
+    [SIZE_MEDIUM] = {
         .name = "Medium",
 
         .modifier = 0,
-    };
-    size_database[SIZE_LARGE] = (struct size_data){
+    },
+    [SIZE_LARGE] = {
         .name = "Large",
 
         .modifier = -1,
-    };
-    size_database[SIZE_HUGE] = (struct size_data){
+    },
+    [SIZE_HUGE] = {
         .name = "Huge",
 
         .modifier = -2,
-    };
+    },
+};
 
-    race_database[RACE_HUMAN] = (struct race_data){
-        .name = "Human",
-        .glyph = '@',
-
-        .size = SIZE_MEDIUM,
-        .speed = 1.0f,
-    };
-    race_database[RACE_DWARF] = (struct race_data){
+const struct race_data race_database[NUM_RACES] = {
+    // player races
+    [RACE_DWARF] = {
         .name = "Dwarf",
         .glyph = '@',
 
         .size = SIZE_SMALL,
         .speed = 0.8f,
-    };
-    race_database[RACE_ELF] = (struct race_data){
+    },
+    [RACE_ELF] = {
         .name = "Elf",
         .glyph = '@',
 
         .size = SIZE_MEDIUM,
         .speed = 1.2f,
-    };
+    },
+    [RACE_HUMAN] = {
+        .name = "Human",
+        .glyph = '@',
 
-    race_database[RACE_BUGBEAR] = (struct race_data){
+        .size = SIZE_MEDIUM,
+        .speed = 1.0f,
+    },
+
+    // monster races
+    [RACE_BUGBEAR] = {
         .name = "Bugbear",
         .glyph = 'b',
 
         .size = SIZE_MEDIUM,
         .speed = 0.5f,
-    };
-    race_database[RACE_DOG] = (struct race_data){
+    },
+    [RACE_DOG] = {
         .name = "Dog",
         .glyph = 'd',
 
         .size = SIZE_SMALL,
         .speed = 0.7f,
-    };
-    race_database[RACE_GOBLIN] = (struct race_data){
+    },
+    [RACE_GOBLIN] = {
         .name = "Goblin",
         .glyph = 'g',
 
         .size = SIZE_SMALL,
         .speed = 0.7f,
-    };
-    race_database[RACE_JACKAL] = (struct race_data){
+    },
+    [RACE_JACKAL] = {
         .name = "Jackal",
         .glyph = 'j',
 
         .size = SIZE_SMALL,
         .speed = 1.5f,
-    };
-    race_database[RACE_KOBOLD] = (struct race_data){
+    },
+    [RACE_KOBOLD] = {
         .name = "Kobold",
         .glyph = 'k',
 
         .size = SIZE_SMALL,
         .speed = 0.7f,
-    };
-    race_database[RACE_ORC] = (struct race_data){
+    },
+    [RACE_ORC] = {
         .name = "Orc",
         .glyph = 'o',
 
         .size = SIZE_MEDIUM,
         .speed = 0.5f,
-    };
-    race_database[RACE_RAT] = (struct race_data){
+    },
+    [RACE_RAT] = {
         .name = "Rat",
         .glyph = 'r',
 
         .size = SIZE_TINY,
         .speed = 0.7f,
-    };
-    race_database[RACE_SLIME] = (struct race_data){
+    },
+    [RACE_SLIME] = {
         .name = "Slime",
         .glyph = 's',
 
         .size = SIZE_SMALL,
         .speed = 0.3f,
-    };
+    },
+};
 
-    class_database[CLASS_FIGHTER] = (struct class_data){
+const struct class_data class_database[NUM_CLASSES] = {
+    // player classes
+    [CLASS_FIGHTER] = {
         .name = "Fighter",
-        .color = color_brass,
+        .color = {COLOR_BRASS},
 
         .hit_die = "1d10",
         .mana_die = "1d4",
-    };
-    class_database[CLASS_WIZARD] = (struct class_data){
+    },
+    [CLASS_WIZARD] = {
         .name = "Wizard",
-        .color = color_azure,
+        .color = {COLOR_AZURE},
 
         .hit_die = "1d4",
         .mana_die = "1d10",
-    };
-    class_database[CLASS_ROGUE] = (struct class_data){
+    },
+    [CLASS_ROGUE] = {
         .name = "Rogue",
-        .color = color_yellow,
+        .color = {COLOR_YELLOW},
 
         .hit_die = "1d6",
         .mana_die = "1d4",
-    };
+    },
 
-    class_database[CLASS_DOG] = (struct class_data){
+    // monster classes
+    [CLASS_DOG] = {
         .name = "Dog",
-        .color = color_lightest_grey,
+        .color = {COLOR_LIGHTEST_GREY},
 
         .hit_die = "1d2",
         .mana_die = "0d0",
-    };
-    class_database[CLASS_GOBLIN] = (struct class_data){
+    },
+    [CLASS_GOBLIN] = {
         .name = "Goblin",
-        .color = color_lightest_grey,
+        .color = {COLOR_LIGHTEST_GREY},
 
         .hit_die = "1d1",
         .mana_die = "0d0",
-    };
-    class_database[CLASS_JACKAL] = (struct class_data){
+    },
+    [CLASS_JACKAL] = {
         .name = "Jackal",
-        .color = color_lightest_grey,
+        .color = {COLOR_LIGHTEST_GREY},
 
         .hit_die = "1d2",
         .mana_die = "0d0",
-    };
-    class_database[CLASS_KOBOLD] = (struct class_data){
+    },
+    [CLASS_KOBOLD] = {
         .name = "Kobold",
-        .color = color_lightest_grey,
+        .color = {COLOR_LIGHTEST_GREY},
 
         .hit_die = "1d1",
         .mana_die = "0d0",
-    };
-    class_database[CLASS_RAT] = (struct class_data){
+    },
+    [CLASS_RAT] = {
         .name = "Jackal",
-        .color = color_lightest_grey,
+        .color = {COLOR_LIGHTEST_GREY},
 
         .hit_die = "1d1",
         .mana_die = "0d0",
-    };
-    class_database[CLASS_SLIME] = (struct class_data){
+    },
+    [CLASS_SLIME] = {
         .name = "Slime",
-        .color = color_light_green,
+        .color = {COLOR_LIGHT_GREEN},
 
         .hit_die = "1d10",
         .mana_die = "0d0",
-    };
+    },
+};
 
-    monster_prototypes[MONSTER_BUGBEAR] = (struct actor_prototype){
+const struct actor_prototype monster_prototypes[NUM_MONSTERS] = {
+    [MONSTER_BUGBEAR] = {
         .name = "Bugbear",
         .race = RACE_BUGBEAR,
         .class = CLASS_FIGHTER,
@@ -373,8 +369,8 @@ void assets_load(void)
             [ABILITY_CONSTITUTION] = 13,
             [ABILITY_INTELLIGENCE] = 10,
         },
-    };
-    monster_prototypes[MONSTER_GOBLIN] = (struct actor_prototype){
+    },
+    [MONSTER_GOBLIN] = {
         .name = "Goblin",
         .race = RACE_GOBLIN,
         .class = CLASS_GOBLIN,
@@ -387,8 +383,8 @@ void assets_load(void)
             [ABILITY_CONSTITUTION] = 11,
             [ABILITY_INTELLIGENCE] = 10,
         },
-    };
-    monster_prototypes[MONSTER_JACKAL] = (struct actor_prototype){
+    },
+    [MONSTER_JACKAL] = {
         .name = "Jackal",
         .race = RACE_JACKAL,
         .class = CLASS_JACKAL,
@@ -401,8 +397,8 @@ void assets_load(void)
             [ABILITY_CONSTITUTION] = 15,
             [ABILITY_INTELLIGENCE] = 3,
         },
-    };
-    monster_prototypes[MONSTER_KOBOLD] = (struct actor_prototype){
+    },
+    [MONSTER_KOBOLD] = {
         .name = "Kobold",
         .race = RACE_KOBOLD,
         .class = CLASS_KOBOLD,
@@ -415,8 +411,8 @@ void assets_load(void)
             [ABILITY_CONSTITUTION] = 11,
             [ABILITY_INTELLIGENCE] = 10,
         },
-    };
-    monster_prototypes[MONSTER_ORC] = (struct actor_prototype){
+    },
+    [MONSTER_ORC] = {
         .name = "Orc",
         .race = RACE_ORC,
         .class = CLASS_FIGHTER,
@@ -429,8 +425,8 @@ void assets_load(void)
             [ABILITY_CONSTITUTION] = 11,
             [ABILITY_INTELLIGENCE] = 9,
         },
-    };
-    monster_prototypes[MONSTER_RAT] = (struct actor_prototype){
+    },
+    [MONSTER_RAT] = {
         .name = "Rat",
         .race = RACE_RAT,
         .class = CLASS_RAT,
@@ -443,8 +439,8 @@ void assets_load(void)
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 3,
         },
-    };
-    monster_prototypes[MONSTER_SLIME] = (struct actor_prototype){
+    },
+    [MONSTER_SLIME] = {
         .name = "Slime",
         .race = RACE_SLIME,
         .class = CLASS_SLIME,
@@ -457,43 +453,49 @@ void assets_load(void)
             [ABILITY_CONSTITUTION] = 11,
             [ABILITY_INTELLIGENCE] = 3,
         },
-    };
+    },
+};
 
-    ability_database[ABILITY_STRENGTH] = (struct ability_data){
+const struct ability_data ability_database[NUM_ABILITIES] = {
+    [ABILITY_STRENGTH] = {
         .name = "Strength",
-    };
-    ability_database[ABILITY_DEXTERITY] = (struct ability_data){
+    },
+    [ABILITY_DEXTERITY] = {
         .name = "Dexterity",
-    };
-    ability_database[ABILITY_CONSTITUTION] = (struct ability_data){
+    },
+    [ABILITY_CONSTITUTION] = {
         .name = "Constitution",
-    };
-    ability_database[ABILITY_INTELLIGENCE] = (struct ability_data){
+    },
+    [ABILITY_INTELLIGENCE] = {
         .name = "Intelligence",
-    };
+    },
+};
 
-    corpse_common = (struct corpse_common){
-        .glyph = '%',
-        .color = color_dark_red,
-    };
+const struct corpse_common corpse_common = {
+    .glyph = '%',
+    .color = {COLOR_DARK_RED},
+};
 
-    equip_slot_database[EQUIP_SLOT_NONE] = (struct equip_slot_data){
+const struct equip_slot_data equip_slot_database[NUM_EQUIP_SLOTS] = {
+    [EQUIP_SLOT_NONE] = {
         .name = "None",
-    };
-    equip_slot_database[EQUIP_SLOT_AMMUNITION] = (struct equip_slot_data){
+    },
+    [EQUIP_SLOT_AMMUNITION] = {
         .name = "Ammunition",
-    };
-    equip_slot_database[EQUIP_SLOT_ARMOR] = (struct equip_slot_data){
+    },
+    [EQUIP_SLOT_ARMOR] = {
         .name = "Armor",
-    };
-    equip_slot_database[EQUIP_SLOT_SHIELD] = (struct equip_slot_data){
+    },
+    [EQUIP_SLOT_SHIELD] = {
         .name = "Shield",
-    };
-    equip_slot_database[EQUIP_SLOT_WEAPON] = (struct equip_slot_data){
+    },
+    [EQUIP_SLOT_WEAPON] = {
         .name = "Weapon",
-    };
+    },
+};
 
-    base_item_database[BASE_ITEM_TYPE_ARROW] = (struct base_item_data){
+const struct base_item_data base_item_database[NUM_BASE_ITEM_TYPES] = {
+    [BASE_ITEM_TYPE_ARROW] = {
         .name = "Arrow",
         .glyph = '`',
 
@@ -512,8 +514,8 @@ void assets_load(void)
         .max_stack = 100,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_BOLT] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_BOLT] = {
         .name = "Bolt",
         .glyph = '`',
 
@@ -532,8 +534,8 @@ void assets_load(void)
         .max_stack = 100,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_BULLET] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_BULLET] = {
         .name = "Bullet",
         .glyph = '`',
 
@@ -552,8 +554,8 @@ void assets_load(void)
         .max_stack = 100,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_DAGGER] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_DAGGER] = {
         .name = "Dagger",
         .glyph = '|',
 
@@ -572,8 +574,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_FULL_PLATE] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_FULL_PLATE] = {
         .name = "Full Plate",
         .glyph = '[',
 
@@ -592,8 +594,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_GOLD] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_GOLD] = {
         .name = "Gold",
         .glyph = '$',
 
@@ -612,8 +614,8 @@ void assets_load(void)
         .max_stack = INT32_MAX,
 
         .max_durability = 0,
-    };
-    base_item_database[BASE_ITEM_TYPE_GREATSWORD] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_GREATSWORD] = {
         .name = "Greatsword",
         .glyph = '|',
 
@@ -632,8 +634,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_CROSSBOW] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_CROSSBOW] = {
         .name = "Crossbow",
         .glyph = 'T',
 
@@ -652,8 +654,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_LARGE_SHIELD] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_LARGE_SHIELD] = {
         .name = "Large Shield",
         .glyph = ')',
 
@@ -672,8 +674,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_LONGBOW] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_LONGBOW] = {
         .name = "Longbow",
         .glyph = '}',
 
@@ -692,8 +694,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_LONGSWORD] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_LONGSWORD] = {
         .name = "Longsword",
         .glyph = '|',
 
@@ -712,8 +714,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_MACE] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_MACE] = {
         .name = "Mace",
         .glyph = '!',
 
@@ -732,8 +734,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_POTION] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_POTION] = {
         .name = "Potion",
         .glyph = '!',
 
@@ -752,8 +754,8 @@ void assets_load(void)
         .max_stack = 10,
 
         .max_durability = 0,
-    };
-    base_item_database[BASE_ITEM_TYPE_SCROLL] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_SCROLL] = {
         .name = "Scroll",
         .glyph = '%',
 
@@ -772,8 +774,8 @@ void assets_load(void)
         .max_stack = 10,
 
         .max_durability = 0,
-    };
-    base_item_database[BASE_ITEM_TYPE_SLING] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_SLING] = {
         .name = "Sling",
         .glyph = '?',
 
@@ -792,8 +794,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_SMALL_SHIELD] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_SMALL_SHIELD] = {
         .name = "Small Shield",
         .glyph = ')',
 
@@ -812,8 +814,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_SPEAR] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_SPEAR] = {
         .name = "Spear",
         .glyph = '|',
 
@@ -832,8 +834,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
-    base_item_database[BASE_ITEM_TYPE_TOME] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_TOME] = {
         .name = "Tome",
         .glyph = '=',
 
@@ -852,8 +854,8 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 0,
-    };
-    base_item_database[BASE_ITEM_TYPE_TOWER_SHIELD] = (struct base_item_data){
+    },
+    [BASE_ITEM_TYPE_TOWER_SHIELD] = {
         .name = "Tower Shield",
         .glyph = ')',
 
@@ -872,14 +874,16 @@ void assets_load(void)
         .max_stack = 1,
 
         .max_durability = 100,
-    };
+    },
+};
 
-    item_database[ITEM_TYPE_ARROW] = (struct item_data){
+const struct item_data item_database[NUM_ITEM_TYPES] = {
+    [ITEM_TYPE_ARROW] = {
         .type = BASE_ITEM_TYPE_ARROW,
 
         .name = "Arrow",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -888,28 +892,26 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_ARROW_1] = (struct item_data){
+    },
+    [ITEM_TYPE_ARROW_1] = {
         .type = BASE_ITEM_TYPE_ARROW,
 
         .name = "Arrow + 1",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 1,
 
         .level = 3,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_BOLT] = (struct item_data){
+    },
+    [ITEM_TYPE_BOLT] = {
         .type = BASE_ITEM_TYPE_BOLT,
 
         .name = "Bolt",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -918,14 +920,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_BULLET] = (struct item_data){
+    },
+    [ITEM_TYPE_BULLET] = {
         .type = BASE_ITEM_TYPE_BULLET,
 
         .name = "Bullet",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -934,14 +935,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_COLD_IRON_BLADE] = (struct item_data){
+    },
+    [ITEM_TYPE_COLD_IRON_BLADE] = {
         .type = BASE_ITEM_TYPE_LONGSWORD,
 
         .name = "Cold Iron Blade",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 1,
 
@@ -950,14 +950,13 @@ void assets_load(void)
         .level = 5,
 
         .unique = true,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_CROSSBOW] = (struct item_data){
+    },
+    [ITEM_TYPE_CROSSBOW] = {
         .type = BASE_ITEM_TYPE_CROSSBOW,
 
         .name = "Crossbow",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -966,14 +965,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_DAGGER] = (struct item_data){
+    },
+    [ITEM_TYPE_DAGGER] = {
         .type = BASE_ITEM_TYPE_DAGGER,
 
         .name = "Dagger",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -982,14 +980,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_FULL_PLATE] = (struct item_data){
+    },
+    [ITEM_TYPE_FULL_PLATE] = {
         .type = BASE_ITEM_TYPE_FULL_PLATE,
 
         .name = "Full Plate",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -998,14 +995,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_FULL_PLATE_1] = (struct item_data){
+    },
+    [ITEM_TYPE_FULL_PLATE_1] = {
         .type = BASE_ITEM_TYPE_FULL_PLATE,
 
         .name = "Full Plate + 1",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 1,
 
@@ -1014,14 +1010,13 @@ void assets_load(void)
         .level = 3,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_GOLD] = (struct item_data){
+    },
+    [ITEM_TYPE_GOLD] = {
         .type = BASE_ITEM_TYPE_GOLD,
 
         .name = "Gold",
         .description = "",
-        .color = color_gold,
+        .color = {COLOR_GOLD},
 
         .enhancement_bonus = 0,
 
@@ -1030,14 +1025,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_GREATSWORD] = (struct item_data){
+    },
+    [ITEM_TYPE_GREATSWORD] = {
         .type = BASE_ITEM_TYPE_GREATSWORD,
 
         .name = "Greatsword",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1046,14 +1040,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_LARGE_SHIELD] = (struct item_data){
+    },
+    [ITEM_TYPE_LARGE_SHIELD] = {
         .type = BASE_ITEM_TYPE_LARGE_SHIELD,
 
         .name = "Large Shield",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1062,14 +1055,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_LONGBOW] = (struct item_data){
+    },
+    [ITEM_TYPE_LONGBOW] = {
         .type = BASE_ITEM_TYPE_LONGBOW,
 
         .name = "Longbow",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1078,14 +1070,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_LONGBOW_1] = (struct item_data){
+    },
+    [ITEM_TYPE_LONGBOW_1] = {
         .type = BASE_ITEM_TYPE_LONGBOW,
 
         .name = "Longbow + 1",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 1,
 
@@ -1094,14 +1085,13 @@ void assets_load(void)
         .level = 3,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_LONGSWORD] = (struct item_data){
+    },
+    [ITEM_TYPE_LONGSWORD] = {
         .type = BASE_ITEM_TYPE_LONGSWORD,
 
         .name = "Longsword",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1110,14 +1100,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_LONGSWORD_1] = (struct item_data){
+    },
+    [ITEM_TYPE_LONGSWORD_1] = {
         .type = BASE_ITEM_TYPE_LONGSWORD,
 
         .name = "Longsword + 1",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 1,
 
@@ -1126,14 +1115,13 @@ void assets_load(void)
         .level = 3,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_MACE] = (struct item_data){
+    },
+    [ITEM_TYPE_MACE] = {
         .type = BASE_ITEM_TYPE_MACE,
 
         .name = "Mace",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1142,14 +1130,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_POTION_MINOR_HEAL] = (struct item_data){
+    },
+    [ITEM_TYPE_POTION_MINOR_HEAL] = {
         .type = BASE_ITEM_TYPE_POTION,
 
         .name = "Potion of Minor Healing",
         .description = "",
-        .color = color_red,
+        .color = {COLOR_RED},
 
         .enhancement_bonus = 0,
 
@@ -1158,14 +1145,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_POTION_MINOR_MANA] = (struct item_data){
+    },
+    [ITEM_TYPE_POTION_MINOR_MANA] = {
         .type = BASE_ITEM_TYPE_POTION,
 
         .name = "Potion of Minor Mana",
         .description = "",
-        .color = color_blue,
+        .color = {COLOR_BLUE},
 
         .enhancement_bonus = 0,
 
@@ -1174,14 +1160,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_SCEPTER_OF_UNITY] = (struct item_data){
+    },
+    [ITEM_TYPE_SCEPTER_OF_UNITY] = {
         .type = BASE_ITEM_TYPE_MACE,
 
         .name = "Scepter of Unity",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1190,14 +1175,13 @@ void assets_load(void)
         .level = 10,
 
         .unique = true,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_SCROLL_LIGHTNING] = (struct item_data){
+    },
+    [ITEM_TYPE_SCROLL_LIGHTNING] = {
         .type = BASE_ITEM_TYPE_SCROLL,
 
         .name = "Scroll of Lightning",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1206,14 +1190,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_SLING] = (struct item_data){
+    },
+    [ITEM_TYPE_SLING] = {
         .type = BASE_ITEM_TYPE_SLING,
 
         .name = "Sling",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1222,14 +1205,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_SMALL_SHIELD] = (struct item_data){
+    },
+    [ITEM_TYPE_SMALL_SHIELD] = {
         .type = BASE_ITEM_TYPE_SMALL_SHIELD,
 
         .name = "Small Shield",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1238,14 +1220,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_SPEAR] = (struct item_data){
+    },
+    [ITEM_TYPE_SPEAR] = {
         .type = BASE_ITEM_TYPE_SPEAR,
 
         .name = "Spear",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1254,14 +1235,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_SPIKED_SHIELD] = (struct item_data){
+    },
+    [ITEM_TYPE_SPIKED_SHIELD] = {
         .type = BASE_ITEM_TYPE_LARGE_SHIELD,
 
         .name = "Spiked Shield",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1270,14 +1250,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = true,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_TOME_FIREBALL] = (struct item_data){
+    },
+    [ITEM_TYPE_TOME_FIREBALL] = {
         .type = BASE_ITEM_TYPE_TOME,
 
         .name = "Tome of Fireball",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1286,14 +1265,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_TOWER_SHIELD] = (struct item_data){
+    },
+    [ITEM_TYPE_TOWER_SHIELD] = {
         .type = BASE_ITEM_TYPE_TOWER_SHIELD,
 
         .name = "Tower Shield",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 0,
 
@@ -1302,14 +1280,13 @@ void assets_load(void)
         .level = 1,
 
         .unique = false,
-        .spawned = false,
-    };
-    item_database[ITEM_TYPE_TOWER_SHIELD_1] = (struct item_data){
+    },
+    [ITEM_TYPE_TOWER_SHIELD_1] = {
         .type = BASE_ITEM_TYPE_TOWER_SHIELD,
 
         .name = "Tower Shield + 1",
         .description = "",
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .enhancement_bonus = 1,
 
@@ -1318,44 +1295,47 @@ void assets_load(void)
         .level = 3,
 
         .unique = false,
-        .spawned = false,
-    };
+    },
+};
 
-    spell_database[SPELL_TYPE_MINOR_HEAL] = (struct spell_data){
+const struct spell_data spell_database[NUM_SPELL_TYPES] = {
+    [SPELL_TYPE_MINOR_HEAL] = {
         .name = "Minor Heal",
         .range = SPELL_RANGE_SELF,
         .mana_cost = 1,
-    };
-    spell_database[SPELL_TYPE_MINOR_MANA] = (struct spell_data){
+    },
+    [SPELL_TYPE_MINOR_MANA] = {
         .name = "Minor Mana",
         .range = SPELL_RANGE_SELF,
         .mana_cost = 0,
-    };
-    spell_database[SPELL_TYPE_LIGHTNING] = (struct spell_data){
+    },
+    [SPELL_TYPE_LIGHTNING] = {
         .name = "Lightning",
         .range = SPELL_RANGE_TARGET,
         .mana_cost = 2,
-    };
-    spell_database[SPELL_TYPE_FIREBALL] = (struct spell_data){
+    },
+    [SPELL_TYPE_FIREBALL] = {
         .name = "Fireball",
         .range = SPELL_RANGE_TARGET,
         .mana_cost = 5,
-    };
+    },
+};
 
-    projectile_database[PROJECTILE_TYPE_ARROW] = (struct projectile_data){
+const struct projectile_data projectile_database[NUM_PROJECTILE_TYPES] = {
+    [PROJECTILE_TYPE_ARROW] = {
         .glyph = '`',
-        .color = color_white,
+        .color = {COLOR_WHITE},
 
         .light_type = LIGHT_TYPE_NONE,
 
         .speed = 50.0f,
-    };
-    projectile_database[PROJECTILE_TYPE_FIREBALL] = (struct projectile_data){
+    },
+    [PROJECTILE_TYPE_FIREBALL] = {
         .glyph = '*',
-        .color = color_flame,
+        .color = {COLOR_FLAME},
 
         .light_type = LIGHT_TYPE_FIREBALL,
 
         .speed = 30.0f,
-    };
-}
+    },
+};

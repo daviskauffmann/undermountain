@@ -127,7 +127,6 @@ struct item_data
     uint8_t level;
 
     bool unique;
-    bool spawned;
 };
 
 struct item

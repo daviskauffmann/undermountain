@@ -22,11 +22,6 @@ struct item *item_new(
 
     item->durability = base_item_database[item_database[type].type].max_durability;
 
-    if (item_database[type].unique)
-    {
-        item_database[type].spawned = true; // TODO: not super liking having the assets be stateful
-    }
-
     return item;
 }
 

@@ -6,6 +6,7 @@
 struct message
 {
     char *text;
+
     TCOD_ColorRGB color; // TODO: change to message type, let an asset or something decide the color
 };
 

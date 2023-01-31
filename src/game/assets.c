@@ -8,7 +8,7 @@ const struct tile_common tile_common = {
     .ambient_light_intensity = 0.05f,
 };
 
-const struct tile_data tile_database[NUM_TILE_TYPES] = {
+const struct tile_data tile_database[] = {
     [TILE_TYPE_EMPTY] = {
         .name = "Empty",
         .glyph = ' ',
@@ -39,7 +39,7 @@ const struct tile_data tile_database[NUM_TILE_TYPES] = {
     },
 };
 
-const struct light_data light_database[NUM_LIGHT_TYPES] = {
+const struct light_data light_database[] = {
     [LIGHT_TYPE_NONE] = {
         .radius = -1,
         .color = {COLOR_BLACK},
@@ -78,7 +78,7 @@ const struct light_data light_database[NUM_LIGHT_TYPES] = {
     },
 };
 
-const struct object_data object_database[NUM_OBJECT_TYPES] = {
+const struct object_data object_database[] = {
     [OBJECT_TYPE_ALTAR] = {
         .name = "Altar",
         .glyph = '_',
@@ -175,7 +175,7 @@ const struct actor_common actor_common = {
     .turns_to_chase = 10,
 };
 
-const struct size_data size_database[NUM_SIZES] = {
+const struct size_data size_database[] = {
     [SIZE_TINY] = {
         .name = "Tiny",
 
@@ -203,7 +203,7 @@ const struct size_data size_database[NUM_SIZES] = {
     },
 };
 
-const struct race_data race_database[NUM_RACES] = {
+const struct race_data race_database[] = {
     // player races
     [RACE_DWARF] = {
         .name = "Dwarf",
@@ -286,7 +286,7 @@ const struct race_data race_database[NUM_RACES] = {
     },
 };
 
-const struct class_data class_database[NUM_CLASSES] = {
+const struct class_data class_database[] = {
     // player classes
     [CLASS_FIGHTER] = {
         .name = "Fighter",
@@ -313,35 +313,35 @@ const struct class_data class_database[NUM_CLASSES] = {
     // monster classes
     [CLASS_DOG] = {
         .name = "Dog",
-        .color = {COLOR_LIGHTEST_GREY},
+        .color = {COLOR_LIGHTEST_GRAY},
 
         .hit_die = "1d2",
         .mana_die = "0d0",
     },
     [CLASS_GOBLIN] = {
         .name = "Goblin",
-        .color = {COLOR_LIGHTEST_GREY},
+        .color = {COLOR_LIGHTEST_GRAY},
 
         .hit_die = "1d1",
         .mana_die = "0d0",
     },
     [CLASS_JACKAL] = {
         .name = "Jackal",
-        .color = {COLOR_LIGHTEST_GREY},
+        .color = {COLOR_LIGHTEST_GRAY},
 
         .hit_die = "1d2",
         .mana_die = "0d0",
     },
     [CLASS_KOBOLD] = {
         .name = "Kobold",
-        .color = {COLOR_LIGHTEST_GREY},
+        .color = {COLOR_LIGHTEST_GRAY},
 
         .hit_die = "1d1",
         .mana_die = "0d0",
     },
     [CLASS_RAT] = {
         .name = "Jackal",
-        .color = {COLOR_LIGHTEST_GREY},
+        .color = {COLOR_LIGHTEST_GRAY},
 
         .hit_die = "1d1",
         .mana_die = "0d0",
@@ -355,7 +355,7 @@ const struct class_data class_database[NUM_CLASSES] = {
     },
 };
 
-const struct actor_prototype monster_prototypes[NUM_MONSTERS] = {
+const struct actor_prototype monster_prototypes[] = {
     [MONSTER_BUGBEAR] = {
         .name = "Bugbear",
         .race = RACE_BUGBEAR,
@@ -456,7 +456,7 @@ const struct actor_prototype monster_prototypes[NUM_MONSTERS] = {
     },
 };
 
-const struct ability_data ability_database[NUM_ABILITIES] = {
+const struct ability_data ability_database[] = {
     [ABILITY_STRENGTH] = {
         .name = "Strength",
     },
@@ -476,7 +476,7 @@ const struct corpse_common corpse_common = {
     .color = {COLOR_DARK_RED},
 };
 
-const struct equip_slot_data equip_slot_database[NUM_EQUIP_SLOTS] = {
+const struct equip_slot_data equip_slot_database[] = {
     [EQUIP_SLOT_NONE] = {
         .name = "None",
     },
@@ -494,7 +494,7 @@ const struct equip_slot_data equip_slot_database[NUM_EQUIP_SLOTS] = {
     },
 };
 
-const struct base_item_data base_item_database[NUM_BASE_ITEM_TYPES] = {
+const struct base_item_data base_item_database[] = {
     [BASE_ITEM_TYPE_ARROW] = {
         .name = "Arrow",
         .glyph = '`',
@@ -877,7 +877,7 @@ const struct base_item_data base_item_database[NUM_BASE_ITEM_TYPES] = {
     },
 };
 
-const struct item_data item_database[NUM_ITEM_TYPES] = {
+const struct item_data item_database[] = {
     [ITEM_TYPE_ARROW] = {
         .type = BASE_ITEM_TYPE_ARROW,
 
@@ -1298,7 +1298,7 @@ const struct item_data item_database[NUM_ITEM_TYPES] = {
     },
 };
 
-const struct spell_data spell_database[NUM_SPELL_TYPES] = {
+const struct spell_data spell_database[] = {
     [SPELL_TYPE_MINOR_HEAL] = {
         .name = "Minor Heal",
         .range = SPELL_RANGE_SELF,
@@ -1321,7 +1321,7 @@ const struct spell_data spell_database[NUM_SPELL_TYPES] = {
     },
 };
 
-const struct projectile_data projectile_database[NUM_PROJECTILE_TYPES] = {
+const struct projectile_data projectile_database[] = {
     [PROJECTILE_TYPE_ARROW] = {
         .glyph = '`',
         .color = {COLOR_WHITE},

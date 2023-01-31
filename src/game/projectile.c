@@ -132,8 +132,6 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
         }
     }
     break;
-    case NUM_PROJECTILE_TYPES:
-        break;
     }
 
 done:

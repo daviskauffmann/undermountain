@@ -3,47 +3,39 @@
 
 #include <libtcod.h>
 
-/* color values */
+/* grey levels */
 #define COLOR_BLACK 0, 0, 0
-#define COLOR_DARKEST_GREY 31, 31, 31
-#define COLOR_DARKER_GREY 63, 63, 63
-#define COLOR_DARK_GREY 95, 95, 95
-#define COLOR_GREY 127, 127, 127
-#define COLOR_LIGHT_GREY 159, 159, 159
-#define COLOR_LIGHTER_GREY 191, 191, 191
-#define COLOR_LIGHTEST_GREY 223, 223, 223
+#define COLOR_DARKEST_GRAY 31, 31, 31
+#define COLOR_DARKER_GRAY 63, 63, 63
+#define COLOR_DARK_GRAY 95, 95, 95
+#define COLOR_GRAY 127, 127, 127
+#define COLOR_LIGHT_GRAY 159, 159, 159
+#define COLOR_LIGHTER_GRAY 191, 191, 191
+#define COLOR_LIGHTEST_GRAY 223, 223, 223
 #define COLOR_WHITE 255, 255, 255
 
-#define COLOR_DARKEST_SEPIA 31, 24, 15
-#define COLOR_DARKER_SEPIA 63, 50, 31
-#define COLOR_DARK_SEPIA 94, 75, 47
-#define COLOR_SEPIA 127, 101, 63
-#define COLOR_LIGHT_SEPIA 158, 134, 100
-#define COLOR_LIGHTER_SEPIA 191, 171, 143
-#define COLOR_LIGHTEST_SEPIA 222, 211, 195
-
-/* desaturated */
-#define COLOR_DESATURATED_RED 127, 63, 63
-#define COLOR_DESATURATED_FLAME 127, 79, 63
-#define COLOR_DESATURATED_ORANGE 127, 95, 63
-#define COLOR_DESATURATED_AMBER 127, 111, 63
-#define COLOR_DESATURATED_YELLOW 127, 127, 63
-#define COLOR_DESATURATED_LIME 111, 127, 63
-#define COLOR_DESATURATED_CHARTREUSE 95, 127, 63
-#define COLOR_DESATURATED_GREEN 63, 127, 63
-#define COLOR_DESATURATED_SEA 63, 127, 95
-#define COLOR_DESATURATED_TURQUOISE 63, 127, 111
-#define COLOR_DESATURATED_CYAN 63, 127, 127
-#define COLOR_DESATURATED_SKY 63, 111, 127
-#define COLOR_DESATURATED_AZURE 63, 95, 127
-#define COLOR_DESATURATED_BLUE 63, 63, 127
-#define COLOR_DESATURATED_HAN 79, 63, 127
-#define COLOR_DESATURATED_VIOLET 95, 63, 127
-#define COLOR_DESATURATED_PURPLE 111, 63, 127
-#define COLOR_DESATURATED_FUCHSIA 127, 63, 127
-#define COLOR_DESATURATED_MAGENTA 127, 63, 111
-#define COLOR_DESATURATED_PINK 127, 63, 95
-#define COLOR_DESATURATED_CRIMSON 127, 63, 79
+/* normal */
+#define COLOR_RED 255, 0, 0
+#define COLOR_FLAME 255, 63, 0
+#define COLOR_ORANGE 255, 127, 0
+#define COLOR_AMBER 255, 191, 0
+#define COLOR_YELLOW 255, 255, 0
+#define COLOR_LIME 191, 255, 0
+#define COLOR_CHARTREUSE 127, 255, 0
+#define COLOR_GREEN 0, 255, 0
+#define COLOR_SEA 0, 255, 127
+#define COLOR_TURQUOISE 0, 255, 191
+#define COLOR_CYAN 0, 255, 255
+#define COLOR_SKY 0, 191, 255
+#define COLOR_AZURE 0, 127, 255
+#define COLOR_BLUE 0, 0, 255
+#define COLOR_HAN 63, 0, 255
+#define COLOR_VIOLET 127, 0, 255
+#define COLOR_PURPLE 191, 0, 255
+#define COLOR_FUCHSIA 255, 0, 255
+#define COLOR_MAGENTA 255, 0, 191
+#define COLOR_PINK 255, 0, 127
+#define COLOR_CRIMSON 255, 0, 63
 
 /* lightest */
 #define COLOR_LIGHTEST_RED 255, 191, 191
@@ -114,29 +106,6 @@
 #define COLOR_LIGHT_PINK 255, 63, 159
 #define COLOR_LIGHT_CRIMSON 255, 63, 111
 
-/* normal */
-#define COLOR_RED 255, 0, 0
-#define COLOR_FLAME 255, 63, 0
-#define COLOR_ORANGE 255, 127, 0
-#define COLOR_AMBER 255, 191, 0
-#define COLOR_YELLOW 255, 255, 0
-#define COLOR_LIME 191, 255, 0
-#define COLOR_CHARTREUSE 127, 255, 0
-#define COLOR_GREEN 0, 255, 0
-#define COLOR_SEA 0, 255, 127
-#define COLOR_TURQUOISE 0, 255, 191
-#define COLOR_CYAN 0, 255, 255
-#define COLOR_SKY 0, 191, 255
-#define COLOR_AZURE 0, 127, 255
-#define COLOR_BLUE 0, 0, 255
-#define COLOR_HAN 63, 0, 255
-#define COLOR_VIOLET 127, 0, 255
-#define COLOR_PURPLE 191, 0, 255
-#define COLOR_FUCHSIA 255, 0, 255
-#define COLOR_MAGENTA 255, 0, 191
-#define COLOR_PINK 255, 0, 127
-#define COLOR_CRIMSON 255, 0, 63
-
 /* dark */
 #define COLOR_DARK_RED 191, 0, 0
 #define COLOR_DARK_FLAME 191, 47, 0
@@ -206,6 +175,38 @@
 #define COLOR_DARKEST_PINK 63, 0, 31
 #define COLOR_DARKEST_CRIMSON 63, 0, 15
 
+/* desaturated */
+#define COLOR_DESATURATED_RED 127, 63, 63
+#define COLOR_DESATURATED_FLAME 127, 79, 63
+#define COLOR_DESATURATED_ORANGE 127, 95, 63
+#define COLOR_DESATURATED_AMBER 127, 111, 63
+#define COLOR_DESATURATED_YELLOW 127, 127, 63
+#define COLOR_DESATURATED_LIME 111, 127, 63
+#define COLOR_DESATURATED_CHARTREUSE 95, 127, 63
+#define COLOR_DESATURATED_GREEN 63, 127, 63
+#define COLOR_DESATURATED_SEA 63, 127, 95
+#define COLOR_DESATURATED_TURQUOISE 63, 127, 111
+#define COLOR_DESATURATED_CYAN 63, 127, 127
+#define COLOR_DESATURATED_SKY 63, 111, 127
+#define COLOR_DESATURATED_AZURE 63, 95, 127
+#define COLOR_DESATURATED_BLUE 63, 63, 127
+#define COLOR_DESATURATED_HAN 79, 63, 127
+#define COLOR_DESATURATED_VIOLET 95, 63, 127
+#define COLOR_DESATURATED_PURPLE 111, 63, 127
+#define COLOR_DESATURATED_FUCHSIA 127, 63, 127
+#define COLOR_DESATURATED_MAGENTA 127, 63, 111
+#define COLOR_DESATURATED_PINK 127, 63, 95
+#define COLOR_DESATURATED_CRIMSON 127, 63, 79
+
+/* sepia */
+#define COLOR_DARKEST_SEPIA 31, 24, 15
+#define COLOR_DARKER_SEPIA 63, 50, 31
+#define COLOR_DARK_SEPIA 94, 75, 47
+#define COLOR_SEPIA 127, 101, 63
+#define COLOR_LIGHT_SEPIA 158, 134, 100
+#define COLOR_LIGHTER_SEPIA 191, 171, 143
+#define COLOR_LIGHTEST_SEPIA 222, 211, 195
+
 /* metallic */
 #define COLOR_BRASS 191, 151, 96
 #define COLOR_COPPER 197, 136, 124
@@ -218,13 +219,6 @@
 
 /* grey levels */
 extern const TCOD_ColorRGB color_black;
-extern const TCOD_ColorRGB color_darkest_grey;
-extern const TCOD_ColorRGB color_darker_grey;
-extern const TCOD_ColorRGB color_dark_grey;
-extern const TCOD_ColorRGB color_grey;
-extern const TCOD_ColorRGB color_light_grey;
-extern const TCOD_ColorRGB color_lighter_grey;
-extern const TCOD_ColorRGB color_lightest_grey;
 extern const TCOD_ColorRGB color_darkest_gray;
 extern const TCOD_ColorRGB color_darker_gray;
 extern const TCOD_ColorRGB color_dark_gray;
@@ -233,15 +227,6 @@ extern const TCOD_ColorRGB color_light_gray;
 extern const TCOD_ColorRGB color_lighter_gray;
 extern const TCOD_ColorRGB color_lightest_gray;
 extern const TCOD_ColorRGB color_white;
-
-/* sepia */
-extern const TCOD_ColorRGB color_darkest_sepia;
-extern const TCOD_ColorRGB color_darker_sepia;
-extern const TCOD_ColorRGB color_dark_sepia;
-extern const TCOD_ColorRGB color_sepia;
-extern const TCOD_ColorRGB color_light_sepia;
-extern const TCOD_ColorRGB color_lighter_sepia;
-extern const TCOD_ColorRGB color_lightest_sepia;
 
 /* standard colors */
 extern const TCOD_ColorRGB color_red;
@@ -426,6 +411,15 @@ extern const TCOD_ColorRGB color_desaturated_fuchsia;
 extern const TCOD_ColorRGB color_desaturated_magenta;
 extern const TCOD_ColorRGB color_desaturated_pink;
 extern const TCOD_ColorRGB color_desaturated_crimson;
+
+/* sepia */
+extern const TCOD_ColorRGB color_darkest_sepia;
+extern const TCOD_ColorRGB color_darker_sepia;
+extern const TCOD_ColorRGB color_dark_sepia;
+extern const TCOD_ColorRGB color_sepia;
+extern const TCOD_ColorRGB color_light_sepia;
+extern const TCOD_ColorRGB color_lighter_sepia;
+extern const TCOD_ColorRGB color_lightest_sepia;
 
 /* metallic */
 extern const TCOD_ColorRGB color_brass;

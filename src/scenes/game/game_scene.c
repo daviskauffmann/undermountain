@@ -16,6 +16,7 @@
 #include "../../scene.h"
 #include "../../util.h"
 #include "../menu/menu_scene.h"
+#include "automove_action.h"
 #include "character_action.h"
 #include "direction.h"
 #include "directional_action.h"
@@ -48,10 +49,11 @@ static int mouse_y;
 static int mouse_tile_x;
 static int mouse_tile_y;
 
-static bool automoving;
+static enum automove_action automove_action;
 static int automove_x;
 static int automove_y;
 static struct actor *automove_actor;
+static struct object *automove_object;
 
 /* Targeting */
 
@@ -279,10 +281,6 @@ static bool do_directional_action(enum direction direction)
 
     switch (directional_action)
     {
-    case DIRECTIONAL_ACTION_NONE:
-    {
-    }
-    break;
     case DIRECTIONAL_ACTION_CLOSE_DOOR:
     {
         took_turn = actor_close_door(world->player, x, y);
@@ -330,10 +328,6 @@ static bool do_inventory_action(struct item *const item)
 
     switch (inventory_action)
     {
-    case INVENTORY_ACTION_NONE:
-    {
-    }
-    break;
     case INVENTORY_ACTION_DROP:
     {
         if (world_player_can_take_turn())
@@ -411,10 +405,6 @@ static bool do_character_action_ability(const enum ability ability)
 
     switch (character_action)
     {
-    case CHARACTER_ACTION_NONE:
-    {
-    }
-    break;
     case CHARACTER_ACTION_ABILITY_ADD_POINT:
     {
         if (world->player->ability_points > 0)
@@ -442,10 +432,6 @@ static bool do_character_action_equipment(const enum equip_slot equip_slot)
 
     switch (character_action)
     {
-    case CHARACTER_ACTION_NONE:
-    {
-    }
-    break;
     case CHARACTER_ACTION_ABILITY_ADD_POINT:
     {
     }
@@ -481,10 +467,6 @@ static bool do_spellbook_action(const enum spell_type spell_type)
 
     switch (spellbook_action)
     {
-    case SPELLBOOK_ACTION_NONE:
-    {
-    }
-    break;
     case SPELLBOOK_ACTION_SELECT:
     {
         world->player->readied_spell_type = spell_type;
@@ -650,7 +632,7 @@ static bool on_click_add_point(void)
 
 static bool on_click_move(void)
 {
-    automoving = true;
+    automove_action = AUTOMOVE_ACTION_MOVE;
 
     const struct tile *const tile = &world->maps[world->player->floor].tiles[tooltip_data.x][tooltip_data.y];
 
@@ -696,7 +678,10 @@ static bool on_click_swap(void)
 
 static bool on_click_attack(void)
 {
-    return actor_attack(world->player, tooltip_data.actor, NULL);
+    automove_action = AUTOMOVE_ACTION_ATTACK;
+    automove_actor = tooltip_data.actor;
+
+    return false;
 }
 
 static bool on_click_character_sheet(void)
@@ -779,7 +764,7 @@ static struct scene *handle_event(SDL_Event *event)
     {
     case SDL_KEYDOWN:
     {
-        automoving = false;
+        automove_action = AUTOMOVE_ACTION_NONE;
 
         switch (event->key.keysym.sym)
         {
@@ -1136,14 +1121,15 @@ static struct scene *handle_event(SDL_Event *event)
                 {
                     targeting_action = TARGETING_ACTION_SHOOT;
 
-                    const struct actor *target = actor_find_closest_enemy(world->player);
-                    if (!target)
+                    const struct actor *nearest_enemy = actor_find_nearest_enemy(world->player);
+
+                    if (!nearest_enemy)
                     {
-                        target = world->player;
+                        nearest_enemy = world->player;
                     }
 
-                    target_x = target->x;
-                    target_y = target->y;
+                    target_x = nearest_enemy->x;
+                    target_y = nearest_enemy->y;
                 }
             }
             break;
@@ -1429,13 +1415,9 @@ static struct scene *handle_event(SDL_Event *event)
                 }
             }
             break;
-            default:
-                break;
             }
         }
         break;
-        default:
-            break;
         }
     }
     break;
@@ -1443,7 +1425,7 @@ static struct scene *handle_event(SDL_Event *event)
     {
         if (event->button.button == SDL_BUTTON_LEFT)
         {
-            automoving = false;
+            automove_action = AUTOMOVE_ACTION_NONE;
 
             if (tooltip_rect.visible)
             {
@@ -1544,13 +1526,13 @@ static struct scene *handle_event(SDL_Event *event)
                             }
                             else
                             {
-                                automoving = true;
+                                automove_action = AUTOMOVE_ACTION_ATTACK;
                                 automove_actor = tile->actor;
                             }
                         }
                         else
                         {
-                            automoving = true;
+                            automove_action = AUTOMOVE_ACTION_MOVE;
                             automove_x = mouse_tile_x;
                             automove_y = mouse_tile_y;
                         }
@@ -1649,8 +1631,6 @@ static struct scene *handle_event(SDL_Event *event)
                     }
                 }
                 break;
-                case NUM_PANELS:
-                    break;
                 }
             }
             else if (map_is_inside(mouse_tile_x, mouse_tile_y))
@@ -1727,8 +1707,6 @@ static struct scene *handle_event(SDL_Event *event)
         mouse_tile_y = mouse_y + view_rect.y;
     }
     break;
-    default:
-        break;
     }
 
     return &game_scene;
@@ -1745,7 +1723,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         }
     }
 
-    if (automoving && world_player_can_take_turn())
+    if (automove_action != AUTOMOVE_ACTION_NONE && world_player_can_take_turn())
     {
         if (automove_actor)
         {
@@ -1753,32 +1731,41 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             automove_y = automove_actor->y;
         }
 
-        // TODO: probably shouldnt use the path function for this
-        // we need to implement custom behavior depending on what the player is doing
-        // for example, if the player selects the interact option on a tooltip for an object far away,
-        //      the player should navigate there but not interact/attack anything along the way
-        world->player->took_turn = actor_path_towards(world->player, automove_x, automove_y);
-        automoving = world->player->took_turn;
-
-        // stop automoving if there is an enemy in FOV
-        if (automoving)
+        if (automove_object)
         {
-            const struct map *const map = &world->maps[world->player->floor];
-            for (size_t actor_index = 0; actor_index < map->actors->size; ++actor_index)
-            {
-                const struct actor *const actor = list_get(map->actors, actor_index);
+            automove_x = automove_object->x;
+            automove_y = automove_object->y;
+        }
 
-                if (TCOD_map_is_in_fov(world->player->fov, actor->x, actor->y) &&
-                    actor->faction != world->player->faction)
-                {
-                    automoving = false;
-                }
+        switch (automove_action)
+        {
+        case AUTOMOVE_ACTION_MOVE:
+        {
+            world->player->took_turn = actor_path_towards(world->player, automove_x, automove_y);
+
+            // if movement failed, stop automoving
+            if (!world->player->took_turn)
+            {
+                automove_action = AUTOMOVE_ACTION_NONE;
             }
+
+            // stop automoving if there is an enemy in FOV
+            if (actor_is_enemy_nearby(world->player))
+            {
+                automove_action = AUTOMOVE_ACTION_NONE;
+            }
+        }
+        break;
+        case AUTOMOVE_ACTION_ATTACK:
+        {
+        }
+        break;
         }
     }
     else
     {
         automove_actor = NULL;
+        automove_object = NULL;
     }
 
     world_update(delta_time);
@@ -3039,8 +3026,6 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 "Spellbook");
         }
         break;
-        case NUM_PANELS:
-            break;
         }
 
         TCOD_console_blit(
@@ -3099,18 +3084,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             1.0f);
     }
 
-    if (automoving)
+    if (automove_action != AUTOMOVE_ACTION_NONE)
     {
-        int x = automove_x;
-        int y = automove_y;
-
-        if (automove_actor)
-        {
-            x = automove_actor->x;
-            y = automove_actor->y;
-        }
-
-        TCOD_console_set_char_background(console, x - view_rect.x, y - view_rect.y, color_red, TCOD_BKGND_SET);
+        TCOD_console_set_char_background(console, automove_x - view_rect.x, automove_y - view_rect.y, color_red, TCOD_BKGND_SET);
     }
 
     if (!world->hero_dead && !world_player_can_take_turn())

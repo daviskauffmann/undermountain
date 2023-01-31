@@ -20,7 +20,7 @@ static enum option option_mouseover(void)
 {
     int y = 1;
 
-    for (enum option option = 1; option < NUM_OPTIONS; option++)
+    for (enum option option = OPTION_NONE + 1; option < NUM_OPTIONS; option++)
     {
         if (mouse_y == y)
         {
@@ -37,10 +37,6 @@ static struct scene *select_option(const enum option option)
 {
     switch (option)
     {
-    case OPTION_NONE:
-    {
-    }
-    break;
     case OPTION_START:
     {
         if (file_exists(SAVE_PATH))
@@ -68,8 +64,6 @@ static struct scene *select_option(const enum option option)
         return NULL;
     }
     break;
-    case NUM_OPTIONS:
-        break;
     }
 
     return &menu_scene;
@@ -139,8 +133,6 @@ static struct scene *handle_event(SDL_Event *const event)
             return select_option(option);
         }
         break;
-        default:
-            break;
         }
     }
     break;
@@ -159,8 +151,6 @@ static struct scene *handle_event(SDL_Event *const event)
         mouse_y = event->motion.y;
     }
     break;
-    default:
-        break;
     }
 
     return &menu_scene;

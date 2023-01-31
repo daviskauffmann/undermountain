@@ -236,9 +236,6 @@ void world_save(const char *filename)
 
                     fwrite(&item->type, sizeof(item->type), 1, file);
 
-                    fwrite(&item->x, sizeof(item->x), 1, file);
-                    fwrite(&item->y, sizeof(item->y), 1, file);
-
                     fwrite(&item->stack, sizeof(item->stack), 1, file);
 
                     fwrite(&item->durability, sizeof(item->durability), 1, file);
@@ -256,9 +253,6 @@ void world_save(const char *filename)
                 const struct item *const item = list_get(actor->items, item_index);
 
                 fwrite(&item->type, sizeof(item->type), 1, file);
-
-                fwrite(&item->x, sizeof(item->x), 1, file);
-                fwrite(&item->y, sizeof(item->y), 1, file);
 
                 fwrite(&item->stack, sizeof(item->stack), 1, file);
 
@@ -370,9 +364,6 @@ void world_save(const char *filename)
                 const struct item *const item = projectile->ammunition;
 
                 fwrite(&item->type, sizeof(item->type), 1, file);
-
-                fwrite(&item->x, sizeof(item->x), 1, file);
-                fwrite(&item->y, sizeof(item->y), 1, file);
 
                 fwrite(&item->stack, sizeof(item->stack), 1, file);
 
@@ -537,10 +528,6 @@ void world_load(const char *filename)
 
                     fread(&item->type, sizeof(item->type), 1, file);
 
-                    item->floor = floor;
-                    fread(&item->x, sizeof(item->x), 1, file);
-                    fread(&item->y, sizeof(item->y), 1, file);
-
                     fread(&item->stack, sizeof(item->stack), 1, file);
 
                     fread(&item->durability, sizeof(item->durability), 1, file);
@@ -561,10 +548,6 @@ void world_load(const char *filename)
                 struct item *const item = malloc(sizeof(*item));
 
                 fread(&item->type, sizeof(item->type), 1, file);
-
-                item->floor = floor;
-                fread(&item->x, sizeof(item->x), 1, file);
-                fread(&item->y, sizeof(item->y), 1, file);
 
                 fread(&item->stack, sizeof(item->stack), 1, file);
 
@@ -694,10 +677,6 @@ void world_load(const char *filename)
                 struct item *const item = malloc(sizeof(*item));
 
                 fread(&item->type, sizeof(item->type), 1, file);
-
-                item->floor = floor;
-                fread(&item->x, sizeof(item->x), 1, file);
-                fread(&item->y, sizeof(item->y), 1, file);
 
                 fread(&item->stack, sizeof(item->stack), 1, file);
 
@@ -869,9 +848,9 @@ void world_update(float delta_time)
             // update world state
             world->time++;
 
-            // reset all actor turns
-            // if there are no controllable actors, return control back to the UI so the current state will be rendered
             bool controllable_exists = false;
+
+            // reset all actor turns
             for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
             {
                 struct actor *const actor = list_get(map->actors, actor_index);
@@ -907,9 +886,10 @@ void world_update(float delta_time)
                     if (actor != world->hero)
                     {
                         // move equipment to ground
-                        for (int i = 0; i < NUM_EQUIP_SLOTS; i++)
+                        for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                         {
-                            struct item *const equipment = actor->equipment[i];
+                            struct item *const equipment = actor->equipment[equip_slot];
+
                             if (equipment)
                             {
                                 equipment->floor = actor->floor;
@@ -919,7 +899,7 @@ void world_update(float delta_time)
                                 list_add(tile->items, equipment);
                                 list_add(map->items, equipment);
 
-                                actor->equipment[i] = NULL;
+                                actor->equipment[equip_slot] = NULL;
                             }
                         }
 
@@ -956,6 +936,8 @@ void world_update(float delta_time)
                     }
                 }
             }
+
+            // if there are no controllable actors, return control back to the UI so the current state will be rendered
             if (!controllable_exists)
             {
                 break;
@@ -1049,7 +1031,7 @@ bool world_player_can_take_turn(void)
     return true;
 }
 
-void world_log(int floor, int x, int y, TCOD_ColorRGB color, char *fmt, ...)
+void world_log(int floor, int x, int y, TCOD_ColorRGB color, const char *fmt, ...)
 {
     if (floor != -1 &&
         (!world->player ||

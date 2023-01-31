@@ -357,8 +357,6 @@ void map_generate(struct map *const map, const enum map_type map_type)
                     tile->type = TCOD_random_get_int(world->random, 0, 4) == 0 ? TILE_TYPE_WALL : TILE_TYPE_FLOOR;
                 }
                 break;
-                case NUM_MAP_TYPES:
-                    break;
                 }
             }
         }
@@ -525,8 +523,6 @@ void map_generate(struct map *const map, const enum map_type map_type)
         list_add(map->rooms, room);
     }
     break;
-    case NUM_MAP_TYPES:
-        break;
     }
 
     // populate doors
@@ -836,7 +832,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
         do
         {
             type = TCOD_random_get_int(world->random, 0, NUM_ITEM_TYPES - 1);
-        } while (item_database[type].level > map->floor + 1 &&
+        } while (item_database[type].level > map->floor + 1 ||
                  (item_database[type].unique && list_contains(world->spawned_unique_item_types, (void *)(size_t)type)));
 
         struct item *const item = item_new(

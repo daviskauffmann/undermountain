@@ -38,7 +38,7 @@ static void uninit(void)
 {
 }
 
-static struct scene *start()
+static struct scene *start(void)
 {
     world_create(hero);
 
@@ -47,7 +47,7 @@ static struct scene *start()
     return &game_scene;
 }
 
-static struct scene *back()
+static struct scene *back(void)
 {
     actor_delete(hero);
 
@@ -76,8 +76,6 @@ static struct scene *handle_event(SDL_Event *event)
             return back();
         }
         break;
-        default:
-            break;
         }
     }
     break;
@@ -93,8 +91,6 @@ static struct scene *handle_event(SDL_Event *event)
         }
     }
     break;
-    default:
-        break;
     }
 
     return &create_scene;

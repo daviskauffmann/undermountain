@@ -96,9 +96,9 @@ void actor_delete(struct actor *const actor)
 
     list_delete(actor->known_spell_types);
 
-    for (size_t i = 0; i < actor->items->size; i++)
+    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
     {
-        item_delete(list_get(actor->items, i));
+        item_delete(list_get(actor->items, item_index));
     }
     list_delete(actor->items);
 
@@ -346,7 +346,7 @@ float actor_calc_speed(const struct actor *actor)
     {
         if (actor->equipment[equip_slot])
         {
-            enum equippability equippability = actor_calc_item_equippability(actor, actor->equipment[equip_slot]);
+            const enum equippability equippability = actor_calc_item_equippability(actor, actor->equipment[equip_slot]);
 
             if (equippability == EQUIPPABILITY_BARELY)
             {
@@ -392,7 +392,7 @@ void actor_calc_fade(struct actor *const actor, const float delta_time)
     }
 }
 
-int actor_calc_sight_radius(struct actor *actor)
+int actor_calc_sight_radius(const struct actor *actor)
 {
     if (actor->race == RACE_ELF)
     {
@@ -562,30 +562,51 @@ bool actor_can_take_turn(const struct actor *const actor)
     return actor->energy >= 1.0f && !actor->dead;
 }
 
-struct actor *actor_find_closest_enemy(const struct actor *const actor)
+bool actor_is_enemy_nearby(const struct actor *const actor)
 {
-    struct actor *closest_enemy = NULL;
+    const struct map *const map = &world->maps[world->player->floor];
+
+    for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+    {
+        struct actor *const other = list_get(map->actors, actor_index);
+
+        if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
+            other->faction != actor->faction)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+struct actor *actor_find_nearest_enemy(const struct actor *const actor)
+{
+    struct actor *nearest_enemy = NULL;
+
+    const struct map *const map = &world->maps[world->player->floor];
 
     float min_distance = FLT_MAX;
-    struct map *map = &world->maps[world->player->floor];
-    for (size_t i = 0; i < map->actors->size; i++)
+    for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
     {
-        struct actor *const other = list_get(map->actors, i);
+        struct actor *const other = list_get(map->actors, actor_index);
+
         if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
             other->faction != actor->faction)
         {
             const float distance = distance_between_sq(
                 actor->x, actor->y,
                 other->x, other->y);
+
             if (distance < min_distance)
             {
-                closest_enemy = other;
+                nearest_enemy = other;
                 min_distance = distance;
             }
         }
     }
 
-    return closest_enemy;
+    return nearest_enemy;
 }
 
 bool actor_ai(struct actor *const actor)
@@ -603,40 +624,42 @@ bool actor_ai(struct actor *const actor)
     // look for fountains to heal if low health
     if (actor->hit_points < actor_calc_max_hit_points(actor) / 2)
     {
-        const struct object *target = NULL;
+        const struct object *nearest_fountain = NULL;
 
         float min_distance = FLT_MAX;
-        for (size_t i = 0; i < map->objects->size; i++)
+        for (size_t object_index = 0; object_index < map->objects->size; object_index++)
         {
-            const struct object *const object = list_get(map->objects, i);
+            const struct object *const object = list_get(map->objects, object_index);
+
             if (TCOD_map_is_in_fov(actor->fov, object->x, object->y) &&
                 object->type == OBJECT_TYPE_FOUNTAIN)
             {
                 const float distance = distance_between_sq(
                     actor->x, actor->y,
                     object->x, object->y);
+
                 if (distance < min_distance)
                 {
-                    target = object;
+                    nearest_fountain = object;
                     min_distance = distance;
                 }
             }
         }
 
-        if (target)
+        if (nearest_fountain)
         {
             if (distance_between(
                     actor->x, actor->y,
-                    target->x, target->y) < 2.0f)
+                    nearest_fountain->x, nearest_fountain->y) < 2.0f)
             {
-                if (actor_drink(actor, target->x, target->y))
+                if (actor_drink(actor, nearest_fountain->x, nearest_fountain->y))
                 {
                     return true;
                 }
             }
             else
             {
-                if (actor_path_towards(actor, target->x, target->y))
+                if (actor_path_towards(actor, nearest_fountain->x, nearest_fountain->y))
                 {
                     return true;
                 }
@@ -646,13 +669,13 @@ bool actor_ai(struct actor *const actor)
 
     // look for hostile targets
     {
-        struct actor *target = actor_find_closest_enemy(actor);
+        struct actor *const nearest_enemy = actor_find_nearest_enemy(actor);
 
-        if (target)
+        if (nearest_enemy)
         {
             // target spotted, so remember the location in case the actor loses them
-            actor->last_seen_x = target->x;
-            actor->last_seen_y = target->y;
+            actor->last_seen_x = nearest_enemy->x;
+            actor->last_seen_y = nearest_enemy->y;
             actor->turns_chased = 0;
 
             bool ranged = false;
@@ -666,21 +689,42 @@ bool actor_ai(struct actor *const actor)
                 if (base_weapon_data->ranged)
                 {
                     // does the actor have ammo?
-                    struct item *ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+                    const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+
                     if (ammunition)
                     {
                         // is it the correct ammo?
                         const struct item_data *const ammunition_data = &item_database[ammunition->type];
                         const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
-                        if (base_weapon_data->ammunition_type == base_ammunition_data->ammunition_type)
+
+                        if (base_ammunition_data->ammunition_type == base_weapon_data->ammunition_type)
                         {
                             ranged = true;
                         }
                     }
-                    else
+
+                    if (!ranged)
                     {
-                        // out of ammo or using the wrong ammo, so unequip the weapon
-                        // TODO: look in inventory for suitable ammo and equip
+                        // out of ammo or using the wrong ammo
+
+                        // try to find suitable ammo in inventory and equip it
+                        for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                        {
+                            struct item *const item = list_get(actor->items, item_index);
+                            const struct item_data *const item_data = &item_database[item->type];
+                            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                            if (base_item_data->ammunition_type == base_weapon_data->ammunition_type)
+                            {
+                                // found suitable ammo, so equip it
+                                if (actor_equip(actor, item))
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+
+                        // no ammo equipped or in inventory, so unequip the weapon
                         if (actor_unequip(actor, EQUIP_SLOT_WEAPON))
                         {
                             return true;
@@ -691,7 +735,7 @@ bool actor_ai(struct actor *const actor)
 
             if (ranged)
             {
-                if (actor_shoot(actor, target->x, target->y))
+                if (actor_shoot(actor, nearest_enemy->x, nearest_enemy->y))
                 {
                     return true;
                 }
@@ -700,16 +744,16 @@ bool actor_ai(struct actor *const actor)
             {
                 if (distance_between(
                         actor->x, actor->y,
-                        target->x, target->y) < 2.0f)
+                        nearest_enemy->x, nearest_enemy->y) < 2.0f)
                 {
-                    if (actor_attack(actor, target, NULL))
+                    if (actor_attack(actor, nearest_enemy, NULL))
                     {
                         return true;
                     }
                 }
                 else
                 {
-                    if (actor_path_towards(actor, target->x, target->y))
+                    if (actor_path_towards(actor, nearest_enemy->x, nearest_enemy->y))
                     {
                         return true;
                     }
@@ -735,7 +779,7 @@ bool actor_ai(struct actor *const actor)
         }
     }
 
-    // stay in visiblity/proximity to leader
+    // stay within visiblity/proximity to leader
     if (actor->leader)
     {
         if (!TCOD_map_is_in_fov(actor->fov, actor->leader->x, actor->leader->y) ||
@@ -1011,11 +1055,8 @@ bool actor_interact(struct actor *actor, struct object *object)
     break;
     case OBJECT_TYPE_TRAP:
     {
-        // TODO: disarm
     }
     break;
-    case NUM_OBJECT_TYPES:
-        break;
     }
 
     return false;
@@ -2202,8 +2243,6 @@ bool actor_cast_spell(
         return false;
     }
     break;
-    case NUM_SPELL_TYPES:
-        break;
     }
 
     return true;

@@ -2,30 +2,14 @@
 
 /* grey levels */
 const TCOD_ColorRGB color_black = {COLOR_BLACK};
-const TCOD_ColorRGB color_darkest_grey = {COLOR_DARKEST_GREY};
-const TCOD_ColorRGB color_darker_grey = {COLOR_DARKER_GREY};
-const TCOD_ColorRGB color_dark_grey = {COLOR_DARK_GREY};
-const TCOD_ColorRGB color_grey = {COLOR_GREY};
-const TCOD_ColorRGB color_light_grey = {COLOR_LIGHT_GREY};
-const TCOD_ColorRGB color_lighter_grey = {COLOR_LIGHTER_GREY};
-const TCOD_ColorRGB color_lightest_grey = {COLOR_LIGHTEST_GREY};
-const TCOD_ColorRGB color_darkest_gray = {COLOR_DARKEST_GREY};
-const TCOD_ColorRGB color_darker_gray = {COLOR_DARKER_GREY};
-const TCOD_ColorRGB color_dark_gray = {COLOR_DARK_GREY};
-const TCOD_ColorRGB color_gray = {COLOR_GREY};
-const TCOD_ColorRGB color_light_gray = {COLOR_LIGHT_GREY};
-const TCOD_ColorRGB color_lighter_gray = {COLOR_LIGHTER_GREY};
-const TCOD_ColorRGB color_lightest_gray = {COLOR_LIGHTEST_GREY};
+const TCOD_ColorRGB color_darkest_gray = {COLOR_DARKEST_GRAY};
+const TCOD_ColorRGB color_darker_gray = {COLOR_DARKER_GRAY};
+const TCOD_ColorRGB color_dark_gray = {COLOR_DARK_GRAY};
+const TCOD_ColorRGB color_gray = {COLOR_GRAY};
+const TCOD_ColorRGB color_light_gray = {COLOR_LIGHT_GRAY};
+const TCOD_ColorRGB color_lighter_gray = {COLOR_LIGHTER_GRAY};
+const TCOD_ColorRGB color_lightest_gray = {COLOR_LIGHTEST_GRAY};
 const TCOD_ColorRGB color_white = {COLOR_WHITE};
-
-/* sepia */
-const TCOD_ColorRGB color_darkest_sepia = {COLOR_DARKEST_SEPIA};
-const TCOD_ColorRGB color_darker_sepia = {COLOR_DARKER_SEPIA};
-const TCOD_ColorRGB color_dark_sepia = {COLOR_DARK_SEPIA};
-const TCOD_ColorRGB color_sepia = {COLOR_SEPIA};
-const TCOD_ColorRGB color_light_sepia = {COLOR_LIGHT_SEPIA};
-const TCOD_ColorRGB color_lighter_sepia = {COLOR_LIGHTER_SEPIA};
-const TCOD_ColorRGB color_lightest_sepia = {COLOR_LIGHTEST_SEPIA};
 
 /* standard colors */
 const TCOD_ColorRGB color_red = {COLOR_RED};
@@ -210,6 +194,15 @@ const TCOD_ColorRGB color_desaturated_fuchsia = {COLOR_DESATURATED_FUCHSIA};
 const TCOD_ColorRGB color_desaturated_magenta = {COLOR_DESATURATED_MAGENTA};
 const TCOD_ColorRGB color_desaturated_pink = {COLOR_DESATURATED_PINK};
 const TCOD_ColorRGB color_desaturated_crimson = {COLOR_DESATURATED_CRIMSON};
+
+/* sepia */
+const TCOD_ColorRGB color_darkest_sepia = {COLOR_DARKEST_SEPIA};
+const TCOD_ColorRGB color_darker_sepia = {COLOR_DARKER_SEPIA};
+const TCOD_ColorRGB color_dark_sepia = {COLOR_DARK_SEPIA};
+const TCOD_ColorRGB color_sepia = {COLOR_SEPIA};
+const TCOD_ColorRGB color_light_sepia = {COLOR_LIGHT_SEPIA};
+const TCOD_ColorRGB color_lighter_sepia = {COLOR_LIGHTER_SEPIA};
+const TCOD_ColorRGB color_lightest_sepia = {COLOR_LIGHTEST_SEPIA};
 
 /* metallic */
 const TCOD_ColorRGB color_brass = {COLOR_BRASS};

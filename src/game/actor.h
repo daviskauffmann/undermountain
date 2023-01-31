@@ -210,7 +210,7 @@ float actor_calc_speed(const struct actor *actor);
 void actor_calc_light(struct actor *actor);
 void actor_calc_fade(struct actor *actor, float delta_time);
 
-int actor_calc_sight_radius(struct actor *actor);
+int actor_calc_sight_radius(const struct actor *actor);
 void actor_calc_fov(struct actor *actor);
 
 void actor_give_experience(struct actor *actor, int experience);
@@ -219,7 +219,8 @@ void actor_add_ability_point(struct actor *actor, enum ability ability);
 
 bool actor_can_take_turn(const struct actor *actor);
 
-struct actor *actor_find_closest_enemy(const struct actor *actor);
+bool actor_is_enemy_nearby(const struct actor *actor);
+struct actor *actor_find_nearest_enemy(const struct actor *actor);
 
 bool actor_ai(struct actor *actor);
 bool actor_rest(struct actor *actor);

@@ -764,7 +764,7 @@ void world_load(const char *filename)
 
 void world_update(float delta_time)
 {
-    struct map *map = &world->maps[world->hero->floor];
+    struct map *const map = &world->maps[world->hero->floor];
 
     // update things that should update every frame, regardless of whether a turn has passed
     for (size_t object_index = 0; object_index < map->objects->size; object_index++)

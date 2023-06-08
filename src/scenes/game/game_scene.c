@@ -1406,6 +1406,7 @@ static struct scene *handle_event(SDL_Event *event)
                                         world->player->readied_spell_type,
                                         target_x, target_y,
                                         true);
+
                                     targeting_action = TARGETING_ACTION_NONE;
                                 }
                             }
@@ -1439,6 +1440,7 @@ static struct scene *handle_event(SDL_Event *event)
                 if (rect_is_inside(tooltip_rect, mouse_x, mouse_y))
                 {
                     const struct tooltip_option *const tooltip_option = tooltip_option_mouseover();
+
                     if (tooltip_option)
                     {
                         if (tooltip_option->on_click)
@@ -1459,6 +1461,7 @@ static struct scene *handle_event(SDL_Event *event)
                 if (inventory_action != INVENTORY_ACTION_NONE)
                 {
                     struct item *const item = panel_inventory_item_mouseover();
+
                     if (item)
                     {
                         world->player->took_turn = do_inventory_action(item);
@@ -1469,6 +1472,7 @@ static struct scene *handle_event(SDL_Event *event)
                     if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
                     {
                         const enum ability ability = panel_character_ability_mouseover();
+
                         if (ability != -1)
                         {
                             world->player->took_turn = do_character_action_ability(ability);
@@ -1478,6 +1482,7 @@ static struct scene *handle_event(SDL_Event *event)
                              character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP)
                     {
                         const enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
+
                         if (equip_slot != EQUIP_SLOT_NONE)
                         {
                             world->player->took_turn = do_character_action_equipment(equip_slot);
@@ -1487,6 +1492,7 @@ static struct scene *handle_event(SDL_Event *event)
                 else if (spellbook_action != SPELLBOOK_ACTION_NONE)
                 {
                     const enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
+
                     if (spell_type != SPELL_TYPE_NONE)
                     {
                         world->player->took_turn = do_spellbook_action(spell_type);
@@ -1497,11 +1503,9 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (world_player_can_take_turn())
                 {
-                    const bool ranged = actor_has_ranged_weapon(world->player);
-
                     if (event->key.keysym.mod & KMOD_CTRL)
                     {
-                        if (ranged)
+                        if (actor_has_ranged_weapon(world->player))
                         {
                             world->player->took_turn = actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
                         }
@@ -1515,26 +1519,9 @@ static struct scene *handle_event(SDL_Event *event)
                     }
                     else
                     {
-                        const struct tile *const tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
-
-                        if (tile->actor && tile->actor->faction != world->player->faction)
-                        {
-                            if (ranged)
-                            {
-                                world->player->took_turn = actor_shoot(world->player, tile->actor->x, tile->actor->y);
-                            }
-                            else
-                            {
-                                automove_action = AUTOMOVE_ACTION_ATTACK;
-                                automove_actor = tile->actor;
-                            }
-                        }
-                        else
-                        {
-                            automove_action = AUTOMOVE_ACTION_MOVE;
-                            automove_x = mouse_tile_x;
-                            automove_y = mouse_tile_y;
-                        }
+                        automove_action = AUTOMOVE_ACTION_MOVE;
+                        automove_x = mouse_tile_x;
+                        automove_y = mouse_tile_y;
                     }
                 }
             }
@@ -1740,7 +1727,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             automove_y = automove_object->y;
         }
 
-        // TODO: check proximity for certain actions, and move towards if out of range (without changing the desired action)
+        if (distance_between(
+                world->player->x, world->player->y,
+                automove_x, automove_y) < 2.0f)
+        {
+        }
+
         switch (automove_action)
         {
         case AUTOMOVE_ACTION_ATTACK:
@@ -1757,12 +1749,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         break;
         case AUTOMOVE_ACTION_BASH:
         {
-            world->player->took_turn = actor_bash(world->player, tooltip_data.object);
+            world->player->took_turn = actor_bash(world->player, automove_object);
         }
         break;
         case AUTOMOVE_ACTION_INTERACT:
         {
-            world->player->took_turn = actor_interact(world->player, tooltip_data.object);
+            world->player->took_turn = actor_interact(world->player, automove_object);
         }
         break;
         case AUTOMOVE_ACTION_MOVE:
@@ -1772,7 +1764,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         break;
         case AUTOMOVE_ACTION_SWAP:
         {
-            world->player->took_turn = actor_swap(world->player, tooltip_data.actor);
+            world->player->took_turn = actor_swap(world->player, automove_actor);
         }
         break;
         }

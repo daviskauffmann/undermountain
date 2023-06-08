@@ -135,6 +135,7 @@ int actor_calc_armor_class(const struct actor *const actor)
     int armor_class = 10 + dexterity_modifer + size_modifer;
 
     const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
+
     if (armor)
     {
         const struct item_data *const armor_data = &item_database[armor->type];
@@ -145,6 +146,7 @@ int actor_calc_armor_class(const struct actor *const actor)
     }
 
     const struct item *const shield = actor->equipment[EQUIP_SLOT_SHIELD];
+
     if (shield)
     {
         const struct item_data *const shield_data = &item_database[shield->type];
@@ -159,6 +161,7 @@ int actor_calc_armor_class(const struct actor *const actor)
 
 int actor_calc_base_attack_bonus(const struct actor *actor)
 {
+    // TODO: use class info
     return (actor->level - 1) * 1;
 }
 
@@ -177,11 +180,13 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         attack_bonus += weapon_data->enhancement_bonus;
 
         const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+
         if (base_weapon_data->ranged)
         {
             attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
 
             const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+
             if (ammunition)
             {
                 const struct item_data *const ammunition_data = &item_database[ammunition->type];
@@ -212,6 +217,7 @@ int actor_calc_attack_bonus(const struct actor *const actor)
 int actor_calc_threat_range(const struct actor *const actor)
 {
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
     if (weapon)
     {
         const struct item_data *const weapon_data = &item_database[weapon->type];
@@ -226,6 +232,7 @@ int actor_calc_threat_range(const struct actor *const actor)
 int actor_calc_critical_multiplier(const struct actor *const actor)
 {
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
     if (weapon)
     {
         const struct item_data *const weapon_data = &item_database[weapon->type];
@@ -242,6 +249,7 @@ int actor_calc_damage_bonus(const struct actor *const actor)
     int damage_bonus = 0;
 
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
     if (weapon)
     {
         const struct item_data *const weapon_data = &item_database[weapon->type];
@@ -249,6 +257,7 @@ int actor_calc_damage_bonus(const struct actor *const actor)
         damage_bonus += weapon_data->enhancement_bonus;
 
         const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+
         if (base_weapon_data->ranged)
         {
             const int strength_modifier = actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
@@ -263,6 +272,7 @@ int actor_calc_damage_bonus(const struct actor *const actor)
             }
 
             const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+
             if (ammunition)
             {
                 const struct item_data *const ammunition_data = &item_database[ammunition->type];
@@ -295,6 +305,7 @@ int actor_calc_damage_bonus(const struct actor *const actor)
 const char *actor_calc_damage(const struct actor *const actor)
 {
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
     if (weapon)
     {
         const struct item_data *const weapon_data = &item_database[weapon->type];
@@ -562,6 +573,12 @@ bool actor_can_take_turn(const struct actor *const actor)
     return actor->energy >= 1.0f && !actor->dead;
 }
 
+bool actor_is_enemy(const struct actor *const actor, const struct actor *const other)
+{
+    return TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
+           actor->faction != other->faction;
+}
+
 bool actor_is_enemy_nearby(const struct actor *const actor)
 {
     const struct map *const map = &world->maps[world->player->floor];
@@ -570,8 +587,7 @@ bool actor_is_enemy_nearby(const struct actor *const actor)
     {
         struct actor *const other = list_get(map->actors, actor_index);
 
-        if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
-            other->faction != actor->faction)
+        if (actor_is_enemy(actor, other))
         {
             return true;
         }
@@ -582,17 +598,16 @@ bool actor_is_enemy_nearby(const struct actor *const actor)
 
 struct actor *actor_find_nearest_enemy(const struct actor *const actor)
 {
-    struct actor *nearest_enemy = NULL;
-
     const struct map *const map = &world->maps[world->player->floor];
 
+    struct actor *nearest_enemy = NULL;
     float min_distance = FLT_MAX;
+
     for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
     {
         struct actor *const other = list_get(map->actors, actor_index);
 
-        if (TCOD_map_is_in_fov(actor->fov, other->x, other->y) &&
-            other->faction != actor->faction)
+        if (actor_is_enemy(actor, other))
         {
             const float distance = distance_between_sq(
                 actor->x, actor->y,
@@ -607,6 +622,24 @@ struct actor *actor_find_nearest_enemy(const struct actor *const actor)
     }
 
     return nearest_enemy;
+}
+
+bool actor_has_ranged_weapon(const struct actor *actor)
+{
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
+    if (weapon)
+    {
+        const struct item_data *const item_data = &item_database[weapon->type];
+        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+        if (base_item_data->ranged)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool actor_ai(struct actor *const actor)
@@ -625,8 +658,8 @@ bool actor_ai(struct actor *const actor)
     if (actor->hit_points < actor_calc_max_hit_points(actor) / 2)
     {
         const struct object *nearest_fountain = NULL;
-
         float min_distance = FLT_MAX;
+
         for (size_t object_index = 0; object_index < map->objects->size; object_index++)
         {
             const struct object *const object = list_get(map->objects, object_index);
@@ -678,7 +711,7 @@ bool actor_ai(struct actor *const actor)
             actor->last_seen_y = nearest_enemy->y;
             actor->turns_chased = 0;
 
-            bool ranged = false;
+            bool can_shoot = false;
 
             const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
             if (weapon)
@@ -699,11 +732,11 @@ bool actor_ai(struct actor *const actor)
 
                         if (base_ammunition_data->ammunition_type == base_weapon_data->ammunition_type)
                         {
-                            ranged = true;
+                            can_shoot = true;
                         }
                     }
 
-                    if (!ranged)
+                    if (!can_shoot)
                     {
                         // out of ammo or using the wrong ammo
 
@@ -733,7 +766,7 @@ bool actor_ai(struct actor *const actor)
                 }
             }
 
-            if (ranged)
+            if (can_shoot)
             {
                 if (actor_shoot(actor, nearest_enemy->x, nearest_enemy->y))
                 {
@@ -822,6 +855,8 @@ bool actor_ai(struct actor *const actor)
 
 bool actor_rest(struct actor *const actor)
 {
+    // TODO: can't rest if enemies nearby
+
     actor_restore_hit_points(actor, 1);
     actor_restore_mana_points(actor, 1);
 
@@ -868,15 +903,14 @@ bool actor_move_towards(
     struct actor *const actor,
     const int target_x, const int target_y)
 {
-    int dx = target_x - actor->x;
-    int dy = target_y - actor->y;
     const float distance = distance_between(
         actor->x, actor->y,
         target_x, target_y);
+
     if (distance > 0.0f)
     {
-        dx = (int)round(dx / distance);
-        dy = (int)round(dy / distance);
+        const int dx = (int)roundf((target_x - actor->x) / distance);
+        const int dy = (int)roundf((target_y - actor->y) / distance);
 
         return actor_move(
             actor,
@@ -942,20 +976,9 @@ bool actor_move(
         }
         else
         {
-            bool ranged = false;
-
-            const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
-            if (weapon)
+            if (actor_has_ranged_weapon(actor))
             {
-                const struct item_data *const weapon_data = &item_database[weapon->type];
-                const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
-
-                ranged = base_weapon_data->ranged;
-            }
-
-            if (ranged)
-            {
-                return actor_shoot(world->player, x, y);
+                return actor_shoot(actor, x, y);
             }
             else
             {
@@ -1073,6 +1096,7 @@ bool actor_open_door(
 
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
+
     if (!tile->object || tile->object->type != OBJECT_TYPE_DOOR_CLOSED)
     {
         world_log(
@@ -1110,6 +1134,7 @@ bool actor_close_door(
 
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
+
     if (!tile->object || tile->object->type != OBJECT_TYPE_DOOR_OPEN)
     {
         world_log(
@@ -1152,9 +1177,10 @@ bool actor_descend(struct actor *const actor)
         return false;
     }
 
-    // is the actor on stairs down?
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[actor->x][actor->y];
+
+    // is the actor on stairs down?
     if (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_DOWN)
     {
         world_log(
@@ -1216,9 +1242,10 @@ bool actor_ascend(struct actor *actor)
         return false;
     }
 
-    // is the actor on stairs up?
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[actor->x][actor->y];
+
+    // is the actor on stairs up?
     if (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_UP)
     {
         world_log(
@@ -1275,6 +1302,7 @@ bool actor_open_chest(
 
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
+
     if (!tile->object || tile->object->type != OBJECT_TYPE_CHEST)
     {
         world_log(
@@ -1317,6 +1345,7 @@ bool actor_pray(
 
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
+
     if (!tile->object || tile->object->type != OBJECT_TYPE_ALTAR)
     {
         world_log(
@@ -1359,6 +1388,7 @@ bool actor_drink(
 
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
+
     if (!tile->object || tile->object->type != OBJECT_TYPE_FOUNTAIN)
     {
         world_log(
@@ -1402,6 +1432,7 @@ bool actor_sit(
 
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
+
     if (!tile->object || tile->object->type != OBJECT_TYPE_THRONE)
     {
         world_log(
@@ -1445,6 +1476,7 @@ bool actor_grab(
 
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
+
     if (tile->items->size == 0)
     {
         world_log(
@@ -1540,11 +1572,11 @@ bool actor_drop(struct actor *const actor, struct item *const item)
 
 bool actor_equip(struct actor *const actor, struct item *const item)
 {
+    // is item equipment?
     const struct item_data *const item_data = &item_database[item->type];
     const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+    const enum equip_slot equip_slot = base_item_data->equip_slot;
 
-    // is item equipment?
-    enum equip_slot equip_slot = base_item_data->equip_slot;
     if (equip_slot == EQUIP_SLOT_NONE)
     {
         world_log(
@@ -1561,6 +1593,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
 
     // is item equippable
     const enum equippability equippability = actor_calc_item_equippability(actor, item);
+
     if (equippability == EQUIPPABILITY_TOO_LARGE)
     {
         world_log(
@@ -1574,6 +1607,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
 
         return false;
     }
+
     if (equippability == EQUIPPABILITY_TOO_SMALL)
     {
         world_log(
@@ -1644,6 +1678,7 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
 {
     // is something equipped in the slot?
     struct item *equipment = actor->equipment[equip_slot];
+
     if (!equipment)
     {
         world_log(
@@ -1680,6 +1715,7 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
 {
     // is the item quaffable?
     const struct item_data *const item_data = &item_database[item->type];
+
     if (item_data->type != BASE_ITEM_TYPE_POTION)
     {
         world_log(
@@ -1730,6 +1766,7 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
 {
     // is the item readable?
     const struct item_data *const item_data = &item_database[item->type];
+
     if (item_data->type != BASE_ITEM_TYPE_SCROLL &&
         item_data->type != BASE_ITEM_TYPE_TOME)
     {
@@ -1793,10 +1830,10 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
 
 bool actor_bash(struct actor *const actor, struct object *const object)
 {
-    const struct object_data *const object_data = &object_database[object->type];
-
     // is the object destroyable?
     // TODO: make this a property on the object_data?
+    const struct object_data *const object_data = &object_database[object->type];
+
     if (object->type == OBJECT_TYPE_STAIR_DOWN ||
         object->type == OBJECT_TYPE_STAIR_UP)
     {
@@ -1825,6 +1862,7 @@ bool actor_bash(struct actor *const actor, struct object *const object)
     tile->object = NULL;
 
     // delete the object
+    // TODO: mark for delete
     object_delete(object);
 
     world_log(
@@ -1851,6 +1889,7 @@ bool actor_shoot(
 
     // does the actor have a weapon?
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
     if (!weapon)
     {
         world_log(
@@ -1867,6 +1906,7 @@ bool actor_shoot(
     // is the weapon ranged?
     const struct item_data *const weapon_data = &item_database[weapon->type];
     const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+
     if (!base_weapon_data->ranged)
     {
         world_log(
@@ -1882,6 +1922,7 @@ bool actor_shoot(
 
     // is there ammo?
     struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+
     if (!ammunition)
     {
         world_log(
@@ -1898,6 +1939,7 @@ bool actor_shoot(
     // is it the right ammo?
     const struct item_data *const ammunition_data = &item_database[ammunition->type];
     const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
+
     if (base_ammunition_data->ammunition_type != base_weapon_data->ammunition_type)
     {
         world_log(
@@ -1952,6 +1994,7 @@ bool actor_shoot(
     return true;
 }
 
+// TODO: rename this function to actor_do_damage and replace all calls with actor_melee, which will do distance checking
 bool actor_attack(struct actor *const actor, struct actor *const other, const struct item *const ammunition)
 {
     // calculate other armor class
@@ -1961,6 +2004,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
     const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
     const int attack_bonus = actor_calc_attack_bonus(actor);
     const int hit_challenge = attack_roll + attack_bonus;
+
     if (attack_roll == 1 ||
         (attack_roll != 20 && hit_challenge < armor_class))
     {
@@ -1996,7 +2040,9 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
             ? actor_calc_critical_multiplier(actor)
             : 1;
     const int damage_bonus = actor_calc_damage_bonus(actor);
+
     int damage = 0;
+
     for (int i = 0; i < num_attack_rolls; i++)
     {
         damage +=
@@ -2006,6 +2052,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
             damage_bonus;
     }
 
+    // if it's a hit, it has to do damage
     if (damage < 1)
     {
         damage = 1;
@@ -2031,6 +2078,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
     if (!killed)
     {
         const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
         if (weapon)
         {
             if (weapon->type == ITEM_TYPE_COLD_IRON_BLADE)
@@ -2062,6 +2110,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
         }
 
         const struct item *const other_shield = other->equipment[EQUIP_SLOT_SHIELD];
+
         if (other_shield)
         {
             if (other_shield->type == ITEM_TYPE_SPIKED_SHIELD && !ammunition)
@@ -2308,6 +2357,7 @@ void actor_die(struct actor *const actor, struct actor *const killer)
     if (killer)
     {
         const int experience = actor->level * 100;
+
         actor_give_experience(killer, experience);
     }
 }

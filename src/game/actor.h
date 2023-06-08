@@ -219,8 +219,11 @@ void actor_add_ability_point(struct actor *actor, enum ability ability);
 
 bool actor_can_take_turn(const struct actor *actor);
 
+bool actor_is_enemy(const struct actor *actor, const struct actor *other);
 bool actor_is_enemy_nearby(const struct actor *actor);
 struct actor *actor_find_nearest_enemy(const struct actor *actor);
+
+bool actor_has_ranged_weapon(const struct actor *actor);
 
 bool actor_ai(struct actor *actor);
 bool actor_rest(struct actor *actor);

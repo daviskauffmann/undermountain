@@ -39,7 +39,6 @@ void world_init(void)
     world->player = NULL;
 
     world->hero = NULL;
-    world->hero_dead = false;
 
     world->messages = list_new();
 }
@@ -66,7 +65,7 @@ void world_uninit(void)
         TCOD_namegen_destroy();
     }
 
-    if (world->hero_dead)
+    if (world->hero->dead)
     {
         actor_delete(world->hero);
     }
@@ -921,8 +920,6 @@ void world_update(float delta_time)
 
                     if (actor == world->hero)
                     {
-                        world->hero_dead = true;
-
                         world_log(
                             actor->floor,
                             actor->x,
@@ -959,7 +956,7 @@ void world_update(float delta_time)
                 // if not, then run the actor's AI
 
                 // slow down the AI if the hero is dead
-                if (world->hero_dead)
+                if (world->hero->dead)
                 {
                     static float timer = 0;
                     timer += delta_time;
@@ -1007,7 +1004,7 @@ void world_update(float delta_time)
 
 bool world_player_can_take_turn(void)
 {
-    if (world->hero_dead)
+    if (world->hero->dead)
     {
         return false;
     }

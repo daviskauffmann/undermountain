@@ -423,6 +423,8 @@ static bool do_character_action_ability(const enum ability ability)
     break;
     }
 
+    // do not unset character action to allow consecutive point allocations
+
     return took_turn;
 }
 
@@ -519,7 +521,7 @@ static void init(struct scene *previous_scene)
 
 static void uninit(void)
 {
-    if (!world->hero_dead)
+    if (!world->hero->dead)
     {
         world_save(SAVE_PATH);
     }
@@ -551,28 +553,23 @@ static bool player_swing(enum direction direction)
 
     if (map_is_inside(x, y))
     {
-        const struct item *const weapon = world->player->equipment[EQUIP_SLOT_WEAPON];
-        if (weapon)
+        if (actor_has_ranged_weapon(world->player))
         {
-            const struct item_data *const weapon_data = &item_database[weapon->type];
-            const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
-            if (base_weapon_data->ranged)
+            if (actor_shoot(world->player, x, y))
             {
-                if (actor_shoot(world->player, x, y))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
-        bool hit = false;
+        bool whiff = true;
 
         const struct map *const map = &world->maps[world->player->floor];
         const struct tile *const tile = &map->tiles[x][y];
 
         if (tile->actor && tile->actor != world->player)
         {
-            hit = true;
+            whiff = false;
+
             if (actor_attack(world->player, tile->actor, NULL))
             {
                 return true;
@@ -581,14 +578,15 @@ static bool player_swing(enum direction direction)
 
         if (tile->object)
         {
-            hit = true;
+            whiff = false;
+
             if (actor_bash(world->player, tile->object))
             {
                 return true;
             }
         }
 
-        if (!hit)
+        if (whiff)
         {
             world_log(
                 world->player->floor,
@@ -619,6 +617,7 @@ static bool player_interact(SDL_Event *event, enum direction direction)
         int x;
         int y;
         get_neighbor_by_direction(world->player->x, world->player->y, direction, &x, &y);
+
         return actor_move(world->player, x, y);
     }
 }
@@ -662,18 +661,26 @@ static bool on_click_examine(void)
 
 static bool on_click_interact(void)
 {
-    // TODO: only if adjacent to object, if not, this should automove to the object
-    return actor_interact(world->player, tooltip_data.object);
+    automove_action = AUTOMOVE_ACTION_INTERACT;
+    automove_object = tooltip_data.object;
+
+    return false;
 }
 
 static bool on_click_bash(void)
 {
-    return actor_bash(world->player, tooltip_data.object);
+    automove_action = AUTOMOVE_ACTION_BASH;
+    automove_object = tooltip_data.object;
+
+    return false;
 }
 
 static bool on_click_swap(void)
 {
-    return actor_swap(world->player, tooltip_data.actor);
+    automove_action = AUTOMOVE_ACTION_SWAP;
+    automove_actor = tooltip_data.actor;
+
+    return false;
 }
 
 static bool on_click_attack(void)
@@ -1490,17 +1497,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 if (world_player_can_take_turn())
                 {
-                    bool ranged = false;
-                    const struct item *const weapon = world->player->equipment[EQUIP_SLOT_WEAPON];
-                    if (weapon)
-                    {
-                        const struct item_data *const item_data = &item_database[weapon->type];
-                        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-                        if (base_item_data->ranged)
-                        {
-                            ranged = true;
-                        }
-                    }
+                    const bool ranged = actor_has_ranged_weapon(world->player);
 
                     if (event->key.keysym.mod & KMOD_CTRL)
                     {
@@ -1512,12 +1509,14 @@ static struct scene *handle_event(SDL_Event *event)
                         {
                             const float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
                             const enum direction direction = get_direction_from_angle(angle);
+
                             world->player->took_turn = player_swing(direction);
                         }
                     }
                     else
                     {
                         const struct tile *const tile = &world->maps[world->player->floor].tiles[mouse_tile_x][mouse_tile_y];
+
                         if (tile->actor && tile->actor->faction != world->player->faction)
                         {
                             if (ranged)
@@ -1549,6 +1548,7 @@ static struct scene *handle_event(SDL_Event *event)
                 case PANEL_CHARACTER:
                 {
                     const enum ability ability = panel_character_ability_mouseover();
+
                     if (ability != -1)
                     {
                         show_tooltip();
@@ -1561,9 +1561,11 @@ static struct scene *handle_event(SDL_Event *event)
                     }
 
                     const enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
+
                     if (equip_slot != EQUIP_SLOT_NONE)
                     {
                         const struct item *const equipment = world->player->equipment[equip_slot];
+
                         if (equipment)
                         {
                             show_tooltip();
@@ -1584,6 +1586,7 @@ static struct scene *handle_event(SDL_Event *event)
                 case PANEL_INVENTORY:
                 {
                     struct item *const item = panel_inventory_item_mouseover();
+
                     if (item)
                     {
                         show_tooltip();
@@ -1737,30 +1740,62 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             automove_y = automove_object->y;
         }
 
+        // TODO: check proximity for certain actions, and move towards if out of range (without changing the desired action)
         switch (automove_action)
         {
+        case AUTOMOVE_ACTION_ATTACK:
+        {
+            if (actor_has_ranged_weapon(world->player))
+            {
+                world->player->took_turn = actor_shoot(world->player, automove_x, automove_y);
+            }
+            else
+            {
+                world->player->took_turn = actor_attack(world->player, automove_actor, NULL);
+            }
+        }
+        break;
+        case AUTOMOVE_ACTION_BASH:
+        {
+            world->player->took_turn = actor_bash(world->player, tooltip_data.object);
+        }
+        break;
+        case AUTOMOVE_ACTION_INTERACT:
+        {
+            world->player->took_turn = actor_interact(world->player, tooltip_data.object);
+        }
+        break;
         case AUTOMOVE_ACTION_MOVE:
         {
             world->player->took_turn = actor_path_towards(world->player, automove_x, automove_y);
-
-            // if movement failed, stop automoving
-            if (!world->player->took_turn)
-            {
-                automove_action = AUTOMOVE_ACTION_NONE;
-            }
-
-            // stop automoving if there is an enemy in FOV
-            if (actor_is_enemy_nearby(world->player))
-            {
-                automove_action = AUTOMOVE_ACTION_NONE;
-            }
         }
         break;
-        case AUTOMOVE_ACTION_ATTACK:
+        case AUTOMOVE_ACTION_SWAP:
         {
+            world->player->took_turn = actor_swap(world->player, tooltip_data.actor);
         }
         break;
         }
+
+        // if automove action failed, stop automoving
+        if (!world->player->took_turn)
+        {
+            automove_action = AUTOMOVE_ACTION_NONE;
+        }
+
+        // stop automoving if there is an enemy in FOV
+        if (actor_is_enemy_nearby(world->player))
+        {
+            automove_action = AUTOMOVE_ACTION_NONE;
+        }
+
+        // stop automoving if the target actor is dead
+        if (automove_actor && automove_actor->dead)
+        {
+            automove_action = AUTOMOVE_ACTION_NONE;
+        }
+
+        // TODO: stop automoving if the target object is destroyed
     }
     else
     {
@@ -1771,7 +1806,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
     world_update(delta_time);
 
     // delete save if hero died
-    if (world->hero_dead && file_exists(SAVE_PATH))
+    if (world->hero->dead && file_exists(SAVE_PATH))
     {
         file_delete(SAVE_PATH);
     }
@@ -3089,7 +3124,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         TCOD_console_set_char_background(console, automove_x - view_rect.x, automove_y - view_rect.y, color_red, TCOD_BKGND_SET);
     }
 
-    if (!world->hero_dead && !world_player_can_take_turn())
+    if (!world->hero->dead && !world_player_can_take_turn())
     {
         console_print(
             console,

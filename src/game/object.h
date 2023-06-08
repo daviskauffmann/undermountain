@@ -39,7 +39,7 @@ struct object
     uint8_t x;
     uint8_t y;
 
-    TCOD_Map * light_fov;
+    TCOD_Map *light_fov;
 };
 
 struct object *object_new(

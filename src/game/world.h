@@ -20,7 +20,6 @@ struct world
     struct actor *player;
 
     struct actor *hero;
-    bool hero_dead;
 
     struct list *messages;
 };

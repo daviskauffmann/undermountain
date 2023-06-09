@@ -13,6 +13,4 @@ struct rect
     int height;
 };
 
-bool rect_is_inside(const struct rect rect, int x, int y);
-
 #endif

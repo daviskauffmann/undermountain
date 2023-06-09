@@ -1142,7 +1142,7 @@ bool actor_close_door(
             actor->x,
             actor->y,
             color_white,
-            "%s can't close the door.",
+            "%s can't close this.",
             actor->name);
 
         return false;

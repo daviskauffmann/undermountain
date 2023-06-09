@@ -39,21 +39,22 @@ void world_init(void)
     world->player = NULL;
 
     world->hero = NULL;
+    world->doomed = false;
 
     world->messages = list_new();
 }
 
 void world_uninit(void)
 {
-    for (size_t i = 0; i < world->messages->size; i++)
+    for (size_t message_index = 0; message_index < world->messages->size; message_index++)
     {
-        message_delete(list_get(world->messages, i));
+        message_delete(list_get(world->messages, message_index));
     }
     list_delete(world->messages);
 
-    for (int i = 0; i < NUM_MAPS; i++)
+    for (int floor = 0; floor < NUM_MAPS; floor++)
     {
-        struct map *map = &world->maps[i];
+        struct map *map = &world->maps[floor];
         map_uninit(map);
     }
 
@@ -65,7 +66,7 @@ void world_uninit(void)
         TCOD_namegen_destroy();
     }
 
-    if (world->hero->dead)
+    if (world->doomed)
     {
         actor_delete(world->hero);
     }
@@ -920,6 +921,8 @@ void world_update(float delta_time)
 
                     if (actor == world->hero)
                     {
+                        world->doomed = true;
+
                         world_log(
                             actor->floor,
                             actor->x,
@@ -956,7 +959,7 @@ void world_update(float delta_time)
                 // if not, then run the actor's AI
 
                 // slow down the AI if the hero is dead
-                if (world->hero->dead)
+                if (world->doomed)
                 {
                     static float timer = 0;
                     timer += delta_time;
@@ -1004,7 +1007,7 @@ void world_update(float delta_time)
 
 bool world_player_can_take_turn(void)
 {
-    if (world->hero->dead)
+    if (world->doomed)
     {
         return false;
     }

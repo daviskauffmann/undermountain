@@ -109,31 +109,6 @@ static bool do_directional_action(enum direction direction)
         took_turn = actor_close_door(world->player, x, y);
     }
     break;
-    case DIRECTIONAL_ACTION_DRINK:
-    {
-        took_turn = actor_drink(world->player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_OPEN_CHEST:
-    {
-        took_turn = actor_open_chest(world->player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_OPEN_DOOR:
-    {
-        took_turn = actor_open_door(world->player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_PRAY:
-    {
-        took_turn = actor_pray(world->player, x, y);
-    }
-    break;
-    case DIRECTIONAL_ACTION_SIT:
-    {
-        took_turn = actor_sit(world->player, x, y);
-    }
-    break;
     }
 
     directional_action = DIRECTIONAL_ACTION_NONE;
@@ -326,7 +301,7 @@ static void init(struct scene *previous_scene)
 
 static void uninit(void)
 {
-    if (!world->hero->dead)
+    if (!world->doomed)
     {
         world_save(SAVE_PATH);
     }
@@ -722,34 +697,7 @@ struct scene *handle_event(SDL_Event *event)
                         world->player->x,
                         world->player->y,
                         color_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
-            }
-            break;
-            case SDLK_d:
-            {
-                if (event->key.keysym.mod & KMOD_SHIFT)
-                {
-                    directional_action = DIRECTIONAL_ACTION_DRINK;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
-                else
-                {
-                    show_panel(PANEL_INVENTORY);
-                    inventory_action = INVENTORY_ACTION_DROP;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose an item to drop. Press 'ESC' to cancel.");
+                        "Choose a direction to close door. Press 'ESC' to cancel.");
                 }
             }
             break;
@@ -827,44 +775,6 @@ struct scene *handle_event(SDL_Event *event)
                 }
             }
             break;
-            case SDLK_o:
-            {
-                if (event->key.keysym.mod & KMOD_SHIFT)
-                {
-                    directional_action = DIRECTIONAL_ACTION_OPEN_CHEST;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
-                else
-                {
-                    directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose a direction. Press 'ESC' to cancel.");
-                }
-            }
-            break;
-            case SDLK_p:
-            {
-                directional_action = DIRECTIONAL_ACTION_PRAY;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose a direction. Press 'ESC' to cancel.");
-            }
-            break;
             case SDLK_q:
             {
                 show_panel(PANEL_INVENTORY);
@@ -904,18 +814,6 @@ struct scene *handle_event(SDL_Event *event)
                         color_yellow,
                         "Choose an item to read. Press 'ESC' to cancel.");
                 }
-            }
-            break;
-            case SDLK_s:
-            {
-                directional_action = DIRECTIONAL_ACTION_SIT;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose a direction. Press 'ESC' to cancel.");
             }
             break;
             case SDLK_t:
@@ -1097,7 +995,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
     world_update(delta_time);
 
     // delete save if hero died
-    if (world->hero->dead && file_exists(SAVE_PATH))
+    if (world->doomed && file_exists(SAVE_PATH))
     {
         file_delete(SAVE_PATH);
     }
@@ -2304,7 +2202,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             1.0f);
     }
 
-    if (!world->hero->dead && !world_player_can_take_turn())
+    if (!world->doomed && !world_player_can_take_turn())
     {
         console_print(
             console,

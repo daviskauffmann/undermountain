@@ -20,6 +20,7 @@ struct world
     struct actor *player;
 
     struct actor *hero;
+    bool doomed;
 
     struct list *messages;
 };

@@ -274,7 +274,7 @@ bool actor_shoot(
     struct actor *actor,
     int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other, const struct item *ammunition);
-bool actor_cast_spell(
+bool actor_cast(
     struct actor *actor,
     enum spell_type spell_type,
     int x, int y,

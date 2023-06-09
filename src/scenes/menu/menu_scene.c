@@ -11,27 +11,7 @@
 #include "option.h"
 #include <libtcod.h>
 
-static int mouse_x;
-static int mouse_y;
-
 static struct option_data option_data[NUM_OPTIONS];
-
-static enum option option_mouseover(void)
-{
-    int y = 1;
-
-    for (enum option option = OPTION_NONE + 1; option < NUM_OPTIONS; option++)
-    {
-        if (mouse_y == y)
-        {
-            return option;
-        }
-
-        y++;
-    }
-
-    return OPTION_NONE;
-}
 
 static struct scene *select_option(const enum option option)
 {
@@ -79,9 +59,6 @@ static void init(struct scene *const previous_scene)
     option_data[OPTION_QUIT] = (struct option_data){
         .text = "Quit",
     };
-
-    mouse_x = -1;
-    mouse_y = -1;
 }
 
 static void uninit(void)
@@ -136,21 +113,6 @@ static struct scene *handle_event(SDL_Event *const event)
         }
     }
     break;
-    case SDL_MOUSEBUTTONDOWN:
-    {
-        if (event->button.button == SDL_BUTTON_LEFT)
-        {
-            const enum option option = option_mouseover();
-            return select_option(option);
-        }
-    }
-    break;
-    case SDL_MOUSEMOTION:
-    {
-        mouse_x = event->motion.x;
-        mouse_y = event->motion.y;
-    }
-    break;
     }
 
     return &menu_scene;
@@ -168,7 +130,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             console,
             1,
             y++,
-            option == option_mouseover() ? &color_yellow : &color_white,
+            &color_white,
             &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,

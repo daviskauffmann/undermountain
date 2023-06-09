@@ -6,10 +6,6 @@
 
 ### Controls
 
-#### Keyboard
-
-#### Mouse
-
 ### Screens
 
 ## Player's Guide

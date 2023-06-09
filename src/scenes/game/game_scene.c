@@ -16,7 +16,6 @@
 #include "../../scene.h"
 #include "../../util.h"
 #include "../menu/menu_scene.h"
-#include "automove_action.h"
 #include "character_action.h"
 #include "direction.h"
 #include "directional_action.h"
@@ -25,8 +24,6 @@
 #include "rect.h"
 #include "spellbook_action.h"
 #include "targeting_action.h"
-#include "tooltip_data.h"
-#include "tooltip_option.h"
 #include <float.h>
 #include <libtcod.h>
 #include <malloc.h>
@@ -34,26 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// TODO: better mouse controls
-// design a system where when selecting an action from the right-click menu, other actions are ignored as the actor paths to the location
-// when left-clicking a hostile actor, or selecting Attack from the menu, should track that actor's position and follow it. when reached, attack once and stop automoving
-
-// TODO: automoving needs to be slower and easy to cancel
-
 // TODO: prompts
-
-/* Input variables */
-
-static int mouse_x;
-static int mouse_y;
-static int mouse_tile_x;
-static int mouse_tile_y;
-
-static enum automove_action automove_action;
-static int automove_x;
-static int automove_y;
-static struct actor *automove_actor;
-static struct object *automove_object;
 
 /* Targeting */
 
@@ -65,69 +43,6 @@ static struct item *targeting_item;
 /* Viewport */
 
 static struct rect view_rect;
-
-/* Tooltips */
-
-static struct rect tooltip_rect;
-static struct list *tooltip_options;
-static struct tooltip_data tooltip_data;
-
-static void add_tooltip_option(char *const text, bool (*const on_click)(void))
-{
-    struct tooltip_option *const tooltip_option = tooltip_option_new(text, on_click);
-
-    list_add(tooltip_options, tooltip_option);
-}
-
-static void clear_tooltip_options(void)
-{
-    for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; tooltip_option_index++)
-    {
-        tooltip_option_delete(list_get(tooltip_options, tooltip_option_index));
-    }
-
-    list_clear(tooltip_options);
-}
-
-static void show_tooltip(void)
-{
-    clear_tooltip_options();
-
-    tooltip_rect.visible = true;
-    tooltip_rect.x = mouse_x;
-    tooltip_rect.y = mouse_y;
-}
-
-static void hide_tooltip(void)
-{
-    clear_tooltip_options();
-
-    tooltip_rect.visible = false;
-}
-
-static struct tooltip_option *tooltip_option_mouseover(void)
-{
-    if (tooltip_rect.visible)
-    {
-        int y = 1;
-
-        for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; tooltip_option_index++)
-        {
-            struct tooltip_option *const option = list_get(tooltip_options, tooltip_option_index);
-
-            if (mouse_x > tooltip_rect.x &&
-                mouse_x < tooltip_rect.x + tooltip_rect.width &&
-                mouse_y == y + tooltip_rect.y)
-            {
-                return option;
-            }
-
-            y++;
-        }
-    }
-
-    return NULL;
-}
 
 /* HUD */
 
@@ -173,98 +88,6 @@ static void show_panel(const enum panel panel)
     {
         toggle_panel(panel);
     }
-}
-
-static enum ability panel_character_ability_mouseover(void)
-{
-    if (panel_rect.visible && current_panel == PANEL_CHARACTER && !tooltip_rect.visible)
-    {
-        int y = 9; // must be updated every time the layout of the character sheet changes
-
-        for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-        {
-            if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + panel_rect.width &&
-                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
-            {
-                return ability;
-            }
-
-            y++;
-        }
-    }
-
-    return -1;
-}
-
-static enum equip_slot panel_character_equip_slot_mouseover(void)
-{
-    if (panel_rect.visible && current_panel == PANEL_CHARACTER && !tooltip_rect.visible)
-    {
-        int y = 14; // must be updated every time the layout of the character sheet changes
-
-        for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
-        {
-            if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + panel_rect.width &&
-                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
-            {
-                return equip_slot;
-            }
-
-            y++;
-        }
-    }
-
-    return EQUIP_SLOT_NONE;
-}
-
-static struct item *panel_inventory_item_mouseover(void)
-{
-    if (panel_rect.visible && current_panel == PANEL_INVENTORY && !tooltip_rect.visible)
-    {
-        int y = 1;
-
-        for (size_t item_index = 0; item_index < world->player->items->size; item_index++)
-        {
-            struct item *const item = list_get(world->player->items, item_index);
-
-            if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + panel_rect.width &&
-                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
-            {
-                return item;
-            }
-
-            y++;
-        }
-    }
-
-    return NULL;
-}
-
-static enum spell_type panel_spellbook_spell_type_mouseover(void)
-{
-    if (panel_rect.visible && current_panel == PANEL_SPELLBOOK && !tooltip_rect.visible)
-    {
-        int y = 1;
-
-        for (size_t spell_type_index = 0; spell_type_index < world->player->known_spell_types->size; spell_type_index++)
-        {
-            const enum spell_type spell_type = (size_t)(list_get(world->player->known_spell_types, spell_type_index));
-
-            if (mouse_x > panel_rect.x &&
-                mouse_x < panel_rect.x + panel_rect.width &&
-                mouse_y == y + panel_rect.y - panel_state[current_panel].scroll)
-            {
-                return spell_type;
-            }
-
-            y++;
-        }
-    }
-
-    return SPELL_TYPE_NONE;
 }
 
 /* Directional actions */
@@ -330,18 +153,12 @@ static bool do_inventory_action(struct item *const item)
     {
     case INVENTORY_ACTION_DROP:
     {
-        if (world_player_can_take_turn())
-        {
-            took_turn = actor_drop(world->player, item);
-        }
+        took_turn = world_player_can_take_turn() && actor_drop(world->player, item);
     }
     break;
     case INVENTORY_ACTION_EQUIP:
     {
-        if (world_player_can_take_turn())
-        {
-            took_turn = actor_equip(world->player, item);
-        }
+        took_turn = world_player_can_take_turn() && actor_equip(world->player, item);
     }
     break;
     case INVENTORY_ACTION_EXAMINE:
@@ -352,10 +169,7 @@ static bool do_inventory_action(struct item *const item)
     break;
     case INVENTORY_ACTION_QUAFF:
     {
-        if (world_player_can_take_turn())
-        {
-            took_turn = actor_quaff(world->player, item);
-        }
+        took_turn = world_player_can_take_turn() && actor_quaff(world->player, item);
     }
     break;
     case INVENTORY_ACTION_READ:
@@ -381,10 +195,7 @@ static bool do_inventory_action(struct item *const item)
         }
         else
         {
-            if (world_player_can_take_turn())
-            {
-                took_turn = actor_read(world->player, item, world->player->x, world->player->y);
-            }
+            took_turn = world_player_can_take_turn() && actor_read(world->player, item, world->player->x, world->player->y);
         }
     }
     break;
@@ -446,10 +257,7 @@ static bool do_character_action_equipment(const enum equip_slot equip_slot)
     break;
     case CHARACTER_ACTION_EQUIPMENT_UNEQUIP:
     {
-        if (world_player_can_take_turn())
-        {
-            took_turn = actor_unequip(world->player, equip_slot);
-        }
+        took_turn = world_player_can_take_turn() && actor_unequip(world->player, equip_slot);
     }
     break;
     }
@@ -501,9 +309,6 @@ static void init(struct scene *previous_scene)
     view_rect.console = NULL;
     view_rect.visible = true;
 
-    tooltip_rect.console = TCOD_console_new(console_width, console_height);
-    tooltip_options = list_new();
-
     hud_rect.console = TCOD_console_new(console_width, console_height);
     hud_rect.visible = true;
 
@@ -536,13 +341,6 @@ static void uninit(void)
     TCOD_console_delete(status_rect.console);
 
     TCOD_console_delete(hud_rect.console);
-
-    for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; tooltip_option_index++)
-    {
-        tooltip_option_delete(list_get(tooltip_options, tooltip_option_index));
-    }
-    list_delete(tooltip_options);
-    TCOD_console_delete(tooltip_rect.console);
 }
 
 static bool player_swing(enum direction direction)
@@ -622,141 +420,7 @@ static bool player_interact(SDL_Event *event, enum direction direction)
     }
 }
 
-static bool on_click_add_point(void)
-{
-    actor_add_ability_point(world->player, tooltip_data.ability);
-
-    return false;
-}
-
-static bool on_click_move(void)
-{
-    automove_action = AUTOMOVE_ACTION_MOVE;
-
-    const struct tile *const tile = &world->maps[world->player->floor].tiles[tooltip_data.x][tooltip_data.y];
-
-    if (tile->actor && tile->actor->faction != world->player->faction)
-    {
-        automove_actor = tile->actor;
-    }
-    else
-    {
-        automove_x = tooltip_data.x;
-        automove_y = tooltip_data.y;
-    }
-
-    return false;
-}
-
-static bool on_click_shoot(void)
-{
-    return actor_shoot(world->player, tooltip_data.x, tooltip_data.y);
-}
-
-static bool on_click_examine(void)
-{
-    // TODO
-    return false;
-}
-
-static bool on_click_interact(void)
-{
-    automove_action = AUTOMOVE_ACTION_INTERACT;
-    automove_object = tooltip_data.object;
-
-    return false;
-}
-
-static bool on_click_bash(void)
-{
-    automove_action = AUTOMOVE_ACTION_BASH;
-    automove_object = tooltip_data.object;
-
-    return false;
-}
-
-static bool on_click_swap(void)
-{
-    automove_action = AUTOMOVE_ACTION_SWAP;
-    automove_actor = tooltip_data.actor;
-
-    return false;
-}
-
-static bool on_click_attack(void)
-{
-    automove_action = AUTOMOVE_ACTION_ATTACK;
-    automove_actor = tooltip_data.actor;
-
-    return false;
-}
-
-static bool on_click_character_sheet(void)
-{
-    show_panel(PANEL_CHARACTER);
-
-    return false;
-}
-
-static bool on_click_inventory(void)
-{
-    show_panel(PANEL_INVENTORY);
-
-    return false;
-}
-
-static bool on_click_spellbook(void)
-{
-    show_panel(PANEL_SPELLBOOK);
-
-    return false;
-}
-
-static bool on_click_drop(void)
-{
-    return actor_drop(world->player, tooltip_data.item);
-}
-
-static bool on_click_quaff(void)
-{
-    return actor_quaff(world->player, tooltip_data.item);
-}
-
-static bool on_click_equip(void)
-{
-    return actor_equip(world->player, tooltip_data.item);
-}
-
-static bool on_click_unequip(void)
-{
-    return actor_unequip(world->player, tooltip_data.equip_slot);
-}
-
-static bool on_click_unready(void)
-{
-    world->player->readied_spell_type = SPELL_TYPE_NONE;
-
-    return false;
-}
-
-static bool on_click_ready(void)
-{
-    world->player->readied_spell_type = tooltip_data.spell_type;
-
-    return false;
-}
-
-static bool on_click_cast(void)
-{
-    return actor_cast_spell(
-        world->player,
-        tooltip_data.spell_type,
-        tooltip_data.x,
-        tooltip_data.y,
-        true);
-}
-
-static struct scene *handle_event(SDL_Event *event)
+struct scene *handle_event(SDL_Event *event)
 {
     if (!world->player)
     {
@@ -771,20 +435,14 @@ static struct scene *handle_event(SDL_Event *event)
     {
     case SDL_KEYDOWN:
     {
-        automove_action = AUTOMOVE_ACTION_NONE;
-
         switch (event->key.keysym.sym)
         {
         case SDLK_ESCAPE:
         {
-            if (tooltip_rect.visible)
-            {
-                hide_tooltip();
-            }
-            else if (directional_action != DIRECTIONAL_ACTION_NONE ||
-                     inventory_action != INVENTORY_ACTION_NONE ||
-                     character_action != CHARACTER_ACTION_NONE ||
-                     spellbook_action != SPELLBOOK_ACTION_NONE)
+            if (directional_action != DIRECTIONAL_ACTION_NONE ||
+                inventory_action != INVENTORY_ACTION_NONE ||
+                character_action != CHARACTER_ACTION_NONE ||
+                spellbook_action != SPELLBOOK_ACTION_NONE)
             {
                 directional_action = DIRECTIONAL_ACTION_NONE;
                 inventory_action = INVENTORY_ACTION_NONE;
@@ -837,9 +495,9 @@ static struct scene *handle_event(SDL_Event *event)
                 target_x--;
                 target_y++;
             }
-            else if (world_player_can_take_turn())
+            else
             {
-                world->player->took_turn = player_interact(event, DIRECTION_SW);
+                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_SW);
             }
         }
         break;
@@ -850,9 +508,9 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 target_y++;
             }
-            else if (world_player_can_take_turn())
+            else
             {
-                world->player->took_turn = player_interact(event, DIRECTION_S);
+                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_S);
             }
         }
         break;
@@ -863,9 +521,9 @@ static struct scene *handle_event(SDL_Event *event)
                 target_x++;
                 target_y++;
             }
-            else if (world_player_can_take_turn())
+            else
             {
-                world->player->took_turn = player_interact(event, DIRECTION_SE);
+                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_SE);
             }
         }
         break;
@@ -876,18 +534,15 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 target_x--;
             }
-            else if (world_player_can_take_turn())
+            else
             {
-                world->player->took_turn = player_interact(event, DIRECTION_W);
+                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_W);
             }
         }
         break;
         case SDLK_KP_5:
         {
-            if (world_player_can_take_turn())
-            {
-                world->player->took_turn = actor_rest(world->player);
-            }
+            world->player->took_turn = world_player_can_take_turn() && actor_rest(world->player);
         }
         break;
         case SDLK_KP_6:
@@ -897,9 +552,9 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 target_x++;
             }
-            else if (world_player_can_take_turn())
+            else
             {
-                world->player->took_turn = player_interact(event, DIRECTION_E);
+                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_E);
             }
         }
         break;
@@ -910,9 +565,9 @@ static struct scene *handle_event(SDL_Event *event)
                 target_x--;
                 target_y--;
             }
-            else if (world_player_can_take_turn())
+            else
             {
-                world->player->took_turn = player_interact(event, DIRECTION_NW);
+                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_NW);
             }
         }
         break;
@@ -923,9 +578,9 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 target_y--;
             }
-            else if (world_player_can_take_turn())
+            else
             {
-                world->player->took_turn = player_interact(event, DIRECTION_N);
+                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_N);
             }
         }
         break;
@@ -936,9 +591,9 @@ static struct scene *handle_event(SDL_Event *event)
                 target_x++;
                 target_y--;
             }
-            else if (world_player_can_take_turn())
+            else
             {
-                world->player->took_turn = player_interact(event, DIRECTION_NE);
+                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_NE);
             }
         }
         break;
@@ -946,10 +601,7 @@ static struct scene *handle_event(SDL_Event *event)
         {
             if (event->key.keysym.mod & KMOD_SHIFT)
             {
-                if (world_player_can_take_turn())
-                {
-                    world->player->took_turn = actor_descend(world->player);
-                }
+                world->player->took_turn = world_player_can_take_turn() && actor_descend(world->player);
             }
         }
         break;
@@ -957,10 +609,7 @@ static struct scene *handle_event(SDL_Event *event)
         {
             if (event->key.keysym.mod & KMOD_SHIFT)
             {
-                if (world_player_can_take_turn())
-                {
-                    world->player->took_turn = actor_ascend(world->player);
-                }
+                world->player->took_turn = world_player_can_take_turn() && actor_ascend(world->player);
             }
         }
         break;
@@ -994,11 +643,13 @@ static struct scene *handle_event(SDL_Event *event)
             bool handled = false;
 
             const int alpha = event->key.keysym.sym - SDLK_a;
-            if (inventory_action != INVENTORY_ACTION_NONE && alpha >= 0 && alpha < world->player->items->size)
+
+            if (inventory_action != INVENTORY_ACTION_NONE &&
+                alpha >= 0 && alpha < world->player->items->size)
             {
                 struct item *const item = list_get(world->player->items, alpha);
 
-                world->player->took_turn = do_inventory_action(item);
+                world->player->took_turn = world_player_can_take_turn() && do_inventory_action(item);
 
                 handled = true;
             }
@@ -1007,7 +658,7 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 const enum ability_type ability = alpha;
 
-                world->player->took_turn = do_character_action_ability(ability);
+                world->player->took_turn = world_player_can_take_turn() && do_character_action_ability(ability);
 
                 handled = true;
             }
@@ -1017,15 +668,16 @@ static struct scene *handle_event(SDL_Event *event)
             {
                 const enum equip_slot equip_slot = alpha + 1;
 
-                world->player->took_turn = do_character_action_equipment(equip_slot);
+                world->player->took_turn = world_player_can_take_turn() && do_character_action_equipment(equip_slot);
 
                 handled = true;
             }
-            else if (spellbook_action != SPELLBOOK_ACTION_NONE && alpha >= 0 && alpha < world->player->known_spell_types->size)
+            else if (spellbook_action != SPELLBOOK_ACTION_NONE &&
+                     alpha >= 0 && alpha < world->player->known_spell_types->size)
             {
                 const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, alpha);
 
-                world->player->took_turn = do_spellbook_action(spell_type);
+                world->player->took_turn = world_player_can_take_turn() && do_spellbook_action(spell_type);
 
                 handled = true;
             }
@@ -1121,6 +773,7 @@ static struct scene *handle_event(SDL_Event *event)
                     if (world_player_can_take_turn())
                     {
                         world->player->took_turn = actor_shoot(world->player, target_x, target_y);
+
                         targeting_action = TARGETING_ACTION_NONE;
                     }
                 }
@@ -1142,10 +795,7 @@ static struct scene *handle_event(SDL_Event *event)
             break;
             case SDLK_g:
             {
-                if (world_player_can_take_turn())
-                {
-                    world->player->took_turn = actor_grab(world->player, world->player->x, world->player->y);
-                }
+                world->player->took_turn = world_player_can_take_turn() && actor_grab(world->player, world->player->x, world->player->y);
             }
             break;
             case SDLK_h:
@@ -1385,14 +1035,13 @@ static struct scene *handle_event(SDL_Event *event)
                         {
                         case SPELL_RANGE_SELF:
                         {
-                            if (world_player_can_take_turn())
-                            {
-                                world->player->took_turn = actor_cast_spell(
+                            world->player->took_turn =
+                                world_player_can_take_turn() &&
+                                actor_cast(
                                     world->player,
                                     world->player->readied_spell_type,
                                     world->player->x, world->player->y,
                                     true);
-                            }
                         }
                         break;
                         case SPELL_RANGE_TARGET:
@@ -1401,7 +1050,7 @@ static struct scene *handle_event(SDL_Event *event)
                             {
                                 if (world_player_can_take_turn())
                                 {
-                                    world->player->took_turn = actor_cast_spell(
+                                    world->player->took_turn = actor_cast(
                                         world->player,
                                         world->player->readied_spell_type,
                                         target_x, target_y,
@@ -1429,274 +1078,6 @@ static struct scene *handle_event(SDL_Event *event)
         }
     }
     break;
-    case SDL_MOUSEBUTTONDOWN:
-    {
-        if (event->button.button == SDL_BUTTON_LEFT)
-        {
-            automove_action = AUTOMOVE_ACTION_NONE;
-
-            if (tooltip_rect.visible)
-            {
-                if (rect_is_inside(tooltip_rect, mouse_x, mouse_y))
-                {
-                    const struct tooltip_option *const tooltip_option = tooltip_option_mouseover();
-
-                    if (tooltip_option)
-                    {
-                        if (tooltip_option->on_click)
-                        {
-                            world->player->took_turn = tooltip_option->on_click();
-                        }
-
-                        hide_tooltip();
-                    }
-                }
-                else
-                {
-                    hide_tooltip();
-                }
-            }
-            else if (rect_is_inside(panel_rect, mouse_x, mouse_y))
-            {
-                if (inventory_action != INVENTORY_ACTION_NONE)
-                {
-                    struct item *const item = panel_inventory_item_mouseover();
-
-                    if (item)
-                    {
-                        world->player->took_turn = do_inventory_action(item);
-                    }
-                }
-                else if (character_action != CHARACTER_ACTION_NONE)
-                {
-                    if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
-                    {
-                        const enum ability ability = panel_character_ability_mouseover();
-
-                        if (ability != -1)
-                        {
-                            world->player->took_turn = do_character_action_ability(ability);
-                        }
-                    }
-                    else if (character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
-                             character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP)
-                    {
-                        const enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
-
-                        if (equip_slot != EQUIP_SLOT_NONE)
-                        {
-                            world->player->took_turn = do_character_action_equipment(equip_slot);
-                        }
-                    }
-                }
-                else if (spellbook_action != SPELLBOOK_ACTION_NONE)
-                {
-                    const enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
-
-                    if (spell_type != SPELL_TYPE_NONE)
-                    {
-                        world->player->took_turn = do_spellbook_action(spell_type);
-                    }
-                }
-            }
-            else if (map_is_inside(mouse_tile_x, mouse_tile_y))
-            {
-                if (world_player_can_take_turn())
-                {
-                    if (event->key.keysym.mod & KMOD_CTRL)
-                    {
-                        if (actor_has_ranged_weapon(world->player))
-                        {
-                            world->player->took_turn = actor_shoot(world->player, mouse_tile_x, mouse_tile_y);
-                        }
-                        else
-                        {
-                            const float angle = angle_between(world->player->x, world->player->y, mouse_tile_x, mouse_tile_y);
-                            const enum direction direction = get_direction_from_angle(angle);
-
-                            world->player->took_turn = player_swing(direction);
-                        }
-                    }
-                    else
-                    {
-                        automove_action = AUTOMOVE_ACTION_MOVE;
-                        automove_x = mouse_tile_x;
-                        automove_y = mouse_tile_y;
-                    }
-                }
-            }
-        }
-        else if (event->button.button == SDL_BUTTON_RIGHT)
-        {
-            if (rect_is_inside(panel_rect, mouse_x, mouse_y))
-            {
-                switch (current_panel)
-                {
-                case PANEL_CHARACTER:
-                {
-                    const enum ability ability = panel_character_ability_mouseover();
-
-                    if (ability != -1)
-                    {
-                        show_tooltip();
-
-                        tooltip_data.ability = ability;
-
-                        add_tooltip_option("Add Point", &on_click_add_point);
-
-                        add_tooltip_option("Cancel", NULL);
-                    }
-
-                    const enum equip_slot equip_slot = panel_character_equip_slot_mouseover();
-
-                    if (equip_slot != EQUIP_SLOT_NONE)
-                    {
-                        const struct item *const equipment = world->player->equipment[equip_slot];
-
-                        if (equipment)
-                        {
-                            show_tooltip();
-
-                            tooltip_data.equip_slot = equip_slot;
-
-                            add_tooltip_option("Unequip", &on_click_unequip);
-
-                            add_tooltip_option("Cancel", NULL);
-                        }
-                    }
-                }
-                break;
-                case PANEL_EXAMINE:
-                {
-                }
-                break;
-                case PANEL_INVENTORY:
-                {
-                    struct item *const item = panel_inventory_item_mouseover();
-
-                    if (item)
-                    {
-                        show_tooltip();
-
-                        tooltip_data.item = item;
-
-                        add_tooltip_option("Drop", &on_click_drop);
-
-                        const struct item_data *const item_data = &item_database[item->type];
-                        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-
-                        if (base_item_data->equip_slot != EQUIP_SLOT_NONE)
-                        {
-                            add_tooltip_option("Equip", &on_click_equip);
-                        }
-
-                        if (item_data->type == BASE_ITEM_TYPE_POTION)
-                        {
-                            add_tooltip_option("Quaff", &on_click_quaff);
-                        }
-
-                        add_tooltip_option("Cancel", NULL);
-                    }
-                }
-                break;
-                case PANEL_SPELLBOOK:
-                {
-                    const enum spell_type spell_type = panel_spellbook_spell_type_mouseover();
-                    if (spell_type != SPELL_TYPE_NONE)
-                    {
-                        show_tooltip();
-
-                        tooltip_data.spell_type = spell_type;
-
-                        if (world->player->readied_spell_type == spell_type)
-                        {
-                            add_tooltip_option("Unready", &on_click_unready);
-                        }
-                        else
-                        {
-                            add_tooltip_option("Ready", &on_click_ready);
-                        }
-
-                        add_tooltip_option("Cancel", NULL);
-                    }
-                }
-                break;
-                }
-            }
-            else if (map_is_inside(mouse_tile_x, mouse_tile_y))
-            {
-                show_tooltip();
-
-                tooltip_data.x = mouse_tile_x;
-                tooltip_data.y = mouse_tile_y;
-
-                const struct map *const map = &world->maps[world->player->floor];
-                const struct tile *const tile = &map->tiles[mouse_tile_x][mouse_tile_y];
-
-                add_tooltip_option("Move", &on_click_move);
-
-                add_tooltip_option("Shoot", &on_click_shoot); // TODO: only if ranged weapon equipped
-
-                if (tile->object)
-                {
-                    tooltip_data.object = tile->object;
-
-                    add_tooltip_option("Examine Object", &on_click_examine);
-                    add_tooltip_option("Interact", &on_click_interact);
-                    add_tooltip_option("Bash", &on_click_bash);
-                }
-
-                if (tile->actor)
-                {
-                    tooltip_data.actor = tile->actor;
-
-                    add_tooltip_option("Examine Actor", &on_click_examine);
-                    add_tooltip_option("Swap", &on_click_swap);
-                    add_tooltip_option("Attack", &on_click_attack);
-
-                    if (tile->actor == world->player)
-                    {
-                        add_tooltip_option("Character Sheet", &on_click_character_sheet);
-                        add_tooltip_option("Inventory", &on_click_inventory);
-                        add_tooltip_option("Spellbook", &on_click_spellbook);
-                    }
-                }
-
-                struct item *const item = list_get(tile->items, 0);
-                if (item)
-                {
-                    tooltip_data.item = item;
-
-                    add_tooltip_option("Examine Item", NULL);
-                    add_tooltip_option("Take Item", NULL);
-                }
-
-                if (tile->items->size > 1)
-                {
-                    add_tooltip_option("Take All", NULL);
-                }
-
-                add_tooltip_option("Cancel", NULL);
-            }
-        }
-    }
-    break;
-    case SDL_MOUSEWHEEL:
-    {
-        if (panel_rect.visible)
-        {
-            panel_state[current_panel].scroll -= event->wheel.y;
-        }
-    }
-    break;
-    case SDL_MOUSEMOTION:
-    {
-        mouse_x = event->motion.x;
-        mouse_y = event->motion.y;
-        mouse_tile_x = mouse_x + view_rect.x;
-        mouse_tile_y = mouse_y + view_rect.y;
-    }
-    break;
     }
 
     return &game_scene;
@@ -1711,88 +1092,6 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         {
             return &game_scene;
         }
-    }
-
-    if (automove_action != AUTOMOVE_ACTION_NONE && world_player_can_take_turn())
-    {
-        if (automove_actor)
-        {
-            automove_x = automove_actor->x;
-            automove_y = automove_actor->y;
-        }
-
-        if (automove_object)
-        {
-            automove_x = automove_object->x;
-            automove_y = automove_object->y;
-        }
-
-        if (distance_between(
-                world->player->x, world->player->y,
-                automove_x, automove_y) < 2.0f)
-        {
-        }
-
-        switch (automove_action)
-        {
-        case AUTOMOVE_ACTION_ATTACK:
-        {
-            if (actor_has_ranged_weapon(world->player))
-            {
-                world->player->took_turn = actor_shoot(world->player, automove_x, automove_y);
-            }
-            else
-            {
-                world->player->took_turn = actor_attack(world->player, automove_actor, NULL);
-            }
-        }
-        break;
-        case AUTOMOVE_ACTION_BASH:
-        {
-            world->player->took_turn = actor_bash(world->player, automove_object);
-        }
-        break;
-        case AUTOMOVE_ACTION_INTERACT:
-        {
-            world->player->took_turn = actor_interact(world->player, automove_object);
-        }
-        break;
-        case AUTOMOVE_ACTION_MOVE:
-        {
-            world->player->took_turn = actor_path_towards(world->player, automove_x, automove_y);
-        }
-        break;
-        case AUTOMOVE_ACTION_SWAP:
-        {
-            world->player->took_turn = actor_swap(world->player, automove_actor);
-        }
-        break;
-        }
-
-        // if automove action failed, stop automoving
-        if (!world->player->took_turn)
-        {
-            automove_action = AUTOMOVE_ACTION_NONE;
-        }
-
-        // stop automoving if there is an enemy in FOV
-        if (actor_is_enemy_nearby(world->player))
-        {
-            automove_action = AUTOMOVE_ACTION_NONE;
-        }
-
-        // stop automoving if the target actor is dead
-        if (automove_actor && automove_actor->dead)
-        {
-            automove_action = AUTOMOVE_ACTION_NONE;
-        }
-
-        // TODO: stop automoving if the target object is destroyed
-    }
-    else
-    {
-        automove_actor = NULL;
-        automove_object = NULL;
     }
 
     world_update(delta_time);
@@ -1839,44 +1138,6 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         panel_rect.height = console_height - (hud_rect.visible ? hud_rect.height : 0);
     }
 
-    if (tooltip_rect.visible)
-    {
-        // tooltip should be as wide as the longest option, plus 2 for borders
-        tooltip_rect.width = 0;
-        for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; ++tooltip_option_index)
-        {
-            const struct tooltip_option *const option = list_get(tooltip_options, tooltip_option_index);
-
-            const int len = (int)strlen(option->text) + 2;
-            if (len > tooltip_rect.width)
-            {
-                tooltip_rect.width = len;
-            }
-        }
-
-        // tooltip should be as tall as the number of options, plus 2 for borders
-        // TODO: multi-line options?
-        tooltip_rect.height = (int)tooltip_options->size + 2;
-
-        // make sure the tooltip does not go off screen
-        if (tooltip_rect.x + tooltip_rect.width > console_width)
-        {
-            tooltip_rect.x = console_width - tooltip_rect.width;
-        }
-        if (tooltip_rect.x < 0)
-        {
-            tooltip_rect.x = 0;
-        }
-        if (tooltip_rect.y + tooltip_rect.height > console_height)
-        {
-            tooltip_rect.y = console_height - tooltip_rect.height;
-        }
-        if (tooltip_rect.y < 0)
-        {
-            tooltip_rect.y = 0;
-        }
-    }
-
     if (view_rect.visible)
     {
         // determine size of the game area
@@ -1920,9 +1181,6 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             {
                 if (map_is_inside(x, y))
                 {
-                    const struct tile *const tile = &map->tiles[x][y];
-                    const struct tile_data tile_data = tile_database[tile->type];
-
                     // ambient lighting
                     float fg_r = tile_common.ambient_light_color.r;
                     float fg_g = tile_common.ambient_light_color.g;
@@ -2043,6 +1301,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     }
 
                     // apply tonemapping
+                    const struct tile *const tile = &map->tiles[x][y];
+                    const struct tile_data *const tile_data = &tile_database[tile->type];
+
                     const float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
                     const float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
                     const TCOD_ColorRGB fg_color = TCOD_color_multiply(
@@ -2050,7 +1311,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             (uint8_t)(fg_r * fg_mult),
                             (uint8_t)(fg_g * fg_mult),
                             (uint8_t)(fg_b * fg_mult)),
-                        tile_data.color);
+                        tile_data->color);
                     const float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
                     const float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
                     const TCOD_ColorRGB bg_color = TCOD_color_multiply(
@@ -2058,11 +1319,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             (uint8_t)(bg_r * bg_mult),
                             (uint8_t)(bg_g * bg_mult),
                             (uint8_t)(bg_b * bg_mult)),
-                        tile_data.color);
+                        tile_data->color);
 
                     if (tile->explored)
                     {
-                        int glyph = tile_data.glyph;
+                        int glyph = tile_data->glyph;
 
                         // select appropriate wall graphic
                         if (tile->type == TILE_TYPE_WALL)
@@ -2695,18 +1956,13 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
             {
-                const TCOD_ColorRGB fg =
-                    ability == panel_character_ability_mouseover()
-                        ? color_yellow
-                        : color_white;
-
                 if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
                 {
                     console_print(
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &color_white,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
@@ -2720,7 +1976,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &color_white,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
@@ -2732,7 +1988,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     panel_rect.console,
                     panel_rect.width - 2,
                     y - current_panel_status->scroll,
-                    &fg,
+                    &color_white,
                     NULL,
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
@@ -2746,10 +2002,6 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
             {
-                const TCOD_ColorRGB fg =
-                    equip_slot == panel_character_equip_slot_mouseover()
-                        ? color_yellow
-                        : color_white;
                 const struct equip_slot_data equip_slot_data = equip_slot_database[equip_slot];
 
                 if (character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
@@ -2759,7 +2011,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &color_white,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
@@ -2773,7 +2025,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &color_white,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
@@ -2789,7 +2041,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         panel_rect.width - 2,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &color_white,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_RIGHT,
@@ -2935,17 +2187,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         break;
         case PANEL_INVENTORY:
         {
-            const struct item *const mouseover_item = panel_inventory_item_mouseover();
             int y = 1;
             for (size_t item_index = 0; item_index < world->player->items->size; item_index++)
             {
                 const struct item *const item = list_get(world->player->items, item_index);
                 const struct item_data item_data = item_database[item->type];
-
-                const TCOD_ColorRGB fg =
-                    item == mouseover_item
-                        ? color_yellow
-                        : item_data.color;
 
                 if (inventory_action == INVENTORY_ACTION_NONE)
                 {
@@ -2953,7 +2199,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &item_data.color,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
@@ -2967,7 +2213,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &item_data.color,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
@@ -2990,18 +2236,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         break;
         case PANEL_SPELLBOOK:
         {
-            const enum spell_type mouseover_spell_type = panel_spellbook_spell_type_mouseover();
-
             int y = 1;
             for (size_t known_spell_type_index = 0; known_spell_type_index < world->player->known_spell_types->size; known_spell_type_index++)
             {
                 const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, known_spell_type_index);
                 const struct spell_data *const spell_data = &spell_database[spell_type];
-
-                const TCOD_ColorRGB fg =
-                    spell_type == mouseover_spell_type
-                        ? color_yellow
-                        : color_white;
 
                 if (spellbook_action == SPELLBOOK_ACTION_NONE)
                 {
@@ -3009,7 +2248,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &color_white,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
@@ -3022,7 +2261,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &fg,
+                        &color_white,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
@@ -3035,7 +2274,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     panel_rect.console,
                     panel_rect.width - 2,
                     y - current_panel_status->scroll,
-                    &fg,
+                    &color_white,
                     NULL,
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
@@ -3063,57 +2302,6 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             panel_rect.y,
             1.0f,
             1.0f);
-    }
-
-    if (tooltip_rect.visible)
-    {
-        TCOD_console_clear(tooltip_rect.console);
-
-        const struct tooltip_option *const mouseover_tooltip_option = tooltip_option_mouseover();
-
-        int y = 1;
-        for (size_t tooltip_option_index = 0; tooltip_option_index < tooltip_options->size; tooltip_option_index++)
-        {
-            const struct tooltip_option *const option = list_get(tooltip_options, tooltip_option_index);
-
-            const TCOD_ColorRGB fg =
-                option == mouseover_tooltip_option
-                    ? color_yellow
-                    : color_white;
-
-            console_print(
-                tooltip_rect.console,
-                1,
-                y,
-                &fg,
-                NULL,
-                TCOD_BKGND_NONE,
-                TCOD_LEFT,
-                option->text);
-
-            y++;
-        }
-
-        TCOD_console_printf_frame(
-            tooltip_rect.console,
-            0, 0, tooltip_rect.width, tooltip_rect.height,
-            false,
-            TCOD_BKGND_NONE,
-            "");
-
-        TCOD_console_blit(
-            tooltip_rect.console,
-            0, 0, tooltip_rect.width, tooltip_rect.height,
-            console,
-            tooltip_rect.x,
-            tooltip_rect.y,
-            1.0f,
-            1.0f);
-    }
-
-    if (automove_action != AUTOMOVE_ACTION_NONE)
-    {
-        TCOD_console_set_char_background(console, automove_x - view_rect.x, automove_y - view_rect.y, color_red, TCOD_BKGND_SET);
     }
 
     if (!world->hero->dead && !world_player_can_take_turn())

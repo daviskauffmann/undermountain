@@ -1740,7 +1740,7 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
         item_data->name);
 
     // cast the stored spell
-    actor_cast_spell(
+    actor_cast(
         actor,
         item_data->spell_type,
         actor->x, actor->y,
@@ -1794,7 +1794,7 @@ bool actor_read(struct actor *actor, struct item *item, int x, int y)
     if (item_data->type == BASE_ITEM_TYPE_SCROLL)
     {
         // cast the stored spell
-        actor_cast_spell(
+        actor_cast(
             actor,
             item_data->spell_type,
             x, y,
@@ -2135,7 +2135,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
     return true;
 }
 
-bool actor_cast_spell(
+bool actor_cast(
     struct actor *const actor,
     const enum spell_type spell_type,
     const int x, const int y,

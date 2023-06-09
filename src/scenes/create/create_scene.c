@@ -12,6 +12,26 @@
 
 struct actor *hero;
 
+static struct scene *start(void)
+{
+    world_create(hero);
+
+    create_scene.uninit();
+    game_scene.init(&create_scene);
+    return &game_scene;
+}
+
+static struct scene *back(void)
+{
+    actor_delete(hero);
+
+    world_uninit();
+
+    create_scene.uninit();
+    menu_scene.init(&create_scene);
+    return &menu_scene;
+}
+
 static void init(struct scene *previous_scene)
 {
     previous_scene;
@@ -38,26 +58,6 @@ static void uninit(void)
 {
 }
 
-static struct scene *start(void)
-{
-    world_create(hero);
-
-    create_scene.uninit();
-    game_scene.init(&create_scene);
-    return &game_scene;
-}
-
-static struct scene *back(void)
-{
-    actor_delete(hero);
-
-    world_uninit();
-
-    create_scene.uninit();
-    menu_scene.init(&create_scene);
-    return &menu_scene;
-}
-
 static struct scene *handle_event(SDL_Event *event)
 {
     switch (event->type)
@@ -76,18 +76,6 @@ static struct scene *handle_event(SDL_Event *event)
             return back();
         }
         break;
-        }
-    }
-    break;
-    case SDL_MOUSEBUTTONDOWN:
-    {
-        if (event->button.button == SDL_BUTTON_LEFT)
-        {
-            return start();
-        }
-        else if (event->button.button == SDL_BUTTON_RIGHT)
-        {
-            return back();
         }
     }
     break;
@@ -120,7 +108,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         &color_black,
         TCOD_BKGND_NONE,
         TCOD_LEFT,
-        "Press ENTER or L-Mouse to start.");
+        "Press ENTER to start.");
 
     console_print(
         console,
@@ -130,7 +118,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         &color_black,
         TCOD_BKGND_NONE,
         TCOD_LEFT,
-        "Press ESC or R-Mouse to return.");
+        "Press ESC to return.");
 
     TCOD_console_printn_frame(
         console,

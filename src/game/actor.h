@@ -19,6 +19,7 @@ enum race
 
     // monster races
     RACE_BUGBEAR,
+    RACE_DRAGON,
     RACE_DOG,
     RACE_GOBLIN,
     RACE_JACKAL,
@@ -39,6 +40,7 @@ enum class
 
     // monster classes
     CLASS_DOG,
+    CLASS_DRAGON,
     CLASS_GOBLIN,
     CLASS_JACKAL,
     CLASS_KOBOLD,
@@ -72,6 +74,7 @@ enum monster
     MONSTER_KOBOLD,
     MONSTER_ORC,
     MONSTER_RAT,
+    MONSTER_RED_DRAGON,
     MONSTER_SLIME,
 
     NUM_MONSTERS

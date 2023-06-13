@@ -27,6 +27,7 @@ float angle_between(
     const float dy = (float)(y1 - y2);
 
     float angle = atan2f(dy, dx);
+
     if (angle < 0.0f)
     {
         angle += PI * 2;

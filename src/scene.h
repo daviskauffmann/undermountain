@@ -6,10 +6,10 @@
 
 struct scene
 {
-    void (*init)(struct scene *previous_scene);
+    void (*init)(const struct scene *previous_scene);
     void (*uninit)(void);
 
-    struct scene *(*handle_event)(SDL_Event *event);
+    struct scene *(*handle_event)(const SDL_Event *event);
     struct scene *(*update)(TCOD_Console *console, float delta_time);
 };
 

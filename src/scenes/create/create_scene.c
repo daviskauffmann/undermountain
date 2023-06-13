@@ -32,7 +32,7 @@ static struct scene *back(void)
     return &menu_scene;
 }
 
-static void init(struct scene *previous_scene)
+static void init(const struct scene *const previous_scene)
 {
     previous_scene;
 
@@ -58,7 +58,7 @@ static void uninit(void)
 {
 }
 
-static struct scene *handle_event(SDL_Event *event)
+static struct scene *handle_event(const SDL_Event *const event)
 {
     switch (event->type)
     {
@@ -119,6 +119,30 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         TCOD_BKGND_NONE,
         TCOD_LEFT,
         "Press ESC to return.");
+
+    y++;
+
+    const char name_label[] = "Name:";
+    TCOD_console_printf(
+        console,
+        1, y++,
+        "%s",
+        name_label);
+    const char name[] = "Jalina Feynolt";
+    TCOD_console_printn_frame(
+        console,
+        1, y++, 20, 3,
+        0,
+        NULL,
+        &color_white,
+        &color_black,
+        TCOD_BKGND_NONE,
+        false);
+    TCOD_console_printf(
+        console,
+        2, y,
+        "%s",
+        name);
 
     TCOD_console_printn_frame(
         console,

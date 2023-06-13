@@ -32,8 +32,7 @@ void world_init(void)
 
     for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
-        struct map *map = &world->maps[floor];
-        map_init(map, floor);
+        map_init(&world->maps[floor], floor);
     }
 
     world->player = NULL;
@@ -52,10 +51,9 @@ void world_uninit(void)
     }
     list_delete(world->messages);
 
-    for (int floor = 0; floor < NUM_MAPS; floor++)
+    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
     {
-        struct map *map = &world->maps[floor];
-        map_uninit(map);
+        map_uninit(&world->maps[floor]);
     }
 
     list_delete(world->spawned_unique_item_types);
@@ -137,7 +135,7 @@ void world_create(struct actor *hero)
 // call it world_serialize? and world_deserialize?
 void world_save(const char *filename)
 {
-    FILE *file = fopen(filename, "wb");
+    FILE *const file = fopen(filename, "wb");
 
     fwrite(world->random, sizeof(*world->random), 1, file);
 
@@ -416,7 +414,7 @@ void world_save(const char *filename)
 
 void world_load(const char *filename)
 {
-    FILE *file = fopen(filename, "rb");
+    FILE *const file = fopen(filename, "rb");
 
     world->random = TCOD_random_new(TCOD_RNG_MT);
     fread(world->random, sizeof(*world->random), 1, file);

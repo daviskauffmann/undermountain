@@ -318,9 +318,9 @@ static bool traverse_node(TCOD_bsp_t *const node, void *const data)
 void map_generate(struct map *const map, const enum map_type map_type)
 {
     // setup default tile state
-    for (int x = 0; x < MAP_WIDTH; x++)
+    for (uint8_t x = 0; x < MAP_WIDTH; x++)
     {
-        for (int y = 0; y < MAP_HEIGHT; y++)
+        for (uint8_t y = 0; y < MAP_HEIGHT; y++)
         {
             struct tile *const tile = &map->tiles[x][y];
 
@@ -373,7 +373,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
         const int room_buffer = 3;
         const float prevent_overlap_chance = 0.75f;
 
-        for (int i = 0; i < num_room_attempts; i++)
+        for (size_t i = 0; i < num_room_attempts; i++)
         {
             const int room_x = TCOD_random_get_int(world->random, 0, MAP_WIDTH);
             const int room_y = TCOD_random_get_int(world->random, 0, MAP_HEIGHT);

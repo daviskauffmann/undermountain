@@ -1762,7 +1762,7 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
     return true;
 }
 
-bool actor_read(struct actor *actor, struct item *item, int x, int y)
+bool actor_read(struct actor *const actor, struct item *const item, const int x, const int y)
 {
     // is the item readable?
     const struct item_data *const item_data = &item_database[item->type];

@@ -242,6 +242,13 @@ const struct race_data race_database[] = {
         .size = SIZE_SMALL,
         .speed = 0.7f,
     },
+    [RACE_DRAGON] = {
+        .name = "Dragon",
+        .glyph = 'D',
+
+        .size = SIZE_LARGE,
+        .speed = 0.5f,
+    },
     [RACE_GOBLIN] = {
         .name = "Goblin",
         .glyph = 'g',
@@ -316,6 +323,13 @@ const struct class_data class_database[] = {
         .color = {COLOR_LIGHTEST_GRAY},
 
         .hit_die = "1d2",
+        .mana_die = "0d0",
+    },
+    [CLASS_DRAGON] = {
+        .name = "Dragon",
+        .color = {COLOR_RED},
+
+        .hit_die = "1d10",
         .mana_die = "0d0",
     },
     [CLASS_GOBLIN] = {
@@ -424,6 +438,20 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_DEXTERITY] = 10,
             [ABILITY_CONSTITUTION] = 11,
             [ABILITY_INTELLIGENCE] = 9,
+        },
+    },
+    [MONSTER_RED_DRAGON] = {
+        .name = "Red Dragon",
+        .race = RACE_DRAGON,
+        .class = CLASS_DRAGON,
+
+        .level = 15,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 33,
+            [ABILITY_DEXTERITY] = 12,
+            [ABILITY_CONSTITUTION] = 22,
+            [ABILITY_INTELLIGENCE] = 17,
         },
     },
     [MONSTER_RAT] = {

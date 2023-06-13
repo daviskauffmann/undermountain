@@ -94,7 +94,7 @@ static void show_panel(const enum panel panel)
 
 static enum directional_action directional_action;
 
-static bool do_directional_action(enum direction direction)
+static bool do_directional_action(const enum direction direction)
 {
     bool took_turn = false;
 
@@ -277,7 +277,7 @@ static bool do_spellbook_action(const enum spell_type spell_type)
 static TCOD_noise_t noise;
 static float noise_x;
 
-static void init(struct scene *previous_scene)
+static void init(const struct scene *const previous_scene)
 {
     previous_scene;
 
@@ -318,7 +318,7 @@ static void uninit(void)
     TCOD_console_delete(hud_rect.console);
 }
 
-static bool player_swing(enum direction direction)
+static bool player_swing(const enum direction direction)
 {
     int x;
     int y;
@@ -374,7 +374,7 @@ static bool player_swing(enum direction direction)
     return false;
 }
 
-static bool player_interact(SDL_Event *event, enum direction direction)
+static bool player_interact(const SDL_Event *const event, const enum direction direction)
 {
     if (directional_action != DIRECTIONAL_ACTION_NONE)
     {
@@ -395,7 +395,7 @@ static bool player_interact(SDL_Event *event, enum direction direction)
     }
 }
 
-struct scene *handle_event(SDL_Event *event)
+struct scene *handle_event(const SDL_Event *event)
 {
     if (!world->player)
     {
@@ -410,6 +410,70 @@ struct scene *handle_event(SDL_Event *event)
     {
     case SDL_KEYDOWN:
     {
+        // determine if player is selecting something in a list
+        // if so, don't process any other keyboard input
+        bool handled = false;
+
+        if (event->key.keysym.sym >= SDLK_a && event->key.keysym.sym <= SDLK_z)
+        {
+            const int alpha = event->key.keysym.sym - SDLK_a;
+
+            if (inventory_action != INVENTORY_ACTION_NONE &&
+                alpha >= 0 && alpha < world->player->items->size)
+            {
+                if (world_player_can_take_turn())
+                {
+                    struct item *const item = list_get(world->player->items, alpha);
+
+                    world->player->took_turn = do_inventory_action(item);
+                }
+
+                handled = true;
+            }
+            else if ((character_action == CHARACTER_ACTION_ABILITY_ADD_POINT) &&
+                     alpha >= 0 && alpha < NUM_ABILITIES)
+            {
+                if (world_player_can_take_turn())
+                {
+                    const enum ability_type ability = alpha;
+
+                    world->player->took_turn = do_character_action_ability(ability);
+                }
+
+                handled = true;
+            }
+            else if ((character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
+                      character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP) &&
+                     alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
+            {
+                if (world_player_can_take_turn())
+                {
+                    const enum equip_slot equip_slot = alpha + 1;
+
+                    world->player->took_turn = do_character_action_equipment(equip_slot);
+                }
+
+                handled = true;
+            }
+            else if (spellbook_action != SPELLBOOK_ACTION_NONE &&
+                     alpha >= 0 && alpha < world->player->known_spell_types->size)
+            {
+                if (world_player_can_take_turn())
+                {
+                    const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, alpha);
+
+                    world->player->took_turn = do_spellbook_action(spell_type);
+                }
+
+                handled = true;
+            }
+        }
+
+        if (handled)
+        {
+            break;
+        }
+
         switch (event->key.keysym.sym)
         {
         case SDLK_ESCAPE:
@@ -447,11 +511,325 @@ struct scene *handle_event(SDL_Event *event)
             }
         }
         break;
-        case SDLK_PAGEDOWN:
+        case SDLK_COMMA:
         {
-            if (panel_rect.visible)
+            if (event->key.keysym.mod & KMOD_SHIFT)
             {
-                panel_state[current_panel].scroll++;
+                world->player->took_turn = world_player_can_take_turn() && actor_ascend(world->player);
+            }
+        }
+        break;
+        case SDLK_PERIOD:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                world->player->took_turn = world_player_can_take_turn() && actor_descend(world->player);
+            }
+        }
+        break;
+        case SDLK_a:
+        {
+            show_panel(PANEL_CHARACTER);
+            character_action = CHARACTER_ACTION_ABILITY_ADD_POINT;
+
+            world_log(
+                world->player->floor,
+                world->player->x,
+                world->player->y,
+                color_yellow,
+                "Choose abilities to add points to. Press 'ESC' to stop.");
+        }
+        break;
+        case SDLK_b:
+        {
+            toggle_panel(PANEL_SPELLBOOK);
+        }
+        break;
+        case SDLK_c:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                toggle_panel(PANEL_CHARACTER);
+            }
+            else
+            {
+                directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    color_yellow,
+                    "Choose a direction to close door. Press 'ESC' to cancel.");
+            }
+        }
+        break;
+        case SDLK_e:
+        {
+            show_panel(PANEL_INVENTORY);
+            inventory_action = INVENTORY_ACTION_EQUIP;
+
+            world_log(
+                world->player->floor,
+                world->player->x,
+                world->player->y,
+                color_yellow,
+                "Choose an item to equip. Press 'ESC' to cancel.");
+        }
+        break;
+        case SDLK_f:
+        {
+            if (targeting_action == TARGETING_ACTION_SHOOT)
+            {
+                if (world_player_can_take_turn())
+                {
+                    world->player->took_turn = actor_shoot(world->player, target_x, target_y);
+
+                    targeting_action = TARGETING_ACTION_NONE;
+                }
+            }
+            else
+            {
+                targeting_action = TARGETING_ACTION_SHOOT;
+
+                const struct actor *nearest_enemy = actor_find_nearest_enemy(world->player);
+
+                if (!nearest_enemy)
+                {
+                    nearest_enemy = world->player;
+                }
+
+                target_x = nearest_enemy->x;
+                target_y = nearest_enemy->y;
+            }
+        }
+        break;
+        case SDLK_g:
+        {
+            world->player->took_turn = world_player_can_take_turn() && actor_grab(world->player, world->player->x, world->player->y);
+        }
+        break;
+        case SDLK_h:
+        {
+            hud_rect.visible = !hud_rect.visible;
+        }
+        break;
+        case SDLK_i:
+        {
+            toggle_panel(PANEL_INVENTORY);
+        }
+        break;
+        case SDLK_k:
+        {
+            actor_die(world->player, NULL);
+        }
+        break;
+        case SDLK_l:
+        {
+            if (targeting_action == TARGETING_ACTION_LOOK)
+            {
+                targeting_action = TARGETING_ACTION_NONE;
+            }
+            else
+            {
+                targeting_action = TARGETING_ACTION_LOOK;
+                target_x = world->player->x;
+                target_y = world->player->y;
+            }
+        }
+        break;
+        case SDLK_q:
+        {
+            show_panel(PANEL_INVENTORY);
+            inventory_action = INVENTORY_ACTION_QUAFF;
+
+            world_log(
+                world->player->floor,
+                world->player->x,
+                world->player->y,
+                color_yellow,
+                "Choose an item to quaff. Press 'ESC' to cancel.");
+        }
+        break;
+        case SDLK_r:
+        {
+            if (targeting_action == TARGETING_ACTION_READ)
+            {
+                if (world_player_can_take_turn())
+                {
+                    world->player->took_turn = actor_read(
+                        world->player,
+                        targeting_item,
+                        target_x, target_y);
+
+                    targeting_action = TARGETING_ACTION_NONE;
+                }
+            }
+            else
+            {
+                show_panel(PANEL_INVENTORY);
+                inventory_action = INVENTORY_ACTION_READ;
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    color_yellow,
+                    "Choose an item to read. Press 'ESC' to cancel.");
+            }
+        }
+        break;
+        case SDLK_t:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                if (world_player_can_take_turn())
+                {
+                    if (world->player->light_type == LIGHT_TYPE_GLOW)
+                    {
+                        world->player->light_type = LIGHT_TYPE_NONE;
+                    }
+                    else
+                    {
+                        world->player->light_type = LIGHT_TYPE_GLOW;
+                    }
+
+                    world->player->took_turn = true;
+                }
+            }
+            else
+            {
+                if (world_player_can_take_turn())
+                {
+                    if (world->player->light_type == LIGHT_TYPE_TORCH)
+                    {
+                        world->player->light_type = LIGHT_TYPE_NONE;
+                    }
+                    else
+                    {
+                        world->player->light_type = LIGHT_TYPE_TORCH;
+                    }
+
+                    world->player->took_turn = true;
+                }
+            }
+        }
+        break;
+        case SDLK_u:
+        {
+            show_panel(PANEL_CHARACTER);
+            character_action = CHARACTER_ACTION_EQUIPMENT_UNEQUIP;
+
+            world_log(
+                world->player->floor,
+                world->player->x,
+                world->player->y,
+                color_yellow,
+                "Choose an item to unequip. Press 'ESC' to cancel.");
+        }
+        break;
+        case SDLK_x:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                show_panel(PANEL_INVENTORY);
+                inventory_action = INVENTORY_ACTION_EXAMINE;
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    color_yellow,
+                    "Choose an item to examine. Press 'ESC' to cancel.");
+            }
+            else
+            {
+                if (event->key.keysym.mod & KMOD_CTRL)
+                {
+                    show_panel(PANEL_CHARACTER);
+                    character_action = CHARACTER_ACTION_EQUIPMENT_EXAMINE;
+
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        color_yellow,
+                        "Choose an equipment to examine. Press 'ESC' to cancel.");
+                }
+                else
+                {
+                    if (targeting_action == TARGETING_ACTION_EXAMINE)
+                    {
+                        show_panel(PANEL_EXAMINE); // TODO: send examine target to ui
+                        targeting_action = TARGETING_ACTION_NONE;
+                    }
+                    else
+                    {
+                        targeting_action = TARGETING_ACTION_EXAMINE;
+                        target_x = world->player->x;
+                        target_y = world->player->y;
+                    }
+                }
+            }
+        }
+        break;
+        case SDLK_z:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                show_panel(PANEL_SPELLBOOK);
+                spellbook_action = SPELLBOOK_ACTION_SELECT;
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    color_yellow,
+                    "Choose a spell. Press 'ESC' to cancel.");
+            }
+            else
+            {
+                if (world->player->readied_spell_type != SPELL_TYPE_NONE)
+                {
+                    const enum spell_range spell_range = spell_database[world->player->readied_spell_type].range;
+                    switch (spell_range)
+                    {
+                    case SPELL_RANGE_SELF:
+                    {
+                        world->player->took_turn =
+                            world_player_can_take_turn() &&
+                            actor_cast(
+                                world->player,
+                                world->player->readied_spell_type,
+                                world->player->x, world->player->y,
+                                true);
+                    }
+                    break;
+                    case SPELL_RANGE_TARGET:
+                    {
+                        if (targeting_action == TARGETING_ACTION_SPELL)
+                        {
+                            if (world_player_can_take_turn())
+                            {
+                                world->player->took_turn = actor_cast(
+                                    world->player,
+                                    world->player->readied_spell_type,
+                                    target_x, target_y,
+                                    true);
+
+                                targeting_action = TARGETING_ACTION_NONE;
+                            }
+                        }
+                        else
+                        {
+                            targeting_action = TARGETING_ACTION_SPELL;
+                            target_x = world->player->x;
+                            target_y = world->player->y;
+                        }
+                        break;
+                    }
+                    }
+                }
             }
         }
         break;
@@ -460,6 +838,14 @@ struct scene *handle_event(SDL_Event *event)
             if (panel_rect.visible)
             {
                 panel_state[current_panel].scroll--;
+            }
+        }
+        break;
+        case SDLK_PAGEDOWN:
+        {
+            if (panel_rect.visible)
+            {
+                panel_state[current_panel].scroll++;
             }
         }
         break;
@@ -569,407 +955,6 @@ struct scene *handle_event(SDL_Event *event)
             else
             {
                 world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_NE);
-            }
-        }
-        break;
-        case SDLK_PERIOD:
-        {
-            if (event->key.keysym.mod & KMOD_SHIFT)
-            {
-                world->player->took_turn = world_player_can_take_turn() && actor_descend(world->player);
-            }
-        }
-        break;
-        case SDLK_COMMA:
-        {
-            if (event->key.keysym.mod & KMOD_SHIFT)
-            {
-                world->player->took_turn = world_player_can_take_turn() && actor_ascend(world->player);
-            }
-        }
-        break;
-        case SDLK_a:
-        case SDLK_b:
-        case SDLK_c:
-        case SDLK_d:
-        case SDLK_e:
-        case SDLK_f:
-        case SDLK_g:
-        case SDLK_h:
-        case SDLK_i:
-        case SDLK_j:
-        case SDLK_k:
-        case SDLK_l:
-        case SDLK_m:
-        case SDLK_n:
-        case SDLK_o:
-        case SDLK_p:
-        case SDLK_q:
-        case SDLK_r:
-        case SDLK_s:
-        case SDLK_t:
-        case SDLK_u:
-        case SDLK_v:
-        case SDLK_w:
-        case SDLK_x:
-        case SDLK_y:
-        case SDLK_z:
-        {
-            bool handled = false;
-
-            const int alpha = event->key.keysym.sym - SDLK_a;
-
-            if (inventory_action != INVENTORY_ACTION_NONE &&
-                alpha >= 0 && alpha < world->player->items->size)
-            {
-                struct item *const item = list_get(world->player->items, alpha);
-
-                world->player->took_turn = world_player_can_take_turn() && do_inventory_action(item);
-
-                handled = true;
-            }
-            else if ((character_action == CHARACTER_ACTION_ABILITY_ADD_POINT) &&
-                     alpha >= 0 && alpha < NUM_ABILITIES)
-            {
-                const enum ability_type ability = alpha;
-
-                world->player->took_turn = world_player_can_take_turn() && do_character_action_ability(ability);
-
-                handled = true;
-            }
-            else if ((character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
-                      character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP) &&
-                     alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
-            {
-                const enum equip_slot equip_slot = alpha + 1;
-
-                world->player->took_turn = world_player_can_take_turn() && do_character_action_equipment(equip_slot);
-
-                handled = true;
-            }
-            else if (spellbook_action != SPELLBOOK_ACTION_NONE &&
-                     alpha >= 0 && alpha < world->player->known_spell_types->size)
-            {
-                const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, alpha);
-
-                world->player->took_turn = world_player_can_take_turn() && do_spellbook_action(spell_type);
-
-                handled = true;
-            }
-
-            if (handled)
-            {
-                break;
-            }
-
-            switch (event->key.keysym.sym)
-            {
-            case SDLK_a:
-            {
-                show_panel(PANEL_CHARACTER);
-                character_action = CHARACTER_ACTION_ABILITY_ADD_POINT;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose abilities to add points to. Press 'ESC' to stop.");
-            }
-            break;
-            case SDLK_b:
-            {
-                toggle_panel(PANEL_SPELLBOOK);
-            }
-            break;
-            case SDLK_c:
-            {
-                if (event->key.keysym.mod & KMOD_SHIFT)
-                {
-                    toggle_panel(PANEL_CHARACTER);
-                }
-                else
-                {
-                    directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose a direction to close door. Press 'ESC' to cancel.");
-                }
-            }
-            break;
-            case SDLK_e:
-            {
-                show_panel(PANEL_INVENTORY);
-                inventory_action = INVENTORY_ACTION_EQUIP;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose an item to equip. Press 'ESC' to cancel.");
-            }
-            break;
-            case SDLK_f:
-            {
-                if (targeting_action == TARGETING_ACTION_SHOOT)
-                {
-                    if (world_player_can_take_turn())
-                    {
-                        world->player->took_turn = actor_shoot(world->player, target_x, target_y);
-
-                        targeting_action = TARGETING_ACTION_NONE;
-                    }
-                }
-                else
-                {
-                    targeting_action = TARGETING_ACTION_SHOOT;
-
-                    const struct actor *nearest_enemy = actor_find_nearest_enemy(world->player);
-
-                    if (!nearest_enemy)
-                    {
-                        nearest_enemy = world->player;
-                    }
-
-                    target_x = nearest_enemy->x;
-                    target_y = nearest_enemy->y;
-                }
-            }
-            break;
-            case SDLK_g:
-            {
-                world->player->took_turn = world_player_can_take_turn() && actor_grab(world->player, world->player->x, world->player->y);
-            }
-            break;
-            case SDLK_h:
-            {
-                hud_rect.visible = !hud_rect.visible;
-            }
-            break;
-            case SDLK_i:
-            {
-                toggle_panel(PANEL_INVENTORY);
-            }
-            break;
-            case SDLK_k:
-            {
-                actor_die(world->player, NULL);
-            }
-            break;
-            case SDLK_l:
-            {
-                if (targeting_action == TARGETING_ACTION_LOOK)
-                {
-                    targeting_action = TARGETING_ACTION_NONE;
-                }
-                else
-                {
-                    targeting_action = TARGETING_ACTION_LOOK;
-                    target_x = world->player->x;
-                    target_y = world->player->y;
-                }
-            }
-            break;
-            case SDLK_q:
-            {
-                show_panel(PANEL_INVENTORY);
-                inventory_action = INVENTORY_ACTION_QUAFF;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose an item to quaff. Press 'ESC' to cancel.");
-            }
-            break;
-            case SDLK_r:
-            {
-                if (targeting_action == TARGETING_ACTION_READ)
-                {
-                    if (world_player_can_take_turn())
-                    {
-                        world->player->took_turn = actor_read(
-                            world->player,
-                            targeting_item,
-                            target_x, target_y);
-
-                        targeting_action = TARGETING_ACTION_NONE;
-                    }
-                }
-                else
-                {
-                    show_panel(PANEL_INVENTORY);
-                    inventory_action = INVENTORY_ACTION_READ;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose an item to read. Press 'ESC' to cancel.");
-                }
-            }
-            break;
-            case SDLK_t:
-            {
-                if (event->key.keysym.mod & KMOD_SHIFT)
-                {
-                    if (world_player_can_take_turn())
-                    {
-                        if (world->player->light_type == LIGHT_TYPE_GLOW)
-                        {
-                            world->player->light_type = LIGHT_TYPE_NONE;
-                        }
-                        else
-                        {
-                            world->player->light_type = LIGHT_TYPE_GLOW;
-                        }
-
-                        world->player->took_turn = true;
-                    }
-                }
-                else
-                {
-                    if (world_player_can_take_turn())
-                    {
-                        if (world->player->light_type == LIGHT_TYPE_TORCH)
-                        {
-                            world->player->light_type = LIGHT_TYPE_NONE;
-                        }
-                        else
-                        {
-                            world->player->light_type = LIGHT_TYPE_TORCH;
-                        }
-
-                        world->player->took_turn = true;
-                    }
-                }
-            }
-            break;
-            case SDLK_u:
-            {
-                show_panel(PANEL_CHARACTER);
-                character_action = CHARACTER_ACTION_EQUIPMENT_UNEQUIP;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose an item to unequip. Press 'ESC' to cancel.");
-            }
-            break;
-            case SDLK_x:
-            {
-                if (event->key.keysym.mod & KMOD_SHIFT)
-                {
-                    show_panel(PANEL_INVENTORY);
-                    inventory_action = INVENTORY_ACTION_EXAMINE;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose an item to examine. Press 'ESC' to cancel.");
-                }
-                else
-                {
-                    if (event->key.keysym.mod & KMOD_CTRL)
-                    {
-                        show_panel(PANEL_CHARACTER);
-                        character_action = CHARACTER_ACTION_EQUIPMENT_EXAMINE;
-
-                        world_log(
-                            world->player->floor,
-                            world->player->x,
-                            world->player->y,
-                            color_yellow,
-                            "Choose an equipment to examine. Press 'ESC' to cancel.");
-                    }
-                    else
-                    {
-                        if (targeting_action == TARGETING_ACTION_EXAMINE)
-                        {
-                            show_panel(PANEL_EXAMINE); // TODO: send examine target to ui
-                            targeting_action = TARGETING_ACTION_NONE;
-                        }
-                        else
-                        {
-                            targeting_action = TARGETING_ACTION_EXAMINE;
-                            target_x = world->player->x;
-                            target_y = world->player->y;
-                        }
-                    }
-                }
-            }
-            break;
-            case SDLK_z:
-            {
-                if (event->key.keysym.mod & KMOD_SHIFT)
-                {
-                    show_panel(PANEL_SPELLBOOK);
-                    spellbook_action = SPELLBOOK_ACTION_SELECT;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose a spell. Press 'ESC' to cancel.");
-                }
-                else
-                {
-                    if (world->player->readied_spell_type != SPELL_TYPE_NONE)
-                    {
-                        const enum spell_range spell_range = spell_database[world->player->readied_spell_type].range;
-                        switch (spell_range)
-                        {
-                        case SPELL_RANGE_SELF:
-                        {
-                            world->player->took_turn =
-                                world_player_can_take_turn() &&
-                                actor_cast(
-                                    world->player,
-                                    world->player->readied_spell_type,
-                                    world->player->x, world->player->y,
-                                    true);
-                        }
-                        break;
-                        case SPELL_RANGE_TARGET:
-                        {
-                            if (targeting_action == TARGETING_ACTION_SPELL)
-                            {
-                                if (world_player_can_take_turn())
-                                {
-                                    world->player->took_turn = actor_cast(
-                                        world->player,
-                                        world->player->readied_spell_type,
-                                        target_x, target_y,
-                                        true);
-
-                                    targeting_action = TARGETING_ACTION_NONE;
-                                }
-                            }
-                            else
-                            {
-                                targeting_action = TARGETING_ACTION_SPELL;
-                                target_x = world->player->x;
-                                target_y = world->player->y;
-                            }
-                            break;
-                        }
-                        }
-                    }
-                }
-            }
-            break;
             }
         }
         break;

@@ -11,7 +11,7 @@ struct world
 {
     TCOD_Random *random;
 
-    unsigned int time;
+    size_t time;
 
     struct list *spawned_unique_item_types;
 

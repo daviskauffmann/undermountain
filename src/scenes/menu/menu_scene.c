@@ -49,7 +49,7 @@ static struct scene *select_option(const enum option option)
     return &menu_scene;
 }
 
-static void init(struct scene *const previous_scene)
+static void init(const struct scene *const previous_scene)
 {
     previous_scene;
 
@@ -65,7 +65,7 @@ static void uninit(void)
 {
 }
 
-static struct scene *handle_event(SDL_Event *const event)
+static struct scene *handle_event(const SDL_Event *const event)
 {
     switch (event->type)
     {

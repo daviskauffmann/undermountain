@@ -10,7 +10,7 @@ struct explosion *explosion_new(
     const uint8_t floor,
     const uint8_t x,
     const uint8_t y,
-    const int radius,
+    const int8_t radius,
     const TCOD_ColorRGB color,
     struct actor *const initiator)
 {

@@ -2,6 +2,7 @@
 
 #include "actor.h"
 #include "color.h"
+#include "surface.h"
 #include "world.h"
 #include <malloc.h>
 #include <math.h>
@@ -22,9 +23,10 @@ struct explosion *explosion_new(
 
     explosion->radius = radius;
     explosion->color = color;
-    explosion->lifetime = 0.0f;
 
-    const struct map *const map = &world->maps[explosion->floor];
+    explosion->time = 0.0f;
+
+    struct map *const map = &world->maps[explosion->floor];
 
     explosion->fov = map_to_fov_map(
         map,
@@ -32,29 +34,40 @@ struct explosion *explosion_new(
         explosion->y,
         explosion->radius);
 
-    for (size_t tile_x = 0; tile_x < MAP_WIDTH; tile_x++)
+    for (uint8_t tile_x = 0; tile_x < MAP_WIDTH; tile_x++)
     {
-        for (size_t tile_y = 0; tile_y < MAP_HEIGHT; tile_y++)
+        for (uint8_t tile_y = 0; tile_y < MAP_HEIGHT; tile_y++)
         {
-            const struct tile *const tile = &map->tiles[tile_x][tile_y];
-
-            if (tile->actor &&
-                tile->actor != initiator &&
-                TCOD_map_is_in_fov(
+            if (TCOD_map_is_in_fov(
                     explosion->fov,
-                    tile->actor->x,
-                    tile->actor->y))
+                    tile_x,
+                    tile_y))
             {
-                world_log(
-                    initiator->floor,
-                    initiator->x,
-                    initiator->y,
-                    color_white,
-                    "%s hits %s for 5.",
-                    initiator->name,
-                    tile->actor->name);
+                struct tile *const tile = &map->tiles[tile_x][tile_y];
 
-                actor_damage_hit_points(tile->actor, initiator, 5);
+                if (tile->actor &&
+                    tile->actor != initiator)
+                {
+                    world_log(
+                        initiator->floor,
+                        initiator->x,
+                        initiator->y,
+                        color_white,
+                        "%s hits %s for 5.",
+                        initiator->name,
+                        tile->actor->name);
+
+                    actor_damage_hit_points(tile->actor, initiator, 5);
+                }
+
+                struct surface *const surface = surface_new(
+                    SURFACE_TYPE_FIRE,
+                    tile_x,
+                    tile_y);
+
+                list_add(map->surfaces, surface);
+
+                tile->surface = surface;
             }
         }
     }
@@ -74,7 +87,7 @@ void explosion_delete(struct explosion *const explosion)
 
 bool explosion_update(struct explosion *const explosion, const float delta_time)
 {
-    explosion->lifetime += delta_time;
+    explosion->time += delta_time;
 
-    return explosion->lifetime < 0.25f;
+    return explosion->time < 0.25f;
 }

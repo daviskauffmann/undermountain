@@ -1,5 +1,5 @@
-#ifndef GAME_UTIL_H
-#define GAME_UTIL_H
+#ifndef UM_GAME_UTIL_H
+#define UM_GAME_UTIL_H
 
 #include <libtcod.h>
 

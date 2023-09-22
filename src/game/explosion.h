@@ -1,5 +1,5 @@
-#ifndef GAME_EXPLOSION_H
-#define GAME_EXPLOSION_H
+#ifndef UM_GAME_EXPLOSION_H
+#define UM_GAME_EXPLOSION_H
 
 #include <libtcod.h>
 
@@ -13,7 +13,8 @@ struct explosion
 
     int8_t radius;
     TCOD_ColorRGB color;
-    float lifetime;
+
+    float time;
 
     TCOD_Map *fov;
 };

@@ -1,5 +1,5 @@
-#ifndef GAME_color_H
-#define GAME_color_H
+#ifndef UM_GAME_COLOR_H
+#define UM_GAME_COLOR_H
 
 #include <libtcod.h>
 

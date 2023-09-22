@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef UM_UTIL_H
+#define UM_UTIL_H
 
 #include <stdbool.h>
 

@@ -1,5 +1,5 @@
-#ifndef GAME_WORLD_H
-#define GAME_WORLD_H
+#ifndef UM_GAME_WORLD_H
+#define UM_GAME_WORLD_H
 
 #include "map.h"
 #include "spell.h"
@@ -33,7 +33,7 @@ void world_create(struct actor *hero);
 void world_save(const char *filename);
 void world_load(const char *filename);
 void world_update(float delta_time);
-bool world_player_can_take_turn(void);
+bool world_can_player_take_turn(void);
 void world_log(int floor, int x, int y, TCOD_ColorRGB color, const char *fmt, ...);
 
 #endif

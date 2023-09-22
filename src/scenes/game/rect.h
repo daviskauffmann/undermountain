@@ -1,5 +1,5 @@
-#ifndef SCENES_GAME_RECT_H
-#define SCENES_GAME_RECT_H
+#ifndef UM_SCENES_GAME_RECT_H
+#define UM_SCENES_GAME_RECT_H
 
 #include <libtcod.h>
 

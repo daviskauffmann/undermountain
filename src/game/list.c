@@ -90,7 +90,7 @@ void list_remove_at(struct list *const list, const size_t index)
         list->data[i] = list->data[i + 1];
     }
 
-    --list->size;
+    list->size--;
 }
 
 void list_clear(struct list *const list)

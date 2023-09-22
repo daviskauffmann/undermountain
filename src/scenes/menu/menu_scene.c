@@ -13,42 +13,6 @@
 
 static struct option_data option_data[NUM_OPTIONS];
 
-static struct scene *select_option(const enum option option)
-{
-    switch (option)
-    {
-    case OPTION_START:
-    {
-        if (file_exists(SAVE_PATH))
-        {
-            // TODO: prompt whether the player wants to overwrite the save with a new character
-            // if so, go to character creation
-            world_init();
-            world_load(SAVE_PATH);
-
-            menu_scene.uninit();
-            game_scene.init(&menu_scene);
-            return &game_scene;
-        }
-        else
-        {
-            menu_scene.uninit();
-            create_scene.init(&menu_scene);
-            return &create_scene;
-        }
-    }
-    break;
-    case OPTION_QUIT:
-    {
-        menu_scene.uninit();
-        return NULL;
-    }
-    break;
-    }
-
-    return &menu_scene;
-}
-
 static void init(const struct scene *const previous_scene)
 {
     previous_scene;
@@ -75,6 +39,7 @@ static struct scene *handle_event(const SDL_Event *const event)
         {
         case SDLK_ESCAPE:
         {
+            menu_scene.uninit();
             return NULL;
         }
         break;
@@ -107,7 +72,37 @@ static struct scene *handle_event(const SDL_Event *const event)
         {
             const int alpha = event->key.keysym.sym - SDLK_a;
             const enum option option = (enum option)(OPTION_START + alpha);
-            return select_option(option);
+
+            switch (option)
+            {
+            case OPTION_START:
+            {
+                if (file_exists(SAVE_PATH))
+                {
+                    // TODO: prompt whether the player wants to overwrite the save with a new character
+                    // if so, go to character creation
+                    world_init();
+                    world_load(SAVE_PATH);
+
+                    menu_scene.uninit();
+                    game_scene.init(&menu_scene);
+                    return &game_scene;
+                }
+                else
+                {
+                    menu_scene.uninit();
+                    create_scene.init(&menu_scene);
+                    return &create_scene;
+                }
+            }
+            break;
+            case OPTION_QUIT:
+            {
+                menu_scene.uninit();
+                return NULL;
+            }
+            break;
+            }
         }
         break;
         }

@@ -94,7 +94,7 @@ const struct object_data object_database[] = {
         .color = {COLOR_LIGHT_AMBER},
         .light_type = LIGHT_TYPE_BRAZIER,
 
-        .is_walkable = true,
+        .is_walkable = false,
         .is_transparent = false,
     },
     [OBJECT_TYPE_CHEST] = {
@@ -224,7 +224,7 @@ const struct race_data race_database[] = {
         .glyph = '@',
 
         .size = SIZE_MEDIUM,
-        .speed = 1.0f,
+        .speed = 1,
     },
 
     // monster races
@@ -301,13 +301,8 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d10",
         .mana_die = "1d4",
-    },
-    [CLASS_WIZARD] = {
-        .name = "Wizard",
-        .color = {COLOR_AZURE},
 
-        .hit_die = "1d4",
-        .mana_die = "1d10",
+        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_COMBAT,
     },
     [CLASS_ROGUE] = {
         .name = "Rogue",
@@ -315,6 +310,17 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d6",
         .mana_die = "1d4",
+
+        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_MIDDLE,
+    },
+    [CLASS_WIZARD] = {
+        .name = "Wizard",
+        .color = {COLOR_AZURE},
+
+        .hit_die = "1d4",
+        .mana_die = "1d10",
+
+        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT,
     },
 
     // monster classes
@@ -484,6 +490,21 @@ const struct actor_prototype monster_prototypes[] = {
     },
 };
 
+const struct base_attack_bonus_progression_data base_attack_bonus_progression_database[] = {
+    [BASE_ATTACK_BONUS_PROGRESSION_COMBAT] = {
+        .name = "Combat",
+        .multiplier = 1,
+    },
+    [BASE_ATTACK_BONUS_PROGRESSION_MIDDLE] = {
+        .name = "Middle",
+        .multiplier = 0.75f,
+    },
+    [BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT] = {
+        .name = "Non-Combat",
+        .multiplier = 0.5f,
+    },
+};
+
 const struct ability_data ability_database[] = {
     [ABILITY_STRENGTH] = {
         .name = "Strength",
@@ -529,6 +550,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .size = SIZE_SMALL,
+        .weight = 0.1f,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_ARROW,
@@ -549,6 +571,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .size = SIZE_SMALL,
+        .weight = 0.1f,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_BOLT,
@@ -569,6 +592,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .size = SIZE_TINY,
+        .weight = 0.1f,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_BULLET,
@@ -589,6 +613,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_TINY,
+        .weight = 1,
 
         .armor_class = 0,
 
@@ -609,6 +634,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_ARMOR,
         .size = SIZE_LARGE,
+        .weight = 50,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -629,6 +655,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_NONE,
         .size = SIZE_TINY,
+        .weight = 0.1f,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -649,6 +676,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_LARGE,
+        .weight = 15,
 
         .armor_class = 0,
 
@@ -663,12 +691,13 @@ const struct base_item_data base_item_database[] = {
 
         .max_durability = 100,
     },
-    [BASE_ITEM_TYPE_CROSSBOW] = {
-        .name = "Crossbow",
+    [BASE_ITEM_TYPE_HEAVY_CROSSBOW] = {
+        .name = "Heavy Crossbow",
         .glyph = 'T',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .size = SIZE_LARGE,
+        .size = SIZE_MEDIUM,
+        .weight = 9,
 
         .armor_class = 0,
 
@@ -689,6 +718,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_SHIELD,
         .size = SIZE_MEDIUM,
+        .weight = 15,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -703,12 +733,34 @@ const struct base_item_data base_item_database[] = {
 
         .max_durability = 100,
     },
+    [BASE_ITEM_TYPE_LIGHT_CROSSBOW] = {
+        .name = "Light Crossbow",
+        .glyph = 't',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_SMALL,
+        .weight = 6,
+
+        .armor_class = 0,
+
+        .ranged = true,
+        .ammunition_type = AMMUNITION_TYPE_BOLT,
+
+        .damage = "1d8",
+        .threat_range = 19,
+        .critical_multiplier = 2,
+
+        .max_stack = 1,
+
+        .max_durability = 100,
+    },
     [BASE_ITEM_TYPE_LONGBOW] = {
         .name = "Longbow",
         .glyph = '}',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_LARGE,
+        .weight = 3,
 
         .ranged = true,
         .ammunition_type = AMMUNITION_TYPE_ARROW,
@@ -729,6 +781,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_MEDIUM,
+        .weight = 4,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -749,6 +802,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_SMALL,
+        .weight = 6,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -769,6 +823,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_NONE,
         .size = SIZE_SMALL,
+        .weight = 0.5f,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -789,6 +844,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_NONE,
         .size = SIZE_SMALL,
+        .weight = 0.5f,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -809,6 +865,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_SMALL,
+        .weight = 1,
 
         .armor_class = 0,
 
@@ -829,6 +886,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_SHIELD,
         .size = SIZE_SMALL,
+        .weight = 6,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -849,6 +907,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_LARGE,
+        .weight = 3,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -869,6 +928,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_NONE,
         .size = SIZE_SMALL,
+        .weight = 0.5f,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -889,6 +949,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_SHIELD,
         .size = SIZE_LARGE,
+        .weight = 45,
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
@@ -979,21 +1040,6 @@ const struct item_data item_database[] = {
 
         .unique = true,
     },
-    [ITEM_TYPE_CROSSBOW] = {
-        .type = BASE_ITEM_TYPE_CROSSBOW,
-
-        .name = "Crossbow",
-        .description = "",
-        .color = {COLOR_WHITE},
-
-        .enhancement_bonus = 0,
-
-        .spell_type = SPELL_TYPE_NONE,
-
-        .level = 1,
-
-        .unique = false,
-    },
     [ITEM_TYPE_DAGGER] = {
         .type = BASE_ITEM_TYPE_DAGGER,
 
@@ -1069,10 +1115,40 @@ const struct item_data item_database[] = {
 
         .unique = false,
     },
+    [ITEM_TYPE_HEAVY_CROSSBOW] = {
+        .type = BASE_ITEM_TYPE_HEAVY_CROSSBOW,
+
+        .name = "Heavy Crossbow",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
+
+        .unique = false,
+    },
     [ITEM_TYPE_LARGE_SHIELD] = {
         .type = BASE_ITEM_TYPE_LARGE_SHIELD,
 
         .name = "Large Shield",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .enhancement_bonus = 0,
+
+        .spell_type = SPELL_TYPE_NONE,
+
+        .level = 1,
+
+        .unique = false,
+    },
+    [ITEM_TYPE_LIGHT_CROSSBOW] = {
+        .type = BASE_ITEM_TYPE_LIGHT_CROSSBOW,
+
+        .name = "Light Crossbow",
         .description = "",
         .color = {COLOR_WHITE},
 
@@ -1329,23 +1405,23 @@ const struct item_data item_database[] = {
 const struct spell_data spell_database[] = {
     [SPELL_TYPE_MINOR_HEAL] = {
         .name = "Minor Heal",
-        .range = SPELL_RANGE_SELF,
+        .range = SPELL_RANGE_TOUCH,
         .mana_cost = 1,
     },
     [SPELL_TYPE_MINOR_MANA] = {
         .name = "Minor Mana",
-        .range = SPELL_RANGE_SELF,
+        .range = SPELL_RANGE_TOUCH,
         .mana_cost = 0,
     },
     [SPELL_TYPE_LIGHTNING] = {
         .name = "Lightning",
-        .range = SPELL_RANGE_TARGET,
+        .range = SPELL_RANGE_TOUCH,
         .mana_cost = 2,
     },
     [SPELL_TYPE_FIREBALL] = {
         .name = "Fireball",
-        .range = SPELL_RANGE_TARGET,
-        .mana_cost = 5,
+        .range = SPELL_RANGE_TOUCH,
+        .mana_cost = 0,
     },
 };
 
@@ -1356,7 +1432,7 @@ const struct projectile_data projectile_database[] = {
 
         .light_type = LIGHT_TYPE_NONE,
 
-        .speed = 50.0f,
+        .speed = 50,
     },
     [PROJECTILE_TYPE_FIREBALL] = {
         .glyph = '*',
@@ -1364,6 +1440,25 @@ const struct projectile_data projectile_database[] = {
 
         .light_type = LIGHT_TYPE_FIREBALL,
 
-        .speed = 30.0f,
+        .speed = 30,
+    },
+};
+
+const struct surface_data surface_database[] = {
+    [SURFACE_TYPE_FIRE] = {
+        .glyph = '*',
+        .color = {COLOR_FLAME},
+
+        .duration = 10,
+
+        .light_type = LIGHT_TYPE_FIRE,
+    },
+    [SURFACE_TYPE_WATER] = {
+        .glyph = '~',
+        .color = {COLOR_AZURE},
+
+        .duration = 10,
+
+        .light_type = LIGHT_TYPE_NONE,
     },
 };

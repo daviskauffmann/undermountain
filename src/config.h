@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef UM_CONFIG_H
+#define UM_CONFIG_H
 
 #include <libtcod.h>
 

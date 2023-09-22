@@ -1,5 +1,5 @@
-#ifndef GAME_OBJECT_H
-#define GAME_OBJECT_H
+#ifndef UM_GAME_OBJECT_H
+#define UM_GAME_OBJECT_H
 
 #include "light.h"
 #include <libtcod.h>

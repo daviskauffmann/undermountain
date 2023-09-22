@@ -1,5 +1,5 @@
-#ifndef GAME_LIST_H
-#define GAME_LIST_H
+#ifndef UM_GAME_LIST_H
+#define UM_GAME_LIST_H
 
 #include <stdbool.h>
 #include <stddef.h>

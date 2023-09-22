@@ -1,5 +1,5 @@
-#ifndef GAME_CORPSE_H
-#define GAME_CORPSE_H
+#ifndef UM_GAME_CORPSE_H
+#define UM_GAME_CORPSE_H
 
 #include <libtcod.h>
 

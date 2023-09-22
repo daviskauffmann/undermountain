@@ -108,6 +108,12 @@ void world_create(struct actor *hero)
                 "Spot",
                 RACE_DOG,
                 CLASS_DOG,
+                (int[]){
+                    [ABILITY_STRENGTH] = 10,
+                    [ABILITY_DEXTERITY] = 10,
+                    [ABILITY_CONSTITUTION] = 10,
+                    [ABILITY_INTELLIGENCE] = 10,
+                },
                 hero->faction,
                 floor,
                 map->stair_up_x + 1,
@@ -384,7 +390,8 @@ void world_save(const char *filename)
 
             fwrite(&explosion->radius, sizeof(explosion->radius), 1, file);
             fwrite(&explosion->color, sizeof(explosion->color), 1, file);
-            fwrite(&explosion->lifetime, sizeof(explosion->lifetime), 1, file);
+
+            fwrite(&explosion->time, sizeof(explosion->time), 1, file);
         }
 
         fwrite(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
@@ -704,7 +711,8 @@ void world_load(const char *filename)
 
             fread(&explosion->radius, sizeof(explosion->radius), 1, file);
             fread(&explosion->color, sizeof(explosion->color), 1, file);
-            fread(&explosion->lifetime, sizeof(explosion->lifetime), 1, file);
+
+            fread(&explosion->time, sizeof(explosion->time), 1, file);
 
             explosion->fov = map_to_fov_map(
                 map,
@@ -780,6 +788,13 @@ void world_update(float delta_time)
         actor_calc_fade(actor, delta_time);
     }
 
+    for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+    {
+        struct actor *const actor = list_get(map->actors, actor_index);
+
+        actor_calc_fov(actor);
+    }
+
     for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
     {
         struct projectile *const projectile = list_get(map->projectiles, projectile_index);
@@ -808,36 +823,11 @@ void world_update(float delta_time)
         }
     }
 
-    // calculate player fov every frame because of moving lights (like projectiles) that can reveal things in between turns
-    actor_calc_fov(world->player);
-
     // process actor turns as long no animations are playing
-    while (map->projectiles->size == 0 &&
-           map->explosions->size == 0)
+    while (!map_is_animation_playing(map))
     {
-        // update things that should be updated per-turn
-        for (size_t object_index = 0; object_index < map->objects->size; object_index++)
-        {
-            struct object *const object = list_get(map->objects, object_index);
-
-            object_calc_light(object);
-        }
-
-        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
-        {
-            struct actor *const actor = list_get(map->actors, actor_index);
-
-            actor_calc_light(actor);
-        }
-
-        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
-        {
-            struct actor *const actor = list_get(map->actors, actor_index);
-
-            actor_calc_fov(actor);
-        }
-
         // check if the last actor in the map has been reached
+        // if so, process once-per-turn things
         if (map->current_actor_index >= map->actors->size)
         {
             // move the pointer to the first actor
@@ -845,6 +835,27 @@ void world_update(float delta_time)
 
             // update world state
             world->time++;
+
+            // update surfaces
+            for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
+            {
+                struct surface *const surface = list_get(map->surfaces, surface_index);
+                const struct surface_data *const surface_data = &surface_database[surface->type];
+
+                surface->time++;
+
+                if (surface->time >= surface_data->duration)
+                {
+                    list_remove_at(map->surfaces, surface_index--);
+
+                    struct tile *const tile = &map->tiles[surface->x][surface->y];
+                    tile->surface = NULL;
+
+                    surface_delete(surface);
+
+                    continue;
+                }
+            }
 
             bool controllable_exists = false;
 
@@ -936,6 +947,7 @@ void world_update(float delta_time)
             }
 
             // if there are no controllable actors, return control back to the UI so the current state will be rendered
+            // the next frame will go on to process actor turns ahead
             if (!controllable_exists)
             {
                 break;
@@ -972,7 +984,7 @@ void world_update(float delta_time)
             }
 
             // for a controllable actor, the UI is responsible for setting took_turn to true
-            // for non-controllable actors, the AI function will do it
+            // for non-controllable actors, it was already done earlier
             if (actor->took_turn)
             {
                 // decrease energy
@@ -1003,7 +1015,7 @@ void world_update(float delta_time)
     }
 }
 
-bool world_player_can_take_turn(void)
+bool world_can_player_take_turn(void)
 {
     if (world->doomed)
     {
@@ -1011,17 +1023,13 @@ bool world_player_can_take_turn(void)
     }
 
     const struct map *const map = &world->maps[world->player->floor];
+
     if (world->player != list_get(map->actors, map->current_actor_index))
     {
         return false;
     }
 
-    if (map->projectiles->size > 0)
-    {
-        return false;
-    }
-
-    if (map->explosions->size > 0)
+    if (map_is_animation_playing(map))
     {
         return false;
     }
@@ -1031,13 +1039,27 @@ bool world_player_can_take_turn(void)
 
 void world_log(int floor, int x, int y, TCOD_ColorRGB color, const char *fmt, ...)
 {
-    if (floor != -1 &&
-        (!world->player ||
-         floor != world->player->floor ||
-         !world->player->fov ||
-         !TCOD_map_is_in_fov(world->player->fov, x, y)))
+    if (floor != -1)
     {
-        return;
+        if (!world->player)
+        {
+            return;
+        }
+
+        if (floor != world->player->floor)
+        {
+            return;
+        }
+
+        if (!world->player->fov)
+        {
+            return;
+        }
+
+        if (!TCOD_map_is_in_fov(world->player->fov, x, y))
+        {
+            return;
+        }
     }
 
     va_list args;

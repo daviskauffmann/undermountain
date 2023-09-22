@@ -1,5 +1,5 @@
-#ifndef GAME_SPELL_H
-#define GAME_SPELL_H
+#ifndef UM_GAME_SPELL_H
+#define UM_GAME_SPELL_H
 
 enum spell_type
 {
@@ -15,8 +15,8 @@ enum spell_type
 
 enum spell_range
 {
-    SPELL_RANGE_SELF,
-    SPELL_RANGE_TARGET
+    SPELL_RANGE_PERSONAL,
+    SPELL_RANGE_TOUCH
 };
 
 struct spell_data

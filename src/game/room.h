@@ -1,5 +1,5 @@
-#ifndef GAME_ROOM_H
-#define GAME_ROOM_H
+#ifndef UM_GAME_ROOM_H
+#define UM_GAME_ROOM_H
 
 #include <stdint.h>
 

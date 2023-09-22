@@ -1,5 +1,5 @@
-#ifndef GAME_TILE_H
-#define GAME_TILE_H
+#ifndef UM_GAME_TILE_H
+#define UM_GAME_TILE_H
 
 #include "list.h"
 #include <libtcod.h>
@@ -37,6 +37,7 @@ struct tile
     struct actor *actor;
     struct list *corpses;
     struct list *items;
+    struct surface *surface;
 };
 
 void tile_init(

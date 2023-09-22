@@ -1,5 +1,5 @@
-#ifndef GAME_PROJECTILE_H
-#define GAME_PROJECTILE_H
+#ifndef UM_GAME_PROJECTILE_H
+#define UM_GAME_PROJECTILE_H
 
 #include "light.h"
 #include <libtcod.h>

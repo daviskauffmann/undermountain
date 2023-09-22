@@ -1,5 +1,5 @@
-#ifndef GAME_MAP_H
-#define GAME_MAP_H
+#ifndef UM_GAME_MAP_H
+#define UM_GAME_MAP_H
 
 #include "list.h"
 #include "tile.h"
@@ -34,6 +34,7 @@ struct map
     struct list *items;
     struct list *projectiles;
     struct list *explosions;
+    struct list *surfaces;
     int current_actor_index;
 };
 
@@ -50,8 +51,9 @@ bool map_is_walkable(
     const struct map *map,
     int x,
     int y);
-TCOD_Map * map_to_TCOD_map(const struct map *map);
-TCOD_Map * map_to_fov_map(
+bool map_is_animation_playing(const struct map *map);
+TCOD_Map *map_to_TCOD_map(const struct map *map);
+TCOD_Map *map_to_fov_map(
     const struct map *map,
     int x,
     int y,

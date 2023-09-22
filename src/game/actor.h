@@ -1,5 +1,5 @@
-#ifndef GAME_ACTOR_H
-#define GAME_ACTOR_H
+#ifndef UM_GAME_ACTOR_H
+#define UM_GAME_ACTOR_H
 
 #include "item.h"
 #include "light.h"
@@ -13,9 +13,9 @@ struct object;
 enum race
 {
     // player races
+    RACE_HUMAN,
     RACE_DWARF,
     RACE_ELF,
-    RACE_HUMAN,
 
     // monster races
     RACE_BUGBEAR,
@@ -30,6 +30,10 @@ enum race
 
     NUM_RACES
 };
+#define PLAYER_RACE_BEGIN RACE_HUMAN
+#define PLAYER_RACE_END RACE_ELF
+#define MONSTER_RACE_BEGIN RACE_BUGBEAR
+#define MONSTER_RACE_END RACE_SLIME
 
 enum class
 {
@@ -48,6 +52,19 @@ enum class
     CLASS_SLIME,
 
     NUM_CLASSES
+};
+#define PLAYER_CLASS_BEGIN CLASS_FIGHTER
+#define PLAYER_CLASS_END CLASS_WIZARD
+#define MONSTER_CLASS_BEGIN CLASS_DOG
+#define MONSTER_CLASS_END CLASS_SLIME
+
+enum base_attack_bonus_progression
+{
+    BASE_ATTACK_BONUS_PROGRESSION_COMBAT,
+    BASE_ATTACK_BONUS_PROGRESSION_MIDDLE,
+    BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT,
+
+    NUM_BASE_ATTACK_BONUS_PROGRESSIONS
 };
 
 enum faction
@@ -111,7 +128,13 @@ struct class_data
     const char *hit_die;
     const char *mana_die;
 
-    // TODO: base attack bonus
+    enum base_attack_bonus_progression base_attack_bonus_progression;
+};
+
+struct base_attack_bonus_progression_data
+{
+    const char *name;
+    float multiplier;
 };
 
 struct ability_data
@@ -190,6 +213,7 @@ struct actor *actor_new(
     const char *name,
     enum race race,
     enum class class,
+    const int ability_scores[NUM_ABILITIES],
     enum faction faction,
     uint8_t floor,
     uint8_t x,
@@ -208,6 +232,8 @@ int actor_calc_critical_multiplier(const struct actor *actor);
 int actor_calc_damage_bonus(const struct actor *actor);
 const char *actor_calc_damage(const struct actor *actor);
 enum equippability actor_calc_item_equippability(const struct actor *actor, const struct item *item);
+float actor_calc_max_carry_weight(const struct actor *actor);
+float actor_calc_carry_weight(const struct actor *actor);
 float actor_calc_speed(const struct actor *actor);
 
 void actor_calc_light(struct actor *actor);
@@ -256,6 +282,9 @@ bool actor_pray(
     struct actor *actor,
     int x, int y);
 bool actor_drink(
+    struct actor *actor,
+    int x, int y);
+bool actor_dip(
     struct actor *actor,
     int x, int y);
 bool actor_sit(

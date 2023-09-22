@@ -40,11 +40,18 @@ void map_init(struct map *const map, const uint8_t floor)
     map->items = list_new();
     map->projectiles = list_new();
     map->explosions = list_new();
+    map->surfaces = list_new();
     map->current_actor_index = 0;
 }
 
 void map_uninit(struct map *const map)
 {
+    for (size_t i = 0; i < map->surfaces->size; i++)
+    {
+        surface_delete(list_get(map->surfaces, i));
+    }
+    list_delete(map->surfaces);
+
     for (size_t i = 0; i < map->explosions->size; i++)
     {
         explosion_delete(list_get(map->explosions, i));
@@ -701,7 +708,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
                  map->tiles[x][y].actor != NULL &&
                  map->tiles[x][y].object != NULL);
 
-        enum race race = TCOD_random_get_int(world->random, RACE_DWARF, RACE_HUMAN);
+        enum race race = TCOD_random_get_int(world->random, PLAYER_RACE_BEGIN, PLAYER_RACE_END);
         char *name;
         switch (race)
         {
@@ -734,7 +741,13 @@ void map_generate(struct map *const map, const enum map_type map_type)
         struct actor *const actor = actor_new(
             TCOD_namegen_generate(name, false),
             race,
-            TCOD_random_get_int(world->random, CLASS_FIGHTER, CLASS_WIZARD),
+            TCOD_random_get_int(world->random, PLAYER_CLASS_BEGIN, PLAYER_CLASS_END),
+            (int[]){
+                [ABILITY_STRENGTH] = TCOD_random_get_int(world->random, 3, 18),
+                [ABILITY_DEXTERITY] = TCOD_random_get_int(world->random, 3, 18),
+                [ABILITY_CONSTITUTION] = TCOD_random_get_int(world->random, 3, 18),
+                [ABILITY_INTELLIGENCE] = TCOD_random_get_int(world->random, 3, 18),
+            },
             FACTION_ADVENTURER,
             map->floor,
             (uint8_t)x,
@@ -764,7 +777,6 @@ void map_generate(struct map *const map, const enum map_type map_type)
                  map->tiles[x][y].actor != NULL &&
                  map->tiles[x][y].object != NULL);
 
-        // TODO: leveled lists
         enum monster monster;
         const struct actor_prototype *monster_prototype;
         do
@@ -778,6 +790,7 @@ void map_generate(struct map *const map, const enum map_type map_type)
             monster_prototype->name,
             monster_prototype->race,
             monster_prototype->class,
+            monster_prototype->ability_scores,
             FACTION_MONSTER,
             map->floor,
             (uint8_t)x,
@@ -786,11 +799,6 @@ void map_generate(struct map *const map, const enum map_type map_type)
         while (actor->level != monster_prototype->level)
         {
             actor_level_up(actor);
-        }
-
-        for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-        {
-            actor->ability_scores[ability] = monster_prototype->ability_scores[ability];
         }
 
         // TODO: specify inventory/equipment on the prototype
@@ -901,6 +909,21 @@ bool map_is_walkable(
     }
 
     return tile_database[tile->type].is_walkable;
+}
+
+bool map_is_animation_playing(const struct map *const map)
+{
+    if (map->projectiles->size > 0)
+    {
+        return true;
+    }
+
+    if (map->explosions->size > 0)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 TCOD_Map *map_to_TCOD_map(const struct map *const map)

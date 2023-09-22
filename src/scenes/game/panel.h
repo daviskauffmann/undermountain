@@ -1,5 +1,5 @@
-#ifndef SCENES_GAME_PANEL_H
-#define SCENES_GAME_PANEL_H
+#ifndef UM_SCENES_GAME_PANEL_H
+#define UM_SCENES_GAME_PANEL_H
 
 enum panel
 {

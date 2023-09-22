@@ -1,5 +1,5 @@
-#ifndef SCENE_H
-#define SCENE_H
+#ifndef UM_SCENE_H
+#define UM_SCENE_H
 
 #include <SDL2/SDL.h>
 #include <libtcod.h>

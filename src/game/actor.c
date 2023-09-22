@@ -17,6 +17,7 @@ struct actor *actor_new(
     const char *const name,
     const enum race race,
     const enum class class,
+    const int ability_scores[NUM_ABILITIES],
     const enum faction faction,
     const uint8_t floor,
     const uint8_t x,
@@ -36,7 +37,7 @@ struct actor *actor_new(
 
     for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
     {
-        actor->ability_scores[ability] = 10;
+        actor->ability_scores[ability] = ability_scores[ability];
     }
 
     actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
@@ -161,8 +162,7 @@ int actor_calc_armor_class(const struct actor *const actor)
 
 int actor_calc_base_attack_bonus(const struct actor *actor)
 {
-    // TODO: use class info
-    return (actor->level - 1) * 1;
+    return (int)floorf(actor->level * base_attack_bonus_progression_database[class_database[actor->class].base_attack_bonus_progression].multiplier);
 }
 
 int actor_calc_attack_bonus(const struct actor *const actor)
@@ -198,6 +198,7 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         {
             if (actor->class == CLASS_ROGUE)
             {
+                // TODO: only if the weapon is a finesse weapon
                 attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
             }
             else
@@ -347,6 +348,40 @@ enum equippability actor_calc_item_equippability(const struct actor *const actor
     }
 }
 
+float actor_calc_max_carry_weight(const struct actor *actor)
+{
+    return 100 + actor_calc_ability_modifer(actor, ABILITY_STRENGTH) * 10.0f;
+}
+
+float actor_calc_carry_weight(const struct actor *actor)
+{
+    float weight = 0.0f;
+
+    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+    {
+        const struct item *const item = list_get(actor->items, item_index);
+        const struct item_data *const item_data = &item_database[item->type];
+        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+        weight += base_item_data->weight;
+    }
+
+    for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+    {
+        const struct item *const item = actor->equipment[equip_slot];
+
+        if (item)
+        {
+            const struct item_data *const item_data = &item_database[item->type];
+            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+            weight += base_item_data->weight;
+        }
+    }
+
+    return weight;
+}
+
 float actor_calc_speed(const struct actor *actor)
 {
     const float speed = race_database[actor->race].speed;
@@ -366,7 +401,7 @@ float actor_calc_speed(const struct actor *actor)
         }
     }
 
-    return speed * encumbrance;
+    return speed * encumbrance * (actor_calc_carry_weight(actor) > actor_calc_max_carry_weight(actor) ? 0.5f : 1);
 }
 
 void actor_calc_light(struct actor *const actor)
@@ -1421,6 +1456,41 @@ bool actor_drink(
     return true;
 }
 
+bool actor_dip(
+    struct actor *const actor,
+    const int x, const int y)
+{
+    if (!map_is_inside(x, y))
+    {
+        return false;
+    }
+
+    struct map *const map = &world->maps[actor->floor];
+    struct tile *const tile = &map->tiles[x][y];
+
+    if (tile->object && tile->object->type == OBJECT_TYPE_BRAZIER)
+    {
+        // TODO: set weapon on fire temporarily
+
+        return true;
+    }
+
+    if (tile->surface)
+    {
+        if (tile->surface->type == SURFACE_TYPE_FIRE)
+        {
+            // TODO: set weapon on fire temporarily
+        }
+
+        if (tile->surface->type == SURFACE_TYPE_WATER)
+        {
+            // TODO: extinguish weapon
+        }
+    }
+
+    return true;
+}
+
 bool actor_sit(
     struct actor *const actor,
     const int x, const int y)
@@ -2201,34 +2271,46 @@ bool actor_cast(
     {
     case SPELL_TYPE_MINOR_HEAL:
     {
-        const int health = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+        if (other)
+        {
+            const int health = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
 
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s heals for %d.",
-            actor->name,
-            health);
+            world_log(
+                other->floor,
+                other->x,
+                other->y,
+                color_white,
+                "%s heals for %d.",
+                other->name,
+                health);
 
-        actor_restore_hit_points(actor, health);
+            actor_restore_hit_points(other, health);
+        }
     }
     break;
     case SPELL_TYPE_MINOR_MANA:
     {
-        const int mana = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+        if (other)
+        {
+            const int mana = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
 
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s recovers %d mana.",
-            actor->name,
-            mana);
+            world_log(
+                other->floor,
+                other->x,
+                other->y,
+                color_white,
+                "%s recovers %d mana.",
+                other->name,
+                mana);
 
-        actor_restore_mana_points(actor, mana);
+            actor_restore_mana_points(other, mana);
+        }
     }
     break;
     case SPELL_TYPE_LIGHTNING:

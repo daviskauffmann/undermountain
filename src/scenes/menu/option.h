@@ -1,5 +1,5 @@
-#ifndef SCENES_MENU_OPTION_H
-#define SCENES_MENU_OPTION_H
+#ifndef UM_SCENES_MENU_OPTION_H
+#define UM_SCENES_MENU_OPTION_H
 
 enum option
 {

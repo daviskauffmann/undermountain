@@ -1,5 +1,5 @@
-#ifndef PRINT_H
-#define PRINT_H
+#ifndef UM_PRINT_H
+#define UM_PRINT_H
 
 #include <libtcod.h>
 

@@ -109,6 +109,11 @@ static bool do_directional_action(const enum direction direction)
         took_turn = actor_close_door(world->player, x, y);
     }
     break;
+    case DIRECTIONAL_ACTION_DIP:
+    {
+        took_turn = actor_dip(world->player, x, y);
+    }
+    break;
     }
 
     directional_action = DIRECTIONAL_ACTION_NONE;
@@ -128,12 +133,12 @@ static bool do_inventory_action(struct item *const item)
     {
     case INVENTORY_ACTION_DROP:
     {
-        took_turn = world_player_can_take_turn() && actor_drop(world->player, item);
+        took_turn = world_can_player_take_turn() && actor_drop(world->player, item);
     }
     break;
     case INVENTORY_ACTION_EQUIP:
     {
-        took_turn = world_player_can_take_turn() && actor_equip(world->player, item);
+        took_turn = world_can_player_take_turn() && actor_equip(world->player, item);
     }
     break;
     case INVENTORY_ACTION_EXAMINE:
@@ -144,7 +149,7 @@ static bool do_inventory_action(struct item *const item)
     break;
     case INVENTORY_ACTION_QUAFF:
     {
-        took_turn = world_player_can_take_turn() && actor_quaff(world->player, item);
+        took_turn = world_can_player_take_turn() && actor_quaff(world->player, item);
     }
     break;
     case INVENTORY_ACTION_READ:
@@ -155,7 +160,7 @@ static bool do_inventory_action(struct item *const item)
         if (item_data->type == BASE_ITEM_TYPE_SCROLL)
         {
             const struct spell_data *const spell_data = &spell_database[item_data->spell_type];
-            if (spell_data->range == SPELL_RANGE_TARGET)
+            if (spell_data->range == SPELL_RANGE_TOUCH)
             {
                 needs_target = true;
             }
@@ -170,7 +175,7 @@ static bool do_inventory_action(struct item *const item)
         }
         else
         {
-            took_turn = world_player_can_take_turn() && actor_read(world->player, item, world->player->x, world->player->y);
+            took_turn = world_can_player_take_turn() && actor_read(world->player, item, world->player->x, world->player->y);
         }
     }
     break;
@@ -232,7 +237,7 @@ static bool do_character_action_equipment(const enum equip_slot equip_slot)
     break;
     case CHARACTER_ACTION_EQUIPMENT_UNEQUIP:
     {
-        took_turn = world_player_can_take_turn() && actor_unequip(world->player, equip_slot);
+        took_turn = world_can_player_take_turn() && actor_unequip(world->player, equip_slot);
     }
     break;
     }
@@ -421,7 +426,7 @@ struct scene *handle_event(const SDL_Event *event)
             if (inventory_action != INVENTORY_ACTION_NONE &&
                 alpha >= 0 && alpha < world->player->items->size)
             {
-                if (world_player_can_take_turn())
+                if (world_can_player_take_turn())
                 {
                     struct item *const item = list_get(world->player->items, alpha);
 
@@ -433,7 +438,7 @@ struct scene *handle_event(const SDL_Event *event)
             else if ((character_action == CHARACTER_ACTION_ABILITY_ADD_POINT) &&
                      alpha >= 0 && alpha < NUM_ABILITIES)
             {
-                if (world_player_can_take_turn())
+                if (world_can_player_take_turn())
                 {
                     const enum ability_type ability = alpha;
 
@@ -446,7 +451,7 @@ struct scene *handle_event(const SDL_Event *event)
                       character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP) &&
                      alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
             {
-                if (world_player_can_take_turn())
+                if (world_can_player_take_turn())
                 {
                     const enum equip_slot equip_slot = alpha + 1;
 
@@ -458,7 +463,7 @@ struct scene *handle_event(const SDL_Event *event)
             else if (spellbook_action != SPELLBOOK_ACTION_NONE &&
                      alpha >= 0 && alpha < world->player->known_spell_types->size)
             {
-                if (world_player_can_take_turn())
+                if (world_can_player_take_turn())
                 {
                     const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, alpha);
 
@@ -515,7 +520,7 @@ struct scene *handle_event(const SDL_Event *event)
         {
             if (event->key.keysym.mod & KMOD_SHIFT)
             {
-                world->player->took_turn = world_player_can_take_turn() && actor_ascend(world->player);
+                world->player->took_turn = world_can_player_take_turn() && actor_ascend(world->player);
             }
         }
         break;
@@ -523,7 +528,7 @@ struct scene *handle_event(const SDL_Event *event)
         {
             if (event->key.keysym.mod & KMOD_SHIFT)
             {
-                world->player->took_turn = world_player_can_take_turn() && actor_descend(world->player);
+                world->player->took_turn = world_can_player_take_turn() && actor_descend(world->player);
             }
         }
         break;
@@ -564,6 +569,34 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
+        case SDLK_d:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                toggle_panel(PANEL_CHARACTER);
+                directional_action = DIRECTIONAL_ACTION_DIP;
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    color_yellow,
+                    "Choose a direction to dip. Press 'ESC' to cancel.");
+            }
+            else
+            {
+                show_panel(PANEL_INVENTORY);
+                inventory_action = INVENTORY_ACTION_DROP;
+
+                world_log(
+                    world->player->floor,
+                    world->player->x,
+                    world->player->y,
+                    color_yellow,
+                    "Choose an item to drop. Press 'ESC' to cancel.");
+            }
+        }
+        break;
         case SDLK_e:
         {
             show_panel(PANEL_INVENTORY);
@@ -581,7 +614,7 @@ struct scene *handle_event(const SDL_Event *event)
         {
             if (targeting_action == TARGETING_ACTION_SHOOT)
             {
-                if (world_player_can_take_turn())
+                if (world_can_player_take_turn())
                 {
                     world->player->took_turn = actor_shoot(world->player, target_x, target_y);
 
@@ -606,7 +639,7 @@ struct scene *handle_event(const SDL_Event *event)
         break;
         case SDLK_g:
         {
-            world->player->took_turn = world_player_can_take_turn() && actor_grab(world->player, world->player->x, world->player->y);
+            world->player->took_turn = world_can_player_take_turn() && actor_grab(world->player, world->player->x, world->player->y);
         }
         break;
         case SDLK_h:
@@ -655,7 +688,7 @@ struct scene *handle_event(const SDL_Event *event)
         {
             if (targeting_action == TARGETING_ACTION_READ)
             {
-                if (world_player_can_take_turn())
+                if (world_can_player_take_turn())
                 {
                     world->player->took_turn = actor_read(
                         world->player,
@@ -683,7 +716,7 @@ struct scene *handle_event(const SDL_Event *event)
         {
             if (event->key.keysym.mod & KMOD_SHIFT)
             {
-                if (world_player_can_take_turn())
+                if (world_can_player_take_turn())
                 {
                     if (world->player->light_type == LIGHT_TYPE_GLOW)
                     {
@@ -699,7 +732,7 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                if (world_player_can_take_turn())
+                if (world_can_player_take_turn())
                 {
                     if (world->player->light_type == LIGHT_TYPE_TORCH)
                     {
@@ -794,10 +827,10 @@ struct scene *handle_event(const SDL_Event *event)
                     const enum spell_range spell_range = spell_database[world->player->readied_spell_type].range;
                     switch (spell_range)
                     {
-                    case SPELL_RANGE_SELF:
+                    case SPELL_RANGE_PERSONAL:
                     {
                         world->player->took_turn =
-                            world_player_can_take_turn() &&
+                            world_can_player_take_turn() &&
                             actor_cast(
                                 world->player,
                                 world->player->readied_spell_type,
@@ -805,11 +838,11 @@ struct scene *handle_event(const SDL_Event *event)
                                 true);
                     }
                     break;
-                    case SPELL_RANGE_TARGET:
+                    case SPELL_RANGE_TOUCH:
                     {
                         if (targeting_action == TARGETING_ACTION_SPELL)
                         {
-                            if (world_player_can_take_turn())
+                            if (world_can_player_take_turn())
                             {
                                 world->player->took_turn = actor_cast(
                                     world->player,
@@ -858,7 +891,7 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_SW);
+                world->player->took_turn = world_can_player_take_turn() && player_interact(event, DIRECTION_SW);
             }
         }
         break;
@@ -871,7 +904,7 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_S);
+                world->player->took_turn = world_can_player_take_turn() && player_interact(event, DIRECTION_S);
             }
         }
         break;
@@ -884,7 +917,7 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_SE);
+                world->player->took_turn = world_can_player_take_turn() && player_interact(event, DIRECTION_SE);
             }
         }
         break;
@@ -897,13 +930,13 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_W);
+                world->player->took_turn = world_can_player_take_turn() && player_interact(event, DIRECTION_W);
             }
         }
         break;
         case SDLK_KP_5:
         {
-            world->player->took_turn = world_player_can_take_turn() && actor_rest(world->player);
+            world->player->took_turn = world_can_player_take_turn() && actor_rest(world->player);
         }
         break;
         case SDLK_KP_6:
@@ -915,7 +948,7 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_E);
+                world->player->took_turn = world_can_player_take_turn() && player_interact(event, DIRECTION_E);
             }
         }
         break;
@@ -928,7 +961,7 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_NW);
+                world->player->took_turn = world_can_player_take_turn() && player_interact(event, DIRECTION_NW);
             }
         }
         break;
@@ -941,7 +974,7 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_N);
+                world->player->took_turn = world_can_player_take_turn() && player_interact(event, DIRECTION_N);
             }
         }
         break;
@@ -954,7 +987,7 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                world->player->took_turn = world_player_can_take_turn() && player_interact(event, DIRECTION_NE);
+                world->player->took_turn = world_can_player_take_turn() && player_interact(event, DIRECTION_NE);
             }
         }
         break;
@@ -1382,6 +1415,26 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             }
         }
 
+        // draw surfaces
+        for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
+        {
+            const struct surface *const surface = list_get(map->surfaces, surface_index);
+
+            if (TCOD_map_is_in_fov(world->player->fov, surface->x, surface->y))
+            {
+                TCOD_console_set_char_foreground(
+                    console,
+                    surface->x - view_rect.x,
+                    surface->y - view_rect.y,
+                    surface_database[surface->type].color);
+                TCOD_console_set_char(
+                    console,
+                    surface->x - view_rect.x,
+                    surface->y - view_rect.y,
+                    surface_database[surface->type].glyph);
+            }
+        }
+
         // draw stairs (to make sure they are drawn on top of other entities)
         for (size_t object_index = 0; object_index < map->objects->size; object_index++)
         {
@@ -1464,15 +1517,32 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 {
                     if (tile->actor)
                     {
-                        TCOD_console_printf_ex(
-                            console,
-                            view_rect.width / 2,
-                            view_rect.height - 2,
-                            TCOD_BKGND_NONE,
-                            TCOD_CENTER,
-                            "Lv.%d %s",
-                            tile->actor->level,
-                            tile->actor->name);
+                        if (tile->actor->faction == world->player->faction)
+                        {
+                            TCOD_console_printf_ex(
+                                console,
+                                view_rect.width / 2,
+                                view_rect.height - 2,
+                                TCOD_BKGND_NONE,
+                                TCOD_CENTER,
+                                "Lv.%d %s (%d/%d HP)",
+                                tile->actor->level,
+                                tile->actor->name,
+                                tile->actor->hit_points,
+                                actor_calc_max_hit_points(tile->actor));
+                        }
+                        else
+                        {
+                            TCOD_console_printf_ex(
+                                console,
+                                view_rect.width / 2,
+                                view_rect.height - 2,
+                                TCOD_BKGND_NONE,
+                                TCOD_CENTER,
+                                "Lv.%d %s",
+                                tile->actor->level,
+                                tile->actor->name);
+                        }
 
                         goto done;
                     }
@@ -1820,6 +1890,22 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 world->player->gold);
             y++;
 
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "Weight");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%.1f / %.1f",
+                actor_calc_carry_weight(world->player),
+                actor_calc_max_carry_weight(world->player));
+            y++;
+
             y++;
 
             TCOD_console_printf(
@@ -1989,6 +2075,21 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 panel_rect.console,
                 1,
                 y - current_panel_status->scroll,
+                "Base Attack Bonus");
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                "%d",
+                actor_calc_base_attack_bonus(world->player));
+            y++;
+
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
                 "Attack Bonus");
             TCOD_console_printf_ex(
                 panel_rect.console,
@@ -2035,19 +2136,38 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             }
             y++;
 
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y - current_panel_status->scroll,
-                "Speed");
-            TCOD_console_printf_ex(
-                panel_rect.console,
-                panel_rect.width - 2,
-                y - current_panel_status->scroll,
-                TCOD_BKGND_NONE,
-                TCOD_RIGHT,
-                "%.1f",
-                actor_calc_speed(world->player));
+            if (actor_calc_carry_weight(world->player) <= actor_calc_max_carry_weight(world->player))
+            {
+                TCOD_console_printf(
+                    panel_rect.console,
+                    1,
+                    y - current_panel_status->scroll,
+                    "Speed");
+                TCOD_console_printf_ex(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%.1f",
+                    actor_calc_speed(world->player));
+            }
+            else
+            {
+                TCOD_console_printf(
+                    panel_rect.console,
+                    1,
+                    y - current_panel_status->scroll,
+                    "Speed");
+                TCOD_console_printf_ex(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%.1f (overburdened)",
+                    actor_calc_speed(world->player));
+            }
             y++;
 
             TCOD_console_printf_frame(
@@ -2187,7 +2307,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             1.0f);
     }
 
-    if (!world->doomed && !world_player_can_take_turn())
+    if (!world->doomed && !world_can_player_take_turn())
     {
         console_print(
             console,

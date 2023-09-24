@@ -1,9 +1,9 @@
-#include "assets.h"
+#include "data.h"
 
 #include "color.h"
 #include <libtcod.h>
 
-const struct tile_common tile_common = {
+const struct tile_metadata tile_metadata = {
     .ambient_light_color = {16, 16, 32},
     .ambient_light_intensity = 0.05f,
 };
@@ -46,6 +46,18 @@ const struct light_data light_database[] = {
         .intensity = 0,
         .flicker = false,
     },
+    [LIGHT_TYPE_ACID] = {
+        .radius = 2,
+        .color = {COLOR_LIME},
+        .intensity = 0.1f,
+        .flicker = true,
+    },
+    [LIGHT_TYPE_ACID_SPLASH] = {
+        .radius = 3,
+        .color = {COLOR_LIME},
+        .intensity = 0.5f,
+        .flicker = true,
+    },
     [LIGHT_TYPE_ALTAR] = {
         .radius = 3,
         .color = {COLOR_WHITE},
@@ -56,6 +68,12 @@ const struct light_data light_database[] = {
         .radius = 10,
         .color = {COLOR_LIGHT_AMBER},
         .intensity = 0.25f,
+        .flicker = true,
+    },
+    [LIGHT_TYPE_FIRE] = {
+        .radius = 2,
+        .color = {COLOR_FLAME},
+        .intensity = 0.1f,
         .flicker = true,
     },
     [LIGHT_TYPE_FIREBALL] = {
@@ -95,7 +113,7 @@ const struct object_data object_database[] = {
         .light_type = LIGHT_TYPE_BRAZIER,
 
         .is_walkable = false,
-        .is_transparent = false,
+        .is_transparent = true,
     },
     [OBJECT_TYPE_CHEST] = {
         .name = "Chest",
@@ -104,7 +122,7 @@ const struct object_data object_database[] = {
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
-        .is_transparent = false,
+        .is_transparent = true,
     },
     [OBJECT_TYPE_DOOR_CLOSED] = {
         .name = "Closed Door",
@@ -131,7 +149,7 @@ const struct object_data object_database[] = {
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
-        .is_transparent = false,
+        .is_transparent = true,
     },
     [OBJECT_TYPE_STAIR_DOWN] = {
         .name = "Stair Down",
@@ -158,7 +176,7 @@ const struct object_data object_database[] = {
         .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
-        .is_transparent = false,
+        .is_transparent = true,
     },
     [OBJECT_TYPE_TRAP] = {
         .name = "Trap",
@@ -171,7 +189,7 @@ const struct object_data object_database[] = {
     },
 };
 
-const struct actor_common actor_common = {
+const struct actor_metadata actor_metadata = {
     .turns_to_chase = 10,
 };
 
@@ -218,6 +236,10 @@ const struct race_data race_database[] = {
 
         .size = SIZE_MEDIUM,
         .speed = 1.2f,
+
+        .feats = {
+            [FEAT_LOW_LIGHT_VISION] = true,
+        },
     },
     [RACE_HUMAN] = {
         .name = "Human",
@@ -303,6 +325,17 @@ const struct class_data class_database[] = {
         .mana_die = "1d4",
 
         .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_COMBAT,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 15,
+            [ABILITY_DEXTERITY] = 12,
+            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_INTELLIGENCE] = 10,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGSWORD,
+        },
     },
     [CLASS_ROGUE] = {
         .name = "Rogue",
@@ -312,6 +345,21 @@ const struct class_data class_database[] = {
         .mana_die = "1d4",
 
         .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_MIDDLE,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 14,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 12,
+            [ABILITY_INTELLIGENCE] = 10,
+        },
+
+        .feats = {
+            [FEAT_WEAPON_FINESSE] = true,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_DAGGER,
+        },
     },
     [CLASS_WIZARD] = {
         .name = "Wizard",
@@ -321,6 +369,23 @@ const struct class_data class_database[] = {
         .mana_die = "1d10",
 
         .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 10,
+            [ABILITY_DEXTERITY] = 14,
+            [ABILITY_CONSTITUTION] = 12,
+            [ABILITY_INTELLIGENCE] = 15,
+        },
+
+        .spell_progression = {
+            [SPELL_TYPE_ACID_SPLASH] = 1,
+            [SPELL_TYPE_FIREBALL] = 1,
+            [SPELL_TYPE_LIGHTNING] = 2,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_DAGGER,
+        },
     },
 
     // monster classes
@@ -343,7 +408,7 @@ const struct class_data class_database[] = {
         .color = {COLOR_LIGHTEST_GRAY},
 
         .hit_die = "1d1",
-        .mana_die = "0d0",
+        .mana_die = "1d1",
     },
     [CLASS_JACKAL] = {
         .name = "Jackal",
@@ -357,7 +422,7 @@ const struct class_data class_database[] = {
         .color = {COLOR_LIGHTEST_GRAY},
 
         .hit_die = "1d1",
-        .mana_die = "0d0",
+        .mana_die = "1d1",
     },
     [CLASS_RAT] = {
         .name = "Jackal",
@@ -372,6 +437,51 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d10",
         .mana_die = "0d0",
+    },
+};
+
+const struct base_attack_bonus_progression_data base_attack_bonus_progression_database[] = {
+    [BASE_ATTACK_BONUS_PROGRESSION_COMBAT] = {
+        .name = "Combat",
+        .multiplier = 1,
+    },
+    [BASE_ATTACK_BONUS_PROGRESSION_MIDDLE] = {
+        .name = "Middle",
+        .multiplier = 0.75f,
+    },
+    [BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT] = {
+        .name = "Non-Combat",
+        .multiplier = 0.5f,
+    },
+};
+
+const struct ability_data ability_database[] = {
+    [ABILITY_STRENGTH] = {
+        .name = "Strength",
+        .description = "Strength measures the muscle and physical power of a character.",
+    },
+    [ABILITY_DEXTERITY] = {
+        .name = "Dexterity",
+        .description = "Dexterity measures agility, reflexes, and balance.",
+    },
+    [ABILITY_CONSTITUTION] = {
+        .name = "Constitution",
+        .description = "Constitution represents the health and stamina of a character.",
+    },
+    [ABILITY_INTELLIGENCE] = {
+        .name = "Intelligence",
+        .description = "Intelligence determines how well a character learns and reasons.",
+    },
+};
+
+const struct feat_data feat_database[] = {
+    [FEAT_LOW_LIGHT_VISION] = {
+        .name = "Low-light vision",
+        .description = "Grants the ability to see in the dark, but not as far as darkvision.",
+    },
+    [FEAT_WEAPON_FINESSE] = {
+        .name = "Weapon Finesse",
+        .description = "A character with this feat is adept at using light weapons subtly and effectively, allowing him to make melee attack rolls with his dexterity modifier instead of strength (if his dexterity is higher than his strength).",
     },
 };
 
@@ -490,45 +600,12 @@ const struct actor_prototype monster_prototypes[] = {
     },
 };
 
-const struct base_attack_bonus_progression_data base_attack_bonus_progression_database[] = {
-    [BASE_ATTACK_BONUS_PROGRESSION_COMBAT] = {
-        .name = "Combat",
-        .multiplier = 1,
-    },
-    [BASE_ATTACK_BONUS_PROGRESSION_MIDDLE] = {
-        .name = "Middle",
-        .multiplier = 0.75f,
-    },
-    [BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT] = {
-        .name = "Non-Combat",
-        .multiplier = 0.5f,
-    },
-};
-
-const struct ability_data ability_database[] = {
-    [ABILITY_STRENGTH] = {
-        .name = "Strength",
-    },
-    [ABILITY_DEXTERITY] = {
-        .name = "Dexterity",
-    },
-    [ABILITY_CONSTITUTION] = {
-        .name = "Constitution",
-    },
-    [ABILITY_INTELLIGENCE] = {
-        .name = "Intelligence",
-    },
-};
-
-const struct corpse_common corpse_common = {
+const struct corpse_metadata corpse_metadata = {
     .glyph = '%',
     .color = {COLOR_DARK_RED},
 };
 
 const struct equip_slot_data equip_slot_database[] = {
-    [EQUIP_SLOT_NONE] = {
-        .name = "None",
-    },
     [EQUIP_SLOT_AMMUNITION] = {
         .name = "Ammunition",
     },
@@ -555,6 +632,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_ARROW,
 
+        .finesse = false,
+
         .armor_class = 0,
 
         .damage = NULL,
@@ -576,6 +655,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_BOLT,
 
+        .finesse = false,
+
         .armor_class = 0,
 
         .damage = NULL,
@@ -596,6 +677,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_BULLET,
+
+        .finesse = false,
 
         .armor_class = 0,
 
@@ -620,6 +703,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
 
+        .finesse = true,
+
         .damage = "1d4",
         .threat_range = 19,
         .critical_multiplier = 2,
@@ -638,6 +723,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .finesse = false,
 
         .armor_class = 8,
 
@@ -659,6 +746,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .finesse = false,
 
         .armor_class = 0,
 
@@ -683,6 +772,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
 
+        .finesse = false,
+
         .damage = "2d6",
         .threat_range = 19,
         .critical_multiplier = 2,
@@ -704,6 +795,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = true,
         .ammunition_type = AMMUNITION_TYPE_BOLT,
 
+        .finesse = false,
+
         .damage = "1d10",
         .threat_range = 19,
         .critical_multiplier = 2,
@@ -722,6 +815,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .finesse = false,
 
         .armor_class = 2,
 
@@ -746,6 +841,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = true,
         .ammunition_type = AMMUNITION_TYPE_BOLT,
 
+        .finesse = false,
+
         .damage = "1d8",
         .threat_range = 19,
         .critical_multiplier = 2,
@@ -764,6 +861,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = true,
         .ammunition_type = AMMUNITION_TYPE_ARROW,
+
+        .finesse = false,
 
         .armor_class = 0,
 
@@ -786,6 +885,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
 
+        .finesse = false,
+
         .armor_class = 0,
 
         .damage = "1d8",
@@ -806,6 +907,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .finesse = true,
 
         .armor_class = 0,
 
@@ -828,6 +931,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
 
+        .finesse = false,
+
         .armor_class = 0,
 
         .damage = NULL,
@@ -848,6 +953,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .finesse = false,
 
         .armor_class = 0,
 
@@ -872,6 +979,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = true,
         .ammunition_type = AMMUNITION_TYPE_BULLET,
 
+        .finesse = false,
+
         .damage = "1d4",
         .threat_range = 20,
         .critical_multiplier = 2,
@@ -890,6 +999,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .finesse = false,
 
         .armor_class = 1,
 
@@ -912,6 +1023,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
 
+        .finesse = false,
+
         .armor_class = 0,
 
         .damage = "1d8",
@@ -933,6 +1046,8 @@ const struct base_item_data base_item_database[] = {
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
 
+        .finesse = false,
+
         .armor_class = 0,
 
         .damage = NULL,
@@ -953,6 +1068,8 @@ const struct base_item_data base_item_database[] = {
 
         .ranged = false,
         .ammunition_type = AMMUNITION_TYPE_NONE,
+
+        .finesse = false,
 
         .armor_class = 3,
 
@@ -1403,6 +1520,11 @@ const struct item_data item_database[] = {
 };
 
 const struct spell_data spell_database[] = {
+    [SPELL_TYPE_ACID_SPLASH] = {
+        .name = "Acid Splash",
+        .range = SPELL_RANGE_TOUCH,
+        .mana_cost = 0,
+    },
     [SPELL_TYPE_MINOR_HEAL] = {
         .name = "Minor Heal",
         .range = SPELL_RANGE_TOUCH,
@@ -1426,6 +1548,14 @@ const struct spell_data spell_database[] = {
 };
 
 const struct projectile_data projectile_database[] = {
+    [PROJECTILE_TYPE_ACID_SPLASH] = {
+        .glyph = '*',
+        .color = {COLOR_LIME},
+
+        .light_type = LIGHT_TYPE_ACID_SPLASH,
+
+        .speed = 30,
+    },
     [PROJECTILE_TYPE_ARROW] = {
         .glyph = '`',
         .color = {COLOR_WHITE},
@@ -1445,11 +1575,19 @@ const struct projectile_data projectile_database[] = {
 };
 
 const struct surface_data surface_database[] = {
+    [SURFACE_TYPE_ACID] = {
+        .glyph = '\0',
+        .color = {COLOR_LIME},
+
+        .duration = 20,
+
+        .light_type = LIGHT_TYPE_ACID,
+    },
     [SURFACE_TYPE_FIRE] = {
-        .glyph = '*',
+        .glyph = '\0',
         .color = {COLOR_FLAME},
 
-        .duration = 10,
+        .duration = 20,
 
         .light_type = LIGHT_TYPE_FIRE,
     },
@@ -1457,7 +1595,7 @@ const struct surface_data surface_database[] = {
         .glyph = '~',
         .color = {COLOR_AZURE},
 
-        .duration = 10,
+        .duration = 0,
 
         .light_type = LIGHT_TYPE_NONE,
     },

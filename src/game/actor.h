@@ -83,6 +83,14 @@ enum ability
     NUM_ABILITIES
 };
 
+enum feat
+{
+    FEAT_LOW_LIGHT_VISION,
+    FEAT_WEAPON_FINESSE,
+
+    NUM_FEATS
+};
+
 enum monster
 {
     MONSTER_BUGBEAR,
@@ -106,7 +114,7 @@ enum equippability
     EQUIPPABILITY_TOO_SMALL
 };
 
-struct actor_common
+struct actor_metadata
 {
     int turns_to_chase;
 };
@@ -118,6 +126,8 @@ struct race_data
 
     enum size size;
     float speed;
+
+    bool feats[NUM_FEATS];
 };
 
 struct class_data
@@ -129,6 +139,16 @@ struct class_data
     const char *mana_die;
 
     enum base_attack_bonus_progression base_attack_bonus_progression;
+
+    int default_ability_scores[NUM_ABILITIES];
+
+    bool feats[NUM_FEATS];
+
+    int spell_progression[NUM_SPELL_TYPES];
+
+    enum item_type starting_equipment[NUM_EQUIP_SLOTS];
+
+    int starting_items[NUM_ITEM_TYPES];
 };
 
 struct base_attack_bonus_progression_data
@@ -140,21 +160,31 @@ struct base_attack_bonus_progression_data
 struct ability_data
 {
     const char *name;
+    const char *description;
+};
+
+struct feat_data
+{
+    const char *name;
+    const char *description;
 };
 
 struct actor_prototype
 {
     const char *name;
+
     enum race race;
     enum class class;
 
-    uint8_t level;
+    int level;
 
     int ability_scores[NUM_ABILITIES];
 
+    bool feats[NUM_FEATS];
+
     enum item_type equipment[NUM_EQUIP_SLOTS];
 
-    // TODO: equipment/inventory/spells
+    // TODO: inventory/spells
 };
 
 struct actor
@@ -163,13 +193,14 @@ struct actor
 
     enum race race;
     enum class class;
-    enum faction faction;
 
-    uint8_t level;
+    int level;
     int experience;
-    int ability_points;
 
+    int ability_points;
     int ability_scores[NUM_ABILITIES];
+
+    bool feats[NUM_FEATS];
 
     int base_hit_points;
     int base_mana_points;
@@ -178,14 +209,19 @@ struct actor
     int mana_points;
 
     int gold;
-    struct item *equipment[NUM_EQUIP_SLOTS];
-    struct list *items;
-    struct list *known_spell_types;
-    enum spell_type readied_spell_type;
 
-    uint8_t floor;
-    uint8_t x;
-    uint8_t y;
+    struct item *equipment[NUM_EQUIP_SLOTS];
+
+    struct list *items;
+
+    struct list *known_spells;
+    enum spell_type readied_spell;
+
+    enum faction faction;
+
+    int floor;
+    int x;
+    int y;
 
     TCOD_Map *fov;
 
@@ -213,11 +249,13 @@ struct actor *actor_new(
     const char *name,
     enum race race,
     enum class class,
+    int level,
     const int ability_scores[NUM_ABILITIES],
+    const bool feats[NUM_FEATS],
     enum faction faction,
-    uint8_t floor,
-    uint8_t x,
-    uint8_t y);
+    int floor,
+    int x,
+    int y);
 void actor_delete(struct actor *actor);
 
 int actor_calc_experience_for_level(int level);
@@ -245,6 +283,11 @@ void actor_calc_fov(struct actor *actor);
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
 void actor_add_ability_point(struct actor *actor, enum ability ability);
+
+bool actor_has_feat(const struct actor *actor, enum feat feat);
+
+void actor_calc_known_spells(const struct actor *actor, bool (*known_spells)[NUM_SPELL_TYPES]);
+bool actor_knows_spell(const struct actor *actor, enum spell_type spell_type);
 
 bool actor_can_take_turn(const struct actor *actor);
 

@@ -8,14 +8,17 @@
 #include <math.h>
 
 struct explosion *explosion_new(
-    const uint8_t floor,
-    const uint8_t x,
-    const uint8_t y,
-    const int8_t radius,
+    const enum explosion_type type,
+    const int floor,
+    const int x,
+    const int y,
+    const int radius,
     const TCOD_ColorRGB color,
     struct actor *const initiator)
 {
     struct explosion *const explosion = malloc(sizeof(*explosion));
+
+    explosion->type = type;
 
     explosion->floor = floor;
     explosion->x = x;
@@ -34,9 +37,9 @@ struct explosion *explosion_new(
         explosion->y,
         explosion->radius);
 
-    for (uint8_t tile_x = 0; tile_x < MAP_WIDTH; tile_x++)
+    for (int tile_x = 0; tile_x < MAP_WIDTH; tile_x++)
     {
-        for (uint8_t tile_y = 0; tile_y < MAP_HEIGHT; tile_y++)
+        for (int tile_y = 0; tile_y < MAP_HEIGHT; tile_y++)
         {
             if (TCOD_map_is_in_fov(
                     explosion->fov,
@@ -45,29 +48,80 @@ struct explosion *explosion_new(
             {
                 struct tile *const tile = &map->tiles[tile_x][tile_y];
 
-                if (tile->actor &&
-                    tile->actor != initiator)
+                // TODO: explosion effect cannot be hardcoded here lol
+                switch (explosion->type)
                 {
-                    world_log(
-                        initiator->floor,
-                        initiator->x,
-                        initiator->y,
-                        color_white,
-                        "%s hits %s for 5.",
-                        initiator->name,
-                        tile->actor->name);
+                case EXPLOSION_TYPE_ACID_SPLASH:
+                {
+                    if (tile->actor &&
+                        tile->actor != initiator)
+                    {
+                        const int damage = TCOD_random_dice_roll_s(world->random, "1d3");
 
-                    actor_damage_hit_points(tile->actor, initiator, 5);
+                        world_log(
+                            initiator->floor,
+                            initiator->x,
+                            initiator->y,
+                            color_white,
+                            "%s acidifies %s for %d damage.",
+                            initiator->name,
+                            tile->actor->name,
+                            damage);
+
+                        actor_damage_hit_points(tile->actor, initiator, damage);
+                    }
+
+                    // TODO: interactions with existing surfaces
+                    if (!tile->surface)
+                    {
+                        struct surface *const surface = surface_new(
+                            SURFACE_TYPE_ACID,
+                            explosion->floor,
+                            tile_x,
+                            tile_y);
+
+                        list_add(map->surfaces, surface);
+
+                        tile->surface = surface;
+                    }
                 }
+                break;
+                case EXPLOSION_TYPE_FIREBALL:
+                {
+                    if (tile->actor &&
+                        tile->actor != initiator)
+                    {
+                        const int damage = TCOD_random_dice_roll_s(world->random, "3d6");
 
-                struct surface *const surface = surface_new(
-                    SURFACE_TYPE_FIRE,
-                    tile_x,
-                    tile_y);
+                        world_log(
+                            initiator->floor,
+                            initiator->x,
+                            initiator->y,
+                            color_white,
+                            "%s burns %s for %d.",
+                            initiator->name,
+                            tile->actor->name,
+                            damage);
 
-                list_add(map->surfaces, surface);
+                        actor_damage_hit_points(tile->actor, initiator, damage);
+                    }
 
-                tile->surface = surface;
+                    // TODO: interactions with existing surfaces
+                    if (!tile->surface)
+                    {
+                        struct surface *const surface = surface_new(
+                            SURFACE_TYPE_FIRE,
+                            explosion->floor,
+                            tile_x,
+                            tile_y);
+
+                        list_add(map->surfaces, surface);
+
+                        tile->surface = surface;
+                    }
+                }
+                break;
+                }
             }
         }
     }

@@ -3,7 +3,7 @@
 
 #include <libtcod.h>
 
-struct corpse_common
+struct corpse_metadata
 {
     unsigned char glyph;
     TCOD_ColorRGB color;
@@ -12,19 +12,19 @@ struct corpse_common
 struct corpse
 {
     char *name;
-    uint8_t level;
+    int level;
 
-    uint8_t floor;
-    uint8_t x;
-    uint8_t y;
+    int floor;
+    int x;
+    int y;
 };
 
 struct corpse *corpse_new(
     const char *name,
-    uint8_t level,
-    uint8_t floor,
-    uint8_t x,
-    uint8_t y);
+    int level,
+    int floor,
+    int x,
+    int y);
 void corpse_delete(struct corpse *corpse);
 
 #endif

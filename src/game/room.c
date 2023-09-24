@@ -5,10 +5,10 @@
 #include <malloc.h>
 
 struct room *room_new(
-    const uint8_t x,
-    const uint8_t y,
-    const uint8_t w,
-    const uint8_t h)
+    const int x,
+    const int y,
+    const int w,
+    const int h)
 {
     struct room *const room = malloc(sizeof(*room));
 

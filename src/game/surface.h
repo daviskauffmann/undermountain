@@ -6,6 +6,7 @@
 
 enum surface_type
 {
+    SURFACE_TYPE_ACID,
     SURFACE_TYPE_FIRE,
     SURFACE_TYPE_WATER,
 
@@ -26,8 +27,9 @@ struct surface
 {
     enum surface_type type;
 
-    uint8_t x;
-    uint8_t y;
+    int floor;
+    int x;
+    int y;
 
     int time;
 
@@ -35,9 +37,11 @@ struct surface
 };
 
 struct surface *surface_new(
-    const enum surface_type type,
-    const uint8_t x,
-    const uint8_t y);
+    enum surface_type type,
+    int floor,
+    int x,
+    int y);
 void surface_delete(struct surface *surface);
+void surface_calc_light(struct surface *surface);
 
 #endif

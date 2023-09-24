@@ -5,13 +5,23 @@
 
 struct actor;
 
+enum explosion_type
+{
+    EXPLOSION_TYPE_ACID_SPLASH,
+    EXPLOSION_TYPE_FIREBALL,
+
+    NUM_EXPLOSION_TYPES
+};
+
 struct explosion
 {
-    uint8_t floor;
-    uint8_t x;
-    uint8_t y;
+    enum explosion_type type;
 
-    int8_t radius;
+    int floor;
+    int x;
+    int y;
+
+    int radius;
     TCOD_ColorRGB color;
 
     float time;
@@ -20,10 +30,11 @@ struct explosion
 };
 
 struct explosion *explosion_new(
-    uint8_t floor,
-    uint8_t x,
-    uint8_t y,
-    int8_t radius,
+    enum explosion_type type,
+    int floor,
+    int x,
+    int y,
+    int radius,
     TCOD_ColorRGB color,
     struct actor *initiator);
 void explosion_delete(struct explosion *explosion);

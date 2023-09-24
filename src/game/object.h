@@ -35,18 +35,18 @@ struct object
 {
     enum object_type type;
 
-    uint8_t floor;
-    uint8_t x;
-    uint8_t y;
+    int floor;
+    int x;
+    int y;
 
     TCOD_Map *light_fov;
 };
 
 struct object *object_new(
     enum object_type type,
-    uint8_t floor,
-    uint8_t x,
-    uint8_t y);
+    int floor,
+    int x,
+    int y);
 void object_delete(struct object *object);
 void object_calc_light(struct object *object);
 

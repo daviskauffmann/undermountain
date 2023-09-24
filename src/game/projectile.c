@@ -1,7 +1,7 @@
 #include "projectile.h"
 
 #include "actor.h"
-#include "assets.h"
+#include "data.h"
 #include "explosion.h"
 #include "util.h"
 #include "world.h"
@@ -11,7 +11,7 @@
 
 struct projectile *projectile_new(
     const enum projectile_type type,
-    const uint8_t floor,
+    const int floor,
     const int origin_x,
     const int origin_y,
     const int target_x,
@@ -64,8 +64,8 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
     const float dy = ((float)projectile->target_y - (float)projectile->origin_y) / distance;
     const float next_x = projectile->x + dx * projectile_database[projectile->type].speed * delta_time;
     const float next_y = projectile->y + dy * projectile_database[projectile->type].speed * delta_time;
-    const uint8_t x = (uint8_t)roundf(next_x);
-    const uint8_t y = (uint8_t)roundf(next_y);
+    const int x = (int)roundf(next_x);
+    const int y = (int)roundf(next_y);
 
     if (!map_is_inside(x, y))
     {
@@ -83,6 +83,36 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
 
     switch (projectile->type)
     {
+    case PROJECTILE_TYPE_ACID_SPLASH:
+    {
+        if (tile->actor &&
+            tile->actor != projectile->shooter)
+        {
+            should_move = false;
+        }
+
+        if (tile->object &&
+            !object_database[tile->object->type].is_walkable &&
+            tile->object->type != OBJECT_TYPE_DOOR_OPEN)
+        {
+            should_move = false;
+        }
+
+        if (!should_move)
+        {
+            list_add(
+                map->explosions,
+                explosion_new(
+                    EXPLOSION_TYPE_ACID_SPLASH,
+                    projectile->floor,
+                    x,
+                    y,
+                    3,
+                    projectile_database[projectile->type].color,
+                    projectile->shooter));
+        }
+    }
+    break;
     case PROJECTILE_TYPE_ARROW:
     {
         if (tile->actor &&
@@ -123,10 +153,11 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
             list_add(
                 map->explosions,
                 explosion_new(
+                    EXPLOSION_TYPE_FIREBALL,
                     projectile->floor,
                     x,
                     y,
-                    10,
+                    5,
                     projectile_database[projectile->type].color,
                     projectile->shooter));
         }

@@ -11,6 +11,7 @@ void tile_init(
     tile->actor = NULL;
     tile->corpses = list_new();
     tile->items = list_new();
+    tile->surface = NULL;
 }
 
 void tile_uninit(struct tile *const tile)

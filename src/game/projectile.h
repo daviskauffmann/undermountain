@@ -6,6 +6,7 @@
 
 enum projectile_type
 {
+    PROJECTILE_TYPE_ACID_SPLASH,
     PROJECTILE_TYPE_ARROW,
     PROJECTILE_TYPE_FIREBALL,
 
@@ -26,7 +27,7 @@ struct projectile
 {
     enum projectile_type type;
 
-    uint8_t floor;
+    int floor;
     int origin_x;
     int origin_y;
     int target_x;
@@ -38,12 +39,12 @@ struct projectile
 
     struct item *ammunition;
 
-    TCOD_Map * light_fov;
+    TCOD_Map *light_fov;
 };
 
 struct projectile *projectile_new(
     enum projectile_type type,
-    uint8_t floor,
+    int floor,
     int origin_x,
     int origin_y,
     int target_x,

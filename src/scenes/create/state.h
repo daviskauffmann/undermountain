@@ -1,0 +1,16 @@
+#ifndef UM_SCENES_CREATE_STATE_H
+#define UM_SCENES_CREATE_STATE_H
+
+enum state
+{
+    STATE_STORY,
+    STATE_NAME,
+    STATE_RACE,
+    STATE_CLASS,
+    STATE_ABILITY_SCORES,
+    STATE_CONFIRM,
+
+    NUM_STATES
+};
+
+#endif

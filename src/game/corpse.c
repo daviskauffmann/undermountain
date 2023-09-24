@@ -5,10 +5,10 @@
 
 struct corpse *corpse_new(
     const char *const name,
-    const uint8_t level,
-    const uint8_t floor,
-    const uint8_t x,
-    const uint8_t y)
+    const int level,
+    const int floor,
+    const int x,
+    const int y)
 {
     struct corpse *const corpse = malloc(sizeof(*corpse));
 

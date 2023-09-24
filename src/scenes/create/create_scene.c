@@ -2,75 +2,67 @@
 
 #include "../../config.h"
 #include "../../game/actor.h"
-#include "../../game/assets.h"
 #include "../../game/color.h"
+#include "../../game/data.h"
 #include "../../game/world.h"
 #include "../../print.h"
 #include "../../scene.h"
 #include "../game/game_scene.h"
 #include "../menu/menu_scene.h"
+#include "state.h"
 #include <libtcod.h>
 
-enum state
-{
-    STATE_STORY,
-    STATE_NAME,
-    STATE_RACE,
-    STATE_CLASS,
-    STATE_ABILITY_SCORES,
-    STATE_CONFIRM,
-
-    NUM_STATES
-};
-
-static const int recommended_ability_scores[NUM_ABILITIES][NUM_CLASSES] = {
-    [CLASS_FIGHTER] = {
-        [ABILITY_STRENGTH] = 18,
-        [ABILITY_DEXTERITY] = 18,
-        [ABILITY_CONSTITUTION] = 18,
-        [ABILITY_INTELLIGENCE] = 18,
-    },
-    [CLASS_ROGUE] = {
-        [ABILITY_STRENGTH] = 18,
-        [ABILITY_DEXTERITY] = 18,
-        [ABILITY_CONSTITUTION] = 18,
-        [ABILITY_INTELLIGENCE] = 18,
-    },
-    [CLASS_WIZARD] = {
-        [ABILITY_STRENGTH] = 18,
-        [ABILITY_DEXTERITY] = 18,
-        [ABILITY_CONSTITUTION] = 18,
-        [ABILITY_INTELLIGENCE] = 18,
-    },
-};
-
 static enum state state;
-static bool default_name_modified;
 
 static char name[32];
-static enum race race;
-static enum class class;
+static bool default_name_modified;
+
+static enum race selected_race;
+
+static enum class selected_class;
+
 static int ability_points;
 static int ability_scores[NUM_ABILITIES];
+static enum ability selected_ability;
 
-static int calc_ability_score_cost(const enum ability ability)
+static bool feats[NUM_FEATS];
+
+static int calc_ability_score_cost(const int ability_score)
 {
-    const int ability_score = ability_scores[ability];
-
-    if (ability_score < 15)
+    if (ability_score <= 14)
     {
         return 1;
     }
-    else if (ability_score < 17)
+    else if (ability_score <= 16)
     {
         return 2;
     }
-    else if (ability_score < 18)
+    else if (ability_score <= 18)
     {
         return 3;
     }
 
-    return 0;
+    return 4;
+}
+
+static void reset_ability_scores(void)
+{
+    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+    {
+        ability_scores[ability] = 8;
+    }
+
+    ability_points = NUM_ABILITIES * 5;
+}
+
+static void set_recommended_ability_scores(void)
+{
+    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+    {
+        ability_scores[ability] = class_database[selected_class].default_ability_scores[ability];
+    }
+
+    ability_points = 0;
 }
 
 static void init(const struct scene *const previous_scene)
@@ -78,16 +70,16 @@ static void init(const struct scene *const previous_scene)
     previous_scene;
 
     state = STATE_STORY;
-    default_name_modified = false;
 
     strcpy(name, "Adventurer");
-    race = RACE_HUMAN;
-    class = CLASS_FIGHTER;
-    ability_points = 0;
-    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-    {
-        ability_scores[ability] = recommended_ability_scores[class][ability];
-    }
+    default_name_modified = false;
+
+    selected_race = RACE_HUMAN;
+
+    selected_class = CLASS_FIGHTER;
+
+    selected_ability = ABILITY_STRENGTH;
+    set_recommended_ability_scores();
 }
 
 static void uninit(void)
@@ -135,18 +127,35 @@ static struct scene *handle_event(const SDL_Event *const event)
             {
                 struct actor *hero = actor_new(
                     name,
-                    race,
-                    class,
+                    selected_race,
+                    selected_class,
+                    1,
                     ability_scores,
+                    feats,
                     FACTION_ADVENTURER,
                     0,
                     0,
                     0);
 
-                hero->equipment[EQUIP_SLOT_WEAPON] = item_new(ITEM_TYPE_LONGSWORD, 0, 0, 0, 1);
-                list_add(hero->known_spell_types, (void *)SPELL_TYPE_MINOR_HEAL);
-                list_add(hero->known_spell_types, (void *)SPELL_TYPE_FIREBALL);
-                hero->readied_spell_type = SPELL_TYPE_FIREBALL;
+                for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+                {
+                    const enum item_type item_type = class_database[selected_class].starting_equipment[equip_slot];
+
+                    if (item_type != ITEM_TYPE_NONE)
+                    {
+                        hero->equipment[equip_slot] = item_new(item_type, 0, 0, 0, 1);
+                    }
+                }
+
+                for (enum item_type item_type = ITEM_TYPE_NONE + 1; item_type < NUM_ITEM_TYPES; item_type++)
+                {
+                    const int stack = class_database[selected_class].starting_items[item_type];
+
+                    if (stack > 0)
+                    {
+                        list_add(hero->items, item_new(item_type, 0, 0, 0, stack));
+                    }
+                }
 
                 hero->light_type = LIGHT_TYPE_TORCH;
 
@@ -163,7 +172,7 @@ static struct scene *handle_event(const SDL_Event *const event)
         {
             state--;
 
-            if (state == 0)
+            if (state < 0)
             {
                 create_scene.uninit();
                 menu_scene.init(&create_scene);
@@ -215,57 +224,141 @@ static struct scene *handle_event(const SDL_Event *const event)
                 }
             }
             break;
+            case STATE_ABILITY_SCORES:
+            {
+                if (event->key.keysym.sym == SDLK_r)
+                {
+                    set_recommended_ability_scores();
+                }
+            }
+            break;
+            }
+        }
+        break;
+        case SDLK_KP_2:
+        case SDLK_DOWN:
+        {
+            switch (state)
+            {
             case STATE_RACE:
             {
-                if (alpha >= PLAYER_RACE_BEGIN && alpha <= PLAYER_RACE_END)
+                if (selected_race == PLAYER_RACE_END)
                 {
-                    race = alpha;
+                    selected_race = PLAYER_RACE_BEGIN;
+                }
+                else
+                {
+                    selected_race++;
                 }
             }
             break;
             case STATE_CLASS:
             {
-                if (alpha >= PLAYER_CLASS_BEGIN && alpha <= PLAYER_CLASS_END)
+                if (selected_class == PLAYER_CLASS_END)
                 {
-                    class = alpha;
-
-                    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-                    {
-                        ability_scores[ability] = recommended_ability_scores[class][ability];
-                    }
+                    selected_class = PLAYER_CLASS_BEGIN;
                 }
+                else
+                {
+                    selected_class++;
+                }
+
+                set_recommended_ability_scores();
             }
             break;
             case STATE_ABILITY_SCORES:
             {
-                if (alpha < NUM_ABILITIES)
+                if (selected_ability == NUM_ABILITIES - 1)
                 {
-                    const int cost = calc_ability_score_cost(alpha);
-
-                    if (ability_points >= cost && ability_scores[alpha] < 18)
-                    {
-                        ability_scores[alpha]++;
-                        ability_points -= cost;
-                    }
+                    selected_ability = 0;
                 }
-                else if (event->key.keysym.sym == SDLK_r)
+                else
                 {
-                    if (event->key.keysym.mod & KMOD_SHIFT)
-                    {
-                        for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-                        {
-                            ability_scores[ability] = 8;
-                        }
-                        ability_points = NUM_ABILITIES * 5;
-                    }
-                    else
-                    {
-                        for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
-                        {
-                            ability_scores[ability] = recommended_ability_scores[class][ability];
-                        }
-                        ability_points = 0;
-                    }
+                    selected_ability++;
+                }
+            }
+            break;
+            }
+        }
+        break;
+        case SDLK_KP_4:
+        case SDLK_LEFT:
+        {
+            switch (state)
+            {
+            case STATE_ABILITY_SCORES:
+            {
+                const int cost = calc_ability_score_cost(ability_scores[selected_ability]);
+
+                if (ability_scores[selected_ability] > 8)
+                {
+                    ability_scores[selected_ability]--;
+                    ability_points += cost;
+                }
+            }
+            break;
+            }
+        }
+        break;
+        case SDLK_KP_6:
+        case SDLK_RIGHT:
+        {
+            switch (state)
+            {
+            case STATE_ABILITY_SCORES:
+            {
+                const int cost = calc_ability_score_cost(ability_scores[selected_ability] + 1);
+
+                if (ability_points >= cost && ability_scores[selected_ability] < 18)
+                {
+                    ability_scores[selected_ability]++;
+                    ability_points -= cost;
+                }
+            }
+            break;
+            }
+        }
+        break;
+        case SDLK_KP_8:
+        case SDLK_UP:
+        {
+            switch (state)
+            {
+            case STATE_RACE:
+            {
+                if (selected_race == PLAYER_RACE_BEGIN)
+                {
+                    selected_race = PLAYER_RACE_END;
+                }
+                else
+                {
+                    selected_race--;
+                }
+            }
+            break;
+            case STATE_CLASS:
+            {
+                if (selected_class == PLAYER_CLASS_BEGIN)
+                {
+                    selected_class = PLAYER_CLASS_END;
+                }
+                else
+                {
+                    selected_class--;
+                }
+
+                set_recommended_ability_scores();
+            }
+            break;
+            case STATE_ABILITY_SCORES:
+            {
+                if (selected_ability == 0)
+                {
+                    selected_ability = NUM_ABILITIES - 1;
+                }
+                else
+                {
+                    selected_ability--;
                 }
             }
             break;
@@ -310,14 +403,16 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
     {
     case STATE_STORY:
     {
+        y++;
+
         console_print(
             console,
-            1,
+            console_width / 2,
             y++,
             &color_white,
             &color_black,
             TCOD_BKGND_NONE,
-            TCOD_LEFT,
+            TCOD_CENTER,
             "Welcome to Undermountain. You kill stuff. The end.");
     }
     break;
@@ -367,12 +462,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 console,
                 1,
                 y++,
-                &color_white,
+                race == selected_race ? &color_yellow : &color_white,
                 &color_black,
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
-                "%c) %s",
-                race + SDLK_a,
+                "%s",
                 race_database[race].name);
         }
 
@@ -386,21 +480,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
-            "Selected: %s",
-            race_database[race].name);
-
-        y++;
-
-        console_print(
-            console,
-            1,
-            y++,
-            &color_white,
-            &color_black,
-            TCOD_BKGND_NONE,
-            TCOD_LEFT,
             "Size: %s",
-            size_database[race_database[race].size].name);
+            size_database[race_database[selected_race].size].name);
 
         console_print(
             console,
@@ -411,52 +492,32 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             TCOD_BKGND_NONE,
             TCOD_LEFT,
             "Speed: %.1f",
-            race_database[race].speed);
+            race_database[selected_race].speed);
 
-        y++;
-
-        // TODO: actually implement these features
-        switch (race)
+        console_print(
+            console,
+            1,
+            y++,
+            &color_white,
+            &color_black,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
+            "Feats:");
+        for (enum feat feat = 0; feat < NUM_FEATS; feat++)
         {
-        case RACE_HUMAN:
-        {
-            console_print(
-                console,
-                1,
-                y++,
-                &color_white,
-                &color_black,
-                TCOD_BKGND_NONE,
-                TCOD_LEFT,
-                "Features: None");
-        }
-        break;
-        case RACE_ELF:
-        {
-            console_print(
-                console,
-                1,
-                y++,
-                &color_white,
-                &color_black,
-                TCOD_BKGND_NONE,
-                TCOD_LEFT,
-                "Features: +2 Dexterity, -2 Constitution, Darkvision");
-        }
-        break;
-        case RACE_DWARF:
-        {
-            console_print(
-                console,
-                1,
-                y++,
-                &color_white,
-                &color_black,
-                TCOD_BKGND_NONE,
-                TCOD_LEFT,
-                "Features: +2 Constitution, -2 Intelligence");
-        }
-        break;
+            if (race_database[selected_race].feats[feat])
+            {
+                console_print(
+                    console,
+                    1,
+                    y++,
+                    &color_white,
+                    &color_black,
+                    TCOD_BKGND_NONE,
+                    TCOD_LEFT,
+                    "- %s",
+                    feat_database[feat].name);
+            }
         }
     }
     break;
@@ -478,12 +539,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 console,
                 1,
                 y++,
-                &color_white,
+                class == selected_class ? &color_yellow : &color_white,
                 &color_black,
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
-                "%c) %s",
-                class + SDLK_a,
+                "%s",
                 class_database[class].name);
         }
 
@@ -497,21 +557,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
-            "Selected: %s",
-            class_database[class].name);
-
-        y++;
-
-        console_print(
-            console,
-            1,
-            y++,
-            &color_white,
-            &color_black,
-            TCOD_BKGND_NONE,
-            TCOD_LEFT,
             "Hit die: %s",
-            class_database[class].hit_die);
+            class_database[selected_class].hit_die);
 
         console_print(
             console,
@@ -522,7 +569,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             TCOD_BKGND_NONE,
             TCOD_LEFT,
             "Mana die: %s",
-            class_database[class].mana_die);
+            class_database[selected_class].mana_die);
 
         console_print(
             console,
@@ -532,9 +579,35 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
-            "Base attack bonus: %s (x%.2f)",
-            base_attack_bonus_progression_database[class_database[class].base_attack_bonus_progression].name,
-            base_attack_bonus_progression_database[class_database[class].base_attack_bonus_progression].multiplier);
+            "Base attack bonus: %s (level x%.2f)",
+            base_attack_bonus_progression_database[class_database[selected_class].base_attack_bonus_progression].name,
+            base_attack_bonus_progression_database[class_database[selected_class].base_attack_bonus_progression].multiplier);
+
+        console_print(
+            console,
+            1,
+            y++,
+            &color_white,
+            &color_black,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
+            "Feats:");
+        for (enum feat feat = 0; feat < NUM_FEATS; feat++)
+        {
+            if (class_database[selected_class].feats[feat])
+            {
+                console_print(
+                    console,
+                    1,
+                    y++,
+                    &color_white,
+                    &color_black,
+                    TCOD_BKGND_NONE,
+                    TCOD_LEFT,
+                    "- %s",
+                    feat_database[feat].name);
+            }
+        }
     }
     break;
     case STATE_ABILITY_SCORES:
@@ -551,20 +624,21 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
         for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
         {
-            const int cost = calc_ability_score_cost(ability);
+            const int modifier = (ability_scores[ability] - 10) / 2;
+            const int cost = calc_ability_score_cost(ability_scores[ability] + 1);
 
             console_print(
                 console,
                 1,
                 y++,
-                &color_white,
+                ability == selected_ability ? &color_yellow : &color_white,
                 &color_black,
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
-                "%c) %s: %d (%d)",
-                ability + SDLK_a,
+                "%s: %d (%d) (cost: %d)",
                 ability_database[ability].name,
                 ability_scores[ability],
+                modifier,
                 cost);
         }
 
@@ -578,16 +652,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
-            "r) Recommended");
-        console_print(
-            console,
-            1,
-            y++,
-            &color_white,
-            &color_black,
-            TCOD_BKGND_NONE,
-            TCOD_LEFT,
-            "R) Reset");
+            "Remaining Points: %d",
+            ability_points);
 
         y++;
 
@@ -599,8 +665,18 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
-            "Remaining Points: %d",
-            ability_points);
+            "%s",
+            ability_database[selected_ability].description);
+
+        console_print(
+            console,
+            1,
+            console_height - 4,
+            &color_white,
+            &color_black,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
+            "right) Increase, left) Decrease, r) Recommended");
     }
     break;
     case STATE_CONFIRM:

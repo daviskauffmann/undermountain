@@ -1,13 +1,13 @@
 #include "item.h"
 
-#include "assets.h"
+#include "data.h"
 #include <malloc.h>
 
 struct item *item_new(
     const enum item_type type,
-    const uint8_t floor,
-    const uint8_t x,
-    const uint8_t y,
+    const int floor,
+    const int x,
+    const int y,
     const int stack)
 {
     struct item *const item = malloc(sizeof(*item));

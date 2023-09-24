@@ -69,6 +69,8 @@ struct base_item_data
     bool ranged;
     enum ammunition_type ammunition_type;
 
+    bool finesse;
+
     int armor_class;
 
     const char *damage;
@@ -82,6 +84,8 @@ struct base_item_data
 
 enum item_type
 {
+    ITEM_TYPE_NONE,
+
     ITEM_TYPE_ARROW,
     ITEM_TYPE_ARROW_1,
     ITEM_TYPE_BOLT,
@@ -127,7 +131,7 @@ struct item_data
 
     enum spell_type spell_type;
 
-    uint8_t level;
+    int level;
 
     bool unique;
 };
@@ -136,9 +140,9 @@ struct item
 {
     enum item_type type;
 
-    uint8_t floor;
-    uint8_t x;
-    uint8_t y;
+    int floor;
+    int x;
+    int y;
 
     int stack;
 
@@ -147,9 +151,9 @@ struct item
 
 struct item *item_new(
     enum item_type type,
-    uint8_t floor,
-    uint8_t x,
-    uint8_t y,
+    int floor,
+    int x,
+    int y,
     int stack);
 void item_delete(struct item *item);
 

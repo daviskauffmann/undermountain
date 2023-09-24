@@ -1,9 +1,9 @@
 #include "world.h"
 
 #include "actor.h"
-#include "assets.h"
 #include "color.h"
 #include "corpse.h"
+#include "data.h"
 #include "explosion.h"
 #include "message.h"
 #include "object.h"
@@ -30,7 +30,7 @@ void world_init(void)
 
     world->spawned_unique_item_types = list_new();
 
-    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
+    for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         map_init(&world->maps[floor], floor);
     }
@@ -51,7 +51,7 @@ void world_uninit(void)
     }
     list_delete(world->messages);
 
-    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
+    for (size_t floor = 0; floor < NUM_MAPS; floor++)
     {
         map_uninit(&world->maps[floor]);
     }
@@ -78,7 +78,7 @@ void world_create(struct actor *hero)
     world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, (unsigned int)time(0));
     TCOD_namegen_parse("data/namegen.cfg", world->random);
 
-    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
+    for (size_t floor = 0; floor < NUM_MAPS; floor++)
     {
         // map_generate(&world->maps[floor], TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
         map_generate(&world->maps[floor], MAP_TYPE_LARGE_DUNGEON);
@@ -87,7 +87,7 @@ void world_create(struct actor *hero)
     world->hero = hero;
 
     {
-        uint8_t floor = 0;
+        int floor = 0;
         struct map *map = &world->maps[floor];
 
         // init player
@@ -108,12 +108,14 @@ void world_create(struct actor *hero)
                 "Spot",
                 RACE_DOG,
                 CLASS_DOG,
+                1,
                 (int[]){
                     [ABILITY_STRENGTH] = 10,
                     [ABILITY_DEXTERITY] = 10,
                     [ABILITY_CONSTITUTION] = 10,
                     [ABILITY_INTELLIGENCE] = 10,
                 },
+                (bool[]){0},
                 hero->faction,
                 floor,
                 map->stair_up_x + 1,
@@ -155,12 +157,12 @@ void world_save(const char *filename)
 
     fwrite(&world->time, sizeof(world->time), 1, file);
 
-    uint8_t player_floor = 0;
+    size_t player_floor = 0;
     size_t player_index = 0;
-    uint8_t hero_floor = 0;
+    size_t hero_floor = 0;
     size_t hero_index = 0;
 
-    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
+    for (size_t floor = 0; floor < NUM_MAPS; floor++)
     {
         const struct map *const map = &world->maps[floor];
 
@@ -169,9 +171,9 @@ void world_save(const char *filename)
         fwrite(&map->stair_up_x, sizeof(map->stair_up_x), 1, file);
         fwrite(&map->stair_up_y, sizeof(map->stair_up_y), 1, file);
 
-        for (int x = 0; x < MAP_WIDTH; x++)
+        for (size_t x = 0; x < MAP_WIDTH; x++)
         {
-            for (int y = 0; y < MAP_HEIGHT; y++)
+            for (size_t y = 0; y < MAP_HEIGHT; y++)
             {
                 const struct tile *const tile = &map->tiles[x][y];
 
@@ -213,13 +215,14 @@ void world_save(const char *filename)
 
             fwrite(&actor->race, sizeof(actor->race), 1, file);
             fwrite(&actor->class, sizeof(actor->class), 1, file);
-            fwrite(&actor->faction, sizeof(actor->faction), 1, file);
 
             fwrite(&actor->level, sizeof(actor->level), 1, file);
             fwrite(&actor->experience, sizeof(actor->experience), 1, file);
-            fwrite(&actor->ability_points, sizeof(actor->ability_points), 1, file);
 
+            fwrite(&actor->ability_points, sizeof(actor->ability_points), 1, file);
             fwrite(&actor->ability_scores, sizeof(actor->ability_scores), 1, file);
+
+            fwrite(&actor->feats, sizeof(actor->feats), 1, file);
 
             fwrite(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
             fwrite(&actor->base_mana_points, sizeof(actor->base_mana_points), 1, file);
@@ -263,15 +266,17 @@ void world_save(const char *filename)
                 fwrite(&item->durability, sizeof(item->durability), 1, file);
             }
 
-            fwrite(&actor->known_spell_types->size, sizeof(actor->known_spell_types->size), 1, file);
-            for (size_t known_spell_type_index = 0; known_spell_type_index < actor->known_spell_types->size; known_spell_type_index++)
+            fwrite(&actor->known_spells->size, sizeof(actor->known_spells->size), 1, file);
+            for (size_t known_spell_index = 0; known_spell_index < actor->known_spells->size; known_spell_index++)
             {
-                const enum spell_type spell_type = (size_t)(list_get(actor->known_spell_types, known_spell_type_index));
+                const enum spell_type spell_type = (size_t)(list_get(actor->known_spells, known_spell_index));
 
                 fwrite(&spell_type, sizeof(spell_type), 1, file);
             }
 
-            fwrite(&actor->readied_spell_type, sizeof(actor->readied_spell_type), 1, file);
+            fwrite(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
+
+            fwrite(&actor->faction, sizeof(actor->faction), 1, file);
 
             fwrite(&actor->x, sizeof(actor->x), 1, file);
             fwrite(&actor->y, sizeof(actor->y), 1, file);
@@ -385,6 +390,8 @@ void world_save(const char *filename)
         {
             const struct explosion *const explosion = list_get(map->explosions, explosion_index);
 
+            fwrite(&explosion->type, sizeof(explosion->type), 1, file);
+
             fwrite(&explosion->x, sizeof(explosion->x), 1, file);
             fwrite(&explosion->y, sizeof(explosion->y), 1, file);
 
@@ -392,6 +399,19 @@ void world_save(const char *filename)
             fwrite(&explosion->color, sizeof(explosion->color), 1, file);
 
             fwrite(&explosion->time, sizeof(explosion->time), 1, file);
+        }
+
+        fwrite(&map->surfaces->size, sizeof(map->surfaces->size), 1, file);
+        for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
+        {
+            const struct surface *const surface = list_get(map->surfaces, surface_index);
+
+            fwrite(&surface->type, sizeof(surface->type), 1, file);
+
+            fwrite(&surface->x, sizeof(surface->x), 1, file);
+            fwrite(&surface->y, sizeof(surface->y), 1, file);
+
+            fwrite(&surface->time, sizeof(surface->time), 1, file);
         }
 
         fwrite(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
@@ -440,7 +460,7 @@ void world_load(const char *filename)
 
     fread(&world->time, sizeof(world->time), 1, file);
 
-    for (uint8_t floor = 0; floor < NUM_MAPS; floor++)
+    for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *const map = &world->maps[floor];
 
@@ -506,13 +526,14 @@ void world_load(const char *filename)
 
             fread(&actor->race, sizeof(actor->race), 1, file);
             fread(&actor->class, sizeof(actor->class), 1, file);
-            fread(&actor->faction, sizeof(actor->faction), 1, file);
 
             fread(&actor->level, sizeof(actor->level), 1, file);
             fread(&actor->experience, sizeof(actor->experience), 1, file);
-            fread(&actor->ability_points, sizeof(actor->ability_points), 1, file);
 
+            fread(&actor->ability_points, sizeof(actor->ability_points), 1, file);
             fread(&actor->ability_scores, sizeof(actor->ability_scores), 1, file);
+
+            fread(&actor->feats, sizeof(actor->feats), 1, file);
 
             fread(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
             fread(&actor->base_mana_points, sizeof(actor->base_mana_points), 1, file);
@@ -561,18 +582,20 @@ void world_load(const char *filename)
                 list_add(actor->items, item);
             }
 
-            actor->known_spell_types = list_new();
-            size_t num_known_spell_types;
-            fread(&num_known_spell_types, sizeof(num_known_spell_types), 1, file);
-            for (size_t known_spell_type_index = 0; known_spell_type_index < num_known_spell_types; known_spell_type_index++)
+            actor->known_spells = list_new();
+            size_t num_known_spells;
+            fread(&num_known_spells, sizeof(num_known_spells), 1, file);
+            for (size_t known_spell_index = 0; known_spell_index < num_known_spells; known_spell_index++)
             {
                 enum spell_type spell_type;
                 fread(&spell_type, sizeof(spell_type), 1, file);
 
-                list_add(actor->known_spell_types, (void *)(size_t)spell_type);
+                list_add(actor->known_spells, (void *)(size_t)spell_type);
             }
 
-            fread(&actor->readied_spell_type, sizeof(actor->readied_spell_type), 1, file);
+            fread(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
+
+            fread(&actor->faction, sizeof(actor->faction), 1, file);
 
             actor->floor = floor;
             fread(&actor->x, sizeof(actor->x), 1, file);
@@ -705,6 +728,8 @@ void world_load(const char *filename)
         {
             struct explosion *const explosion = malloc(sizeof(*explosion));
 
+            fread(&explosion->type, sizeof(explosion->type), 1, file);
+
             explosion->floor = floor;
             fread(&explosion->x, sizeof(explosion->x), 1, file);
             fread(&explosion->y, sizeof(explosion->y), 1, file);
@@ -723,16 +748,35 @@ void world_load(const char *filename)
             list_add(map->explosions, explosion);
         }
 
+        size_t num_surfaces;
+        fread(&num_surfaces, sizeof(num_surfaces), 1, file);
+        for (size_t surface_index = 0; surface_index < num_surfaces; surface_index++)
+        {
+            struct surface *const surface = malloc(sizeof(*surface));
+
+            fread(&surface->type, sizeof(surface->type), 1, file);
+
+            surface->floor = floor;
+            fread(&surface->x, sizeof(surface->x), 1, file);
+            fread(&surface->y, sizeof(surface->y), 1, file);
+
+            fread(&surface->time, sizeof(surface->time), 1, file);
+
+            surface->light_fov = NULL;
+
+            list_add(map->surfaces, surface);
+        }
+
         fread(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
     }
 
-    uint8_t player_floor;
+    size_t player_floor;
     fread(&player_floor, sizeof(player_floor), 1, file);
     size_t player_index;
     fread(&player_index, sizeof(player_index), 1, file);
     world->player = list_get(world->maps[player_floor].actors, player_index);
 
-    uint8_t hero_floor;
+    size_t hero_floor;
     fread(&hero_floor, sizeof(hero_floor), 1, file);
     size_t hero_index;
     fread(&hero_index, sizeof(hero_index), 1, file);
@@ -778,6 +822,13 @@ void world_update(float delta_time)
         struct object *const object = list_get(map->objects, object_index);
 
         object_calc_light(object);
+    }
+
+    for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
+    {
+        struct surface *const surface = list_get(map->surfaces, surface_index);
+
+        surface_calc_light(surface);
     }
 
     for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)

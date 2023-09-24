@@ -21,11 +21,11 @@ enum map_type
 
 struct map
 {
-    uint8_t floor;
-    uint8_t stair_down_x;
-    uint8_t stair_down_y;
-    uint8_t stair_up_x;
-    uint8_t stair_up_y;
+    int floor;
+    int stair_down_x;
+    int stair_down_y;
+    int stair_up_x;
+    int stair_up_y;
     struct tile tiles[MAP_WIDTH][MAP_HEIGHT];
     struct list *rooms;
     struct list *objects;
@@ -38,7 +38,7 @@ struct map
     int current_actor_index;
 };
 
-void map_init(struct map *map, uint8_t floor);
+void map_init(struct map *map, int floor);
 void map_uninit(struct map *map);
 void map_generate(struct map *map, enum map_type map_type);
 bool map_is_inside(int x, int y);

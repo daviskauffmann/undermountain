@@ -14,7 +14,7 @@ enum tile_type
     NUM_TILE_TYPES
 };
 
-struct tile_common
+struct tile_metadata
 {
     TCOD_ColorRGB ambient_light_color;
     float ambient_light_intensity;

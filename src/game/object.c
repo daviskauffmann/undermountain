@@ -1,14 +1,14 @@
 #include "object.h"
 
-#include "assets.h"
+#include "data.h"
 #include "world.h"
 #include <malloc.h>
 
 struct object *object_new(
     const enum object_type type,
-    const uint8_t floor,
-    const uint8_t x,
-    const uint8_t y)
+    const int floor,
+    const int x,
+    const int y)
 {
     struct object *const object = malloc(sizeof(*object));
 

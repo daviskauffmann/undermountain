@@ -5,17 +5,17 @@
 
 struct room
 {
-    uint8_t x;
-    uint8_t y;
-    uint8_t w;
-    uint8_t h;
+    int x;
+    int y;
+    int w;
+    int h;
 };
 
 struct room *room_new(
-    uint8_t x,
-    uint8_t y,
-    uint8_t w,
-    uint8_t h);
+    int x,
+    int y,
+    int w,
+    int h);
 void room_delete(struct room *room);
 void room_get_random_pos(
     const struct room *room,

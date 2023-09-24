@@ -2,8 +2,8 @@
 
 #include "../../config.h"
 #include "../../game/actor.h"
-#include "../../game/assets.h"
 #include "../../game/color.h"
+#include "../../game/data.h"
 #include "../../game/explosion.h"
 #include "../../game/item.h"
 #include "../../game/list.h"
@@ -259,7 +259,7 @@ static bool do_spellbook_action(const enum spell_type spell_type)
     {
     case SPELLBOOK_ACTION_SELECT:
     {
-        world->player->readied_spell_type = spell_type;
+        world->player->readied_spell = spell_type;
 
         world_log(
             world->player->floor,
@@ -460,14 +460,33 @@ struct scene *handle_event(const SDL_Event *event)
 
                 handled = true;
             }
-            else if (spellbook_action != SPELLBOOK_ACTION_NONE &&
-                     alpha >= 0 && alpha < world->player->known_spell_types->size)
+            else if (spellbook_action != SPELLBOOK_ACTION_NONE)
             {
                 if (world_can_player_take_turn())
                 {
-                    const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, alpha);
+                    enum spell_type spell_type = SPELL_TYPE_NONE;
 
-                    world->player->took_turn = do_spellbook_action(spell_type);
+                    bool known_spells[NUM_SPELL_TYPES] = {false};
+                    actor_calc_known_spells(world->player, &known_spells);
+                    int known_spell_count = 0;
+                    for (enum spell_type _spell_type = SPELL_TYPE_NONE + 1; _spell_type < NUM_SPELL_TYPES; _spell_type++)
+                    {
+                        if (known_spells[_spell_type])
+                        {
+                            known_spell_count++;
+
+                            if (alpha + 1 == known_spell_count)
+                            {
+                                spell_type = _spell_type;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (spell_type != SPELL_TYPE_NONE)
+                    {
+                        world->player->took_turn = do_spellbook_action(spell_type);
+                    }
                 }
 
                 handled = true;
@@ -822,9 +841,9 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                if (world->player->readied_spell_type != SPELL_TYPE_NONE)
+                if (world->player->readied_spell != SPELL_TYPE_NONE)
                 {
-                    const enum spell_range spell_range = spell_database[world->player->readied_spell_type].range;
+                    const enum spell_range spell_range = spell_database[world->player->readied_spell].range;
                     switch (spell_range)
                     {
                     case SPELL_RANGE_PERSONAL:
@@ -833,7 +852,7 @@ struct scene *handle_event(const SDL_Event *event)
                             world_can_player_take_turn() &&
                             actor_cast(
                                 world->player,
-                                world->player->readied_spell_type,
+                                world->player->readied_spell,
                                 world->player->x, world->player->y,
                                 true);
                     }
@@ -846,7 +865,7 @@ struct scene *handle_event(const SDL_Event *event)
                             {
                                 world->player->took_turn = actor_cast(
                                     world->player,
-                                    world->player->readied_spell_type,
+                                    world->player->readied_spell,
                                     target_x, target_y,
                                     true);
 
@@ -1098,12 +1117,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 if (map_is_inside(x, y))
                 {
                     // ambient lighting
-                    float fg_r = tile_common.ambient_light_color.r;
-                    float fg_g = tile_common.ambient_light_color.g;
-                    float fg_b = tile_common.ambient_light_color.b;
-                    float bg_r = fg_r * tile_common.ambient_light_intensity;
-                    float bg_g = fg_g * tile_common.ambient_light_intensity;
-                    float bg_b = fg_b * tile_common.ambient_light_intensity;
+                    float fg_r = tile_metadata.ambient_light_color.r;
+                    float fg_g = tile_metadata.ambient_light_color.g;
+                    float fg_b = tile_metadata.ambient_light_color.b;
+                    float bg_r = fg_r * tile_metadata.ambient_light_intensity;
+                    float bg_g = fg_g * tile_metadata.ambient_light_intensity;
+                    float bg_b = fg_b * tile_metadata.ambient_light_intensity;
 
                     if (TCOD_map_is_in_fov(world->player->fov, x, y))
                     {
@@ -1142,7 +1161,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                             if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
                             {
-                                const struct light_data *const light_data = &light_database[actor->light_type];
+                                const struct light_data *light_data = &light_database[actor->light_type];
 
                                 const float radius_sq = powf((float)light_data->radius, 2);
                                 const float distance_sq =
@@ -1212,6 +1231,34 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 bg_r += explosion->color.r * 0.5f * attenuation;
                                 bg_g += explosion->color.g * 0.5f * attenuation;
                                 bg_b += explosion->color.b * 0.5f * attenuation;
+                            }
+                        }
+
+                        // calculate surface lighting
+                        for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
+                        {
+                            const struct surface *const surface = list_get(map->surfaces, surface_index);
+
+                            if (surface->light_fov && TCOD_map_is_in_fov(surface->light_fov, x, y))
+                            {
+                                const struct surface_data *const surface_data = &surface_database[surface->type];
+                                const struct light_data *const light_data = &light_database[surface_data->light_type];
+
+                                const float radius_sq = powf((float)light_data->radius, 2);
+                                const float distance_sq =
+                                    powf((float)(x - surface->x + (light_data->flicker ? dx : 0)), 2) +
+                                    powf((float)(y - surface->y + (light_data->flicker ? dy : 0)), 2);
+                                const float attenuation = CLAMP(
+                                    0.0f,
+                                    1.0f,
+                                    (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
+
+                                fg_r += light_data->color.r * attenuation;
+                                fg_g += light_data->color.g * attenuation;
+                                fg_b += light_data->color.b * attenuation;
+                                bg_r += light_data->color.r * light_data->intensity * attenuation;
+                                bg_g += light_data->color.g * light_data->intensity * attenuation;
+                                bg_b += light_data->color.b * light_data->intensity * attenuation;
                             }
                         }
                     }
@@ -1317,12 +1364,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     console,
                     corpse->x - view_rect.x,
                     corpse->y - view_rect.y,
-                    corpse_common.color);
+                    corpse_metadata.color);
                 TCOD_console_set_char(
                     console,
                     corpse->x - view_rect.x,
                     corpse->y - view_rect.y,
-                    corpse_common.glyph);
+                    corpse_metadata.glyph);
             }
         }
 
@@ -1420,7 +1467,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         {
             const struct surface *const surface = list_get(map->surfaces, surface_index);
 
-            if (TCOD_map_is_in_fov(world->player->fov, surface->x, surface->y))
+            if (surface_database[surface->type].glyph && TCOD_map_is_in_fov(world->player->fov, surface->x, surface->y))
             {
                 TCOD_console_set_char_foreground(
                     console,
@@ -2240,51 +2287,56 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         case PANEL_SPELLBOOK:
         {
             int y = 1;
-            for (size_t known_spell_type_index = 0; known_spell_type_index < world->player->known_spell_types->size; known_spell_type_index++)
+
+            bool known_spells[NUM_SPELL_TYPES] = {false};
+            actor_calc_known_spells(world->player, &known_spells);
+            for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
             {
-                const enum spell_type spell_type = (size_t)list_get(world->player->known_spell_types, known_spell_type_index);
-                const struct spell_data *const spell_data = &spell_database[spell_type];
-
-                if (spellbook_action == SPELLBOOK_ACTION_NONE)
+                if (known_spells[spell_type])
                 {
+                    const struct spell_data *const spell_data = &spell_database[spell_type];
+
+                    if (spellbook_action == SPELLBOOK_ACTION_NONE)
+                    {
+                        console_print(
+                            panel_rect.console,
+                            1,
+                            y - current_panel_status->scroll,
+                            &color_white,
+                            NULL,
+                            TCOD_BKGND_NONE,
+                            TCOD_LEFT,
+                            world->player->readied_spell == spell_type ? "%s (readied)" : "%s",
+                            spell_data->name);
+                    }
+                    else
+                    {
+                        console_print(
+                            panel_rect.console,
+                            1,
+                            y - current_panel_status->scroll,
+                            &color_white,
+                            NULL,
+                            TCOD_BKGND_NONE,
+                            TCOD_LEFT,
+                            world->player->readied_spell == spell_type ? "%c) %s (readied)" : "%c) %s",
+                            y - 1 + SDLK_a - current_panel_status->scroll,
+                            spell_data->name);
+                    }
+
                     console_print(
                         panel_rect.console,
-                        1,
+                        panel_rect.width - 2,
                         y - current_panel_status->scroll,
                         &color_white,
                         NULL,
                         TCOD_BKGND_NONE,
-                        TCOD_LEFT,
-                        world->player->readied_spell_type == spell_type ? "%s (readied)" : "%s",
-                        spell_data->name);
-                }
-                else
-                {
-                    console_print(
-                        panel_rect.console,
-                        1,
-                        y - current_panel_status->scroll,
-                        &color_white,
-                        NULL,
-                        TCOD_BKGND_NONE,
-                        TCOD_LEFT,
-                        world->player->readied_spell_type == spell_type ? "%c) %s (readied)" : "%c) %s",
-                        y - 1 + SDLK_a - current_panel_status->scroll,
-                        spell_data->name);
-                }
+                        TCOD_RIGHT,
+                        "%d",
+                        spell_data->mana_cost);
 
-                console_print(
-                    panel_rect.console,
-                    panel_rect.width - 2,
-                    y - current_panel_status->scroll,
-                    &color_white,
-                    NULL,
-                    TCOD_BKGND_NONE,
-                    TCOD_RIGHT,
-                    "%d",
-                    spell_data->mana_cost);
-
-                y++;
+                    y++;
+                }
             }
 
             TCOD_console_printf_frame(

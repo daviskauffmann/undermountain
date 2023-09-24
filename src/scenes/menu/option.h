@@ -3,8 +3,6 @@
 
 enum option
 {
-    OPTION_NONE,
-
     OPTION_START,
     OPTION_QUIT,
 

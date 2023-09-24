@@ -3,8 +3,9 @@
 
 enum spell_type
 {
-    SPELL_TYPE_NONE,
+    SPELL_TYPE_NONE, // TODO: maybe remove this?
 
+    SPELL_TYPE_ACID_SPLASH,
     SPELL_TYPE_MINOR_HEAL,
     SPELL_TYPE_MINOR_MANA,
     SPELL_TYPE_LIGHTNING,

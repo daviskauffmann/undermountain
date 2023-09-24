@@ -1,7 +1,7 @@
 #include "actor.h"
 
-#include "assets.h"
 #include "color.h"
+#include "data.h"
 #include "explosion.h"
 #include "item.h"
 #include "projectile.h"
@@ -17,11 +17,13 @@ struct actor *actor_new(
     const char *const name,
     const enum race race,
     const enum class class,
+    const int level,
     const int ability_scores[NUM_ABILITIES],
+    const bool feats[NUM_FEATS],
     const enum faction faction,
-    const uint8_t floor,
-    const uint8_t x,
-    const uint8_t y)
+    const int floor,
+    const int x,
+    const int y)
 {
     struct actor *const actor = malloc(sizeof(*actor));
 
@@ -29,15 +31,19 @@ struct actor *actor_new(
 
     actor->race = race;
     actor->class = class;
-    actor->faction = faction;
 
     actor->level = 1;
-    actor->experience = 0;
-    actor->ability_points = 0;
+    actor->experience = actor_calc_experience_for_level(level);
 
+    actor->ability_points = 0;
     for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
     {
         actor->ability_scores[ability] = ability_scores[ability];
+    }
+
+    for (enum feat feat = 0; feat < NUM_FEATS; feat++)
+    {
+        actor->feats[feat] = feats[feat];
     }
 
     actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
@@ -47,17 +53,22 @@ struct actor *actor_new(
     actor->mana_points = actor_calc_max_mana_points(actor);
 
     actor->gold = 0;
+
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
         actor->equipment[equip_slot] = NULL;
     }
+
     actor->items = list_new();
-    actor->known_spell_types = list_new();
-    actor->readied_spell_type = SPELL_TYPE_NONE;
+
+    actor->known_spells = list_new();
+    actor->readied_spell = SPELL_TYPE_NONE;
 
     actor->floor = floor;
     actor->x = x;
     actor->y = y;
+
+    actor->faction = faction;
 
     actor->fov = NULL;
 
@@ -80,6 +91,11 @@ struct actor *actor_new(
 
     actor->dead = false;
 
+    while (actor->level != level)
+    {
+        actor_level_up(actor);
+    }
+
     return actor;
 }
 
@@ -95,7 +111,7 @@ void actor_delete(struct actor *const actor)
         TCOD_map_delete(actor->fov);
     }
 
-    list_delete(actor->known_spell_types);
+    list_delete(actor->known_spells);
 
     for (size_t item_index = 0; item_index < actor->items->size; item_index++)
     {
@@ -196,9 +212,10 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         }
         else
         {
-            if (actor->class == CLASS_ROGUE)
+            const enum equippability equippability = actor_calc_item_equippability(actor, weapon);
+
+            if (actor_has_feat(actor, FEAT_WEAPON_FINESSE) && base_weapon_data->finesse && equippability != EQUIPPABILITY_BARELY)
             {
-                // TODO: only if the weapon is a finesse weapon
                 attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
             }
             else
@@ -209,7 +226,14 @@ int actor_calc_attack_bonus(const struct actor *const actor)
     }
     else
     {
-        attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+        if (actor_has_feat(actor, FEAT_WEAPON_FINESSE))
+        {
+            attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+        }
+        else
+        {
+            attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+        }
     }
 
     return attack_bonus;
@@ -440,7 +464,7 @@ void actor_calc_fade(struct actor *const actor, const float delta_time)
 
 int actor_calc_sight_radius(const struct actor *actor)
 {
-    if (actor->race == RACE_ELF)
+    if (actor_has_feat(actor, FEAT_LOW_LIGHT_VISION))
     {
         return 3;
     }
@@ -507,6 +531,17 @@ void actor_calc_fov(struct actor *const actor)
 
                     if (explosion->fov &&
                         TCOD_map_is_in_fov(explosion->fov, x, y))
+                    {
+                        TCOD_map_set_in_fov(actor->fov, x, y, true);
+                    }
+                }
+
+                for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
+                {
+                    const struct surface *const surface = list_get(map->surfaces, surface_index);
+
+                    if (surface->light_fov &&
+                        TCOD_map_is_in_fov(surface->light_fov, x, y))
                     {
                         TCOD_map_set_in_fov(actor->fov, x, y, true);
                     }
@@ -603,6 +638,40 @@ void actor_add_ability_point(struct actor *const actor, const enum ability abili
     }
 }
 
+bool actor_has_feat(const struct actor *const actor, const enum feat feat)
+{
+    // TODO: feats from equipment
+    return actor->feats[feat] || race_database[actor->race].feats[feat] || class_database[actor->class].feats[feat];
+}
+
+void actor_calc_known_spells(const struct actor *const actor, bool (*known_spells)[NUM_SPELL_TYPES])
+{
+    for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
+    {
+        const int level = class_database[actor->class].spell_progression[spell_type];
+
+        if (level > 0 && actor->level >= level)
+        {
+            (*known_spells)[spell_type] = true;
+        }
+    }
+
+    for (size_t spell_index = 0; spell_index < actor->known_spells->size; spell_index++)
+    {
+        const enum spell_type spell_type = (enum spell_type)(long long)list_get(actor->known_spells, spell_index);
+
+        (*known_spells)[spell_type] = true;
+    }
+}
+
+bool actor_knows_spell(const struct actor *const actor, const enum spell_type spell_type)
+{
+    bool known_spells[NUM_SPELL_TYPES] = {false};
+    actor_calc_known_spells(actor, &known_spells);
+
+    return known_spells[spell_type];
+}
+
 bool actor_can_take_turn(const struct actor *const actor)
 {
     return actor->energy >= 1.0f && !actor->dead;
@@ -679,12 +748,12 @@ bool actor_has_ranged_weapon(const struct actor *actor)
 
 bool actor_ai(struct actor *const actor)
 {
-    while (actor->ability_points > 0)
-    {
-        const enum ability ability = TCOD_random_get_int(world->random, 0, NUM_ABILITIES - 1);
+    // while (actor->ability_points > 0)
+    // {
+    //     const enum ability ability = TCOD_random_get_int(world->random, 0, NUM_ABILITIES - 1);
 
-        actor_add_ability_point(actor, ability);
-    }
+    //     actor_add_ability_point(actor, ability);
+    // }
 
     const struct map *const map = &world->maps[actor->floor];
     const struct tile *const tile = &map->tiles[actor->x][actor->y];
@@ -834,7 +903,7 @@ bool actor_ai(struct actor *const actor)
     if (actor->last_seen_x != -1 && actor->last_seen_y != -1)
     {
         if ((actor->x == actor->last_seen_x && actor->y == actor->last_seen_y) ||
-            actor->turns_chased > actor_common.turns_to_chase)
+            actor->turns_chased > actor_metadata.turns_to_chase)
         {
             actor->last_seen_x = -1;
             actor->last_seen_y = -1;
@@ -1027,8 +1096,8 @@ bool actor_move(
 
     tile->actor = actor;
 
-    actor->x = (uint8_t)x;
-    actor->y = (uint8_t)y;
+    actor->x = x;
+    actor->y = y;
 
     return true;
 }
@@ -1042,8 +1111,8 @@ bool actor_swap(struct actor *const actor, struct actor *const other)
     }
 
     // swap actor coordinates
-    const uint8_t temp_x = actor->x;
-    const uint8_t temp_y = actor->y;
+    const int temp_x = actor->x;
+    const int temp_y = actor->y;
     actor->x = other->x;
     actor->y = other->y;
     other->x = temp_x;
@@ -1885,8 +1954,10 @@ bool actor_read(struct actor *const actor, struct item *const item, const int x,
     }
     else if (item_data->type == BASE_ITEM_TYPE_TOME)
     {
+        // TODO: if already known, do nothing
+
         // add spell to known spells
-        list_add(actor->known_spell_types, (void *)(size_t)item_data->spell_type);
+        list_add(actor->known_spells, (void *)(size_t)item_data->spell_type);
 
         // remove from inventory
         list_remove(actor->items, item);
@@ -2223,7 +2294,7 @@ bool actor_cast(
         // does the actor know the spell?
         // this should never happen, but just in case
         // an actor should only be able to "ready" a spell they know
-        if (!list_contains(actor->known_spell_types, (void *)(size_t)spell_type))
+        if (!actor_knows_spell(actor, spell_type))
         {
             world_log(
                 actor->floor,
@@ -2359,6 +2430,30 @@ bool actor_cast(
         // create a fireball projectile
         struct projectile *const projectile = projectile_new(
             PROJECTILE_TYPE_FIREBALL,
+            actor->floor,
+            actor->x,
+            actor->y,
+            x,
+            y,
+            actor,
+            NULL);
+
+        // add the projectile to the map
+        struct map *const map = &world->maps[actor->floor];
+        list_add(map->projectiles, projectile);
+
+        return false;
+    }
+    case SPELL_TYPE_ACID_SPLASH:
+    {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
+        // create a fireball projectile
+        struct projectile *const projectile = projectile_new(
+            PROJECTILE_TYPE_ACID_SPLASH,
             actor->floor,
             actor->x,
             actor->y,

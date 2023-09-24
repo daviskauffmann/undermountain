@@ -13,6 +13,8 @@
 
 static struct option_data option_data[NUM_OPTIONS];
 
+static enum option selected_option;
+
 static void init(const struct scene *const previous_scene)
 {
     previous_scene;
@@ -37,43 +39,9 @@ static struct scene *handle_event(const SDL_Event *const event)
     {
         switch (event->key.keysym.sym)
         {
-        case SDLK_ESCAPE:
+        case SDLK_RETURN:
         {
-            menu_scene.uninit();
-            return NULL;
-        }
-        break;
-        case SDLK_a:
-        case SDLK_b:
-        case SDLK_c:
-        case SDLK_d:
-        case SDLK_e:
-        case SDLK_f:
-        case SDLK_g:
-        case SDLK_h:
-        case SDLK_i:
-        case SDLK_j:
-        case SDLK_k:
-        case SDLK_l:
-        case SDLK_m:
-        case SDLK_n:
-        case SDLK_o:
-        case SDLK_p:
-        case SDLK_q:
-        case SDLK_r:
-        case SDLK_s:
-        case SDLK_t:
-        case SDLK_u:
-        case SDLK_v:
-        case SDLK_w:
-        case SDLK_x:
-        case SDLK_y:
-        case SDLK_z:
-        {
-            const int alpha = event->key.keysym.sym - SDLK_a;
-            const enum option option = (enum option)(OPTION_START + alpha);
-
-            switch (option)
+            switch (selected_option)
             {
             case OPTION_START:
             {
@@ -105,6 +73,38 @@ static struct scene *handle_event(const SDL_Event *const event)
             }
         }
         break;
+        case SDLK_ESCAPE:
+        {
+            menu_scene.uninit();
+            return NULL;
+        }
+        break;
+        case SDLK_KP_2:
+        case SDLK_DOWN:
+        {
+            if (selected_option == NUM_OPTIONS - 1)
+            {
+                selected_option = 0;
+            }
+            else
+            {
+                selected_option++;
+            }
+        }
+        break;
+        case SDLK_KP_8:
+        case SDLK_UP:
+        {
+            if (selected_option == 0)
+            {
+                selected_option = NUM_OPTIONS - 1;
+            }
+            else
+            {
+                selected_option--;
+            }
+        }
+        break;
         }
     }
     break;
@@ -117,20 +117,19 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
     delta_time;
 
-    int y = 1;
+    int y = console_height / 2;
 
     for (enum option option = OPTION_START; option < NUM_OPTIONS; option++)
     {
         console_print(
             console,
-            1,
+            console_width / 2,
             y++,
-            &color_white,
+            option == selected_option ? &color_yellow : &color_white,
             &color_black,
             TCOD_BKGND_NONE,
-            TCOD_LEFT,
-            "%c) %s",
-            option + 'a' - 1,
+            TCOD_CENTER,
+            "%s",
             option_data[option].text);
     }
 

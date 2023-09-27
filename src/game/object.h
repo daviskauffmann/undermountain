@@ -48,6 +48,7 @@ struct object *object_new(
     int x,
     int y);
 void object_delete(struct object *object);
+
 void object_calc_light(struct object *object);
 
 #endif

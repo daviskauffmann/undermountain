@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         .tcod_version = TCOD_COMPILEDVERSION,
         .console = console,
         .window_title = TITLE,
-        .sdl_window_flags = SDL_WINDOW_RESIZABLE,
+        .sdl_window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP,
         .renderer_type = TCOD_RENDERER_SDL2,
         .tileset = tileset,
         .vsync = true,

@@ -5,7 +5,7 @@
 #include "spell.h"
 #include <libtcod.h>
 
-#define NUM_MAPS 20
+#define NUM_MAPS 40
 
 struct world
 {
@@ -29,11 +29,16 @@ extern struct world *world;
 
 void world_init(void);
 void world_uninit(void);
+
 void world_create(struct actor *hero);
-void world_save(const char *filename);
-void world_load(const char *filename);
+
+void world_save(FILE *file);
+void world_load(FILE *file);
+
 void world_update(float delta_time);
+
 bool world_can_player_take_turn(void);
+
 void world_log(int floor, int x, int y, TCOD_ColorRGB color, const char *fmt, ...);
 
 #endif

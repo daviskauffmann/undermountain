@@ -20,8 +20,6 @@ struct item *item_new(
 
     item->stack = CLAMP(0, base_item_database[item_database[type].type].max_stack, stack);
 
-    item->durability = base_item_database[item_database[type].type].max_durability;
-
     return item;
 }
 

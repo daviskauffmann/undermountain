@@ -80,15 +80,14 @@ void world_create(struct actor *hero)
 
     for (size_t floor = 0; floor < NUM_MAPS; floor++)
     {
-        // map_generate(&world->maps[floor], TCOD_random_get_int(world->random, 0, NUM_MAP_TYPES - 1));
-        map_generate(&world->maps[floor], MAP_TYPE_LARGE_DUNGEON);
+        map_generate(&world->maps[floor]);
     }
 
     world->hero = hero;
 
     {
-        int floor = 0;
-        struct map *map = &world->maps[floor];
+        const int floor = hero->level - 1;
+        struct map *const map = &world->maps[floor];
 
         // init player
         {
@@ -104,23 +103,25 @@ void world_create(struct actor *hero)
 
         // create pet
         {
-            struct actor *pet = actor_new(
+            struct actor *const pet = actor_new(
                 "Spot",
-                RACE_DOG,
+                RACE_ANIMAL_SMALL,
                 CLASS_DOG,
-                1,
+                hero->level,
                 (int[]){
-                    [ABILITY_STRENGTH] = 10,
-                    [ABILITY_DEXTERITY] = 10,
-                    [ABILITY_CONSTITUTION] = 10,
-                    [ABILITY_INTELLIGENCE] = 10,
+                    [ABILITY_STRENGTH] = 13,
+                    [ABILITY_DEXTERITY] = 17,
+                    [ABILITY_CONSTITUTION] = 15,
+                    [ABILITY_INTELLIGENCE] = 2,
                 },
-                (bool[]){0},
+                (bool[NUM_FEATS]){
+                    [FEAT_LOW_LIGHT_VISION] = true,
+                },
                 hero->faction,
                 floor,
                 map->stair_up_x + 1,
                 map->stair_up_y + 1);
-            pet->leader = world->hero;
+            pet->leader = hero;
 
             list_add(map->actors, pet);
 
@@ -135,16 +136,10 @@ void world_create(struct actor *hero)
         color_white,
         "Hail, %s!",
         world->hero->name);
-
-    printf("World created.\n");
 }
 
-// TODO: maybe this function should just take in a stream instead of loading the file
-// call it world_serialize? and world_deserialize?
-void world_save(const char *filename)
+void world_save(FILE *const file)
 {
-    FILE *const file = fopen(filename, "wb");
-
     fwrite(world->random, sizeof(*world->random), 1, file);
 
     fwrite(&world->spawned_unique_item_types->size, sizeof(world->spawned_unique_item_types->size), 1, file);
@@ -157,15 +152,9 @@ void world_save(const char *filename)
 
     fwrite(&world->time, sizeof(world->time), 1, file);
 
-    size_t player_floor = 0;
-    size_t player_index = 0;
-    size_t hero_floor = 0;
-    size_t hero_index = 0;
-
     for (size_t floor = 0; floor < NUM_MAPS; floor++)
     {
         const struct map *const map = &world->maps[floor];
-
         fwrite(&map->stair_down_x, sizeof(map->stair_down_x), 1, file);
         fwrite(&map->stair_down_y, sizeof(map->stair_down_y), 1, file);
         fwrite(&map->stair_up_x, sizeof(map->stair_up_x), 1, file);
@@ -244,8 +233,6 @@ void world_save(const char *filename)
                     fwrite(&item->type, sizeof(item->type), 1, file);
 
                     fwrite(&item->stack, sizeof(item->stack), 1, file);
-
-                    fwrite(&item->durability, sizeof(item->durability), 1, file);
                 }
                 else
                 {
@@ -262,8 +249,6 @@ void world_save(const char *filename)
                 fwrite(&item->type, sizeof(item->type), 1, file);
 
                 fwrite(&item->stack, sizeof(item->stack), 1, file);
-
-                fwrite(&item->durability, sizeof(item->durability), 1, file);
             }
 
             fwrite(&actor->known_spells->size, sizeof(actor->known_spells->size), 1, file);
@@ -297,17 +282,11 @@ void world_save(const char *filename)
 
             fwrite(&actor->dead, sizeof(actor->dead), 1, file);
 
-            if (actor == world->player)
-            {
-                player_floor = floor;
-                player_index = actor_index;
-            }
+            const bool is_player = actor == world->player;
+            fwrite(&is_player, sizeof(is_player), 1, file);
 
-            if (actor == world->hero)
-            {
-                hero_floor = floor;
-                hero_index = actor_index;
-            }
+            const bool is_hero = actor == world->hero;
+            fwrite(&is_hero, sizeof(is_hero), 1, file);
         }
 
         for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
@@ -344,8 +323,6 @@ void world_save(const char *filename)
             fwrite(&item->y, sizeof(item->y), 1, file);
 
             fwrite(&item->stack, sizeof(item->stack), 1, file);
-
-            fwrite(&item->durability, sizeof(item->durability), 1, file);
         }
 
         fwrite(&map->projectiles->size, sizeof(map->projectiles->size), 1, file);
@@ -375,8 +352,6 @@ void world_save(const char *filename)
                 fwrite(&item->type, sizeof(item->type), 1, file);
 
                 fwrite(&item->stack, sizeof(item->stack), 1, file);
-
-                fwrite(&item->durability, sizeof(item->durability), 1, file);
             }
             else
             {
@@ -417,11 +392,6 @@ void world_save(const char *filename)
         fwrite(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
     }
 
-    fwrite(&player_floor, sizeof(player_floor), 1, file);
-    fwrite(&player_index, sizeof(player_index), 1, file);
-    fwrite(&hero_floor, sizeof(hero_floor), 1, file);
-    fwrite(&hero_index, sizeof(hero_index), 1, file);
-
     fwrite(&world->messages->size, sizeof(world->messages->size), 1, file);
     for (size_t message_index = 0; message_index < world->messages->size; message_index++)
     {
@@ -433,16 +403,10 @@ void world_save(const char *filename)
 
         fwrite(&message->color, sizeof(message->color), 1, file);
     }
-
-    fclose(file);
-
-    printf("World saved.\n");
 }
 
-void world_load(const char *filename)
+void world_load(FILE *const file)
 {
-    FILE *const file = fopen(filename, "rb");
-
     world->random = TCOD_random_new(TCOD_RNG_MT);
     fread(world->random, sizeof(*world->random), 1, file);
 
@@ -463,7 +427,6 @@ void world_load(const char *filename)
     for (int floor = 0; floor < NUM_MAPS; floor++)
     {
         struct map *const map = &world->maps[floor];
-
         fread(&map->stair_down_x, sizeof(map->stair_down_x), 1, file);
         fread(&map->stair_down_y, sizeof(map->stair_down_y), 1, file);
         fread(&map->stair_up_x, sizeof(map->stair_up_x), 1, file);
@@ -502,7 +465,7 @@ void world_load(const char *filename)
 
             fread(&object->type, sizeof(object->type), 1, file);
 
-            object->floor = floor;
+            object->floor = map->floor;
             fread(&object->x, sizeof(object->x), 1, file);
             fread(&object->y, sizeof(object->y), 1, file);
 
@@ -556,8 +519,6 @@ void world_load(const char *filename)
 
                     fread(&item->stack, sizeof(item->stack), 1, file);
 
-                    fread(&item->durability, sizeof(item->durability), 1, file);
-
                     actor->equipment[equip_slot] = item;
                 }
                 else
@@ -577,8 +538,6 @@ void world_load(const char *filename)
 
                 fread(&item->stack, sizeof(item->stack), 1, file);
 
-                fread(&item->durability, sizeof(item->durability), 1, file);
-
                 list_add(actor->items, item);
             }
 
@@ -597,7 +556,7 @@ void world_load(const char *filename)
 
             fread(&actor->faction, sizeof(actor->faction), 1, file);
 
-            actor->floor = floor;
+            actor->floor = map->floor;
             fread(&actor->x, sizeof(actor->x), 1, file);
             fread(&actor->y, sizeof(actor->y), 1, file);
 
@@ -621,6 +580,20 @@ void world_load(const char *filename)
             fread(&actor->controllable, sizeof(actor->controllable), 1, file);
 
             fread(&actor->dead, sizeof(actor->dead), 1, file);
+
+            bool is_player;
+            fread(&is_player, sizeof(is_player), 1, file);
+            if (is_player)
+            {
+                world->player = actor;
+            }
+
+            bool is_hero;
+            fread(&is_hero, sizeof(is_hero), 1, file);
+            if (is_hero)
+            {
+                world->hero = actor;
+            }
 
             list_add(map->actors, actor);
             map->tiles[actor->x][actor->y].actor = actor;
@@ -649,7 +622,7 @@ void world_load(const char *filename)
 
             fread(&corpse->level, sizeof(corpse->level), 1, file);
 
-            corpse->floor = floor;
+            corpse->floor = map->floor;
             fread(&corpse->x, sizeof(corpse->x), 1, file);
             fread(&corpse->y, sizeof(corpse->y), 1, file);
 
@@ -665,13 +638,11 @@ void world_load(const char *filename)
 
             fread(&item->type, sizeof(item->type), 1, file);
 
-            item->floor = floor;
+            item->floor = map->floor;
             fread(&item->x, sizeof(item->x), 1, file);
             fread(&item->y, sizeof(item->y), 1, file);
 
             fread(&item->stack, sizeof(item->stack), 1, file);
-
-            fread(&item->durability, sizeof(item->durability), 1, file);
 
             list_add(map->items, item);
             list_add(map->tiles[item->x][item->y].items, item);
@@ -685,7 +656,7 @@ void world_load(const char *filename)
 
             fread(&projectile->type, sizeof(projectile->type), 1, file);
 
-            projectile->floor = floor;
+            projectile->floor = map->floor;
             fread(&projectile->origin_x, sizeof(projectile->origin_x), 1, file);
             fread(&projectile->origin_y, sizeof(projectile->origin_y), 1, file);
             fread(&projectile->target_x, sizeof(projectile->target_x), 1, file);
@@ -708,8 +679,6 @@ void world_load(const char *filename)
 
                 fread(&item->stack, sizeof(item->stack), 1, file);
 
-                fread(&item->durability, sizeof(item->durability), 1, file);
-
                 projectile->ammunition = item;
             }
             else
@@ -730,7 +699,7 @@ void world_load(const char *filename)
 
             fread(&explosion->type, sizeof(explosion->type), 1, file);
 
-            explosion->floor = floor;
+            explosion->floor = map->floor;
             fread(&explosion->x, sizeof(explosion->x), 1, file);
             fread(&explosion->y, sizeof(explosion->y), 1, file);
 
@@ -756,7 +725,7 @@ void world_load(const char *filename)
 
             fread(&surface->type, sizeof(surface->type), 1, file);
 
-            surface->floor = floor;
+            surface->floor = map->floor;
             fread(&surface->x, sizeof(surface->x), 1, file);
             fread(&surface->y, sizeof(surface->y), 1, file);
 
@@ -769,18 +738,6 @@ void world_load(const char *filename)
 
         fread(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
     }
-
-    size_t player_floor;
-    fread(&player_floor, sizeof(player_floor), 1, file);
-    size_t player_index;
-    fread(&player_index, sizeof(player_index), 1, file);
-    world->player = list_get(world->maps[player_floor].actors, player_index);
-
-    size_t hero_floor;
-    fread(&hero_floor, sizeof(hero_floor), 1, file);
-    size_t hero_index;
-    fread(&hero_index, sizeof(hero_index), 1, file);
-    world->hero = list_get(world->maps[hero_floor].actors, hero_index);
 
     size_t num_messages;
     fread(&num_messages, sizeof(num_messages), 1, file);
@@ -808,8 +765,6 @@ void world_load(const char *filename)
         color_white,
         "Welcome back, %s!",
         world->hero->name);
-
-    printf("World loaded.\n");
 }
 
 void world_update(float delta_time)
@@ -1028,7 +983,7 @@ void world_update(float delta_time)
                     {
                         break;
                     }
-                    timer = 0.0f;
+                    timer = 0;
                 }
 
                 actor->took_turn = actor_ai(actor);
@@ -1039,7 +994,7 @@ void world_update(float delta_time)
             if (actor->took_turn)
             {
                 // decrease energy
-                actor->energy -= 1.0f;
+                actor->energy -= 1;
 
                 // check if the actor can still take a turn
                 if (actor_can_take_turn(actor))

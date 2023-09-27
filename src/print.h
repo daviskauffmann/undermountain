@@ -10,6 +10,6 @@ void console_print(
     const TCOD_ColorRGB *bg,
     TCOD_bkgnd_flag_t flag,
     TCOD_alignment_t alignment,
-    char *fmt, ...);
+    const char *fmt, ...);
 
 #endif

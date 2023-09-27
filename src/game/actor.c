@@ -75,6 +75,7 @@ struct actor *actor_new(
     actor->took_turn = false;
     actor->energy = actor_calc_speed(actor);
 
+    actor->current_target = NULL;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
     actor->turns_chased = 0;
@@ -85,7 +86,7 @@ struct actor *actor_new(
     actor->light_fov = NULL;
 
     actor->flash_color = color_white;
-    actor->flash_fade_coef = 0.0f;
+    actor->flash_fade_coef = 0;
 
     actor->controllable = false;
 
@@ -129,9 +130,99 @@ int actor_calc_experience_for_level(const int level)
     return level * (level - 1) / 2 * 1000;
 }
 
+void actor_give_experience(struct actor *const actor, const int experience)
+{
+    actor->experience += experience;
+
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        color_azure,
+        "%s gains %d experience.",
+        actor->name,
+        experience);
+
+    while (actor->experience >= actor_calc_experience_for_level(actor->level + 1))
+    {
+        actor_level_up(actor);
+
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            color_yellow,
+            "%s has gained a level!",
+            actor->name);
+    }
+}
+
+void actor_level_up(struct actor *const actor)
+{
+    const float current_hit_points_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
+    const float current_mana_points_percent = (float)actor->mana_points / actor_calc_max_mana_points(actor);
+
+    actor->level++;
+    actor->ability_points++;
+    actor->base_hit_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].hit_die);
+    actor->base_mana_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].mana_die);
+
+    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
+    actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
+
+    if (actor->hit_points <= 0)
+    {
+        actor_die(actor, NULL);
+    }
+    if (actor->mana_points <= 0)
+    {
+        actor->mana_points = 0;
+    }
+}
+
+void actor_add_ability_point(struct actor *const actor, const enum ability ability)
+{
+    const float current_hit_points_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
+    const float current_mana_points_percent = (float)actor->mana_points / actor_calc_max_mana_points(actor);
+
+    actor->ability_scores[ability]++;
+    actor->ability_points--;
+
+    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
+    actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
+
+    if (actor->hit_points <= 0)
+    {
+        actor_die(actor, NULL);
+    }
+    if (actor->mana_points <= 0)
+    {
+        actor->mana_points = 0;
+    }
+}
+
 int actor_calc_ability_modifer(const struct actor *const actor, const enum ability ability)
 {
-    return (actor->ability_scores[ability] - 10) / 2;
+    int modifier = (actor->ability_scores[ability] - 10) / 2;
+
+    if (ability == ABILITY_DEXTERITY)
+    {
+        const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
+
+        if (armor)
+        {
+            const struct item_data *const armor_data = &item_database[armor->type];
+            const struct base_item_data *const base_armor_data = &base_item_database[armor_data->type];
+
+            if (base_armor_data->max_dexterity_bonus > 0 &&
+                modifier > base_armor_data->max_dexterity_bonus)
+            {
+                modifier = base_armor_data->max_dexterity_bonus;
+            }
+        }
+    }
+
+    return modifier;
 }
 
 int actor_calc_max_hit_points(const struct actor *const actor)
@@ -147,9 +238,10 @@ int actor_calc_max_mana_points(const struct actor *const actor)
 int actor_calc_armor_class(const struct actor *const actor)
 {
     const int dexterity_modifer = actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+    const int natural_armor_bonus = class_database[actor->class].natural_armor_bonus;
     const int size_modifer = size_database[race_database[actor->race].size].modifier;
 
-    int armor_class = 10 + dexterity_modifer + size_modifer;
+    int armor_class = 10 + dexterity_modifer + natural_armor_bonus + size_modifer;
 
     const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
 
@@ -176,9 +268,54 @@ int actor_calc_armor_class(const struct actor *const actor)
     return armor_class;
 }
 
-int actor_calc_base_attack_bonus(const struct actor *actor)
+int actor_calc_attacks_per_round(const struct actor *const actor)
 {
-    return (int)floorf(actor->level * base_attack_bonus_progression_database[class_database[actor->class].base_attack_bonus_progression].multiplier);
+    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
+
+    int attacks_per_round = (base_attack_bonus - 5) / 5;
+
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
+    if (weapon)
+    {
+        const struct item_data *const weapon_data = &item_database[weapon->type];
+        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+
+        if (base_weapon_data->ranged &&
+            (weapon_data->type == BASE_ITEM_TYPE_LIGHT_CROSSBOW ||
+             weapon_data->type == BASE_ITEM_TYPE_HEAVY_CROSSBOW) &&
+            !actor_has_feat(actor, FEAT_RAPID_RELOAD))
+        {
+            attacks_per_round = 1;
+        }
+    }
+
+    // TODO: monk using unarmed or kama
+    // return (base_attack_bonus - 3) / 3;
+
+    // TODO: dual wielding? off hand weapon gives extra attacks at BAB -10 / 5
+
+    // TODO: rapid shot feat, gives extra attack per round if ranged (not crossbow)
+    // need to implement this in the attack code as well, since all attacks in round suffer -2 penalty
+
+    if (attacks_per_round < 1)
+    {
+        return 1;
+    }
+
+    return attacks_per_round;
+}
+
+int actor_calc_base_attack_bonus(const struct actor *const actor)
+{
+    const enum base_attack_bonus_progression base_attack_bonus_progression = class_database[actor->class].base_attack_bonus_progression;
+
+    if (base_attack_bonus_progression == BASE_ATTACK_BONUS_FIXED)
+    {
+        return class_database[actor->class].base_attack_bonus;
+    }
+
+    return (int)floorf(actor->level * base_attack_bonus_progression_database[base_attack_bonus_progression].multiplier);
 }
 
 int actor_calc_attack_bonus(const struct actor *const actor)
@@ -342,6 +479,38 @@ const char *actor_calc_damage(const struct actor *const actor)
     return "1d3";
 }
 
+float actor_calc_arcane_spell_failure(const struct actor *const actor)
+{
+    float arcane_spell_failure = 0;
+
+    if (actor_has_feat(actor, FEAT_STILL_SPELL))
+    {
+        return 0;
+    }
+
+    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
+
+    if (armor)
+    {
+        const struct item_data *const armor_data = &item_database[armor->type];
+        const struct base_item_data *const base_armor_data = &base_item_database[armor_data->type];
+
+        arcane_spell_failure += base_armor_data->arcane_spell_failure;
+    }
+
+    const struct item *const shield = actor->equipment[EQUIP_SLOT_SHIELD];
+
+    if (shield)
+    {
+        const struct item_data *const shield_data = &item_database[shield->type];
+        const struct base_item_data *const base_shield_data = &base_item_database[shield_data->type];
+
+        arcane_spell_failure += base_shield_data->arcane_spell_failure;
+    }
+
+    return arcane_spell_failure;
+}
+
 enum equippability actor_calc_item_equippability(const struct actor *const actor, const struct item *const item)
 {
     const struct race_data *const race_data = &race_database[actor->race];
@@ -408,24 +577,10 @@ float actor_calc_carry_weight(const struct actor *actor)
 
 float actor_calc_speed(const struct actor *actor)
 {
-    const float speed = race_database[actor->race].speed;
+    const float speed = size_database[race_database[actor->race].size].speed;
+    const bool encumbered = actor_calc_carry_weight(actor) > actor_calc_max_carry_weight(actor);
 
-    float encumbrance = 1.0f;
-
-    for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
-    {
-        if (actor->equipment[equip_slot])
-        {
-            const enum equippability equippability = actor_calc_item_equippability(actor, actor->equipment[equip_slot]);
-
-            if (equippability == EQUIPPABILITY_BARELY)
-            {
-                encumbrance -= 0.2f;
-            }
-        }
-    }
-
-    return speed * encumbrance * (actor_calc_carry_weight(actor) > actor_calc_max_carry_weight(actor) ? 0.5f : 1);
+    return speed * (encumbered ? 0.5f : 1);
 }
 
 void actor_calc_light(struct actor *const actor)
@@ -454,11 +609,11 @@ void actor_calc_fade(struct actor *const actor, const float delta_time)
     {
         // TODO: slower/faster fade depending on circumstances
         // TODO: different fade functions such as sin()
-        actor->flash_fade_coef -= 4.0f * delta_time;
+        actor->flash_fade_coef -= 4 * delta_time;
     }
     else
     {
-        actor->flash_fade_coef = 0.0f;
+        actor->flash_fade_coef = 0;
     }
 }
 
@@ -567,81 +722,72 @@ void actor_calc_fov(struct actor *const actor)
     TCOD_map_delete(los_map);
 }
 
-void actor_give_experience(struct actor *const actor, const int experience)
+void actor_calc_feats(const struct actor *actor, bool (*feats)[NUM_FEATS])
 {
-    actor->experience += experience;
-
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_azure,
-        "%s gains %d experience.",
-        actor->name,
-        experience);
-
-    while (actor->experience >= actor_calc_experience_for_level(actor->level + 1))
+    for (enum feat feat = 0; feat < NUM_FEATS; feat++)
     {
-        actor_level_up(actor);
+        if (race_database[actor->race].feats[feat])
+        {
+            (*feats)[feat] = true;
+        }
 
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_yellow,
-            "%s has gained a level!",
-            actor->name);
-    }
-}
+        const int level = class_database[actor->class].feat_progression[feat];
 
-void actor_level_up(struct actor *const actor)
-{
-    const float current_hit_points_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
-    const float current_mana_points_percent = (float)actor->mana_points / actor_calc_max_mana_points(actor);
+        if (level > 0 && level <= actor->level)
+        {
+            (*feats)[feat] = true;
+        }
 
-    actor->level++;
-    actor->ability_points++;
-    actor->base_hit_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].hit_die);
-    actor->base_mana_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].mana_die);
+        if (actor->feats[feat])
+        {
+            (*feats)[feat] = true;
+        }
 
-    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
-    actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
-
-    if (actor->hit_points <= 0)
-    {
-        actor_die(actor, NULL);
-    }
-    if (actor->mana_points <= 0)
-    {
-        actor->mana_points = 0;
-    }
-}
-
-void actor_add_ability_point(struct actor *const actor, const enum ability ability)
-{
-    const float current_hit_points_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
-    const float current_mana_points_percent = (float)actor->mana_points / actor_calc_max_mana_points(actor);
-
-    actor->ability_scores[ability]++;
-    actor->ability_points--;
-
-    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
-    actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
-
-    if (actor->hit_points <= 0)
-    {
-        actor_die(actor, NULL);
-    }
-    if (actor->mana_points <= 0)
-    {
-        actor->mana_points = 0;
+        // TODO: feats from equipment
     }
 }
 
 bool actor_has_feat(const struct actor *const actor, const enum feat feat)
 {
-    // TODO: feats from equipment
-    return actor->feats[feat] || race_database[actor->race].feats[feat] || class_database[actor->class].feats[feat];
+    bool known_feats[NUM_FEATS] = {false};
+    actor_calc_feats(actor, &known_feats);
+
+    return known_feats[feat];
+}
+
+bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
+{
+    // TODO: if getting the feat from equipment, the actor should still be able to learn it
+    if (actor_has_feat(actor, feat))
+    {
+        return false;
+    }
+
+    const struct feat_prerequisites *const prerequisites = &feat_database[feat].prerequisites;
+
+    if (prerequisites->requires_race &&
+        prerequisites->race != actor->race)
+    {
+        return false;
+    }
+
+    if (prerequisites->requires_class &&
+        prerequisites->class != actor->class)
+    {
+        return false;
+    }
+
+    if (prerequisites->level > actor->level)
+    {
+        return false;
+    }
+
+    if (feat_database[feat].prerequisites.base_attack_bonus > actor_calc_base_attack_bonus(actor))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 void actor_calc_known_spells(const struct actor *const actor, bool (*known_spells)[NUM_SPELL_TYPES])
@@ -650,7 +796,7 @@ void actor_calc_known_spells(const struct actor *const actor, bool (*known_spell
     {
         const int level = class_database[actor->class].spell_progression[spell_type];
 
-        if (level > 0 && actor->level >= level)
+        if (level > 0 && level <= actor->level)
         {
             (*known_spells)[spell_type] = true;
         }
@@ -674,7 +820,7 @@ bool actor_knows_spell(const struct actor *const actor, const enum spell_type sp
 
 bool actor_can_take_turn(const struct actor *const actor)
 {
-    return actor->energy >= 1.0f && !actor->dead;
+    return actor->energy >= 1 && !actor->dead;
 }
 
 bool actor_is_enemy(const struct actor *const actor, const struct actor *const other)
@@ -748,6 +894,7 @@ bool actor_has_ranged_weapon(const struct actor *actor)
 
 bool actor_ai(struct actor *const actor)
 {
+    // assign ability points
     // while (actor->ability_points > 0)
     // {
     //     const enum ability ability = TCOD_random_get_int(world->random, 0, NUM_ABILITIES - 1);
@@ -758,9 +905,13 @@ bool actor_ai(struct actor *const actor)
     const struct map *const map = &world->maps[actor->floor];
     const struct tile *const tile = &map->tiles[actor->x][actor->y];
 
-    // look for fountains to heal if low health
     if (actor->hit_points < actor_calc_max_hit_points(actor) / 2)
     {
+        // TODO: look in inventory for potion
+
+        // TODO: cast a healing spell
+
+        // look for fountains to heal
         const struct object *nearest_fountain = NULL;
         float min_distance = FLT_MAX;
 
@@ -787,7 +938,7 @@ bool actor_ai(struct actor *const actor)
         {
             if (distance_between(
                     actor->x, actor->y,
-                    nearest_fountain->x, nearest_fountain->y) < 2.0f)
+                    nearest_fountain->x, nearest_fountain->y) < 2)
             {
                 if (actor_drink(actor, nearest_fountain->x, nearest_fountain->y))
                 {
@@ -804,99 +955,111 @@ bool actor_ai(struct actor *const actor)
         }
     }
 
+    // TODO: look for injured allies to heal
+
     // look for hostile targets
+    struct actor *const nearest_enemy = actor_find_nearest_enemy(actor);
+
+    if (nearest_enemy)
     {
-        struct actor *const nearest_enemy = actor_find_nearest_enemy(actor);
+        // target spotted, so remember the location in case the actor loses them
+        actor->current_target = nearest_enemy;
+        actor->last_seen_x = nearest_enemy->x;
+        actor->last_seen_y = nearest_enemy->y;
+        actor->turns_chased = 0;
 
-        if (nearest_enemy)
+        bool can_shoot = false;
+
+        const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+        if (weapon)
         {
-            // target spotted, so remember the location in case the actor loses them
-            actor->last_seen_x = nearest_enemy->x;
-            actor->last_seen_y = nearest_enemy->y;
-            actor->turns_chased = 0;
+            const struct item_data *const weapon_data = &item_database[weapon->type];
+            const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
-            bool can_shoot = false;
-
-            const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
-            if (weapon)
+            if (base_weapon_data->ranged)
             {
-                const struct item_data *const weapon_data = &item_database[weapon->type];
-                const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+                // does the actor have ammo?
+                const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
 
-                if (base_weapon_data->ranged)
+                if (ammunition)
                 {
-                    // does the actor have ammo?
-                    const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+                    // is it the correct ammo?
+                    const struct item_data *const ammunition_data = &item_database[ammunition->type];
+                    const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
 
-                    if (ammunition)
+                    if (base_ammunition_data->ammunition_type == base_weapon_data->ammunition_type)
                     {
-                        // is it the correct ammo?
-                        const struct item_data *const ammunition_data = &item_database[ammunition->type];
-                        const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
-
-                        if (base_ammunition_data->ammunition_type == base_weapon_data->ammunition_type)
-                        {
-                            can_shoot = true;
-                        }
+                        can_shoot = true;
                     }
+                }
 
-                    if (!can_shoot)
+                if (!can_shoot)
+                {
+                    // out of ammo or using the wrong ammo
+
+                    // try to find suitable ammo in inventory and equip it
+                    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
                     {
-                        // out of ammo or using the wrong ammo
+                        struct item *const item = list_get(actor->items, item_index);
+                        const struct item_data *const item_data = &item_database[item->type];
+                        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
-                        // try to find suitable ammo in inventory and equip it
-                        for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                        if (base_item_data->ammunition_type == base_weapon_data->ammunition_type)
                         {
-                            struct item *const item = list_get(actor->items, item_index);
-                            const struct item_data *const item_data = &item_database[item->type];
-                            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-
-                            if (base_item_data->ammunition_type == base_weapon_data->ammunition_type)
+                            // found suitable ammo, so equip it
+                            if (actor_equip(actor, item))
                             {
-                                // found suitable ammo, so equip it
-                                if (actor_equip(actor, item))
-                                {
-                                    return true;
-                                }
+                                return true;
                             }
                         }
-
-                        // no ammo equipped or in inventory, so unequip the weapon
-                        if (actor_unequip(actor, EQUIP_SLOT_WEAPON))
-                        {
-                            return true;
-                        }
                     }
-                }
-            }
 
-            if (can_shoot)
-            {
-                if (actor_shoot(actor, nearest_enemy->x, nearest_enemy->y))
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                if (distance_between(
-                        actor->x, actor->y,
-                        nearest_enemy->x, nearest_enemy->y) < 2.0f)
-                {
-                    if (actor_attack(actor, nearest_enemy, NULL))
-                    {
-                        return true;
-                    }
-                }
-                else
-                {
-                    if (actor_path_towards(actor, nearest_enemy->x, nearest_enemy->y))
+                    // no ammo equipped or in inventory, so unequip the weapon
+                    if (actor_unequip(actor, EQUIP_SLOT_WEAPON))
                     {
                         return true;
                     }
                 }
             }
         }
+        else
+        {
+            // look for weapon in inventory and equip
+            // if the enemy is in melee range, look for a melee weapon
+            // if the enemy is far away, look for a ranged weapon
+            // if the weapon is ranged, make sure there is also ammo, otherwise fall back to a melee weapon
+        }
+
+        if (can_shoot)
+        {
+            if (actor_shoot(actor, nearest_enemy->x, nearest_enemy->y))
+            {
+                return true;
+            }
+        }
+        else
+        {
+            if (distance_between(
+                    actor->x, actor->y,
+                    nearest_enemy->x, nearest_enemy->y) < 2)
+            {
+                if (actor_attack(actor, nearest_enemy, NULL))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (actor_path_towards(actor, nearest_enemy->x, nearest_enemy->y))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    else
+    {
+        actor->current_target = NULL;
     }
 
     // go to where a hostile target was recently seen
@@ -920,7 +1083,7 @@ bool actor_ai(struct actor *const actor)
     if (actor->leader)
     {
         if (!TCOD_map_is_in_fov(actor->fov, actor->leader->x, actor->leader->y) ||
-            distance_between(actor->x, actor->y, actor->leader->x, actor->leader->y) > 5.0f)
+            distance_between(actor->x, actor->y, actor->leader->x, actor->leader->y) > 5)
         {
             if (actor_path_towards(actor, actor->leader->x, actor->leader->y))
             {
@@ -978,7 +1141,7 @@ bool actor_path_towards(
         TCOD_map_is_transparent(TCOD_map, target_x, target_y),
         true);
 
-    const TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1.0f);
+    const TCOD_path_t path = TCOD_path_new_using_map(TCOD_map, 1);
     TCOD_path_compute(
         path,
         actor->x, actor->y,
@@ -1011,7 +1174,7 @@ bool actor_move_towards(
         actor->x, actor->y,
         target_x, target_y);
 
-    if (distance > 0.0f)
+    if (distance > 0)
     {
         const int dx = (int)roundf((target_x - actor->x) / distance);
         const int dy = (int)roundf((target_y - actor->y) / distance);
@@ -1761,6 +1924,118 @@ bool actor_equip(struct actor *const actor, struct item *const item)
         return false;
     }
 
+    bool feats[NUM_FEATS] = {false};
+    actor_calc_feats(actor, &feats);
+    bool is_proficient = false;
+    for (enum weapon_proficiency weapon_proficiency = WEAPON_PROFICIENCY_NONE + 1; weapon_proficiency < NUM_WEAPON_PROFICIENCIES; weapon_proficiency++)
+    {
+        if (base_item_data->weapon_proficiencies[weapon_proficiency])
+        {
+            switch (weapon_proficiency)
+            {
+            case WEAPON_PROFICIENCY_ELF:
+            {
+                if (feats[FEAT_WEAPON_PROFICIENCY_ELF])
+                {
+                    is_proficient = true;
+                }
+            }
+            break;
+            case WEAPON_PROFICIENCY_EXOTIC:
+            {
+                if (feats[FEAT_WEAPON_PROFICIENCY_EXOTIC])
+                {
+                    is_proficient = true;
+                }
+            }
+            break;
+            case WEAPON_PROFICIENCY_MARTIAL:
+            {
+                if (feats[FEAT_WEAPON_PROFICIENCY_MARTIAL])
+                {
+                    is_proficient = true;
+                }
+            }
+            break;
+            case WEAPON_PROFICIENCY_ROGUE:
+            {
+                if (feats[FEAT_WEAPON_PROFICIENCY_ROGUE])
+                {
+                    is_proficient = true;
+                }
+            }
+            break;
+            case WEAPON_PROFICIENCY_SIMPLE:
+            {
+                if (feats[FEAT_WEAPON_PROFICIENCY_SIMPLE])
+                {
+                    is_proficient = true;
+                }
+            }
+            break;
+            case WEAPON_PROFICIENCY_WIZARD:
+            {
+                if (feats[FEAT_WEAPON_PROFICIENCY_WIZARD])
+                {
+                    is_proficient = true;
+                }
+            }
+            break;
+            }
+        }
+    }
+    if (base_item_data->armor_proficiency != ARMOR_PROFICIENCY_NONE)
+    {
+        switch (base_item_data->armor_proficiency)
+        {
+        case ARMOR_PROFICIENCY_HEAVY:
+        {
+            if (feats[FEAT_ARMOR_PROFICIENCY_HEAVY])
+            {
+                is_proficient = true;
+            }
+        }
+        break;
+        case ARMOR_PROFICIENCY_LIGHT:
+        {
+            if (feats[FEAT_ARMOR_PROFICIENCY_LIGHT])
+            {
+                is_proficient = true;
+            }
+        }
+        break;
+        case ARMOR_PROFICIENCY_MEDIUM:
+        {
+            if (feats[FEAT_ARMOR_PROFICIENCY_MEDIUM])
+            {
+                is_proficient = true;
+            }
+        }
+        break;
+        case ARMOR_PROFICIENCY_SHIELD:
+        {
+            if (feats[FEAT_SHIELD_PROFICIENCY])
+            {
+                is_proficient = true;
+            }
+        }
+        break;
+        }
+    }
+    if (!is_proficient)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            color_white,
+            "%s is not proficient with %s.",
+            actor->name,
+            item_data->name);
+
+        return false;
+    }
+
     // unequip the current item in the slot
     if (actor->equipment[equip_slot])
     {
@@ -2138,138 +2413,106 @@ bool actor_shoot(
 // TODO: rename this function to actor_do_damage and replace all calls with actor_melee, which will do distance checking
 bool actor_attack(struct actor *const actor, struct actor *const other, const struct item *const ammunition)
 {
+    ammunition;
+
     // calculate other armor class
     const int armor_class = actor_calc_armor_class(other);
 
-    // calculate hit
-    const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
-    const int attack_bonus = actor_calc_attack_bonus(actor);
-    const int hit_challenge = attack_roll + attack_bonus;
+    // calculate number of attacks
+    const int attacks_per_round = actor_calc_attacks_per_round(actor);
 
-    if (attack_roll == 1 ||
-        (attack_roll != 20 && hit_challenge < armor_class))
+    for (int attack = 0; attack < attacks_per_round; attack++)
     {
+        // calculate hit
+        const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+        const int attack_bonus = actor_calc_attack_bonus(actor);
+        const int successive_attack_penalty = attack * 5;
+        const int hit_challenge = attack_roll + attack_bonus - successive_attack_penalty;
+
+        if (attack_roll == 1 ||
+            (attack_roll != 20 && hit_challenge < armor_class))
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_light_gray,
+                "%s misses %s.",
+                actor->name,
+                other->name);
+
+            return true;
+        }
+
+        // calculate critical hit
+        bool crit = false;
+
+        if (attack_roll >= actor_calc_threat_range(actor))
+        {
+            const int threat_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+            const int crit_challenge = threat_roll + attack_bonus;
+
+            if (crit_challenge >= armor_class)
+            {
+                crit = true;
+            }
+        }
+
+        // calculate damage
+        const int num_attack_rolls =
+            crit
+                ? actor_calc_critical_multiplier(actor)
+                : 1;
+        const int damage_bonus = actor_calc_damage_bonus(actor);
+
+        int damage = 0;
+
+        for (size_t i = 0; i < num_attack_rolls; i++)
+        {
+            const int weapon_damage = TCOD_random_dice_roll_s(world->random, actor_calc_damage(actor));
+
+            damage += weapon_damage + damage_bonus;
+        }
+
+        // sneak attack
+        bool sneak_attack = false;
+
+        if (actor_has_feat(actor, FEAT_SNEAK_ATTACK) && other->current_target != actor)
+        {
+            sneak_attack = true;
+
+            for (size_t i = 0; i < actor->level / 2; i++)
+            {
+                damage += TCOD_random_dice_roll_s(world->random, "1d6");
+            }
+        }
+
+        // if it's a hit, it has to do damage
+        if (damage < 1)
+        {
+            damage = 1;
+        }
+
+        // TODO: when projectiles come at the player from the dark, nothing gets logged
+        // it'd be nice if there were a way to do something like "someone attacks <player> for <damage>"
         world_log(
             actor->floor,
             actor->x,
             actor->y,
-            color_light_gray,
-            "%s misses %s.",
+            crit ? color_light_red : color_white,
+            "%s %s %s for %d%s.",
             actor->name,
-            other->name);
+            crit ? "crits" : "hits",
+            other->name,
+            damage,
+            sneak_attack ? " (sneak)" : "");
 
-        return true;
-    }
+        // deal damage
+        const bool killed = actor_damage_hit_points(other, actor, damage);
 
-    // calculate critical hit
-    bool crit = false;
-
-    if (attack_roll >= actor_calc_threat_range(actor))
-    {
-        const int threat_roll = TCOD_random_dice_roll_s(world->random, "1d20");
-        const int crit_challenge = threat_roll + attack_bonus;
-
-        if (crit_challenge >= armor_class)
+        if (killed)
         {
-            crit = true;
-        }
-    }
-
-    // calculate damage
-    const int num_attack_rolls =
-        crit
-            ? actor_calc_critical_multiplier(actor)
-            : 1;
-    const int damage_bonus = actor_calc_damage_bonus(actor);
-
-    int damage = 0;
-
-    for (int i = 0; i < num_attack_rolls; i++)
-    {
-        damage +=
-            TCOD_random_dice_roll_s(
-                world->random,
-                actor_calc_damage(actor)) +
-            damage_bonus;
-    }
-
-    // if it's a hit, it has to do damage
-    if (damage < 1)
-    {
-        damage = 1;
-    }
-
-    // TODO: when projectiles come at the player from the dark, nothing gets logged
-    // it'd be nice if there were a way to do something like "someone attacks <player> for <damage>"
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        crit ? color_light_red : color_white,
-        "%s %s %s for %d.",
-        actor->name,
-        crit ? "crits" : "hits",
-        other->name,
-        damage);
-
-    // deal damage
-    const bool killed = actor_damage_hit_points(other, actor, damage);
-
-    // if the other actor wasn't killed, perform any other effects
-    if (!killed)
-    {
-        const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
-
-        if (weapon)
-        {
-            if (weapon->type == ITEM_TYPE_COLD_IRON_BLADE)
-            {
-                other->energy -= 1.0f;
-
-                world_log(
-                    actor->floor,
-                    actor->x,
-                    actor->y,
-                    color_white,
-                    "%s has been slowed!",
-                    other->name);
-            }
-
-            if (weapon->type == ITEM_TYPE_SCEPTER_OF_UNITY)
-            {
-                other->faction = actor->faction;
-
-                world_log(
-                    actor->floor,
-                    actor->x,
-                    actor->y,
-                    color_white,
-                    "%s has become friendly to %s!",
-                    other->name,
-                    actor->name);
-            }
-        }
-
-        const struct item *const other_shield = other->equipment[EQUIP_SLOT_SHIELD];
-
-        if (other_shield)
-        {
-            if (other_shield->type == ITEM_TYPE_SPIKED_SHIELD && !ammunition)
-            {
-                const int spike_damage = TCOD_random_dice_roll_s(world->random, "1d4");
-
-                world_log(
-                    actor->floor,
-                    actor->x,
-                    actor->y,
-                    color_white,
-                    "%s's shield spike hits %s for %d.",
-                    other->name,
-                    actor->name,
-                    spike_damage);
-
-                actor_damage_hit_points(actor, other, spike_damage);
-            }
+            break;
         }
     }
 
@@ -2321,6 +2564,33 @@ bool actor_cast(
                 spell_data->name);
 
             return false;
+        }
+
+        // arcane spell failure
+        const float arcane_spell_failure = actor_calc_arcane_spell_failure(actor);
+
+        if (arcane_spell_failure > 0)
+        {
+            const float roll = TCOD_random_get_float(world->random, 0, 1);
+
+            if (roll < arcane_spell_failure)
+            {
+                world_log(
+                    actor->floor,
+                    actor->x,
+                    actor->y,
+                    color_white,
+                    "%s's spell fizzles.",
+                    actor->name,
+                    spell_data->name);
+
+                if (from_memory)
+                {
+                    actor->mana_points -= spell_data->mana_cost;
+                }
+
+                return true;
+            }
         }
     }
 
@@ -2441,8 +2711,6 @@ bool actor_cast(
         // add the projectile to the map
         struct map *const map = &world->maps[actor->floor];
         list_add(map->projectiles, projectile);
-
-        return false;
     }
     case SPELL_TYPE_ACID_SPLASH:
     {
@@ -2465,8 +2733,6 @@ bool actor_cast(
         // add the projectile to the map
         struct map *const map = &world->maps[actor->floor];
         list_add(map->projectiles, projectile);
-
-        return false;
     }
     break;
     }
@@ -2478,7 +2744,7 @@ void actor_restore_hit_points(struct actor *const actor, const int health)
 {
     actor->hit_points += health;
     actor->flash_color = color_green;
-    actor->flash_fade_coef = 1.0f;
+    actor->flash_fade_coef = 1;
 
     const int max_health = actor_calc_max_hit_points(actor);
     if (actor->hit_points > max_health)
@@ -2498,11 +2764,23 @@ void actor_restore_mana_points(struct actor *const actor, const int mana)
     }
 }
 
-bool actor_damage_hit_points(struct actor *const actor, struct actor *const attacker, const int damage)
+bool actor_damage_hit_points(struct actor *const actor, struct actor *const attacker, int damage)
 {
+    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
+
+    if (armor && armor->type == ITEM_TYPE_ADAMANTINE_BREASTPLATE)
+    {
+        damage -= 2;
+
+        if (damage < 0)
+        {
+            return true;
+        }
+    }
+
     actor->hit_points -= damage;
     actor->flash_color = color_red;
-    actor->flash_fade_coef = 1.0f;
+    actor->flash_fade_coef = 1;
 
     if (actor->hit_points <= 0)
     {

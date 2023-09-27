@@ -27,7 +27,7 @@ struct explosion *explosion_new(
     explosion->radius = radius;
     explosion->color = color;
 
-    explosion->time = 0.0f;
+    explosion->time = 0;
 
     struct map *const map = &world->maps[explosion->floor];
 
@@ -48,7 +48,6 @@ struct explosion *explosion_new(
             {
                 struct tile *const tile = &map->tiles[tile_x][tile_y];
 
-                // TODO: explosion effect cannot be hardcoded here lol
                 switch (explosion->type)
                 {
                 case EXPLOSION_TYPE_ACID_SPLASH:

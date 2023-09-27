@@ -11,7 +11,7 @@ void console_print(
     const TCOD_ColorRGB *const bg,
     const TCOD_bkgnd_flag_t flag,
     const TCOD_alignment_t alignment,
-    char *const fmt, ...)
+    const char *const fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

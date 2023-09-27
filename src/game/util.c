@@ -28,7 +28,7 @@ float angle_between(
 
     float angle = atan2f(dy, dx);
 
-    if (angle < 0.0f)
+    if (angle < 0)
     {
         angle += PI * 2;
     }

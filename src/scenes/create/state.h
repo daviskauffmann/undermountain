@@ -8,6 +8,7 @@ enum state
     STATE_RACE,
     STATE_CLASS,
     STATE_ABILITY_SCORES,
+    STATE_FEATS,
     STATE_CONFIRM,
 
     NUM_STATES

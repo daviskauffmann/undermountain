@@ -47,10 +47,14 @@ static struct scene *handle_event(const SDL_Event *const event)
             {
                 if (file_exists(SAVE_PATH))
                 {
+                    world_init();
+
                     // TODO: prompt whether the player wants to overwrite the save with a new character
                     // if so, go to character creation
-                    world_init();
-                    world_load(SAVE_PATH);
+
+                    FILE *const file = fopen(SAVE_PATH, "rb");
+                    world_load(file);
+                    fclose(file);
 
                     menu_scene.uninit();
                     game_scene.init(&menu_scene);

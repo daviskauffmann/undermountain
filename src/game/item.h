@@ -17,6 +17,32 @@ enum equip_slot
     NUM_EQUIP_SLOTS
 };
 
+enum weapon_proficiency
+{
+    WEAPON_PROFICIENCY_NONE,
+
+    WEAPON_PROFICIENCY_ELF,
+    WEAPON_PROFICIENCY_EXOTIC,
+    WEAPON_PROFICIENCY_MARTIAL,
+    WEAPON_PROFICIENCY_ROGUE,
+    WEAPON_PROFICIENCY_SIMPLE,
+    WEAPON_PROFICIENCY_WIZARD,
+
+    NUM_WEAPON_PROFICIENCIES
+};
+
+enum armor_proficiency
+{
+    ARMOR_PROFICIENCY_NONE,
+
+    ARMOR_PROFICIENCY_HEAVY,
+    ARMOR_PROFICIENCY_LIGHT,
+    ARMOR_PROFICIENCY_MEDIUM,
+    ARMOR_PROFICIENCY_SHIELD,
+
+    NUM_ARMOR_PROFICIENCIES
+};
+
 struct equip_slot_data
 {
     char *name;
@@ -34,14 +60,18 @@ enum ammunition_type
 enum base_item_type
 {
     BASE_ITEM_TYPE_ARROW,
+    BASE_ITEM_TYPE_BREASTPLATE,
     BASE_ITEM_TYPE_BOLT,
     BASE_ITEM_TYPE_BULLET,
+    BASE_ITEM_TYPE_CLOTHING,
     BASE_ITEM_TYPE_DAGGER,
     BASE_ITEM_TYPE_FULL_PLATE,
     BASE_ITEM_TYPE_GOLD,
     BASE_ITEM_TYPE_GREATSWORD,
+    BASE_ITEM_TYPE_HALF_PLATE,
     BASE_ITEM_TYPE_HEAVY_CROSSBOW,
     BASE_ITEM_TYPE_LARGE_SHIELD,
+    BASE_ITEM_TYPE_LEATHER_ARMOR,
     BASE_ITEM_TYPE_LIGHT_CROSSBOW,
     BASE_ITEM_TYPE_LONGBOW,
     BASE_ITEM_TYPE_LONGSWORD,
@@ -65,56 +95,52 @@ struct base_item_data
     enum equip_slot equip_slot;
     enum size size;
     float weight;
-
-    bool ranged;
-    enum ammunition_type ammunition_type;
-
-    bool finesse;
-
-    int armor_class;
+    int max_stack;
 
     const char *damage;
     int threat_range;
     int critical_multiplier;
+    bool finesse;
+    bool ranged;
+    enum ammunition_type ammunition_type;
+    bool weapon_proficiencies[NUM_WEAPON_PROFICIENCIES];
 
-    int max_stack;
-
-    int max_durability;
+    int armor_class;
+    float arcane_spell_failure;
+    int max_dexterity_bonus;
+    enum armor_proficiency armor_proficiency;
 };
 
 enum item_type
 {
     ITEM_TYPE_NONE,
 
+    ITEM_TYPE_ADAMANTINE_BREASTPLATE,
     ITEM_TYPE_ARROW,
-    ITEM_TYPE_ARROW_1,
+    ITEM_TYPE_BREASTPLATE,
     ITEM_TYPE_BOLT,
     ITEM_TYPE_BULLET,
-    ITEM_TYPE_COLD_IRON_BLADE,
     ITEM_TYPE_DAGGER,
     ITEM_TYPE_FULL_PLATE,
-    ITEM_TYPE_FULL_PLATE_1,
     ITEM_TYPE_GOLD,
     ITEM_TYPE_GREATSWORD,
+    ITEM_TYPE_HALF_PLATE,
     ITEM_TYPE_HEAVY_CROSSBOW,
     ITEM_TYPE_LARGE_SHIELD,
+    ITEM_TYPE_LEATHER_ARMOR,
     ITEM_TYPE_LIGHT_CROSSBOW,
     ITEM_TYPE_LONGBOW,
-    ITEM_TYPE_LONGBOW_1,
     ITEM_TYPE_LONGSWORD,
-    ITEM_TYPE_LONGSWORD_1,
     ITEM_TYPE_MACE,
     ITEM_TYPE_POTION_MINOR_HEAL,
     ITEM_TYPE_POTION_MINOR_MANA,
-    ITEM_TYPE_SCEPTER_OF_UNITY,
     ITEM_TYPE_SCROLL_LIGHTNING,
     ITEM_TYPE_SLING,
     ITEM_TYPE_SMALL_SHIELD,
     ITEM_TYPE_SPEAR,
-    ITEM_TYPE_SPIKED_SHIELD,
     ITEM_TYPE_TOME_FIREBALL,
     ITEM_TYPE_TOWER_SHIELD,
-    ITEM_TYPE_TOWER_SHIELD_1,
+    ITEM_TYPE_WIZARDS_ROBE,
 
     NUM_ITEM_TYPES
 };
@@ -145,8 +171,6 @@ struct item
     int y;
 
     int stack;
-
-    int durability;
 };
 
 struct item *item_new(

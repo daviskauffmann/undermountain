@@ -308,7 +308,9 @@ static void uninit(void)
 {
     if (!world->doomed)
     {
-        world_save(SAVE_PATH);
+        FILE *const file = fopen(SAVE_PATH, "wb");
+        world_save(file);
+        fclose(file);
     }
     world_uninit();
 
@@ -844,6 +846,7 @@ struct scene *handle_event(const SDL_Event *event)
                 if (world->player->readied_spell != SPELL_TYPE_NONE)
                 {
                     const enum spell_range spell_range = spell_database[world->player->readied_spell].range;
+
                     switch (spell_range)
                     {
                     case SPELL_RANGE_PERSONAL:
@@ -878,8 +881,8 @@ struct scene *handle_event(const SDL_Event *event)
                             target_x = world->player->x;
                             target_y = world->player->y;
                         }
-                        break;
                     }
+                    break;
                     }
                 }
             }
@@ -1268,7 +1271,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     const struct tile_data *const tile_data = &tile_database[tile->type];
 
                     const float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
-                    const float fg_mult = fg_max > 255.0f ? 255.0f / fg_max : 1.0f;
+                    const float fg_mult = fg_max > 255 ? 255 / fg_max : 1;
                     const TCOD_ColorRGB fg_color = TCOD_color_multiply(
                         TCOD_color_RGB(
                             (uint8_t)(fg_r * fg_mult),
@@ -1276,7 +1279,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             (uint8_t)(fg_b * fg_mult)),
                         tile_data->color);
                     const float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
-                    const float bg_mult = bg_max > 255.0f ? 255.0f / bg_max : 1.0f;
+                    const float bg_mult = bg_max > 255 ? 255 / bg_max : 1;
                     const TCOD_ColorRGB bg_color = TCOD_color_multiply(
                         TCOD_color_RGB(
                             (uint8_t)(bg_r * bg_mult),
@@ -1527,7 +1530,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     console,
                     actor->x - view_rect.x,
                     actor->y - view_rect.y,
-                    race_database[actor->race].glyph);
+                    class_database[actor->class].glyph);
             }
         }
 
@@ -1698,6 +1701,18 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             int y = 1;
 
+            console_print(
+                status_rect.console,
+                1,
+                y++,
+                &color_white,
+                NULL,
+                TCOD_BKGND_NONE,
+                TCOD_LEFT,
+                "LV: %d%s",
+                world->player->level,
+                world->player->ability_points > 0 ? "*" : "");
+
             {
                 const int max_health = actor_calc_max_hit_points(world->player);
                 const TCOD_ColorRGB fg =
@@ -1744,7 +1759,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
                 "Floor: %d",
-                world->player->floor);
+                world->player->floor + 1);
 
             console_print(
                 status_rect.console,
@@ -1769,7 +1784,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 0, 0, status_rect.width, status_rect.height,
                 hud_rect.console,
                 status_rect.x, status_rect.y,
-                1.0f, 1.0f);
+                1, 1);
         }
 
         if (message_log_rect.visible)
@@ -1827,7 +1842,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 0, 0, message_log_rect.width, message_log_rect.height,
                 hud_rect.console,
                 message_log_rect.x, message_log_rect.y,
-                1.0f, 1.0f);
+                1, 1);
         }
 
         TCOD_console_blit(
@@ -1835,7 +1850,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             0, 0, hud_rect.width, hud_rect.height,
             console,
             hud_rect.x, hud_rect.y,
-            1.0f, 1.0f);
+            1, 1);
     }
 
     if (panel_rect.visible)
@@ -1917,7 +1932,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 y - current_panel_status->scroll,
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
-                "%d / %d",
+                "%d/%d",
                 world->player->experience,
                 actor_calc_experience_for_level(world->player->level + 1));
             y++;
@@ -1948,7 +1963,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 y - current_panel_status->scroll,
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
-                "%.1f / %.1f",
+                "%.1f/%.1f",
                 actor_calc_carry_weight(world->player),
                 actor_calc_max_carry_weight(world->player));
             y++;
@@ -2082,7 +2097,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 y - current_panel_status->scroll,
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
-                "%d / %d",
+                "%d/%d",
                 world->player->hit_points,
                 actor_calc_max_hit_points(world->player));
             y++;
@@ -2098,7 +2113,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 y - current_panel_status->scroll,
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
-                "%d / %d",
+                "%d/%d",
                 world->player->mana_points,
                 actor_calc_max_mana_points(world->player));
             y++;
@@ -2122,15 +2137,39 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 panel_rect.console,
                 1,
                 y - current_panel_status->scroll,
-                "Base Attack Bonus");
+                "Arcane Spell Failure");
             TCOD_console_printf_ex(
                 panel_rect.console,
                 panel_rect.width - 2,
                 y - current_panel_status->scroll,
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
-                "%d",
-                actor_calc_base_attack_bonus(world->player));
+                "%d%%",
+                (int)(actor_calc_arcane_spell_failure(world->player) * 100));
+            y++;
+
+            TCOD_console_printf(
+                panel_rect.console,
+                1,
+                y - current_panel_status->scroll,
+                "Base Attack Bonus");
+            const int base_attack_bonus = actor_calc_base_attack_bonus(world->player);
+            char base_attack_bonus_string[20] = {0};
+            snprintf(base_attack_bonus_string, sizeof(base_attack_bonus_string), "%d", base_attack_bonus);
+            const int attacks_per_round = actor_calc_attacks_per_round(world->player);
+            for (int i = 1; i < attacks_per_round; i++)
+            {
+                char extra_attack_string[10] = {0};
+                snprintf(extra_attack_string, sizeof(extra_attack_string), "/%d", base_attack_bonus - i * 5);
+                strcat(base_attack_bonus_string, extra_attack_string);
+            }
+            TCOD_console_printf_ex(
+                panel_rect.console,
+                panel_rect.width - 2,
+                y - current_panel_status->scroll,
+                TCOD_BKGND_NONE,
+                TCOD_RIGHT,
+                base_attack_bonus_string);
             y++;
 
             TCOD_console_printf(
@@ -2355,8 +2394,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             console,
             panel_rect.x,
             panel_rect.y,
-            1.0f,
-            1.0f);
+            1, 1);
     }
 
     if (!world->doomed && !world_can_player_take_turn())

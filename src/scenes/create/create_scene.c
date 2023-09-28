@@ -183,10 +183,10 @@ static struct scene *handle_event(const SDL_Event *const event)
                     name,
                     selected_race,
                     selected_class,
+                    FACTION_ADVENTURER,
                     1,
                     ability_scores,
                     feats,
-                    FACTION_ADVENTURER,
                     0,
                     0,
                     0);
@@ -593,7 +593,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
-            "Speed: %.1f",
+            "Speed: %.2f",
             size_database[race_database[selected_race].size].speed);
 
         console_print(
@@ -658,16 +658,6 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             TCOD_LEFT,
             "Hit die: %s",
             class_database[selected_class].hit_die);
-
-        console_print(
-            console,
-            1, y++,
-            &color_white,
-            &color_black,
-            TCOD_BKGND_NONE,
-            TCOD_LEFT,
-            "Mana die: %s",
-            class_database[selected_class].mana_die);
 
         console_print(
             console,

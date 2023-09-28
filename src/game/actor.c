@@ -17,10 +17,10 @@ struct actor *actor_new(
     const char *const name,
     const enum race race,
     const enum class class,
+    const enum faction faction,
     const int level,
     const int ability_scores[NUM_ABILITIES],
     const bool feats[NUM_FEATS],
-    const enum faction faction,
     const int floor,
     const int x,
     const int y)
@@ -31,6 +31,7 @@ struct actor *actor_new(
 
     actor->race = race;
     actor->class = class;
+    actor->faction = faction;
 
     actor->level = 1;
     actor->experience = actor_calc_experience_for_level(level);
@@ -47,10 +48,8 @@ struct actor *actor_new(
     }
 
     actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
-    actor->base_mana_points = TCOD_random_dice_new(class_database[actor->class].mana_die).nb_faces;
 
     actor->hit_points = actor_calc_max_hit_points(actor);
-    actor->mana_points = actor_calc_max_mana_points(actor);
 
     actor->gold = 0;
 
@@ -61,14 +60,13 @@ struct actor *actor_new(
 
     actor->items = list_new();
 
+    actor->mana = actor_calc_max_mana(actor);
     actor->known_spells = list_new();
     actor->readied_spell = SPELL_TYPE_NONE;
 
     actor->floor = floor;
     actor->x = x;
     actor->y = y;
-
-    actor->faction = faction;
 
     actor->fov = NULL;
 
@@ -159,45 +157,44 @@ void actor_give_experience(struct actor *const actor, const int experience)
 
 void actor_level_up(struct actor *const actor)
 {
-    const float current_hit_points_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
-    const float current_mana_points_percent = (float)actor->mana_points / actor_calc_max_mana_points(actor);
+    const float current_hit_point_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
+    const float current_mana_percent = (float)actor->mana / actor_calc_max_mana(actor);
 
     actor->level++;
     actor->ability_points++;
     actor->base_hit_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].hit_die);
-    actor->base_mana_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].mana_die);
 
-    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
-    actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
+    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_point_percent);
+    actor->mana = (int)(actor_calc_max_mana(actor) * current_mana_percent);
 
     if (actor->hit_points <= 0)
     {
         actor_die(actor, NULL);
     }
-    if (actor->mana_points <= 0)
+    if (actor->mana <= 0)
     {
-        actor->mana_points = 0;
+        actor->mana = 0;
     }
 }
 
 void actor_add_ability_point(struct actor *const actor, const enum ability ability)
 {
-    const float current_hit_points_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
-    const float current_mana_points_percent = (float)actor->mana_points / actor_calc_max_mana_points(actor);
+    const float current_hit_point_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
+    const float current_mana_percent = (float)actor->mana / actor_calc_max_mana(actor);
 
     actor->ability_scores[ability]++;
     actor->ability_points--;
 
-    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_points_percent);
-    actor->mana_points = (int)(actor_calc_max_mana_points(actor) * current_mana_points_percent);
+    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_point_percent);
+    actor->mana = (int)(actor_calc_max_mana(actor) * current_mana_percent);
 
     if (actor->hit_points <= 0)
     {
         actor_die(actor, NULL);
     }
-    if (actor->mana_points <= 0)
+    if (actor->mana <= 0)
     {
-        actor->mana_points = 0;
+        actor->mana = 0;
     }
 }
 
@@ -230,9 +227,47 @@ int actor_calc_max_hit_points(const struct actor *const actor)
     return actor->base_hit_points + (actor->level * actor_calc_ability_modifer(actor, ABILITY_CONSTITUTION));
 }
 
-int actor_calc_max_mana_points(const struct actor *const actor)
+void actor_restore_hit_points(struct actor *const actor, const int health)
 {
-    return actor->base_mana_points + (actor->level * actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE));
+    actor->hit_points += health;
+    actor->flash_color = color_green;
+    actor->flash_fade_coef = 1;
+
+    const int max_health = actor_calc_max_hit_points(actor);
+    if (actor->hit_points > max_health)
+    {
+        actor->hit_points = max_health;
+    }
+}
+
+bool actor_damage_hit_points(struct actor *const actor, struct actor *const attacker, int damage)
+{
+    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
+
+    if (armor && armor->type == ITEM_TYPE_ADAMANTINE_BREASTPLATE)
+    {
+        damage -= 2;
+
+        if (damage < 0)
+        {
+            return true;
+        }
+    }
+
+    actor->hit_points -= damage;
+    actor->flash_color = color_red;
+    actor->flash_fade_coef = 1;
+
+    if (actor->hit_points <= 0)
+    {
+        actor->hit_points = 0;
+
+        actor_die(actor, attacker);
+
+        return true;
+    }
+
+    return false;
 }
 
 int actor_calc_armor_class(const struct actor *const actor)
@@ -376,6 +411,25 @@ int actor_calc_attack_bonus(const struct actor *const actor)
     return attack_bonus;
 }
 
+int actor_calc_ranged_attack_penalty(const struct actor *const actor, const struct actor *const other)
+{
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+    if (weapon)
+    {
+        const struct item_data *const weapon_data = &item_database[weapon->type];
+        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+
+        if (base_weapon_data->ranged &&
+            distance_between(actor->x, actor->y, other->x, other->y) < 2 &&
+            !actor_has_feat(actor, FEAT_POINT_BLANK_SHOT))
+        {
+            return 4;
+        }
+    }
+
+    return 0;
+}
+
 int actor_calc_threat_range(const struct actor *const actor)
 {
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
@@ -477,6 +531,23 @@ const char *actor_calc_damage(const struct actor *const actor)
     }
 
     return "1d3";
+}
+
+int actor_calc_max_mana(const struct actor *const actor)
+{
+    // TODO: better formula
+    return actor->level * actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+}
+
+void actor_restore_mana(struct actor *const actor, const int mana)
+{
+    actor->mana += mana;
+
+    const int max_mana = actor_calc_max_mana(actor);
+    if (actor->mana > max_mana)
+    {
+        actor->mana = max_mana;
+    }
 }
 
 float actor_calc_arcane_spell_failure(const struct actor *const actor)
@@ -1122,10 +1193,71 @@ bool actor_ai(struct actor *const actor)
 
 bool actor_rest(struct actor *const actor)
 {
-    // TODO: can't rest if enemies nearby
+    const struct map *const map = &world->maps[actor->floor];
 
-    actor_restore_hit_points(actor, 1);
-    actor_restore_mana_points(actor, 1);
+    for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+    {
+        struct actor *const other = list_get(map->actors, actor_index);
+
+        if (other->faction != actor->faction)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_white,
+                "%s cannot rest while enemies are nearby.",
+                actor->name);
+
+            return false;
+        }
+    }
+
+    struct item *food = NULL;
+
+    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+    {
+        struct item *const item = list_get(actor->items, item_index);
+
+        if (item->type == ITEM_TYPE_FOOD)
+        {
+            food = item;
+            break;
+        }
+    }
+
+    if (!food)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            color_white,
+            "%s has no food to rest with.",
+            actor->name);
+
+        return false;
+    }
+
+    food->stack--;
+
+    if (food->stack == 0)
+    {
+        list_remove(actor->items, food);
+
+        item_delete(food);
+    }
+
+    actor_restore_hit_points(actor, actor_calc_max_hit_points(actor) - actor->hit_points);
+    actor_restore_mana(actor, actor_calc_max_mana(actor) - actor->mana);
+
+    world_log(
+        actor->floor,
+        actor->x,
+        actor->y,
+        color_white,
+        "%s rests.",
+        actor->name);
 
     return true;
 }
@@ -1267,8 +1399,8 @@ bool actor_move(
 
 bool actor_swap(struct actor *const actor, struct actor *const other)
 {
-    // npc actors can't initiate a swap with the player
-    if (other == world->player)
+    // npc actors can't swap
+    if (actor != world->player)
     {
         return false;
     }
@@ -1670,7 +1802,7 @@ bool actor_drink(
     }
 
     actor_restore_hit_points(actor, actor_calc_max_hit_points(actor) - actor->hit_points);
-    actor_restore_mana_points(actor, actor_calc_max_mana_points(actor) - actor->mana_points);
+    actor_restore_mana(actor, actor_calc_max_mana(actor) - actor->mana);
 
     list_remove(map->objects, tile->object);
 
@@ -2427,7 +2559,8 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
         const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
         const int attack_bonus = actor_calc_attack_bonus(actor);
         const int successive_attack_penalty = attack * 5;
-        const int hit_challenge = attack_roll + attack_bonus - successive_attack_penalty;
+        const int ranged_attack_penalty = actor_calc_ranged_attack_penalty(actor, other);
+        const int hit_challenge = attack_roll + attack_bonus - ranged_attack_penalty - successive_attack_penalty;
 
         if (attack_roll == 1 ||
             (attack_roll != 20 && hit_challenge < armor_class))
@@ -2551,8 +2684,22 @@ bool actor_cast(
             return false;
         }
 
+        if (actor->level < spell_data->level)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_white,
+                "%s is not high enough level to cast %s.",
+                actor->name,
+                spell_data->name);
+
+            return false;
+        }
+
         // does the actor have enough mana?
-        if (actor->mana_points < spell_data->mana_cost)
+        if (actor->mana < spell_data->level)
         {
             world_log(
                 actor->floor,
@@ -2586,7 +2733,7 @@ bool actor_cast(
 
                 if (from_memory)
                 {
-                    actor->mana_points -= spell_data->mana_cost;
+                    actor->mana -= spell_data->level;
                 }
 
                 return true;
@@ -2605,7 +2752,7 @@ bool actor_cast(
 
     if (from_memory)
     {
-        actor->mana_points -= spell_data->mana_cost;
+        actor->mana -= spell_data->level;
     }
 
     switch (spell_type)
@@ -2650,7 +2797,7 @@ bool actor_cast(
                 other->name,
                 mana);
 
-            actor_restore_mana_points(other, mana);
+            actor_restore_mana(other, mana);
         }
     }
     break;
@@ -2738,60 +2885,6 @@ bool actor_cast(
     }
 
     return true;
-}
-
-void actor_restore_hit_points(struct actor *const actor, const int health)
-{
-    actor->hit_points += health;
-    actor->flash_color = color_green;
-    actor->flash_fade_coef = 1;
-
-    const int max_health = actor_calc_max_hit_points(actor);
-    if (actor->hit_points > max_health)
-    {
-        actor->hit_points = max_health;
-    }
-}
-
-void actor_restore_mana_points(struct actor *const actor, const int mana)
-{
-    actor->mana_points += mana;
-
-    const int max_mana = actor_calc_max_mana_points(actor);
-    if (actor->mana_points > max_mana)
-    {
-        actor->mana_points = max_mana;
-    }
-}
-
-bool actor_damage_hit_points(struct actor *const actor, struct actor *const attacker, int damage)
-{
-    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
-
-    if (armor && armor->type == ITEM_TYPE_ADAMANTINE_BREASTPLATE)
-    {
-        damage -= 2;
-
-        if (damage < 0)
-        {
-            return true;
-        }
-    }
-
-    actor->hit_points -= damage;
-    actor->flash_color = color_red;
-    actor->flash_fade_coef = 1;
-
-    if (actor->hit_points <= 0)
-    {
-        actor->hit_points = 0;
-
-        actor_die(actor, attacker);
-
-        return true;
-    }
-
-    return false;
 }
 
 void actor_die(struct actor *const actor, struct actor *const killer)

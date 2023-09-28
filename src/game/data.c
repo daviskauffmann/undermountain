@@ -4,7 +4,7 @@
 #include <libtcod.h>
 
 const struct tile_metadata tile_metadata = {
-    .ambient_light_color = {16, 16, 32},
+    .ambient_light_color = {64, 64, 64},
     .ambient_light_intensity = 0.05f,
 };
 
@@ -104,7 +104,7 @@ const struct object_data object_database[] = {
         .light_type = LIGHT_TYPE_ALTAR,
 
         .is_walkable = true,
-        .is_transparent = false,
+        .is_transparent = true,
     },
     [OBJECT_TYPE_BRAZIER] = {
         .name = "Brazier",
@@ -186,6 +186,67 @@ const struct object_data object_database[] = {
 
         .is_walkable = true,
         .is_transparent = true,
+    },
+};
+
+const struct monster_pack_data monster_pack_database[] = {
+    [MONSTER_PACK_BATS] = {
+        .min_floor = 0,
+        .max_floor = 100,
+
+        .monsters = {
+            [MONSTER_BAT] = 4,
+        },
+    },
+    [MONSTER_PACK_BUGBEARS] = {
+        .min_floor = 3,
+        .max_floor = 5,
+
+        .monsters = {
+            [MONSTER_BUGBEAR] = 1,
+            [MONSTER_GOBLIN] = 2,
+        },
+    },
+    [MONSTER_PACK_DIRE_RAT] = {
+        .min_floor = 1,
+        .max_floor = 6,
+
+        .monsters = {
+            [MONSTER_DIRE_RAT] = 1,
+            [MONSTER_RAT] = 3,
+        },
+    },
+    [MONSTER_PACK_GOBLINS] = {
+        .min_floor = 3,
+        .max_floor = 6,
+
+        .monsters = {
+            [MONSTER_GOBLIN] = 3,
+        },
+    },
+    [MONSTER_PACK_KOBOLDS] = {
+        .min_floor = 3,
+        .max_floor = 6,
+
+        .monsters = {
+            [MONSTER_KOBOLD] = 3,
+        },
+    },
+    [MONSTER_PACK_RATS] = {
+        .min_floor = 0,
+        .max_floor = 4,
+
+        .monsters = {
+            [MONSTER_RAT] = 4,
+        },
+    },
+    [MONSTER_PACK_SKELETONS] = {
+        .min_floor = 1,
+        .max_floor = 6,
+
+        .monsters = {
+            [MONSTER_SKELETON_WARRIOR] = 2,
+        },
     },
 };
 
@@ -333,7 +394,6 @@ const struct class_data class_database[] = {
         .glyph = '@',
 
         .hit_die = "1d10",
-        .mana_die = "1d4",
 
         .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_COMBAT,
 
@@ -358,6 +418,10 @@ const struct class_data class_database[] = {
             [EQUIP_SLOT_SHIELD] = ITEM_TYPE_LARGE_SHIELD,
             [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGSWORD,
         },
+
+        .starting_items = {
+            [ITEM_TYPE_FOOD] = 10,
+        },
     },
     [CLASS_ROGUE] = {
         .name = "Rogue",
@@ -365,7 +429,6 @@ const struct class_data class_database[] = {
         .glyph = '@',
 
         .hit_die = "1d6",
-        .mana_die = "1d4",
 
         .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_MIDDLE,
 
@@ -390,6 +453,7 @@ const struct class_data class_database[] = {
 
         .starting_items = {
             [ITEM_TYPE_DAGGER] = 1,
+            [ITEM_TYPE_FOOD] = 10,
         },
     },
     [CLASS_WIZARD] = {
@@ -398,7 +462,6 @@ const struct class_data class_database[] = {
         .glyph = '@',
 
         .hit_die = "1d4",
-        .mana_die = "1d10",
 
         .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT,
 
@@ -424,6 +487,10 @@ const struct class_data class_database[] = {
             [EQUIP_SLOT_ARMOR] = ITEM_TYPE_WIZARDS_ROBE,
             [EQUIP_SLOT_WEAPON] = ITEM_TYPE_DAGGER,
         },
+
+        .starting_items = {
+            [ITEM_TYPE_FOOD] = 10,
+        },
     },
 
     // monster classes
@@ -433,19 +500,26 @@ const struct class_data class_database[] = {
         .glyph = 'b',
 
         .hit_die = "1d2",
-        .mana_die = "0d0",
     },
     [CLASS_BUGBEAR] = {
         .name = "Bugbear",
         .color = {COLOR_BRASS},
         .glyph = 'b',
 
-        .hit_die = "1d8",
-        .mana_die = "0d0",
+        .hit_die = "1d8+1",
 
         .natural_armor_bonus = 3,
 
         .base_attack_bonus = 2,
+    },
+    [CLASS_DIRE_RAT] = {
+        .name = "Dire Rat",
+        .color = {COLOR_GRAY},
+        .glyph = 'R',
+
+        .hit_die = "1d8+1",
+
+        .natural_armor_bonus = 1,
     },
     [CLASS_DOG] = {
         .name = "Dog",
@@ -453,7 +527,6 @@ const struct class_data class_database[] = {
         .glyph = 'd',
 
         .hit_die = "1d8",
-        .mana_die = "0d0",
 
         .natural_armor_bonus = 1,
     },
@@ -462,8 +535,7 @@ const struct class_data class_database[] = {
         .color = {COLOR_DARK_GREEN},
         .glyph = 'g',
 
-        .hit_die = "1d5",
-        .mana_die = "0d0",
+        .hit_die = "1d8+1",
 
         .base_attack_bonus = 1,
     },
@@ -473,7 +545,6 @@ const struct class_data class_database[] = {
         .glyph = 'k',
 
         .hit_die = "1d8",
-        .mana_die = "0d0",
 
         .base_attack_bonus = 1,
 
@@ -485,7 +556,6 @@ const struct class_data class_database[] = {
         .glyph = 'r',
 
         .hit_die = "1d2",
-        .mana_die = "0d0",
 
         .natural_armor_bonus = 1,
     },
@@ -494,8 +564,7 @@ const struct class_data class_database[] = {
         .color = {COLOR_LIGHT_RED},
         .glyph = 'D',
 
-        .hit_die = "1d12",
-        .mana_die = "0d0",
+        .hit_die = "1d12+2",
 
         .natural_armor_bonus = 6,
 
@@ -506,8 +575,7 @@ const struct class_data class_database[] = {
         .color = {COLOR_RED},
         .glyph = 'D',
 
-        .hit_die = "1d12",
-        .mana_die = "0d0",
+        .hit_die = "1d12+5",
 
         .natural_armor_bonus = 21,
 
@@ -518,8 +586,7 @@ const struct class_data class_database[] = {
         .color = {COLOR_DARK_RED},
         .glyph = 'D',
 
-        .hit_die = "1d12",
-        .mana_die = "0d0",
+        .hit_die = "1d12+9",
 
         .natural_armor_bonus = 33,
 
@@ -531,7 +598,6 @@ const struct class_data class_database[] = {
         .glyph = 's',
 
         .hit_die = "1d12",
-        .mana_die = "0d0",
     },
 };
 
@@ -672,6 +738,7 @@ const struct feat_data feat_database[] = {
 const struct actor_prototype monster_prototypes[] = {
     [MONSTER_BAT] = {
         .name = "Bat",
+
         .race = RACE_ANIMAL_DIMINUTIVE,
         .class = CLASS_BAT,
 
@@ -683,11 +750,15 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 2,
         },
+
+        .faction = FACTION_WILD_ANIMAL,
     },
     [MONSTER_BUGBEAR] = {
         .name = "Bugbear",
+
         .race = RACE_HUMANOID_MEDIUM,
         .class = CLASS_BUGBEAR,
+        .faction = FACTION_GOBLINOID,
 
         .level = 3,
 
@@ -709,10 +780,28 @@ const struct actor_prototype monster_prototypes[] = {
             [ITEM_TYPE_MACE] = 1,
         },
     },
+    [MONSTER_DIRE_RAT] = {
+        .name = "Dire Rat",
+
+        .race = RACE_ANIMAL_SMALL,
+        .class = CLASS_DIRE_RAT,
+        .faction = FACTION_WILD_ANIMAL,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 10,
+            [ABILITY_DEXTERITY] = 17,
+            [ABILITY_CONSTITUTION] = 12,
+            [ABILITY_INTELLIGENCE] = 1,
+        },
+    },
     [MONSTER_GOBLIN] = {
         .name = "Goblin",
+
         .race = RACE_HUMANOID_SMALL,
         .class = CLASS_GOBLIN,
+        .faction = FACTION_GOBLINOID,
 
         .level = 1,
 
@@ -731,8 +820,10 @@ const struct actor_prototype monster_prototypes[] = {
     },
     [MONSTER_KOBOLD] = {
         .name = "Kobold",
+
         .race = RACE_HUMANOID_SMALL,
         .class = CLASS_KOBOLD,
+        .faction = FACTION_KOBOLD,
 
         .level = 1,
 
@@ -750,8 +841,10 @@ const struct actor_prototype monster_prototypes[] = {
     },
     [MONSTER_RAT] = {
         .name = "Rat",
+
         .race = RACE_ANIMAL_TINY,
         .class = CLASS_RAT,
+        .faction = FACTION_WILD_ANIMAL,
 
         .level = 1,
 
@@ -761,17 +854,13 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 2,
         },
-
-        .equipment = {
-            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_LEATHER_ARMOR,
-            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_SMALL_SHIELD,
-            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_MACE,
-        },
     },
     [MONSTER_RED_DRAGON_WYRMLING] = {
         .name = "Wyrmling Red Dragon",
+
         .race = RACE_DRAGON_WYRMLING,
         .class = CLASS_RED_DRAGON_WYRMLING,
+        .faction = FACTION_RED_DRAGON,
 
         .level = 7,
 
@@ -784,8 +873,10 @@ const struct actor_prototype monster_prototypes[] = {
     },
     [MONSTER_RED_DRAGON_ADULT] = {
         .name = "Adult Red Dragon",
+
         .race = RACE_DRAGON_ADULT,
         .class = CLASS_RED_DRAGON_ADULT,
+        .faction = FACTION_RED_DRAGON,
 
         .level = 22,
 
@@ -798,8 +889,10 @@ const struct actor_prototype monster_prototypes[] = {
     },
     [MONSTER_RED_DRAGON_ANCIENT] = {
         .name = "Ancient Red Dragon",
+
         .race = RACE_DRAGON_ANCIENT,
         .class = CLASS_RED_DRAGON_ANCIENT,
+        .faction = FACTION_RED_DRAGON,
 
         .level = 34,
 
@@ -812,8 +905,10 @@ const struct actor_prototype monster_prototypes[] = {
     },
     [MONSTER_SKELETON_WARRIOR] = {
         .name = "Skeleton Warrior",
+
         .race = RACE_UNDEAD,
         .class = CLASS_SKELETON_WARRIOR,
+        .faction = FACTION_UNDEAD,
 
         .level = 1,
 
@@ -826,7 +921,7 @@ const struct actor_prototype monster_prototypes[] = {
 
         .equipment = {
             [EQUIP_SLOT_SHIELD] = ITEM_TYPE_LARGE_SHIELD,
-            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGSWORD,
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_SCIMITAR,
         },
     },
 };
@@ -864,7 +959,7 @@ const struct base_item_data base_item_database[] = {
         .ammunition_type = AMMUNITION_TYPE_ARROW,
     },
     [BASE_ITEM_TYPE_BREASTPLATE] = {
-        .name = "Breatplate",
+        .name = "Breastplate",
         .glyph = '[',
 
         .equip_slot = EQUIP_SLOT_ARMOR,
@@ -925,6 +1020,14 @@ const struct base_item_data base_item_database[] = {
             [WEAPON_PROFICIENCY_SIMPLE] = true,
             [WEAPON_PROFICIENCY_WIZARD] = true,
         },
+    },
+    [BASE_ITEM_TYPE_FOOD] = {
+        .name = "Food",
+        .glyph = '#',
+
+        .size = SIZE_TINY,
+        .weight = 0.1f,
+        .max_stack = INT32_MAX,
     },
     [BASE_ITEM_TYPE_FULL_PLATE] = {
         .name = "Full Plate",
@@ -1105,6 +1208,22 @@ const struct base_item_data base_item_database[] = {
         .weight = 0.5f,
         .max_stack = 10,
     },
+    [BASE_ITEM_TYPE_SCIMITAR] = {
+        .name = "Scimitar",
+        .glyph = '|',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_MEDIUM,
+        .weight = 4,
+        .max_stack = 1,
+
+        .damage = "1d6",
+        .threat_range = 18,
+        .critical_multiplier = 2,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
+    },
     [BASE_ITEM_TYPE_SCROLL] = {
         .name = "Scroll",
         .glyph = '%',
@@ -1241,6 +1360,15 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
+    [ITEM_TYPE_FOOD] = {
+        .type = BASE_ITEM_TYPE_FOOD,
+
+        .name = "Food",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
     [ITEM_TYPE_FULL_PLATE] = {
         .type = BASE_ITEM_TYPE_FULL_PLATE,
 
@@ -1361,6 +1489,15 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
+    [ITEM_TYPE_SCIMITAR] = {
+        .type = BASE_ITEM_TYPE_SCIMITAR,
+
+        .name = "Scimitar",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
     [ITEM_TYPE_SCROLL_LIGHTNING] = {
         .type = BASE_ITEM_TYPE_SCROLL,
 
@@ -1434,27 +1571,32 @@ const struct spell_data spell_database[] = {
     [SPELL_TYPE_ACID_SPLASH] = {
         .name = "Acid Splash",
         .range = SPELL_RANGE_TOUCH,
-        .mana_cost = 0,
+        .level = 1,
     },
     [SPELL_TYPE_MINOR_HEAL] = {
         .name = "Minor Heal",
         .range = SPELL_RANGE_TOUCH,
-        .mana_cost = 1,
+        .level = 1,
     },
     [SPELL_TYPE_MINOR_MANA] = {
         .name = "Minor Mana",
         .range = SPELL_RANGE_TOUCH,
-        .mana_cost = 0,
+        .level = 1,
     },
     [SPELL_TYPE_LIGHTNING] = {
         .name = "Lightning",
         .range = SPELL_RANGE_TOUCH,
-        .mana_cost = 2,
+        .level = 1,
     },
     [SPELL_TYPE_FIREBALL] = {
         .name = "Fireball",
         .range = SPELL_RANGE_TOUCH,
-        .mana_cost = 0,
+        .level = 1,
+    },
+    [SPELL_TYPE_SUMMON_FAMILIAR] = {
+        .name = "Summon Familiar",
+        .range = SPELL_RANGE_TOUCH,
+        .level = 1,
     },
 };
 

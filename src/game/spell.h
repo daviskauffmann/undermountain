@@ -25,7 +25,7 @@ struct spell_data
 {
     const char *name;
     enum spell_range range;
-    int mana_cost;
+    int level;
 };
 
 #endif

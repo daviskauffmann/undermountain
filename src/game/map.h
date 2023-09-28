@@ -1,12 +1,34 @@
 #ifndef UM_GAME_MAP_H
 #define UM_GAME_MAP_H
 
+#include "actor.h"
 #include "list.h"
 #include "tile.h"
 #include <libtcod.h>
 
 #define MAP_WIDTH 50
 #define MAP_HEIGHT 50
+
+enum monster_pack
+{
+    MONSTER_PACK_BATS,
+    MONSTER_PACK_BUGBEARS,
+    MONSTER_PACK_DIRE_RAT,
+    MONSTER_PACK_GOBLINS,
+    MONSTER_PACK_KOBOLDS,
+    MONSTER_PACK_RATS,
+    MONSTER_PACK_SKELETONS,
+
+    NUM_MONSTER_PACKS,
+};
+
+struct monster_pack_data
+{
+    int min_floor;
+    int max_floor;
+
+    int monsters[NUM_MONSTERS];
+};
 
 struct map
 {

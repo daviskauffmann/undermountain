@@ -707,29 +707,36 @@ struct scene *handle_event(const SDL_Event *event)
         break;
         case SDLK_r:
         {
-            if (targeting_action == TARGETING_ACTION_READ)
+            if (event->key.keysym.mod & KMOD_SHIFT)
             {
-                if (world_can_player_take_turn())
-                {
-                    world->player->took_turn = actor_read(
-                        world->player,
-                        targeting_item,
-                        target_x, target_y);
-
-                    targeting_action = TARGETING_ACTION_NONE;
-                }
+                world->player->took_turn = world_can_player_take_turn() && actor_rest(world->player);
             }
             else
             {
-                show_panel(PANEL_INVENTORY);
-                inventory_action = INVENTORY_ACTION_READ;
+                if (targeting_action == TARGETING_ACTION_READ)
+                {
+                    if (world_can_player_take_turn())
+                    {
+                        world->player->took_turn = actor_read(
+                            world->player,
+                            targeting_item,
+                            target_x, target_y);
 
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose an item to read. Press 'ESC' to cancel.");
+                        targeting_action = TARGETING_ACTION_NONE;
+                    }
+                }
+                else
+                {
+                    show_panel(PANEL_INVENTORY);
+                    inventory_action = INVENTORY_ACTION_READ;
+
+                    world_log(
+                        world->player->floor,
+                        world->player->x,
+                        world->player->y,
+                        color_yellow,
+                        "Choose an item to read. Press 'ESC' to cancel.");
+                }
             }
         }
         break;
@@ -958,7 +965,7 @@ struct scene *handle_event(const SDL_Event *event)
         break;
         case SDLK_KP_5:
         {
-            world->player->took_turn = world_can_player_take_turn() && actor_rest(world->player);
+            world->player->took_turn = world_can_player_take_turn();
         }
         break;
         case SDLK_KP_6:
@@ -1709,7 +1716,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 NULL,
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
-                "LV: %d%s",
+                "Level: %d%s",
                 world->player->level,
                 world->player->ability_points > 0 ? "*" : "");
 
@@ -1734,8 +1741,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             }
 
             {
-                const int max_mana = actor_calc_max_mana_points(world->player);
-                const TCOD_ColorRGB fg = TCOD_color_lerp(color_gray, color_azure, (float)world->player->mana_points / max_mana);
+                const int max_mana = actor_calc_max_mana(world->player);
+                const TCOD_ColorRGB fg = TCOD_color_lerp(color_gray, color_azure, (float)world->player->mana / max_mana);
 
                 console_print(
                     status_rect.console,
@@ -1745,8 +1752,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     NULL,
                     TCOD_BKGND_NONE,
                     TCOD_LEFT,
-                    "MP: %d/%d",
-                    world->player->mana_points,
+                    "Mana: %d/%d",
+                    world->player->mana,
                     max_mana);
             }
 
@@ -2114,8 +2121,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 "%d/%d",
-                world->player->mana_points,
-                actor_calc_max_mana_points(world->player));
+                world->player->mana,
+                actor_calc_max_mana(world->player));
             y++;
 
             TCOD_console_printf(
@@ -2235,7 +2242,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     y - current_panel_status->scroll,
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
-                    "%.1f",
+                    "%.2f",
                     actor_calc_speed(world->player));
             }
             else
@@ -2251,7 +2258,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     y - current_panel_status->scroll,
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
-                    "%.1f (overburdened)",
+                    "%.2f (overburdened)",
                     actor_calc_speed(world->player));
             }
             y++;
@@ -2372,7 +2379,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_RIGHT,
                         "%d",
-                        spell_data->mana_cost);
+                        spell_data->level);
 
                     y++;
                 }

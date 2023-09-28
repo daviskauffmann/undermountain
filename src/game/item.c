@@ -1,6 +1,7 @@
 #include "item.h"
 
 #include "data.h"
+#include "world.h"
 #include <malloc.h>
 
 struct item *item_new(
@@ -19,6 +20,11 @@ struct item *item_new(
     item->y = y;
 
     item->stack = CLAMP(0, base_item_database[item_database[type].type].max_stack, stack);
+
+    if (item_database[type].unique)
+    {
+        list_add(world->spawned_unique_item_types, (void *)(size_t)type);
+    }
 
     return item;
 }

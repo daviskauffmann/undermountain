@@ -5,6 +5,7 @@
 #include "corpse.h"
 #include "item.h"
 #include "light.h"
+#include "map.h"
 #include "object.h"
 #include "projectile.h"
 #include "size.h"
@@ -16,6 +17,7 @@ extern const struct tile_metadata tile_metadata;
 extern const struct tile_data tile_database[NUM_TILE_TYPES];
 extern const struct light_data light_database[NUM_LIGHT_TYPES];
 extern const struct object_data object_database[NUM_OBJECT_TYPES];
+extern const struct monster_pack_data monster_pack_database[NUM_MONSTER_PACKS];
 extern const struct actor_metadata actor_metadata;
 extern const struct size_data size_database[NUM_SIZES];
 extern const struct race_data race_database[NUM_RACES];

@@ -1,6 +1,5 @@
 #include "map.h"
 
-#include "actor.h"
 #include "data.h"
 #include "explosion.h"
 #include "object.h"
@@ -20,14 +19,14 @@
 #define MAX_PREVENT_OVERLAP_CHANCE 1
 #define MIN_DOOR_CHANCE 0
 #define MAX_DOOR_CHANCE 1
-#define MIN_OBJECTS 1
-#define MAX_OBJECTS 3
-#define MIN_ADVENTURERS 1
-#define MAX_ADVENTURERS 3
-#define MIN_MONSTERS 10
-#define MAX_MONSTERS 20
-#define MIN_ITEMS 2
-#define MAX_ITEMS 8
+#define MIN_OBJECT_CHANCE 0
+#define MAX_OBJECT_CHANCE 1
+#define MIN_ITEM_CHANCE 0
+#define MAX_ITEM_CHANCE 1
+#define MIN_ADVENTURER_CHANCE 0
+#define MAX_ADVENTURER_CHANCE 0.1f
+#define MIN_MONSTER_PACK_CHANCE 0
+#define MAX_MONSTER_PACK_CHANCE 1
 
 void map_init(struct map *const map, const int floor)
 {
@@ -386,13 +385,13 @@ void map_generate(struct map *const map)
     }
 
     // create stairs down
+    const struct room *stair_down_room;
     {
         do
         {
-            room_get_random_pos(
-                map_get_random_room(map),
-                (int *)&map->stair_down_x,
-                (int *)&map->stair_down_y);
+            stair_down_room = map_get_random_room(map);
+
+            room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
         } while (map->tiles[map->stair_down_x][map->stair_down_y].type == TILE_TYPE_FLOOR &&
                  map->tiles[map->stair_down_x][map->stair_down_y].object != NULL);
 
@@ -408,13 +407,13 @@ void map_generate(struct map *const map)
     }
 
     // create stairs up
+    const struct room *stair_up_room;
     {
         do
         {
-            room_get_random_pos(
-                map_get_random_room(map),
-                (int *)&map->stair_up_x,
-                (int *)&map->stair_up_y);
+            stair_up_room = map_get_random_room(map);
+
+            room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
         } while (map->tiles[map->stair_up_x][map->stair_up_y].type == TILE_TYPE_FLOOR &&
                  map->tiles[map->stair_up_x][map->stair_up_y].object != NULL);
 
@@ -429,229 +428,239 @@ void map_generate(struct map *const map)
         map->tiles[stair_up->x][stair_up->y].object = stair_up;
     }
 
-    // spawn objects
-    const int num_objects = TCOD_random_get_int(world->random, MIN_OBJECTS, MAX_OBJECTS);
-    for (int i = 0; i < num_objects; i++)
+    for (size_t room_index = 0; room_index < map->rooms->size; room_index++)
     {
-        int x, y;
-        do
-        {
-            room_get_random_pos(
-                map_get_random_room(map),
-                &x, &y);
-        } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                 map->tiles[x][y].object != NULL);
+        const struct room *const room = list_get(map->rooms, room_index);
 
-        enum object_type type = 0;
-        switch (TCOD_random_get_int(world->random, 0, 5))
+        // spawn object
+        const float object_chance = TCOD_random_get_float(world->random, MIN_OBJECT_CHANCE, MAX_OBJECT_CHANCE);
+        if (TCOD_random_get_float(world->random, 0, 1) < object_chance)
         {
-        case 0:
-        {
-            type = OBJECT_TYPE_ALTAR;
-        }
-        break;
-        case 1:
-        {
-            type = OBJECT_TYPE_BRAZIER;
-        }
-        break;
-        case 2:
-        {
-            type = OBJECT_TYPE_CHEST;
-        }
-        break;
-        case 3:
-        {
-            type = OBJECT_TYPE_FOUNTAIN;
-        }
-        break;
-        case 4:
-        {
-            type = OBJECT_TYPE_THRONE;
-        }
-        break;
-        case 5:
-        {
-            type = OBJECT_TYPE_TRAP;
-        }
-        break;
-        }
-
-        struct object *const object = object_new(
-            type,
-            map->floor,
-            x, y);
-
-        list_add(map->objects, object);
-
-        map->tiles[x][y].object = object;
-    }
-
-    // spawn adventurers
-    const int num_adventurers = TCOD_random_get_int(world->random, MIN_ADVENTURERS, MAX_ADVENTURERS);
-    for (int i = 0; i < num_adventurers; i++)
-    {
-        int x, y;
-        do
-        {
-            room_get_random_pos(
-                map_get_random_room(map),
-                &x, &y);
-        } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                 map->tiles[x][y].actor != NULL &&
-                 map->tiles[x][y].object != NULL);
-
-        enum race race = TCOD_random_get_int(world->random, PLAYER_RACE_BEGIN, PLAYER_RACE_END);
-        char *name;
-        switch (race)
-        {
-        case RACE_DWARF:
-        {
-            if (TCOD_random_get_int(world->random, 0, 1) == 0)
+            int x, y;
+            do
             {
-                name = "dwarf male";
-            }
-            else
+                room_get_random_pos(room, &x, &y);
+            } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
+                     map->tiles[x][y].object != NULL);
+
+            enum object_type object_type = 0;
+            switch (TCOD_random_get_int(world->random, 0, 5))
             {
-                name = "dwarf female";
-            }
-        }
-        break;
-        default:
-        {
-            if (TCOD_random_get_int(world->random, 0, 1) == 0)
+            case 0:
             {
-                name = "standard male";
+                object_type = OBJECT_TYPE_ALTAR;
             }
-            else
+            break;
+            case 1:
             {
-                name = "standard female";
+                object_type = OBJECT_TYPE_BRAZIER;
             }
-        }
-        break;
-        }
-
-        const enum class class = TCOD_random_get_int(world->random, PLAYER_CLASS_BEGIN, PLAYER_CLASS_END);
-
-        struct actor *const actor = actor_new(
-            TCOD_namegen_generate(name, false),
-            race,
-            class,
-            map->floor + 1,
-            class_database[class].default_ability_scores,
-            (bool[NUM_FEATS]){0},
-            FACTION_ADVENTURER,
-            map->floor,
-            x, y);
-
-        list_add(map->actors, actor);
-
-        map->tiles[x][y].actor = actor;
-    }
-
-    // spawn monsters
-    const int num_monsters = TCOD_random_get_int(world->random, MIN_MONSTERS, MAX_MONSTERS);
-    for (int i = 0; i < num_monsters; i++)
-    {
-        int x, y;
-        do
-        {
-            room_get_random_pos(
-                map_get_random_room(map),
-                &x, &y);
-        } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                 map->tiles[x][y].actor != NULL &&
-                 map->tiles[x][y].object != NULL);
-
-        enum monster monster;
-        const struct actor_prototype *monster_prototype;
-        do
-        {
-            monster = TCOD_random_get_int(world->random, 0, NUM_MONSTERS - 1);
-            monster_prototype = &monster_prototypes[monster];
-        } while (monster_prototype->level > map->floor + 1);
-
-        // TODO: monster packs
-        struct actor *const actor = actor_new(
-            monster_prototype->name,
-            monster_prototype->race,
-            monster_prototype->class,
-            monster_prototype->level,
-            monster_prototype->ability_scores,
-            monster_prototype->feats,
-            FACTION_MONSTER,
-            map->floor,
-            x, y);
-
-        for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
-        {
-            if (monster_prototype->equipment[equip_slot] != EQUIP_SLOT_NONE)
+            break;
+            case 2:
             {
-                actor->equipment[equip_slot] = item_new(
-                    monster_prototype->equipment[equip_slot],
-                    0,
-                    0, 0,
-                    base_item_database[item_database[monster_prototype->equipment[equip_slot]].type].max_stack);
+                object_type = OBJECT_TYPE_CHEST;
             }
-        }
-
-        for (enum item_type item_type = ITEM_TYPE_NONE + 1; item_type < NUM_ITEM_TYPES; item_type++)
-        {
-            const int stack = monster_prototype->items[item_type];
-
-            if (stack > 0)
+            break;
+            case 3:
             {
-                struct item *const item = item_new(
-                    item_type,
-                    0,
-                    0, 0,
-                    stack);
+                object_type = OBJECT_TYPE_FOUNTAIN;
+            }
+            break;
+            case 4:
+            {
+                object_type = OBJECT_TYPE_THRONE;
+            }
+            break;
+            case 5:
+            {
+                object_type = OBJECT_TYPE_TRAP;
+            }
+            break;
+            }
 
-                list_add(actor->items, item);
+            struct object *const object = object_new(
+                object_type,
+                map->floor,
+                x, y);
+
+            list_add(map->objects, object);
+
+            map->tiles[x][y].object = object;
+        }
+
+        // spawn item
+        const float item_chance = TCOD_random_get_float(world->random, MIN_ITEM_CHANCE, MAX_ITEM_CHANCE);
+        if (TCOD_random_get_float(world->random, 0, 1) < item_chance)
+        {
+            int x, y;
+            do
+            {
+                room_get_random_pos(room, &x, &y);
+            } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
+                     map->tiles[x][y].object != NULL);
+
+            enum item_type type;
+            do
+            {
+                type = TCOD_random_get_int(world->random, ITEM_TYPE_NONE + 1, NUM_ITEM_TYPES - 1);
+            } while (item_database[type].level > map->floor + 1 ||
+                     (item_database[type].unique && list_contains(world->spawned_unique_item_types, (void *)(size_t)type)));
+
+            struct item *const item = item_new(
+                type,
+                map->floor,
+                x, y,
+                type == ITEM_TYPE_GOLD
+                    ? TCOD_random_get_int(world->random, 1, 10 * (map->floor + 1))
+                    : base_item_database[item_database[type].type].max_stack);
+
+            list_add(map->items, item);
+
+            list_add(map->tiles[x][y].items, item);
+        }
+
+        // spawn adventurer
+        const float adventurer_chance = TCOD_random_get_float(world->random, MIN_ADVENTURER_CHANCE, MAX_ADVENTURER_CHANCE);
+        if (TCOD_random_get_float(world->random, 0, 1) < adventurer_chance)
+        {
+            int x, y;
+            do
+            {
+                room_get_random_pos(
+                    map_get_random_room(map),
+                    &x, &y);
+            } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
+                     map->tiles[x][y].actor != NULL &&
+                     map->tiles[x][y].object != NULL);
+
+            enum race race = TCOD_random_get_int(world->random, PLAYER_RACE_BEGIN, PLAYER_RACE_END);
+            char *name;
+            switch (race)
+            {
+            case RACE_DWARF:
+            {
+                if (TCOD_random_get_int(world->random, 0, 1) == 0)
+                {
+                    name = "dwarf male";
+                }
+                else
+                {
+                    name = "dwarf female";
+                }
+            }
+            break;
+            default:
+            {
+                if (TCOD_random_get_int(world->random, 0, 1) == 0)
+                {
+                    name = "standard male";
+                }
+                else
+                {
+                    name = "standard female";
+                }
+            }
+            break;
+            }
+
+            const enum class class = TCOD_random_get_int(world->random, PLAYER_CLASS_BEGIN, PLAYER_CLASS_END);
+
+            struct actor *const actor = actor_new(
+                TCOD_namegen_generate(name, false),
+                race,
+                class,
+                FACTION_ADVENTURER,
+                map->floor + 1,
+                class_database[class].default_ability_scores,
+                (bool[NUM_FEATS]){0},
+                map->floor,
+                x, y);
+
+            list_add(map->actors, actor);
+
+            map->tiles[x][y].actor = actor;
+        }
+
+        // spawn monster pack if not the entrance room
+        if (room != stair_up_room)
+        {
+            const float monster_pack_chance = TCOD_random_get_float(world->random, MIN_MONSTER_PACK_CHANCE, MAX_MONSTER_PACK_CHANCE);
+            if (TCOD_random_get_float(world->random, 0, 1) < monster_pack_chance)
+            {
+                const struct monster_pack_data *monster_pack_data;
+                do
+                {
+                    const enum monster_pack monster_pack = TCOD_random_get_int(world->random, 0, NUM_MONSTER_PACKS - 1);
+                    monster_pack_data = &monster_pack_database[monster_pack];
+                } while (map->floor < monster_pack_data->min_floor ||
+                         map->floor > monster_pack_data->max_floor);
+
+                for (enum monster monster = 0; monster < NUM_MONSTERS; monster++)
+                {
+                    const int num_monsters = monster_pack_data->monsters[monster];
+
+                    if (num_monsters > 0)
+                    {
+                        const struct actor_prototype *const monster_prototype = &monster_prototypes[monster];
+
+                        // TODO: spawn num_monsters monsters
+                        for (size_t i = 0; i < num_monsters; i++)
+                        {
+                            int x, y;
+                            do
+                            {
+                                room_get_random_pos(room, &x, &y);
+                            } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
+                                     map->tiles[x][y].actor != NULL &&
+                                     map->tiles[x][y].object != NULL);
+
+                            struct actor *const actor = actor_new(
+                                monster_prototype->name,
+                                monster_prototype->race,
+                                monster_prototype->class,
+                                monster_prototype->faction,
+                                monster_prototype->level,
+                                monster_prototype->ability_scores,
+                                monster_prototype->feats,
+                                map->floor,
+                                x, y);
+
+                            for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+                            {
+                                if (monster_prototype->equipment[equip_slot] != EQUIP_SLOT_NONE)
+                                {
+                                    actor->equipment[equip_slot] = item_new(
+                                        monster_prototype->equipment[equip_slot],
+                                        0,
+                                        0, 0,
+                                        base_item_database[item_database[monster_prototype->equipment[equip_slot]].type].max_stack);
+                                }
+                            }
+
+                            for (enum item_type item_type = ITEM_TYPE_NONE + 1; item_type < NUM_ITEM_TYPES; item_type++)
+                            {
+                                const int stack = monster_prototype->items[item_type];
+
+                                if (stack > 0)
+                                {
+                                    struct item *const item = item_new(
+                                        item_type,
+                                        0,
+                                        0, 0,
+                                        stack);
+
+                                    list_add(actor->items, item);
+                                }
+                            }
+
+                            list_add(map->actors, actor);
+
+                            map->tiles[x][y].actor = actor;
+                        }
+                    }
+                }
             }
         }
-
-        list_add(map->actors, actor);
-
-        map->tiles[x][y].actor = actor;
-    }
-
-    // spawn items
-    const int num_items = TCOD_random_get_int(world->random, MIN_ITEMS, MAX_ITEMS);
-    for (int i = 0; i < num_items; i++)
-    {
-        int x, y;
-        do
-        {
-            room_get_random_pos(
-                map_get_random_room(map),
-                &x, &y);
-        } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                 map->tiles[x][y].object != NULL);
-
-        enum item_type type;
-        do
-        {
-            type = TCOD_random_get_int(world->random, ITEM_TYPE_NONE + 1, NUM_ITEM_TYPES - 1);
-        } while (item_database[type].level > map->floor + 1 ||
-                 (item_database[type].unique && list_contains(world->spawned_unique_item_types, (void *)(size_t)type)));
-
-        struct item *const item = item_new(
-            type,
-            map->floor,
-            x, y,
-            type == ITEM_TYPE_GOLD
-                ? TCOD_random_get_int(world->random, 1, 10 * (map->floor + 1))
-                : base_item_database[item_database[type].type].max_stack);
-
-        if (item_database[type].unique)
-        {
-            list_add(world->spawned_unique_item_types, (void *)(size_t)type);
-        }
-
-        list_add(map->items, item);
-
-        list_add(map->tiles[x][y].items, item);
     }
 }
 

@@ -107,6 +107,7 @@ void world_create(struct actor *hero)
                 "Spot",
                 RACE_ANIMAL_SMALL,
                 CLASS_DOG,
+                hero->faction,
                 hero->level,
                 (int[]){
                     [ABILITY_STRENGTH] = 13,
@@ -117,7 +118,6 @@ void world_create(struct actor *hero)
                 (bool[NUM_FEATS]){
                     [FEAT_LOW_LIGHT_VISION] = true,
                 },
-                hero->faction,
                 floor,
                 map->stair_up_x + 1,
                 map->stair_up_y + 1);
@@ -214,10 +214,8 @@ void world_save(FILE *const file)
             fwrite(&actor->feats, sizeof(actor->feats), 1, file);
 
             fwrite(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
-            fwrite(&actor->base_mana_points, sizeof(actor->base_mana_points), 1, file);
 
             fwrite(&actor->hit_points, sizeof(actor->hit_points), 1, file);
-            fwrite(&actor->mana_points, sizeof(actor->mana_points), 1, file);
 
             fwrite(&actor->gold, sizeof(actor->gold), 1, file);
 
@@ -250,6 +248,8 @@ void world_save(FILE *const file)
 
                 fwrite(&item->stack, sizeof(item->stack), 1, file);
             }
+
+            fwrite(&actor->mana, sizeof(actor->mana), 1, file);
 
             fwrite(&actor->known_spells->size, sizeof(actor->known_spells->size), 1, file);
             for (size_t known_spell_index = 0; known_spell_index < actor->known_spells->size; known_spell_index++)
@@ -499,10 +499,8 @@ void world_load(FILE *const file)
             fread(&actor->feats, sizeof(actor->feats), 1, file);
 
             fread(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
-            fread(&actor->base_mana_points, sizeof(actor->base_mana_points), 1, file);
 
             fread(&actor->hit_points, sizeof(actor->hit_points), 1, file);
-            fread(&actor->mana_points, sizeof(actor->mana_points), 1, file);
 
             fread(&actor->gold, sizeof(actor->gold), 1, file);
 
@@ -540,6 +538,8 @@ void world_load(FILE *const file)
 
                 list_add(actor->items, item);
             }
+
+            fread(&actor->mana, sizeof(actor->mana), 1, file);
 
             actor->known_spells = list_new();
             size_t num_known_spells;

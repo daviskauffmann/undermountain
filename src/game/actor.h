@@ -45,6 +45,7 @@ enum class
     // monster classes
     CLASS_BAT,
     CLASS_BUGBEAR,
+    CLASS_DIRE_RAT,
     CLASS_DOG,
     CLASS_GOBLIN,
     CLASS_KOBOLD,
@@ -61,6 +62,16 @@ enum class
 #define MONSTER_CLASS_BEGIN CLASS_DOG
 #define MONSTER_CLASS_END CLASS_SLIME
 
+enum faction
+{
+    FACTION_ADVENTURER,
+    FACTION_GOBLINOID,
+    FACTION_KOBOLD,
+    FACTION_RED_DRAGON,
+    FACTION_UNDEAD,
+    FACTION_WILD_ANIMAL,
+};
+
 enum base_attack_bonus_progression
 {
     BASE_ATTACK_BONUS_FIXED,
@@ -69,12 +80,6 @@ enum base_attack_bonus_progression
     BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT,
 
     NUM_BASE_ATTACK_BONUS_PROGRESSIONS
-};
-
-enum faction
-{
-    FACTION_ADVENTURER,
-    FACTION_MONSTER
 };
 
 enum ability
@@ -93,6 +98,7 @@ enum feat
     FEAT_ARMOR_PROFICIENCY_MEDIUM,
     FEAT_ARMOR_PROFICIENCY_HEAVY,
     FEAT_LOW_LIGHT_VISION,
+    FEAT_POINT_BLANK_SHOT,
     FEAT_QUICK_TO_MASTER,
     FEAT_RAPID_RELOAD,
     FEAT_SHIELD_PROFICIENCY,
@@ -113,6 +119,7 @@ enum monster
 {
     MONSTER_BAT,
     MONSTER_BUGBEAR,
+    MONSTER_DIRE_RAT,
     MONSTER_GOBLIN,
     MONSTER_KOBOLD,
     MONSTER_RAT,
@@ -154,7 +161,6 @@ struct class_data
     unsigned char glyph;
 
     const char *hit_die;
-    const char *mana_die;
 
     int natural_armor_bonus;
 
@@ -211,6 +217,7 @@ struct actor_prototype
 
     enum race race;
     enum class class;
+    enum faction faction;
 
     int level;
 
@@ -231,6 +238,7 @@ struct actor
 
     enum race race;
     enum class class;
+    enum faction faction;
 
     int level;
     int experience;
@@ -241,10 +249,7 @@ struct actor
     bool feats[NUM_FEATS]; // TODO: use a dynamic list like spells?
 
     int base_hit_points;
-    int base_mana_points;
-
     int hit_points;
-    int mana_points;
 
     int gold;
 
@@ -252,10 +257,9 @@ struct actor
 
     struct list *items;
 
+    int mana;
     struct list *known_spells;
     enum spell_type readied_spell;
-
-    enum faction faction;
 
     int floor;
     int x;
@@ -288,10 +292,10 @@ struct actor *actor_new(
     const char *name,
     enum race race,
     enum class class,
+    enum faction faction,
     int level,
     const int ability_scores[NUM_ABILITIES],
     const bool feats[NUM_FEATS],
-    enum faction faction,
     int floor,
     int x,
     int y);
@@ -304,18 +308,22 @@ void actor_level_up(struct actor *actor);
 void actor_add_ability_point(struct actor *actor, enum ability ability);
 
 int actor_calc_max_hit_points(const struct actor *actor);
-int actor_calc_max_mana_points(const struct actor *actor);
+void actor_restore_hit_points(struct actor *actor, int health);
+bool actor_damage_hit_points(struct actor *actor, struct actor *attacker, int damage);
 
 int actor_calc_armor_class(const struct actor *actor);
 
 int actor_calc_attacks_per_round(const struct actor *actor);
 int actor_calc_base_attack_bonus(const struct actor *actor);
 int actor_calc_attack_bonus(const struct actor *actor);
+int actor_calc_ranged_attack_penalty(const struct actor *actor, const struct actor *other);
 int actor_calc_threat_range(const struct actor *actor);
 int actor_calc_critical_multiplier(const struct actor *actor);
 int actor_calc_damage_bonus(const struct actor *actor);
 const char *actor_calc_damage(const struct actor *actor);
 
+int actor_calc_max_mana(const struct actor *actor);
+void actor_restore_mana(struct actor *actor, int mana);
 float actor_calc_arcane_spell_failure(const struct actor *actor);
 
 enum equippability actor_calc_item_equippability(const struct actor *actor, const struct item *item);
@@ -403,9 +411,6 @@ bool actor_cast(
     int x, int y,
     bool from_memory);
 
-void actor_restore_hit_points(struct actor *actor, int health);
-void actor_restore_mana_points(struct actor *actor, int mana);
-bool actor_damage_hit_points(struct actor *actor, struct actor *attacker, int damage);
 void actor_die(struct actor *actor, struct actor *killer);
 
 #endif

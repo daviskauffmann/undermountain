@@ -184,6 +184,7 @@ static struct scene *handle_event(const SDL_Event *const event)
                     name,
                     selected_race,
                     selected_class,
+                    race_database[selected_race].size,
                     FACTION_ADVENTURER,
                     1,
                     ability_scores,

@@ -2,7 +2,7 @@
 
 #include "corpse.h"
 #include "explosion.h"
-#include "monster_prototype.h"
+#include "monster_pack.h"
 #include "object.h"
 #include "projectile.h"
 #include "room.h"
@@ -571,6 +571,7 @@ void map_generate(struct map *const map)
                 TCOD_namegen_generate(name, false),
                 race,
                 class,
+                race_database[race].size,
                 FACTION_ADVENTURER,
                 map->floor + 1,
                 class_database[class].default_ability_scores,
@@ -593,22 +594,21 @@ void map_generate(struct map *const map)
                 const struct monster_pack_data *monster_pack_data;
                 do
                 {
-                    const enum monster_pack monster_pack = TCOD_random_get_int(world->random, 0, NUM_MONSTER_PACKS - 1);
-                    monster_pack_data = &monster_pack_database[monster_pack];
+                    const enum monster_pack_type monster_pack_type = TCOD_random_get_int(world->random, 0, NUM_MONSTER_PACK_TYPES - 1);
+                    monster_pack_data = &monster_pack_database[monster_pack_type];
                 } while (map->floor < monster_pack_data->min_floor ||
                          map->floor > monster_pack_data->max_floor);
 
-                for (enum monster monster = 0; monster < NUM_MONSTERS; monster++)
+                for (enum monster_type monster_type = 0; monster_type < NUM_MONSTER_TYPES; monster_type++)
                 {
-                    const int min_count = monster_pack_data->monsters[monster].min_count;
-                    const int max_count = monster_pack_data->monsters[monster].max_count;
+                    const int min_count = monster_pack_data->monsters[monster_type].min_count;
+                    const int max_count = monster_pack_data->monsters[monster_type].max_count;
                     const int count = TCOD_random_get_int(world->random, min_count, max_count);
 
                     if (count > 0)
                     {
-                        const struct monster_prototype *const monster_prototype = &monster_prototypes[monster];
+                        const struct monster_data *const monster_data = &monster_database[monster_type];
 
-                        // TODO: spawn num_monsters monsters
                         for (size_t i = 0; i < count; i++)
                         {
                             int x, y;
@@ -620,25 +620,26 @@ void map_generate(struct map *const map)
                                      map->tiles[x][y].object != NULL);
 
                             struct actor *const actor = actor_new(
-                                monster_prototype->name,
-                                monster_prototype->race,
-                                monster_prototype->class,
-                                monster_prototype->faction,
-                                monster_prototype->level,
-                                monster_prototype->ability_scores,
-                                monster_prototype->special_abilities,
-                                monster_prototype->feats,
+                                monster_data->name,
+                                monster_data->race,
+                                monster_data->class,
+                                monster_data->size,
+                                monster_data->faction,
+                                monster_data->level,
+                                monster_data->ability_scores,
+                                monster_data->special_abilities,
+                                monster_data->feats,
                                 map->floor,
                                 x, y);
 
                             for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                             {
-                                const enum item_type item_type = monster_prototype->equipment[equip_slot].type;
+                                const enum item_type item_type = monster_data->equipment[equip_slot].type;
 
                                 if (item_type != EQUIP_SLOT_NONE)
                                 {
-                                    const int min_stack = monster_prototype->equipment[equip_slot].min_stack;
-                                    const int max_stack = monster_prototype->equipment[equip_slot].max_stack;
+                                    const int min_stack = monster_data->equipment[equip_slot].min_stack;
+                                    const int max_stack = monster_data->equipment[equip_slot].max_stack;
                                     const int stack = TCOD_random_get_int(world->random, min_stack, max_stack);
 
                                     if (stack > 0)
@@ -654,8 +655,8 @@ void map_generate(struct map *const map)
 
                             for (enum item_type item_type = ITEM_TYPE_NONE + 1; item_type < NUM_ITEM_TYPES; item_type++)
                             {
-                                const int min_stack = monster_prototype->items[item_type].min_stack;
-                                const int max_stack = monster_prototype->items[item_type].max_stack;
+                                const int min_stack = monster_data->items[item_type].min_stack;
+                                const int max_stack = monster_data->items[item_type].max_stack;
                                 const int stack = TCOD_random_get_int(world->random, min_stack, max_stack);
 
                                 if (stack > 0)

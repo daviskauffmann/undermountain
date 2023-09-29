@@ -51,6 +51,12 @@ const struct light_data light_database[] = {
         .intensity = 0.1f,
         .flicker = false,
     },
+    [LIGHT_TYPE_MAGIC_MISSILE] = {
+        .radius = 2,
+        .color = {COLOR_AZURE},
+        .intensity = 0.5f,
+        .flicker = true,
+    },
     [LIGHT_TYPE_STAIRS] = {
         .radius = 2,
         .color = {COLOR_WHITE},

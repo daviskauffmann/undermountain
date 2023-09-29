@@ -61,6 +61,17 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
+    [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = {
+        .type = BASE_ITEM_TYPE_POTION,
+
+        .name = "Cure Light Wounds Potion",
+        .description = "",
+        .color = {COLOR_LIGHT_RED},
+
+        .spell_type = SPELL_TYPE_CURE_LIGHT_WOUNDS,
+
+        .level = 1,
+    },
     [ITEM_TYPE_DAGGER] = {
         .type = BASE_ITEM_TYPE_DAGGER,
 
@@ -213,25 +224,14 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
-    [ITEM_TYPE_POTION_MINOR_HEAL] = {
+    [ITEM_TYPE_POTION_RECOVER_LIGHT_ARCANA] = {
         .type = BASE_ITEM_TYPE_POTION,
 
-        .name = "Potion of Minor Healing",
+        .name = "Recover Light Mana Potion",
         .description = "",
-        .color = {COLOR_RED},
+        .color = {COLOR_LIGHT_AZURE},
 
-        .spell_type = SPELL_TYPE_MINOR_HEAL,
-
-        .level = 1,
-    },
-    [ITEM_TYPE_POTION_MINOR_MANA] = {
-        .type = BASE_ITEM_TYPE_POTION,
-
-        .name = "Potion of Minor Mana",
-        .description = "",
-        .color = {COLOR_BLUE},
-
-        .spell_type = SPELL_TYPE_MINOR_MANA,
+        .spell_type = SPELL_TYPE_RECOVER_LIGHT_ARCANA,
 
         .level = 1,
     },
@@ -244,14 +244,14 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
-    [ITEM_TYPE_SCROLL_LIGHTNING] = {
+    [ITEM_TYPE_SCROLL_CHAIN_LIGHTNING] = {
         .type = BASE_ITEM_TYPE_SCROLL,
 
-        .name = "Scroll of Lightning",
+        .name = "Scroll of Chain Lightning",
         .description = "",
         .color = {COLOR_WHITE},
 
-        .spell_type = SPELL_TYPE_LIGHTNING,
+        .spell_type = SPELL_TYPE_CHAIN_LIGHTNING,
 
         .level = 1,
     },

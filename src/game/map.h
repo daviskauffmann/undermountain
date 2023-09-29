@@ -3,7 +3,6 @@
 
 #include "actor.h"
 #include "list.h"
-#include "monster_pack.h"
 #include "tile.h"
 #include <libtcod.h>
 

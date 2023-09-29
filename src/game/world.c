@@ -105,8 +105,9 @@ void world_create(struct actor *hero)
         {
             struct actor *const pet = actor_new(
                 "Spot",
-                RACE_ANIMAL_SMALL,
+                RACE_ANIMAL,
                 CLASS_DOG,
+                SIZE_SMALL,
                 hero->faction,
                 hero->level,
                 (int[]){
@@ -205,6 +206,8 @@ void world_save(FILE *const file)
 
             fwrite(&actor->race, sizeof(actor->race), 1, file);
             fwrite(&actor->class, sizeof(actor->class), 1, file);
+            fwrite(&actor->size, sizeof(actor->size), 1, file);
+            fwrite(&actor->faction, sizeof(actor->faction), 1, file);
 
             fwrite(&actor->level, sizeof(actor->level), 1, file);
             fwrite(&actor->experience, sizeof(actor->experience), 1, file);
@@ -263,8 +266,6 @@ void world_save(FILE *const file)
             }
 
             fwrite(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
-
-            fwrite(&actor->faction, sizeof(actor->faction), 1, file);
 
             fwrite(&actor->x, sizeof(actor->x), 1, file);
             fwrite(&actor->y, sizeof(actor->y), 1, file);
@@ -500,6 +501,8 @@ void world_load(FILE *const file)
 
             fread(&actor->race, sizeof(actor->race), 1, file);
             fread(&actor->class, sizeof(actor->class), 1, file);
+            fread(&actor->size, sizeof(actor->size), 1, file);
+            fread(&actor->faction, sizeof(actor->faction), 1, file);
 
             fread(&actor->level, sizeof(actor->level), 1, file);
             fread(&actor->experience, sizeof(actor->experience), 1, file);
@@ -566,8 +569,6 @@ void world_load(FILE *const file)
             }
 
             fread(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
-
-            fread(&actor->faction, sizeof(actor->faction), 1, file);
 
             actor->floor = map->floor;
             fread(&actor->x, sizeof(actor->x), 1, file);

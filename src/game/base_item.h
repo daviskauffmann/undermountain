@@ -63,7 +63,7 @@ struct base_item_data
     enum damage_type damage_type;
     int threat_range;
     int critical_multiplier;
-    bool finesse;
+    bool finesssable;
     bool ranged;
     enum ammunition_type ammunition_type;
     bool weapon_proficiencies[NUM_WEAPON_PROFICIENCIES];

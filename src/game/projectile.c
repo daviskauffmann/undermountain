@@ -36,6 +36,14 @@ const struct projectile_data projectile_database[] = {
 
         .speed = 30,
     },
+    [PROJECTILE_TYPE_MAGIC_MISSILE] = {
+        .glyph = '*',
+        .color = {COLOR_AZURE},
+
+        .light_type = LIGHT_TYPE_MAGIC_MISSILE,
+
+        .speed = 30,
+    },
 };
 
 struct projectile *projectile_new(
@@ -189,6 +197,30 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                     5,
                     projectile_database[projectile->type].color,
                     projectile->shooter));
+        }
+    }
+    break;
+    case PROJECTILE_TYPE_MAGIC_MISSILE:
+    {
+        if (tile->actor &&
+            tile->actor != projectile->shooter)
+        {
+            // TODO: multiple missiles?
+            const int damage = TCOD_random_dice_roll_s(world->random, "1d4+1");
+
+            world_log(
+                projectile->shooter->floor,
+                projectile->shooter->x,
+                projectile->shooter->y,
+                color_white,
+                "%s bombards %s for %d damage.",
+                projectile->shooter->name,
+                tile->actor->name,
+                damage);
+
+            actor_damage_hit_points(tile->actor, projectile->shooter, damage);
+
+            should_move = false;
         }
     }
     break;

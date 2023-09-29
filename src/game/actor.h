@@ -24,17 +24,15 @@ enum race
     RACE_ELF,
 
     // monster races
-    RACE_ANIMAL_DIMINUTIVE,
-    RACE_ANIMAL_TINY,
-    RACE_ANIMAL_SMALL,
-    RACE_ANIMAL_MEDIUM,
-    RACE_DRAGON_WYRMLING,
-    RACE_DRAGON_ADULT,
-    RACE_DRAGON_ANCIENT,
-    RACE_GIANT_LARGE,
-    RACE_HUMANOID_SMALL,
-    RACE_HUMANOID_MEDIUM,
+    RACE_ANIMAL,
+    RACE_GIANT,
+    RACE_HUMANOID,
+    RACE_MAGICAL_BEAST,
+    RACE_RED_DRAGON_WYRMLING,
+    RACE_RED_DRAGON_ADULT,
+    RACE_RED_DRAGON_ANCIENT,
     RACE_UNDEAD,
+    RACE_VERMIN,
 
     NUM_RACES,
 };
@@ -57,17 +55,23 @@ enum class
     CLASS_BUGBEAR,
     CLASS_DIRE_RAT,
     CLASS_DOG,
+    CLASS_FIRE_BEETLE,
     CLASS_HYENA,
+    CLASS_GIANT_ANT,
     CLASS_GNOLL,
     CLASS_GOBLIN,
     CLASS_HOBGOBLIN,
     CLASS_KOBOLD,
+    CLASS_KRENSHAR,
     CLASS_RAT,
     CLASS_RED_DRAGON_WYRMLING,
     CLASS_RED_DRAGON_ADULT,
     CLASS_RED_DRAGON_ANCIENT,
     CLASS_SKELETON_WARRIOR,
+    CLASS_SNAKE,
+    CLASS_SPIDER,
     CLASS_TROLL,
+    CLASS_WOLF,
 
     NUM_CLASSES,
 };
@@ -169,6 +173,7 @@ struct actor
 
     enum race race;
     enum class class;
+    enum size size;
     enum faction faction;
 
     int level;
@@ -230,6 +235,7 @@ struct actor *actor_new(
     const char *name,
     enum race race,
     enum class class,
+    enum size size,
     enum faction faction,
     int level,
     const int ability_scores[NUM_ABILITIES],

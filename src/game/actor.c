@@ -48,55 +48,29 @@ const struct race_data race_database[] = {
     },
 
     // monster races
-    [RACE_ANIMAL_DIMINUTIVE] = {
-        .name = "Diminutive Animal",
-
-        .size = SIZE_DIMINUTIVE,
+    [RACE_ANIMAL] = {
+        .name = "Animal",
     },
-    [RACE_ANIMAL_TINY] = {
-        .name = "Small Animal",
-
-        .size = SIZE_SMALL,
+    [RACE_GIANT] = {
+        .name = "Giant",
     },
-    [RACE_ANIMAL_SMALL] = {
-        .name = "Small Animal",
-
-        .size = SIZE_TINY,
+    [RACE_HUMANOID] = {
+        .name = "Humanoid",
     },
-    [RACE_DRAGON_ADULT] = {
-        .name = "Wyrmling Dragon",
-
-        .size = SIZE_MEDIUM,
+    [RACE_RED_DRAGON_ADULT] = {
+        .name = "Wyrmling Red Dragon",
     },
-    [RACE_DRAGON_ADULT] = {
-        .name = "Adult Dragon",
-
-        .size = SIZE_HUGE,
+    [RACE_RED_DRAGON_ADULT] = {
+        .name = "Adult Red Dragon",
     },
-    [RACE_DRAGON_ADULT] = {
-        .name = "Ancient Dragon",
-
-        .size = SIZE_COLOSSAL,
-    },
-    [RACE_GIANT_LARGE] = {
-        .name = "Large Giant",
-
-        .size = SIZE_LARGE,
-    },
-    [RACE_HUMANOID_SMALL] = {
-        .name = "Small Humanoid",
-
-        .size = SIZE_SMALL,
-    },
-    [RACE_HUMANOID_MEDIUM] = {
-        .name = "Medium Humanoid",
-
-        .size = SIZE_MEDIUM,
+    [RACE_RED_DRAGON_ADULT] = {
+        .name = "Ancient Red Dragon",
     },
     [RACE_UNDEAD] = {
         .name = "Undead",
-
-        .size = SIZE_MEDIUM,
+    },
+    [RACE_VERMIN] = {
+        .name = "Small Vermin",
     },
 };
 
@@ -135,6 +109,7 @@ const struct class_data class_database[] = {
 
         .starting_items = {
             [ITEM_TYPE_FOOD] = 10,
+            [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
         },
     },
     [CLASS_ROGUE] = {
@@ -168,6 +143,7 @@ const struct class_data class_database[] = {
         .starting_items = {
             [ITEM_TYPE_DAGGER] = 1,
             [ITEM_TYPE_FOOD] = 10,
+            [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
         },
     },
     [CLASS_WIZARD] = {
@@ -192,9 +168,10 @@ const struct class_data class_database[] = {
 
         .spell_progression = {
             [SPELL_TYPE_ACID_SPLASH] = 1,
-            [SPELL_TYPE_FIREBALL] = 1,
+            [SPELL_TYPE_MAGIC_MISSILE] = 1,
+            [SPELL_TYPE_FIREBALL] = 3,
+            [SPELL_TYPE_CHAIN_LIGHTNING] = 6,
             [SPELL_TYPE_SUMMON_FAMILIAR] = 1,
-            [SPELL_TYPE_LIGHTNING] = 2,
         },
 
         .starting_equipment = {
@@ -204,6 +181,8 @@ const struct class_data class_database[] = {
 
         .starting_items = {
             [ITEM_TYPE_FOOD] = 10,
+            [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
+            [ITEM_TYPE_POTION_RECOVER_LIGHT_ARCANA] = 10,
         },
     },
 
@@ -250,6 +229,17 @@ const struct class_data class_database[] = {
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
+    [CLASS_FIRE_BEETLE] = {
+        .name = "Fire Beetle",
+        .color = {COLOR_FLAME},
+        .glyph = 'b',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 5,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
     [CLASS_HYENA] = {
         .name = "Hyena",
         .color = {COLOR_DARK_AMBER},
@@ -257,9 +247,22 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d8",
 
+        .natural_armor_bonus = 1,
+
         .base_attack_bonus = 1,
 
-        .natural_armor_bonus = 1,
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
+    [CLASS_GIANT_ANT] = {
+        .name = "Giant Ant",
+        .color = {COLOR_DARK_FLAME},
+        .glyph = 'a',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 7,
+
+        .base_attack_bonus = 1,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
@@ -302,6 +305,17 @@ const struct class_data class_database[] = {
         .base_attack_bonus = 1,
 
         .natural_armor_bonus = 1,
+    },
+    [CLASS_KRENSHAR] = {
+        .name = "Krenshar",
+        .color = {COLOR_LIGHT_SEPIA},
+        .glyph = 'k',
+
+        .hit_die = "1d10",
+
+        .base_attack_bonus = 2,
+
+        .natural_armor_bonus = 3,
     },
     [CLASS_RAT] = {
         .name = "Rat",
@@ -347,6 +361,33 @@ const struct class_data class_database[] = {
 
         .base_attack_bonus = 34,
     },
+    [CLASS_SKELETON_WARRIOR] = {
+        .name = "Skeleton Warrior",
+        .color = {COLOR_WHITE},
+        .glyph = 's',
+
+        .hit_die = "1d12",
+    },
+    [CLASS_SNAKE] = {
+        .name = "Snake",
+        .color = {COLOR_LIGHT_CRIMSON},
+        .glyph = 's',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 3,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
+    [CLASS_SPIDER] = {
+        .name = "Spider",
+        .color = {COLOR_LIGHT_GREEN},
+        .glyph = 's',
+
+        .hit_die = "1d8",
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
     [CLASS_TROLL] = {
         .name = "Rat",
         .color = {COLOR_GREEN},
@@ -360,12 +401,18 @@ const struct class_data class_database[] = {
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_CLAW,
     },
-    [CLASS_SKELETON_WARRIOR] = {
-        .name = "Skeleton Warrior",
-        .color = {COLOR_WHITE},
-        .glyph = 's',
+    [CLASS_WOLF] = {
+        .name = "Wolf",
+        .color = {COLOR_LIGHT_GRAY},
+        .glyph = 'w',
 
-        .hit_die = "1d12",
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 2,
+
+        .base_attack_bonus = 1,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
 };
 
@@ -473,6 +520,7 @@ struct actor *actor_new(
     const char *const name,
     const enum race race,
     const enum class class,
+    const enum size size,
     const enum faction faction,
     const int level,
     const int ability_scores[NUM_ABILITIES],
@@ -488,6 +536,7 @@ struct actor *actor_new(
 
     actor->race = race;
     actor->class = class;
+    actor->size = size;
     actor->faction = faction;
 
     actor->level = 1;
@@ -736,7 +785,7 @@ int actor_calc_armor_class(const struct actor *const actor)
 {
     const int dexterity_modifer = actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
     const int natural_armor_bonus = class_database[actor->class].natural_armor_bonus;
-    const int size_modifer = size_database[race_database[actor->race].size].modifier;
+    const int size_modifer = size_database[actor->size].modifier;
 
     int armor_class = 10 + dexterity_modifer + natural_armor_bonus + size_modifer;
 
@@ -818,7 +867,7 @@ int actor_calc_base_attack_bonus(const struct actor *const actor)
 int actor_calc_attack_bonus(const struct actor *const actor)
 {
     const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
-    const int size_modifer = size_database[race_database[actor->race].size].modifier;
+    const int size_modifer = size_database[actor->size].modifier;
 
     int attack_bonus = base_attack_bonus + size_modifer;
 
@@ -831,6 +880,7 @@ int actor_calc_attack_bonus(const struct actor *const actor)
 
         const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
+        // ranged weapons use dexterity modifier instead of strength modifier
         if (base_weapon_data->ranged)
         {
             attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
@@ -848,7 +898,10 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         {
             const enum equippability equippability = actor_calc_item_equippability(actor, weapon);
 
-            if (actor_has_feat(actor, FEAT_WEAPON_FINESSE) && base_weapon_data->finesse && equippability != EQUIPPABILITY_BARELY)
+            // if the actor has the weapon finesse feat, the weapon is finessable, and is not two-handed, then use dexterity modifier instead of strength modifier
+            if (actor_has_feat(actor, FEAT_WEAPON_FINESSE) &&
+                base_weapon_data->finesssable &&
+                equippability != EQUIPPABILITY_BARELY)
             {
                 attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
             }
@@ -860,6 +913,7 @@ int actor_calc_attack_bonus(const struct actor *const actor)
     }
     else
     {
+        // unarmed attacks are always finessable, so if the actor has the weapon finesse feat, then use dexterity modifier instead of strength modifier
         if (actor_has_feat(actor, FEAT_WEAPON_FINESSE))
         {
             attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
@@ -881,6 +935,7 @@ int actor_calc_ranged_attack_penalty(const struct actor *const actor, const stru
         const struct item_data *const weapon_data = &item_database[weapon->type];
         const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
+        // ranged weapons fired at close range suffer an automatic -4 attack penalty, unless the actor has the point blank shot feat
         if (base_weapon_data->ranged &&
             distance_between(actor->x, actor->y, other->x, other->y) < 2 &&
             !actor_has_feat(actor, FEAT_POINT_BLANK_SHOT))
@@ -904,7 +959,7 @@ int actor_calc_threat_range(const struct actor *const actor)
         return base_weapon_data->threat_range;
     }
 
-    return 20;
+    return natural_weapon_database[class_database[actor->class].natural_weapon_type].threat_range;
 }
 
 int actor_calc_critical_multiplier(const struct actor *const actor)
@@ -919,7 +974,7 @@ int actor_calc_critical_multiplier(const struct actor *const actor)
         return base_weapon_data->critical_multiplier;
     }
 
-    return 2;
+    return natural_weapon_database[class_database[actor->class].natural_weapon_type].critical_multiplier;
 }
 
 int actor_calc_damage_bonus(const struct actor *const actor)
@@ -938,13 +993,15 @@ int actor_calc_damage_bonus(const struct actor *const actor)
 
         if (base_weapon_data->ranged)
         {
+            // ranged weapons do not get strength modifier to damage, except for slings
+            // though, they do receive strength penalties, except for composite bows
             const int strength_modifier = actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
 
             if (weapon_data->type == BASE_ITEM_TYPE_SLING)
             {
                 damage_bonus += strength_modifier;
             }
-            else if (strength_modifier < 0) // TODO: if composite bows are added, then exclude them from the strength penalty
+            else if (strength_modifier < 0 /*TODO: && weapon_data->type != BASE_ITEM_TYPE_COMPOSITE_BOW*/)
             {
                 damage_bonus += strength_modifier;
             }
@@ -962,6 +1019,7 @@ int actor_calc_damage_bonus(const struct actor *const actor)
         {
             const enum equippability equippability = actor_calc_item_equippability(actor, weapon);
 
+            // two-handing a weapon adds 1.5x damage bonus
             if (equippability == EQUIPPABILITY_BARELY)
             {
                 damage_bonus += (int)(actor_calc_ability_modifer(actor, ABILITY_STRENGTH) * 1.5f);
@@ -1048,11 +1106,10 @@ float actor_calc_arcane_spell_failure(const struct actor *const actor)
 
 enum equippability actor_calc_item_equippability(const struct actor *const actor, const struct item *const item)
 {
-    const struct race_data *const race_data = &race_database[actor->race];
     const struct item_data *const item_data = &item_database[item->type];
     const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
-    const int difference = race_data->size - base_item_data->size;
+    const int difference = actor->size - base_item_data->size;
 
     if (difference < -1)
     {
@@ -1112,7 +1169,7 @@ float actor_calc_carry_weight(const struct actor *actor)
 
 float actor_calc_speed(const struct actor *actor)
 {
-    const float speed = size_database[race_database[actor->race].size].speed;
+    const float speed = size_database[actor->size].speed;
     const bool encumbered = actor_calc_carry_weight(actor) > actor_calc_max_carry_weight(actor);
 
     return speed * (encumbered ? 0.5f : 1);
@@ -1159,7 +1216,7 @@ int actor_calc_sight_radius(const struct actor *actor)
 
     if (special_abilities[SPECIAL_ABILITY_DARKVISION])
     {
-        return 2;
+        return 3;
     }
 
     if (special_abilities[SPECIAL_ABILITY_LOW_LIGHT_VISION])
@@ -3445,23 +3502,48 @@ bool actor_cast(
         actor->mana -= spell_data->level;
     }
 
+    // TODO: add caster level if from memory, otherwise use the level of the item
+
     switch (spell_type)
     {
-    case SPELL_TYPE_MINOR_HEAL:
+    case SPELL_TYPE_ACID_SPLASH:
+    {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
+        // create a fireball projectile
+        struct projectile *const projectile = projectile_new(
+            PROJECTILE_TYPE_ACID_SPLASH,
+            actor->floor,
+            actor->x,
+            actor->y,
+            x,
+            y,
+            actor,
+            NULL);
+
+        // add the projectile to the map
+        struct map *const map = &world->maps[actor->floor];
+        list_add(map->projectiles, projectile);
+    }
+    break;
+    case SPELL_TYPE_CURE_LIGHT_WOUNDS:
     {
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+            const int health = TCOD_random_dice_roll_s(world->random, "1d8");
 
             world_log(
                 other->floor,
                 other->x,
                 other->y,
                 color_white,
-                "%s heals for %d.",
+                "%s cures %d damage.",
                 other->name,
                 health);
 
@@ -3469,36 +3551,14 @@ bool actor_cast(
         }
     }
     break;
-    case SPELL_TYPE_MINOR_MANA:
+    case SPELL_TYPE_CHAIN_LIGHTNING:
     {
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
         if (other)
         {
-            const int mana = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
-
-            world_log(
-                other->floor,
-                other->x,
-                other->y,
-                color_white,
-                "%s recovers %d mana.",
-                other->name,
-                mana);
-
-            actor_restore_mana(other, mana);
-        }
-    }
-    break;
-    case SPELL_TYPE_LIGHTNING:
-    {
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
-        if (other)
-        {
-            const int damage = TCOD_random_dice_roll_s(world->random, "1d4") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+            const int damage = TCOD_random_dice_roll_s(world->random, "1d4");
 
             world_log(
                 actor->floor,
@@ -3549,7 +3609,8 @@ bool actor_cast(
         struct map *const map = &world->maps[actor->floor];
         list_add(map->projectiles, projectile);
     }
-    case SPELL_TYPE_ACID_SPLASH:
+    break;
+    case SPELL_TYPE_MAGIC_MISSILE:
     {
         if (x == actor->x && y == actor->y)
         {
@@ -3558,7 +3619,7 @@ bool actor_cast(
 
         // create a fireball projectile
         struct projectile *const projectile = projectile_new(
-            PROJECTILE_TYPE_ACID_SPLASH,
+            PROJECTILE_TYPE_MAGIC_MISSILE,
             actor->floor,
             actor->x,
             actor->y,
@@ -3570,6 +3631,28 @@ bool actor_cast(
         // add the projectile to the map
         struct map *const map = &world->maps[actor->floor];
         list_add(map->projectiles, projectile);
+    }
+    break;
+    case SPELL_TYPE_RECOVER_LIGHT_ARCANA:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+        if (other)
+        {
+            const int mana = TCOD_random_dice_roll_s(world->random, "1d8");
+
+            world_log(
+                other->floor,
+                other->x,
+                other->y,
+                color_white,
+                "%s recovers %d mana.",
+                other->name,
+                mana);
+
+            actor_restore_mana(other, mana);
+        }
     }
     break;
     }
@@ -3597,5 +3680,10 @@ void actor_die(struct actor *const actor, struct actor *const killer)
         const int experience = actor->level * 100;
 
         actor_give_experience(killer, experience);
+
+        if (killer->leader)
+        {
+            actor_give_experience(killer->leader, experience);
+        }
     }
 }

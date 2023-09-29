@@ -1,13 +1,14 @@
-#include "monster_prototype.h"
+#include "monster.h"
 
 #include "faction.h"
 
-const struct monster_prototype monster_prototypes[] = {
-    [MONSTER_BAT] = {
+const struct monster_data monster_database[] = {
+    [MONSTER_TYPE_BAT] = {
         .name = "Bat",
 
-        .race = RACE_ANIMAL_DIMINUTIVE,
+        .race = RACE_ANIMAL,
         .class = CLASS_BAT,
+        .size = SIZE_DIMINUTIVE,
         .faction = FACTION_WILD_ANIMAL,
 
         .level = 1,
@@ -27,11 +28,12 @@ const struct monster_prototype monster_prototypes[] = {
             [FEAT_WEAPON_FINESSE] = true,
         },
     },
-    [MONSTER_BUGBEAR] = {
+    [MONSTER_TYPE_BUGBEAR] = {
         .name = "Bugbear",
 
-        .race = RACE_HUMANOID_MEDIUM,
+        .race = RACE_HUMANOID,
         .class = CLASS_BUGBEAR,
+        .size = SIZE_MEDIUM,
         .faction = FACTION_GOBLINOID,
 
         .level = 3,
@@ -78,11 +80,12 @@ const struct monster_prototype monster_prototypes[] = {
             [ITEM_TYPE_JAVELIN] = 1,
         },
     },
-    [MONSTER_DIRE_RAT] = {
+    [MONSTER_TYPE_DIRE_RAT] = {
         .name = "Dire Rat",
 
-        .race = RACE_ANIMAL_SMALL,
+        .race = RACE_ANIMAL,
         .class = CLASS_DIRE_RAT,
+        .size = SIZE_SMALL,
         .faction = FACTION_WILD_ANIMAL,
 
         .level = 1,
@@ -102,31 +105,50 @@ const struct monster_prototype monster_prototypes[] = {
             [FEAT_WEAPON_FINESSE] = true,
         },
     },
-    [MONSTER_HYENA] = {
-        .name = "Hyena",
+    [MONSTER_TYPE_FIRE_BEETLE] = {
+        .name = "Fire Beetle",
 
-        .race = RACE_ANIMAL_MEDIUM,
-        .class = CLASS_HYENA,
-        .faction = FACTION_GNOLL,
+        .race = RACE_VERMIN,
+        .class = CLASS_FIRE_BEETLE,
+        .size = SIZE_SMALL,
+        .faction = FACTION_VERMIN,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 10,
+            [ABILITY_DEXTERITY] = 11,
+            [ABILITY_CONSTITUTION] = 11,
+            [ABILITY_INTELLIGENCE] = 0,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+    },
+    [MONSTER_TYPE_GIANT_ANT] = {
+        .name = "Giant Ant",
+
+        .race = RACE_VERMIN,
+        .class = CLASS_GIANT_ANT,
+        .size = SIZE_MEDIUM,
+        .faction = FACTION_VERMIN,
 
         .level = 2,
 
         .ability_scores = {
-            [ABILITY_STRENGTH] = 14,
-            [ABILITY_DEXTERITY] = 15,
-            [ABILITY_CONSTITUTION] = 15,
-            [ABILITY_INTELLIGENCE] = 2,
-        },
-
-        .special_abilities = {
-            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [ABILITY_STRENGTH] = 10,
+            [ABILITY_DEXTERITY] = 10,
+            [ABILITY_CONSTITUTION] = 10,
+            [ABILITY_INTELLIGENCE] = 0,
         },
     },
-    [MONSTER_GNOLL] = {
+    [MONSTER_TYPE_GNOLL] = {
         .name = "Gnoll",
 
-        .race = RACE_ANIMAL_MEDIUM,
-        .class = CLASS_HYENA,
+        .race = RACE_HUMANOID,
+        .class = CLASS_GNOLL,
+        .size = SIZE_MEDIUM,
         .faction = FACTION_GNOLL,
 
         .level = 2,
@@ -166,7 +188,7 @@ const struct monster_prototype monster_prototypes[] = {
         .items = {
             [ITEM_TYPE_SHORTBOW] = {
                 .min_stack = 0,
-                .max_stack = 3,
+                .max_stack = 1,
             },
             [ITEM_TYPE_ARROW] = {
                 .min_stack = 0,
@@ -174,11 +196,12 @@ const struct monster_prototype monster_prototypes[] = {
             },
         },
     },
-    [MONSTER_GOBLIN] = {
+    [MONSTER_TYPE_GOBLIN] = {
         .name = "Goblin",
 
-        .race = RACE_HUMANOID_SMALL,
+        .race = RACE_HUMANOID,
         .class = CLASS_GOBLIN,
+        .size = SIZE_SMALL,
         .faction = FACTION_GOBLINOID,
 
         .level = 1,
@@ -228,11 +251,12 @@ const struct monster_prototype monster_prototypes[] = {
             },
         },
     },
-    [MONSTER_HOBGOBLIN] = {
+    [MONSTER_TYPE_HOBGOBLIN] = {
         .name = "Hobgoblin",
 
-        .race = RACE_HUMANOID_MEDIUM,
+        .race = RACE_HUMANOID,
         .class = CLASS_HOBGOBLIN,
+        .size = SIZE_MEDIUM,
         .faction = FACTION_GOBLINOID,
 
         .level = 1,
@@ -283,11 +307,33 @@ const struct monster_prototype monster_prototypes[] = {
             },
         },
     },
-    [MONSTER_KOBOLD] = {
+    [MONSTER_TYPE_HYENA] = {
+        .name = "Hyena",
+
+        .race = RACE_ANIMAL,
+        .class = CLASS_HYENA,
+        .size = SIZE_MEDIUM,
+        .faction = FACTION_GNOLL,
+
+        .level = 2,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 14,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 15,
+            [ABILITY_INTELLIGENCE] = 2,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+    },
+    [MONSTER_TYPE_KOBOLD] = {
         .name = "Kobold",
 
-        .race = RACE_HUMANOID_SMALL,
+        .race = RACE_HUMANOID,
         .class = CLASS_KOBOLD,
+        .size = SIZE_SMALL,
         .faction = FACTION_KOBOLD,
 
         .level = 1,
@@ -330,7 +376,7 @@ const struct monster_prototype monster_prototypes[] = {
 
         .items = {
             [ITEM_TYPE_SLING] = {
-                .min_stack = 1,
+                .min_stack = 0,
                 .max_stack = 1,
             },
             [ITEM_TYPE_BULLET] = {
@@ -339,11 +385,37 @@ const struct monster_prototype monster_prototypes[] = {
             },
         },
     },
-    [MONSTER_RAT] = {
+    [MONSTER_TYPE_KRENSHAR] = {
+        .name = "Krenshar",
+
+        .race = RACE_MAGICAL_BEAST,
+        .class = CLASS_KRENSHAR,
+        .size = SIZE_MEDIUM,
+        .faction = FACTION_MAGICAL_BEAST,
+
+        .level = 2,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 11,
+            [ABILITY_DEXTERITY] = 14,
+            [ABILITY_CONSTITUTION] = 11,
+            [ABILITY_INTELLIGENCE] = 6,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        // .feats = {
+        //     [FEAT_WEAPON_MULTIATTACK] = true,
+        // },
+    },
+    [MONSTER_TYPE_RAT] = {
         .name = "Rat",
 
-        .race = RACE_ANIMAL_TINY,
+        .race = RACE_ANIMAL,
         .class = CLASS_RAT,
+        .size = SIZE_TINY,
         .faction = FACTION_WILD_ANIMAL,
 
         .level = 1,
@@ -363,11 +435,12 @@ const struct monster_prototype monster_prototypes[] = {
             [FEAT_WEAPON_FINESSE] = true,
         },
     },
-    [MONSTER_RED_DRAGON_WYRMLING] = {
+    [MONSTER_TYPE_RED_DRAGON_WYRMLING] = {
         .name = "Wyrmling Red Dragon",
 
-        .race = RACE_DRAGON_WYRMLING,
+        .race = RACE_RED_DRAGON_WYRMLING,
         .class = CLASS_RED_DRAGON_WYRMLING,
+        .size = SIZE_MEDIUM,
         .faction = FACTION_RED_DRAGON,
 
         .level = 7,
@@ -379,11 +452,12 @@ const struct monster_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 10,
         },
     },
-    [MONSTER_RED_DRAGON_ADULT] = {
+    [MONSTER_TYPE_RED_DRAGON_ADULT] = {
         .name = "Adult Red Dragon",
 
-        .race = RACE_DRAGON_ADULT,
+        .race = RACE_RED_DRAGON_ADULT,
         .class = CLASS_RED_DRAGON_ADULT,
+        .size = SIZE_HUGE,
         .faction = FACTION_RED_DRAGON,
 
         .level = 22,
@@ -395,11 +469,12 @@ const struct monster_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 16,
         },
     },
-    [MONSTER_RED_DRAGON_ANCIENT] = {
+    [MONSTER_TYPE_RED_DRAGON_ANCIENT] = {
         .name = "Ancient Red Dragon",
 
-        .race = RACE_DRAGON_ANCIENT,
+        .race = RACE_RED_DRAGON_ANCIENT,
         .class = CLASS_RED_DRAGON_ANCIENT,
+        .size = SIZE_GARGANTUAN,
         .faction = FACTION_RED_DRAGON,
 
         .level = 34,
@@ -411,31 +486,12 @@ const struct monster_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 24,
         },
     },
-    [MONSTER_TROLL] = {
-        .name = "Troll",
-
-        .race = RACE_GIANT_LARGE,
-        .class = CLASS_TROLL,
-        .faction = FACTION_TROLL,
-
-        .level = 6,
-
-        .ability_scores = {
-            [ABILITY_STRENGTH] = 23,
-            [ABILITY_DEXTERITY] = 14,
-            [ABILITY_CONSTITUTION] = 23,
-            [ABILITY_INTELLIGENCE] = 6,
-        },
-
-        .special_abilities = {
-            [SPECIAL_ABILITY_DARKVISION] = true,
-        },
-    },
-    [MONSTER_SKELETON_WARRIOR] = {
+    [MONSTER_TYPE_SKELETON_WARRIOR] = {
         .name = "Skeleton Warrior",
 
         .race = RACE_UNDEAD,
         .class = CLASS_SKELETON_WARRIOR,
+        .size = SIZE_MEDIUM,
         .faction = FACTION_UNDEAD,
 
         .level = 1,
@@ -464,6 +520,86 @@ const struct monster_prototype monster_prototypes[] = {
                 .min_stack = 1,
                 .max_stack = 1,
             },
+        },
+    },
+    [MONSTER_TYPE_SNAKE] = {
+        .name = "Snake",
+
+        .race = RACE_ANIMAL,
+        .class = CLASS_SNAKE,
+        .size = SIZE_SMALL,
+        .faction = FACTION_WILD_ANIMAL,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 6,
+            [ABILITY_DEXTERITY] = 17,
+            [ABILITY_CONSTITUTION] = 11,
+            [ABILITY_INTELLIGENCE] = 1,
+        },
+    },
+    [MONSTER_TYPE_SPIDER] = {
+        .name = "Spider",
+
+        .race = RACE_VERMIN,
+        .class = CLASS_SPIDER,
+        .size = SIZE_SMALL,
+        .faction = FACTION_VERMIN,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 7,
+            [ABILITY_DEXTERITY] = 17,
+            [ABILITY_CONSTITUTION] = 10,
+            [ABILITY_INTELLIGENCE] = 0,
+        },
+
+        .feats = {
+            [FEAT_WEAPON_FINESSE] = true,
+        },
+    },
+    [MONSTER_TYPE_TROLL] = {
+        .name = "Troll",
+
+        .race = RACE_GIANT,
+        .class = CLASS_TROLL,
+        .size = SIZE_LARGE,
+        .faction = FACTION_TROLL,
+
+        .level = 6,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 23,
+            [ABILITY_DEXTERITY] = 14,
+            [ABILITY_CONSTITUTION] = 23,
+            [ABILITY_INTELLIGENCE] = 6,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+    },
+    [MONSTER_TYPE_WOLF] = {
+        .name = "Wolf",
+
+        .race = RACE_ANIMAL,
+        .class = CLASS_WOLF,
+        .size = SIZE_MEDIUM,
+        .faction = FACTION_WILD_ANIMAL,
+
+        .level = 2,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 13,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 15,
+            [ABILITY_INTELLIGENCE] = 2,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
         },
     },
 };

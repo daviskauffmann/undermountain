@@ -115,9 +115,10 @@ void world_create(struct actor *hero)
                     [ABILITY_CONSTITUTION] = 15,
                     [ABILITY_INTELLIGENCE] = 2,
                 },
-                (bool[NUM_FEATS]){
-                    [FEAT_LOW_LIGHT_VISION] = true,
+                (bool[NUM_SPECIAL_ABILITIES]){
+                    [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
                 },
+                (bool[NUM_FEATS]){false},
                 floor,
                 map->stair_up_x + 1,
                 map->stair_up_y + 1);
@@ -211,6 +212,8 @@ void world_save(FILE *const file)
             fwrite(&actor->ability_points, sizeof(actor->ability_points), 1, file);
             fwrite(&actor->ability_scores, sizeof(actor->ability_scores), 1, file);
 
+            fwrite(&actor->special_abilities, sizeof(actor->special_abilities), 1, file);
+
             fwrite(&actor->feats, sizeof(actor->feats), 1, file);
 
             fwrite(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
@@ -287,6 +290,14 @@ void world_save(FILE *const file)
 
             const bool is_hero = actor == world->hero;
             fwrite(&is_hero, sizeof(is_hero), 1, file);
+        }
+
+        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+        {
+            const struct actor *const actor = list_get(map->actors, actor_index);
+
+            const size_t current_target_index = list_index_of(map->actors, actor->current_target);
+            fwrite(&current_target_index, sizeof(current_target_index), 1, file);
         }
 
         for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
@@ -496,6 +507,8 @@ void world_load(FILE *const file)
             fread(&actor->ability_points, sizeof(actor->ability_points), 1, file);
             fread(&actor->ability_scores, sizeof(actor->ability_scores), 1, file);
 
+            fread(&actor->special_abilities, sizeof(actor->special_abilities), 1, file);
+
             fread(&actor->feats, sizeof(actor->feats), 1, file);
 
             fread(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
@@ -565,6 +578,7 @@ void world_load(FILE *const file)
             fread(&actor->took_turn, sizeof(actor->took_turn), 1, file);
             fread(&actor->energy, sizeof(actor->energy), 1, file);
 
+            actor->current_target = NULL;
             fread(&actor->last_seen_x, sizeof(actor->last_seen_x), 1, file);
             fread(&actor->last_seen_y, sizeof(actor->last_seen_y), 1, file);
             fread(&actor->turns_chased, sizeof(actor->turns_chased), 1, file);
@@ -597,6 +611,15 @@ void world_load(FILE *const file)
 
             list_add(map->actors, actor);
             map->tiles[actor->x][actor->y].actor = actor;
+        }
+
+        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+        {
+            struct actor *const actor = list_get(map->actors, actor_index);
+
+            size_t current_target_index;
+            fread(&current_target_index, sizeof(current_target_index), 1, file);
+            actor->current_target = list_get(map->actors, current_target_index);
         }
 
         for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
@@ -790,6 +813,82 @@ void world_update(float delta_time)
     {
         struct actor *const actor = list_get(map->actors, actor_index);
 
+        // process dead actors
+        if (actor->dead)
+        {
+            // remove from map
+            list_remove_at(map->actors, actor_index--);
+
+            // remove from tile
+            struct tile *const tile = &map->tiles[actor->x][actor->y];
+            tile->actor = NULL;
+
+            // create a corpse
+            struct corpse *const corpse = corpse_new(
+                actor->name,
+                actor->level,
+                actor->floor,
+                actor->x,
+                actor->y);
+            list_add(map->corpses, corpse);
+            list_add(tile->corpses, corpse);
+
+            // drop items
+            if (actor != world->hero)
+            {
+                // move equipment to ground
+                for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+                {
+                    struct item *const equipment = actor->equipment[equip_slot];
+
+                    if (equipment)
+                    {
+                        equipment->floor = actor->floor;
+                        equipment->x = actor->x;
+                        equipment->y = actor->y;
+
+                        list_add(tile->items, equipment);
+                        list_add(map->items, equipment);
+
+                        actor->equipment[equip_slot] = NULL;
+                    }
+                }
+
+                // move inventory to ground
+                for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                {
+                    struct item *const item = list_get(actor->items, item_index);
+
+                    item->floor = actor->floor;
+                    item->x = actor->x;
+                    item->y = actor->y;
+
+                    list_add(tile->items, item);
+                    list_add(map->items, item);
+
+                    list_remove_at(actor->items, item_index--);
+                }
+            }
+
+            if (actor == world->hero)
+            {
+                world->doomed = true;
+
+                world_log(
+                    actor->floor,
+                    actor->x,
+                    actor->y,
+                    color_green,
+                    "Game over! Press 'ESC' to return to the menu.");
+            }
+            else
+            {
+                actor_delete(actor);
+            }
+
+            continue;
+        }
+
         actor_calc_light(actor);
         actor_calc_fade(actor, delta_time);
     }
@@ -876,79 +975,6 @@ void world_update(float delta_time)
                 if (actor->controllable)
                 {
                     controllable_exists = true;
-                }
-
-                if (actor->dead)
-                {
-                    // remove from map
-                    list_remove_at(map->actors, actor_index--);
-
-                    // remove from tile
-                    struct tile *const tile = &map->tiles[actor->x][actor->y];
-                    tile->actor = NULL;
-
-                    // create a corpse
-                    struct corpse *const corpse = corpse_new(
-                        actor->name,
-                        actor->level,
-                        actor->floor,
-                        actor->x,
-                        actor->y);
-                    list_add(map->corpses, corpse);
-                    list_add(tile->corpses, corpse);
-
-                    // drop items
-                    if (actor != world->hero)
-                    {
-                        // move equipment to ground
-                        for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
-                        {
-                            struct item *const equipment = actor->equipment[equip_slot];
-
-                            if (equipment)
-                            {
-                                equipment->floor = actor->floor;
-                                equipment->x = actor->x;
-                                equipment->y = actor->y;
-
-                                list_add(tile->items, equipment);
-                                list_add(map->items, equipment);
-
-                                actor->equipment[equip_slot] = NULL;
-                            }
-                        }
-
-                        // move inventory to ground
-                        for (size_t item_index = 0; item_index < actor->items->size; item_index++)
-                        {
-                            struct item *const item = list_get(actor->items, item_index);
-
-                            item->floor = actor->floor;
-                            item->x = actor->x;
-                            item->y = actor->y;
-
-                            list_add(tile->items, item);
-                            list_add(map->items, item);
-
-                            list_remove_at(actor->items, item_index--);
-                        }
-                    }
-
-                    if (actor == world->hero)
-                    {
-                        world->doomed = true;
-
-                        world_log(
-                            actor->floor,
-                            actor->x,
-                            actor->y,
-                            color_green,
-                            "Game over! Press 'ESC' to return to the menu.");
-                    }
-                    else
-                    {
-                        actor_delete(actor);
-                    }
                 }
             }
 

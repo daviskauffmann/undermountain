@@ -14,9 +14,11 @@ enum monster_pack
     MONSTER_PACK_BATS,
     MONSTER_PACK_BUGBEARS,
     MONSTER_PACK_DIRE_RAT,
+    MONSTER_PACK_RED_DRAGON,
     MONSTER_PACK_GOBLINS,
     MONSTER_PACK_KOBOLDS,
     MONSTER_PACK_RATS,
+    MONSTER_PACK_TROLLS,
     MONSTER_PACK_SKELETONS,
 
     NUM_MONSTER_PACKS,
@@ -27,7 +29,11 @@ struct monster_pack_data
     int min_floor;
     int max_floor;
 
-    int monsters[NUM_MONSTERS];
+    struct
+    {
+        int min_count;
+        int max_count;
+    } monsters[NUM_MONSTERS];
 };
 
 struct map

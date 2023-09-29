@@ -20,6 +20,7 @@ struct actor *actor_new(
     const enum faction faction,
     const int level,
     const int ability_scores[NUM_ABILITIES],
+    const bool special_abilities[NUM_SPECIAL_ABILITIES],
     const bool feats[NUM_FEATS],
     const int floor,
     const int x,
@@ -45,6 +46,11 @@ struct actor *actor_new(
     for (enum feat feat = 0; feat < NUM_FEATS; feat++)
     {
         actor->feats[feat] = feats[feat];
+    }
+
+    for (enum special_ability special_ability = 0; special_ability < NUM_SPECIAL_ABILITIES; special_ability++)
+    {
+        actor->special_abilities[special_ability] = special_abilities[special_ability];
     }
 
     actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
@@ -530,7 +536,9 @@ const char *actor_calc_damage(const struct actor *const actor)
         return base_weapon_data->damage;
     }
 
-    return "1d3";
+    const struct class_data *const class_data = &class_database[actor->class];
+
+    return natural_weapon_database[class_data->natural_weapon_type].damage;
 }
 
 int actor_calc_max_mana(const struct actor *const actor)
@@ -690,9 +698,17 @@ void actor_calc_fade(struct actor *const actor, const float delta_time)
 
 int actor_calc_sight_radius(const struct actor *actor)
 {
-    if (actor_has_feat(actor, FEAT_LOW_LIGHT_VISION))
+    bool special_abilities[NUM_SPECIAL_ABILITIES] = {false};
+    actor_calc_special_abilities(actor, &special_abilities);
+
+    if (special_abilities[SPECIAL_ABILITY_DARKVISION])
     {
-        return 3;
+        return 2;
+    }
+
+    if (special_abilities[SPECIAL_ABILITY_LOW_LIGHT_VISION])
+    {
+        return 2;
     }
 
     return 1;
@@ -793,7 +809,7 @@ void actor_calc_fov(struct actor *const actor)
     TCOD_map_delete(los_map);
 }
 
-void actor_calc_feats(const struct actor *actor, bool (*feats)[NUM_FEATS])
+void actor_calc_feats(const struct actor *actor, bool (*const feats)[NUM_FEATS])
 {
     for (enum feat feat = 0; feat < NUM_FEATS; feat++)
     {
@@ -861,7 +877,31 @@ bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
     return true;
 }
 
-void actor_calc_known_spells(const struct actor *const actor, bool (*known_spells)[NUM_SPELL_TYPES])
+void actor_calc_special_abilities(const struct actor *const actor, bool (*const special_abilities)[NUM_SPECIAL_ABILITIES])
+{
+    for (enum special_ability special_ability = 0; special_ability < NUM_SPECIAL_ABILITIES; special_ability++)
+    {
+        if (race_database[actor->race].special_abilities[special_ability])
+        {
+            (*special_abilities)[special_ability] = true;
+        }
+
+        if (actor->special_abilities[special_ability])
+        {
+            (*special_abilities)[special_ability] = true;
+        }
+    }
+}
+
+bool actor_has_special_ability(const struct actor *const actor, const enum special_ability special_ability)
+{
+    bool special_abilities[NUM_SPECIAL_ABILITIES] = {false};
+    actor_calc_special_abilities(actor, &special_abilities);
+
+    return special_abilities[special_ability];
+}
+
+void actor_calc_known_spells(const struct actor *const actor, bool (*const known_spells)[NUM_SPELL_TYPES])
 {
     for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
     {
@@ -963,16 +1003,96 @@ bool actor_has_ranged_weapon(const struct actor *actor)
     return false;
 }
 
+bool actor_is_proficient(const struct actor *const actor, const struct item *const item)
+{
+    const struct item_data *const item_data = &item_database[item->type];
+    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+    bool feats[NUM_FEATS] = {false};
+    actor_calc_feats(actor, &feats);
+
+    if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON)
+    {
+        bool is_weapon_proficient = false;
+
+        for (enum weapon_proficiency weapon_proficiency = WEAPON_PROFICIENCY_NONE + 1; weapon_proficiency < NUM_WEAPON_PROFICIENCIES; weapon_proficiency++)
+        {
+            if (base_item_data->weapon_proficiencies[weapon_proficiency])
+            {
+                if (weapon_proficiency == WEAPON_PROFICIENCY_ELF && feats[FEAT_WEAPON_PROFICIENCY_ELF])
+                {
+                    is_weapon_proficient = true;
+
+                    break;
+                }
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_EXOTIC && feats[FEAT_WEAPON_PROFICIENCY_EXOTIC])
+                {
+                    is_weapon_proficient = true;
+
+                    break;
+                }
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_MARTIAL && feats[FEAT_WEAPON_PROFICIENCY_MARTIAL])
+                {
+                    is_weapon_proficient = true;
+
+                    break;
+                }
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_ROGUE && feats[FEAT_WEAPON_PROFICIENCY_ROGUE])
+                {
+                    is_weapon_proficient = true;
+
+                    break;
+                }
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_SIMPLE && feats[FEAT_WEAPON_PROFICIENCY_SIMPLE])
+                {
+                    is_weapon_proficient = true;
+
+                    break;
+                }
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_WIZARD && feats[FEAT_WEAPON_PROFICIENCY_WIZARD])
+                {
+                    is_weapon_proficient = true;
+
+                    break;
+                }
+            }
+        }
+
+        return is_weapon_proficient;
+    }
+    else if (base_item_data->equip_slot == EQUIP_SLOT_ARMOR ||
+             base_item_data->equip_slot == EQUIP_SLOT_SHIELD)
+    {
+        if (base_item_data->armor_proficiency != ARMOR_PROFICIENCY_NONE)
+        {
+            if (base_item_data->armor_proficiency == ARMOR_PROFICIENCY_HEAVY && feats[FEAT_ARMOR_PROFICIENCY_HEAVY])
+            {
+                return true;
+            }
+            else if (base_item_data->armor_proficiency == ARMOR_PROFICIENCY_LIGHT && feats[FEAT_ARMOR_PROFICIENCY_LIGHT])
+            {
+                return true;
+            }
+            else if (base_item_data->armor_proficiency == ARMOR_PROFICIENCY_MEDIUM && feats[FEAT_ARMOR_PROFICIENCY_MEDIUM])
+            {
+                return true;
+            }
+            else if (base_item_data->armor_proficiency == ARMOR_PROFICIENCY_SHIELD && feats[FEAT_SHIELD_PROFICIENCY])
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 bool actor_ai(struct actor *const actor)
 {
-    // assign ability points
-    // while (actor->ability_points > 0)
-    // {
-    //     const enum ability ability = TCOD_random_get_int(world->random, 0, NUM_ABILITIES - 1);
-
-    //     actor_add_ability_point(actor, ability);
-    // }
-
     const struct map *const map = &world->maps[actor->floor];
     const struct tile *const tile = &map->tiles[actor->x][actor->y];
 
@@ -1039,17 +1159,65 @@ bool actor_ai(struct actor *const actor)
         actor->last_seen_y = nearest_enemy->y;
         actor->turns_chased = 0;
 
-        bool can_shoot = false;
-
         const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
-        if (weapon)
-        {
-            const struct item_data *const weapon_data = &item_database[weapon->type];
-            const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
 
-            if (base_weapon_data->ranged)
+        // is the actor in melee range?
+        if (distance_between(
+                actor->x, actor->y,
+                nearest_enemy->x, nearest_enemy->y) < 2)
+        {
+            // does the actor have a weapon?
+            if (!weapon)
             {
-                // does the actor have ammo?
+                // look for a melee weapon to equip
+                for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                {
+                    struct item *const item = list_get(actor->items, item_index);
+                    const struct item_data *const item_data = &item_database[item->type];
+                    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                    if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON &&
+                        !base_item_data->ranged &&
+                        actor_is_proficient(actor, item))
+                    {
+                        if (actor_equip(actor, item))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // if carrying a ranged weapon, look for other options before shooting
+            if (actor_has_ranged_weapon(actor))
+            {
+                const struct item_data *const weapon_data = &item_database[weapon->type];
+                const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+
+                // look for a melee weapon to equip
+                if (!actor_has_feat(actor, FEAT_POINT_BLANK_SHOT))
+                {
+                    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                    {
+                        struct item *const item = list_get(actor->items, item_index);
+                        const struct item_data *const item_data = &item_database[item->type];
+                        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                        if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON &&
+                            !base_item_data->ranged &&
+                            actor_is_proficient(actor, item))
+                        {
+                            if (actor_equip(actor, item))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                // did not find melee weapon or has point blank shot feat, so check ammo
+                bool has_ammunition = false;
+
                 const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
 
                 if (ammunition)
@@ -1060,22 +1228,22 @@ bool actor_ai(struct actor *const actor)
 
                     if (base_ammunition_data->ammunition_type == base_weapon_data->ammunition_type)
                     {
-                        can_shoot = true;
+                        has_ammunition = true;
                     }
                 }
 
-                if (!can_shoot)
+                // no ammo or wrong ammo, so look for suitable ammo in inventory and equip it
+                if (!has_ammunition)
                 {
-                    // out of ammo or using the wrong ammo
-
-                    // try to find suitable ammo in inventory and equip it
                     for (size_t item_index = 0; item_index < actor->items->size; item_index++)
                     {
                         struct item *const item = list_get(actor->items, item_index);
                         const struct item_data *const item_data = &item_database[item->type];
                         const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
-                        if (base_item_data->ammunition_type == base_weapon_data->ammunition_type)
+                        if (!base_weapon_data->ranged &&
+                            base_item_data->ammunition_type == base_weapon_data->ammunition_type &&
+                            actor_is_proficient(actor, item))
                         {
                             // found suitable ammo, so equip it
                             if (actor_equip(actor, item))
@@ -1085,46 +1253,198 @@ bool actor_ai(struct actor *const actor)
                         }
                     }
 
-                    // no ammo equipped or in inventory, so unequip the weapon
+                    // we didn't find ammo, so unequip the weapon
                     if (actor_unequip(actor, EQUIP_SLOT_WEAPON))
                     {
                         return true;
                     }
                 }
-            }
-        }
-        else
-        {
-            // look for weapon in inventory and equip
-            // if the enemy is in melee range, look for a melee weapon
-            // if the enemy is far away, look for a ranged weapon
-            // if the weapon is ranged, make sure there is also ammo, otherwise fall back to a melee weapon
-        }
 
-        if (can_shoot)
-        {
-            if (actor_shoot(actor, nearest_enemy->x, nearest_enemy->y))
+                // no other choice, take the shot in melee range
+                if (actor_shoot(actor, nearest_enemy->x, nearest_enemy->y))
+                {
+                    return true;
+                }
+            }
+
+            // enemy is in melee range, so melee attack
+            if (actor_attack(actor, nearest_enemy, NULL))
             {
                 return true;
             }
         }
         else
         {
-            if (distance_between(
-                    actor->x, actor->y,
-                    nearest_enemy->x, nearest_enemy->y) < 2)
+            // is the actor carrying a ranged weapon?
+            if (actor_has_ranged_weapon(actor))
             {
-                if (actor_attack(actor, nearest_enemy, NULL))
+                const struct item_data *const weapon_data = &item_database[weapon->type];
+                const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+
+                // does the actor have ammunition?
+                bool has_ammunition = false;
+
+                // does the weapon require ammunition?
+                if (base_weapon_data->ammunition_type == AMMUNITION_TYPE_NONE)
+                {
+                    has_ammunition = true;
+                }
+                else
+                {
+                    // check if ammo is equipped
+                    const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+
+                    if (ammunition)
+                    {
+                        const struct item_data *const ammunition_data = &item_database[ammunition->type];
+                        const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
+
+                        if (base_ammunition_data->ammunition_type == base_weapon_data->ammunition_type)
+                        {
+                            has_ammunition = true;
+                        }
+                    }
+                }
+
+                if (!has_ammunition)
+                {
+                    // if no ammo, try to find suitable ammo in inventory and equip it
+                    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                    {
+                        struct item *const item = list_get(actor->items, item_index);
+                        const struct item_data *const item_data = &item_database[item->type];
+                        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                        if (!base_item_data->ranged &&
+                            base_item_data->ammunition_type == base_weapon_data->ammunition_type &&
+                            actor_is_proficient(actor, item))
+                        {
+                            // found suitable ammo, so equip it
+                            if (actor_equip(actor, item))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+
+                    // no ammo, so look for a melee weapon to equip
+                    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                    {
+                        struct item *const item = list_get(actor->items, item_index);
+                        const struct item_data *const item_data = &item_database[item->type];
+                        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                        if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON &&
+                            !base_item_data->ranged &&
+                            actor_is_proficient(actor, item))
+                        {
+                            if (actor_equip(actor, item))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+
+                    // no melee weapon, so unequip the ranged weapon
+                    if (actor_unequip(actor, EQUIP_SLOT_WEAPON))
+                    {
+                        return true;
+                    }
+                }
+
+                // take the shot
+                if (actor_shoot(actor, nearest_enemy->x, nearest_enemy->y))
                 {
                     return true;
                 }
             }
             else
             {
-                if (actor_path_towards(actor, nearest_enemy->x, nearest_enemy->y))
+                // does the actor have a ranged weapon in their inventory?
+                struct item *ranged_weapon = NULL;
+
+                for (size_t item_index = 0; item_index < actor->items->size; item_index++)
                 {
-                    return true;
+                    struct item *const item = list_get(actor->items, item_index);
+                    const struct item_data *const item_data = &item_database[item->type];
+                    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                    if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON &&
+                        base_item_data->ranged &&
+                        actor_is_proficient(actor, item))
+                    {
+                        ranged_weapon = item;
+                    }
                 }
+
+                if (ranged_weapon)
+                {
+                    const struct item_data *const weapon_data = &item_database[ranged_weapon->type];
+                    const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+
+                    // does the ranged weapon require ammo?
+                    bool should_equip = false;
+
+                    if (base_weapon_data->ammunition_type == AMMUNITION_TYPE_NONE)
+                    {
+                        should_equip = true;
+                    }
+                    else
+                    {
+                        // look for ammo in inventory
+                        for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                        {
+                            struct item *const item = list_get(actor->items, item_index);
+                            const struct item_data *const item_data = &item_database[item->type];
+                            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                            if (!base_item_data->ranged &&
+                                base_item_data->ammunition_type == base_weapon_data->ammunition_type &&
+                                actor_is_proficient(actor, item))
+                            {
+                                should_equip = true;
+                            }
+                        }
+                    }
+
+                    // was ammunition found or not needed?
+                    if (should_equip)
+                    {
+                        // equip the ranged weapon
+                        if (actor_equip(actor, ranged_weapon))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // does the actor have a weapon?
+            if (!weapon)
+            {
+                // look for a melee weapon to equip
+                for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+                {
+                    struct item *const item = list_get(actor->items, item_index);
+                    const struct item_data *const item_data = &item_database[item->type];
+                    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                    if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON &&
+                        !base_item_data->ranged &&
+                        actor_is_proficient(actor, item))
+                    {
+                        if (actor_equip(actor, item))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // move towards enemy
+            if (actor_path_towards(actor, nearest_enemy->x, nearest_enemy->y))
+            {
+                return true;
             }
         }
     }
@@ -2056,105 +2376,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
         return false;
     }
 
-    bool feats[NUM_FEATS] = {false};
-    actor_calc_feats(actor, &feats);
-    bool is_proficient = false;
-    for (enum weapon_proficiency weapon_proficiency = WEAPON_PROFICIENCY_NONE + 1; weapon_proficiency < NUM_WEAPON_PROFICIENCIES; weapon_proficiency++)
-    {
-        if (base_item_data->weapon_proficiencies[weapon_proficiency])
-        {
-            switch (weapon_proficiency)
-            {
-            case WEAPON_PROFICIENCY_ELF:
-            {
-                if (feats[FEAT_WEAPON_PROFICIENCY_ELF])
-                {
-                    is_proficient = true;
-                }
-            }
-            break;
-            case WEAPON_PROFICIENCY_EXOTIC:
-            {
-                if (feats[FEAT_WEAPON_PROFICIENCY_EXOTIC])
-                {
-                    is_proficient = true;
-                }
-            }
-            break;
-            case WEAPON_PROFICIENCY_MARTIAL:
-            {
-                if (feats[FEAT_WEAPON_PROFICIENCY_MARTIAL])
-                {
-                    is_proficient = true;
-                }
-            }
-            break;
-            case WEAPON_PROFICIENCY_ROGUE:
-            {
-                if (feats[FEAT_WEAPON_PROFICIENCY_ROGUE])
-                {
-                    is_proficient = true;
-                }
-            }
-            break;
-            case WEAPON_PROFICIENCY_SIMPLE:
-            {
-                if (feats[FEAT_WEAPON_PROFICIENCY_SIMPLE])
-                {
-                    is_proficient = true;
-                }
-            }
-            break;
-            case WEAPON_PROFICIENCY_WIZARD:
-            {
-                if (feats[FEAT_WEAPON_PROFICIENCY_WIZARD])
-                {
-                    is_proficient = true;
-                }
-            }
-            break;
-            }
-        }
-    }
-    if (base_item_data->armor_proficiency != ARMOR_PROFICIENCY_NONE)
-    {
-        switch (base_item_data->armor_proficiency)
-        {
-        case ARMOR_PROFICIENCY_HEAVY:
-        {
-            if (feats[FEAT_ARMOR_PROFICIENCY_HEAVY])
-            {
-                is_proficient = true;
-            }
-        }
-        break;
-        case ARMOR_PROFICIENCY_LIGHT:
-        {
-            if (feats[FEAT_ARMOR_PROFICIENCY_LIGHT])
-            {
-                is_proficient = true;
-            }
-        }
-        break;
-        case ARMOR_PROFICIENCY_MEDIUM:
-        {
-            if (feats[FEAT_ARMOR_PROFICIENCY_MEDIUM])
-            {
-                is_proficient = true;
-            }
-        }
-        break;
-        case ARMOR_PROFICIENCY_SHIELD:
-        {
-            if (feats[FEAT_SHIELD_PROFICIENCY])
-            {
-                is_proficient = true;
-            }
-        }
-        break;
-        }
-    }
-    if (!is_proficient)
+    if (!actor_is_proficient(actor, item))
     {
         world_log(
             actor->floor,
@@ -2436,7 +2658,7 @@ bool actor_shoot(
     }
 
     // does the actor have a weapon?
-    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+    struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
 
     if (!weapon)
     {
@@ -2468,37 +2690,46 @@ bool actor_shoot(
         return false;
     }
 
-    // is there ammo?
-    struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
-
-    if (!ammunition)
+    // does the weapon require ammo?
+    struct item *ammunition;
+    if (base_weapon_data->ammunition_type == AMMUNITION_TYPE_NONE)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s has no ammunition equipped!",
-            actor->name);
-
-        return false;
+        ammunition = weapon;
     }
-
-    // is it the right ammo?
-    const struct item_data *const ammunition_data = &item_database[ammunition->type];
-    const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
-
-    if (base_ammunition_data->ammunition_type != base_weapon_data->ammunition_type)
+    else
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s has unsuitable ammunition equipped!",
-            actor->name);
+        // is there ammo?
+        ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
 
-        return false;
+        if (!ammunition)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_white,
+                "%s has no ammunition equipped!",
+                actor->name);
+
+            return false;
+        }
+
+        // is it the right ammo?
+        const struct item_data *const ammunition_data = &item_database[ammunition->type];
+        const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
+
+        if (base_ammunition_data->ammunition_type != base_weapon_data->ammunition_type)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_white,
+                "%s has unsuitable ammunition equipped!",
+                actor->name);
+
+            return false;
+        }
     }
 
     // create a projectile
@@ -2529,11 +2760,11 @@ bool actor_shoot(
     // unequip and delete the item if out of ammo
     if (ammunition->stack <= 0)
     {
-        // remove from inventory
-        list_remove(actor->items, ammunition);
-
         // remove from slot
-        actor->equipment[EQUIP_SLOT_AMMUNITION] = NULL;
+        const struct item_data *const ammunition_data = &item_database[ammunition->type];
+        const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
+
+        actor->equipment[base_ammunition_data->equip_slot] = NULL;
 
         // delete the item
         item_delete(ammunition);
@@ -2565,6 +2796,9 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
         if (attack_roll == 1 ||
             (attack_roll != 20 && hit_challenge < armor_class))
         {
+            other->flash_color = color_gray;
+            other->flash_fade_coef = 1;
+
             world_log(
                 actor->floor,
                 actor->x,

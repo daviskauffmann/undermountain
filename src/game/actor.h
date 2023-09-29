@@ -24,16 +24,19 @@ enum race
     RACE_DRAGON_WYRMLING,
     RACE_DRAGON_ADULT,
     RACE_DRAGON_ANCIENT,
+    RACE_GIANT_LARGE,
     RACE_HUMANOID_SMALL,
     RACE_HUMANOID_MEDIUM,
     RACE_UNDEAD,
 
-    NUM_RACES
+    NUM_RACES,
 };
 #define PLAYER_RACE_BEGIN RACE_HUMAN
 #define PLAYER_RACE_END RACE_ELF
+#define NUM_PLAYER_RACES PLAYER_RACE_END + 1
 #define MONSTER_RACE_BEGIN RACE_BUGBEAR
 #define MONSTER_RACE_END RACE_SLIME
+#define NUM_MONSTER_RACES = MONSTER_RACE_END + 1
 
 enum class
 {
@@ -48,19 +51,23 @@ enum class
     CLASS_DIRE_RAT,
     CLASS_DOG,
     CLASS_GOBLIN,
+    CLASS_HOBGOBLIN,
     CLASS_KOBOLD,
     CLASS_RAT,
     CLASS_RED_DRAGON_WYRMLING,
     CLASS_RED_DRAGON_ADULT,
     CLASS_RED_DRAGON_ANCIENT,
     CLASS_SKELETON_WARRIOR,
+    CLASS_TROLL,
 
-    NUM_CLASSES
+    NUM_CLASSES,
 };
 #define PLAYER_CLASS_BEGIN CLASS_FIGHTER
 #define PLAYER_CLASS_END CLASS_WIZARD
+#define NUM_PLAYER_CLASSES PLAYER_CLASS_END + 1
 #define MONSTER_CLASS_BEGIN CLASS_DOG
 #define MONSTER_CLASS_END CLASS_SLIME
+#define NUM_MONSTER_CLASSES MONSTER_CLASS_END + 1
 
 enum faction
 {
@@ -68,6 +75,7 @@ enum faction
     FACTION_GOBLINOID,
     FACTION_KOBOLD,
     FACTION_RED_DRAGON,
+    FACTION_TROLL,
     FACTION_UNDEAD,
     FACTION_WILD_ANIMAL,
 };
@@ -82,6 +90,15 @@ enum base_attack_bonus_progression
     NUM_BASE_ATTACK_BONUS_PROGRESSIONS
 };
 
+enum natural_weapon_type
+{
+    NATURAL_WEAPON_TYPE_UNARMED,
+    NATURAL_WEAPON_TYPE_CLAW,
+    NATURAL_WEAPON_TYPE_BITE,
+
+    NUM_NATURAL_WEAPON_TYPES,
+};
+
 enum ability
 {
     ABILITY_STRENGTH,
@@ -89,7 +106,15 @@ enum ability
     ABILITY_CONSTITUTION,
     ABILITY_INTELLIGENCE,
 
-    NUM_ABILITIES
+    NUM_ABILITIES,
+};
+
+enum special_ability
+{
+    SPECIAL_ABILITY_DARKVISION,
+    SPECIAL_ABILITY_LOW_LIGHT_VISION,
+
+    NUM_SPECIAL_ABILITIES,
 };
 
 enum feat
@@ -97,7 +122,6 @@ enum feat
     FEAT_ARMOR_PROFICIENCY_LIGHT,
     FEAT_ARMOR_PROFICIENCY_MEDIUM,
     FEAT_ARMOR_PROFICIENCY_HEAVY,
-    FEAT_LOW_LIGHT_VISION,
     FEAT_POINT_BLANK_SHOT,
     FEAT_QUICK_TO_MASTER,
     FEAT_RAPID_RELOAD,
@@ -112,7 +136,16 @@ enum feat
     FEAT_WEAPON_PROFICIENCY_SIMPLE,
     FEAT_WEAPON_PROFICIENCY_WIZARD,
 
-    NUM_FEATS
+    NUM_FEATS,
+};
+
+enum player
+{
+    PLAYER_FIGHTER,
+    PLAYER_ROGUE,
+    PLAYER_WIZARD,
+
+    NUM_PLAYERS,
 };
 
 enum monster
@@ -121,14 +154,16 @@ enum monster
     MONSTER_BUGBEAR,
     MONSTER_DIRE_RAT,
     MONSTER_GOBLIN,
+    MONSTER_HOBGOBLIN,
     MONSTER_KOBOLD,
     MONSTER_RAT,
     MONSTER_RED_DRAGON_WYRMLING,
     MONSTER_RED_DRAGON_ADULT,
     MONSTER_RED_DRAGON_ANCIENT,
+    MONSTER_TROLL,
     MONSTER_SKELETON_WARRIOR,
 
-    NUM_MONSTERS
+    NUM_MONSTERS,
 };
 
 enum equippability
@@ -137,7 +172,7 @@ enum equippability
     EQUIPPABILITY_BARELY,
     EQUIPPABILITY_COMFORTABLY,
     EQUIPPABILITY_EASILY,
-    EQUIPPABILITY_TOO_SMALL
+    EQUIPPABILITY_TOO_SMALL,
 };
 
 struct actor_metadata
@@ -150,6 +185,8 @@ struct race_data
     const char *name;
 
     enum size size;
+
+    bool special_abilities[NUM_SPECIAL_ABILITIES];
 
     bool feats[NUM_FEATS];
 };
@@ -176,12 +213,24 @@ struct class_data
     enum item_type starting_equipment[NUM_EQUIP_SLOTS];
 
     int starting_items[NUM_ITEM_TYPES];
+
+    enum natural_weapon_type natural_weapon_type;
 };
 
 struct base_attack_bonus_progression_data
 {
     const char *name;
     float multiplier;
+};
+
+struct natural_weapon_data
+{
+    const char *name;
+
+    const char *damage;
+    enum damage_type damage_type;
+    int threat_range;
+    int critical_multiplier;
 };
 
 struct ability_data
@@ -201,6 +250,12 @@ struct feat_prerequisites
     int level;
 
     int base_attack_bonus;
+};
+
+struct special_ability_data
+{
+    const char *name;
+    const char *description;
 };
 
 struct feat_data
@@ -223,11 +278,23 @@ struct actor_prototype
 
     int ability_scores[NUM_ABILITIES];
 
+    bool special_abilities[NUM_SPECIAL_ABILITIES];
+
     bool feats[NUM_FEATS];
 
-    enum item_type equipment[NUM_EQUIP_SLOTS];
+    struct
+    {
+        enum item_type type;
 
-    int items[NUM_ITEM_TYPES];
+        int min_stack;
+        int max_stack;
+    } equipment[NUM_EQUIP_SLOTS];
+
+    struct
+    {
+        int min_stack;
+        int max_stack;
+    } items[NUM_ITEM_TYPES];
 
     // TODO: spells
 };
@@ -246,7 +313,9 @@ struct actor
     int ability_points;
     int ability_scores[NUM_ABILITIES];
 
-    bool feats[NUM_FEATS]; // TODO: use a dynamic list like spells?
+    bool special_abilities[NUM_SPECIAL_ABILITIES];
+
+    bool feats[NUM_FEATS];
 
     int base_hit_points;
     int hit_points;
@@ -270,7 +339,7 @@ struct actor
     bool took_turn;
     float energy;
 
-    struct actor *current_target; // TODO: save
+    struct actor *current_target;
     int last_seen_x;
     int last_seen_y;
     int turns_chased;
@@ -295,6 +364,7 @@ struct actor *actor_new(
     enum faction faction,
     int level,
     const int ability_scores[NUM_ABILITIES],
+    const bool special_abilities[NUM_SPECIAL_ABILITIES],
     const bool feats[NUM_FEATS],
     int floor,
     int x,
@@ -342,6 +412,9 @@ void actor_calc_feats(const struct actor *actor, bool (*feats)[NUM_FEATS]);
 bool actor_has_feat(const struct actor *actor, enum feat feat);
 bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat);
 
+void actor_calc_special_abilities(const struct actor *actor, bool (*special_abilities)[NUM_SPECIAL_ABILITIES]);
+bool actor_has_special_ability(const struct actor *actor, enum special_ability special_ability);
+
 void actor_calc_known_spells(const struct actor *actor, bool (*known_spells)[NUM_SPELL_TYPES]);
 bool actor_knows_spell(const struct actor *actor, enum spell_type spell_type);
 
@@ -352,6 +425,7 @@ bool actor_is_enemy_nearby(const struct actor *actor);
 struct actor *actor_find_nearest_enemy(const struct actor *actor);
 
 bool actor_has_ranged_weapon(const struct actor *actor);
+bool actor_is_proficient(const struct actor *actor, const struct item *item);
 
 bool actor_ai(struct actor *actor);
 bool actor_rest(struct actor *actor);

@@ -186,6 +186,7 @@ static struct scene *handle_event(const SDL_Event *const event)
                     FACTION_ADVENTURER,
                     1,
                     ability_scores,
+                    (bool[NUM_SPECIAL_ABILITIES]){false},
                     feats,
                     0,
                     0,

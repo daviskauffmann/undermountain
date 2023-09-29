@@ -88,6 +88,12 @@ const struct light_data light_database[] = {
         .intensity = 0.1f,
         .flicker = false,
     },
+    [LIGHT_TYPE_STAIRS] = {
+        .radius = 2,
+        .color = {COLOR_WHITE},
+        .intensity = 0.1f,
+        .flicker = false,
+    },
     [LIGHT_TYPE_TORCH] = {
         .radius = 10,
         .color = {COLOR_LIGHT_AMBER},
@@ -119,7 +125,6 @@ const struct object_data object_database[] = {
         .name = "Chest",
         .glyph = '~',
         .color = {COLOR_SEPIA},
-        .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
@@ -128,7 +133,6 @@ const struct object_data object_database[] = {
         .name = "Closed Door",
         .glyph = '+',
         .color = {COLOR_WHITE},
-        .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = false,
         .is_transparent = false,
@@ -137,7 +141,6 @@ const struct object_data object_database[] = {
         .name = "Open Door",
         .glyph = '-',
         .color = {COLOR_WHITE},
-        .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
@@ -146,7 +149,6 @@ const struct object_data object_database[] = {
         .name = "Fountain",
         .glyph = '{',
         .color = {COLOR_LIGHT_AZURE},
-        .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
@@ -155,7 +157,7 @@ const struct object_data object_database[] = {
         .name = "Stair Down",
         .glyph = '>',
         .color = {COLOR_WHITE},
-        .light_type = LIGHT_TYPE_NONE,
+        .light_type = LIGHT_TYPE_STAIRS,
 
         .is_walkable = true,
         .is_transparent = true,
@@ -164,7 +166,7 @@ const struct object_data object_database[] = {
         .name = "Stair Up",
         .glyph = '<',
         .color = {COLOR_WHITE},
-        .light_type = LIGHT_TYPE_NONE,
+        .light_type = LIGHT_TYPE_STAIRS,
 
         .is_walkable = true,
         .is_transparent = true,
@@ -173,7 +175,6 @@ const struct object_data object_database[] = {
         .name = "Throne",
         .glyph = '\\',
         .color = {COLOR_GOLD},
-        .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
@@ -182,7 +183,6 @@ const struct object_data object_database[] = {
         .name = "Trap",
         .glyph = '^',
         .color = {COLOR_WHITE},
-        .light_type = LIGHT_TYPE_NONE,
 
         .is_walkable = true,
         .is_transparent = true,
@@ -192,19 +192,28 @@ const struct object_data object_database[] = {
 const struct monster_pack_data monster_pack_database[] = {
     [MONSTER_PACK_BATS] = {
         .min_floor = 0,
-        .max_floor = 100,
+        .max_floor = 4,
 
         .monsters = {
-            [MONSTER_BAT] = 4,
+            [MONSTER_BAT] = {
+                .min_count = 1,
+                .max_count = 5,
+            },
         },
     },
     [MONSTER_PACK_BUGBEARS] = {
-        .min_floor = 3,
-        .max_floor = 5,
+        .min_floor = 2,
+        .max_floor = 6,
 
         .monsters = {
-            [MONSTER_BUGBEAR] = 1,
-            [MONSTER_GOBLIN] = 2,
+            [MONSTER_BUGBEAR] = {
+                .min_count = 1,
+                .max_count = 3,
+            },
+            [MONSTER_GOBLIN] = {
+                .min_count = 0,
+                .max_count = 3,
+            },
         },
     },
     [MONSTER_PACK_DIRE_RAT] = {
@@ -212,24 +221,51 @@ const struct monster_pack_data monster_pack_database[] = {
         .max_floor = 6,
 
         .monsters = {
-            [MONSTER_DIRE_RAT] = 1,
-            [MONSTER_RAT] = 3,
+            [MONSTER_DIRE_RAT] = {
+                .min_count = 1,
+                .max_count = 1,
+            },
+            [MONSTER_RAT] = {
+                .min_count = 0,
+                .max_count = 5,
+            },
+        },
+    },
+    [MONSTER_PACK_RED_DRAGON] = {
+        .min_floor = 7,
+        .max_floor = 100,
+
+        .monsters = {
+            [MONSTER_RED_DRAGON_WYRMLING] = {
+                .min_count = 1,
+                .max_count = 1,
+            },
+            [MONSTER_RED_DRAGON_ADULT] = {
+                .min_count = 0,
+                .max_count = 1,
+            },
         },
     },
     [MONSTER_PACK_GOBLINS] = {
-        .min_floor = 3,
+        .min_floor = 0,
         .max_floor = 6,
 
         .monsters = {
-            [MONSTER_GOBLIN] = 3,
+            [MONSTER_GOBLIN] = {
+                .min_count = 1,
+                .max_count = 5,
+            },
         },
     },
     [MONSTER_PACK_KOBOLDS] = {
-        .min_floor = 3,
+        .min_floor = 0,
         .max_floor = 6,
 
         .monsters = {
-            [MONSTER_KOBOLD] = 3,
+            [MONSTER_KOBOLD] = {
+                .min_count = 1,
+                .max_count = 5,
+            },
         },
     },
     [MONSTER_PACK_RATS] = {
@@ -237,15 +273,32 @@ const struct monster_pack_data monster_pack_database[] = {
         .max_floor = 4,
 
         .monsters = {
-            [MONSTER_RAT] = 4,
+            [MONSTER_RAT] = {
+                .min_count = 1,
+                .max_count = 5,
+            },
+        },
+    },
+    [MONSTER_PACK_TROLLS] = {
+        .min_floor = 5,
+        .max_floor = 10,
+
+        .monsters = {
+            [MONSTER_TROLL] = {
+                .min_count = 1,
+                .max_count = 4,
+            },
         },
     },
     [MONSTER_PACK_SKELETONS] = {
-        .min_floor = 1,
+        .min_floor = 0,
         .max_floor = 6,
 
         .monsters = {
-            [MONSTER_SKELETON_WARRIOR] = 2,
+            [MONSTER_SKELETON_WARRIOR] = {
+                .min_count = 1,
+                .max_count = 5,
+            },
         },
     },
 };
@@ -323,8 +376,11 @@ const struct race_data race_database[] = {
 
         .size = SIZE_MEDIUM,
 
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+
         .feats = {
-            [FEAT_LOW_LIGHT_VISION] = true,
             [FEAT_WEAPON_PROFICIENCY_ELF] = true,
         },
     },
@@ -368,6 +424,11 @@ const struct race_data race_database[] = {
         .name = "Ancient Dragon",
 
         .size = SIZE_COLOSSAL,
+    },
+    [RACE_GIANT_LARGE] = {
+        .name = "Large Giant",
+
+        .size = SIZE_LARGE,
     },
     [RACE_HUMANOID_SMALL] = {
         .name = "Small Humanoid",
@@ -415,7 +476,7 @@ const struct class_data class_database[] = {
 
         .starting_equipment = {
             [EQUIP_SLOT_ARMOR] = ITEM_TYPE_BREASTPLATE,
-            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_LARGE_SHIELD,
+            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_HEAVY_SHIELD,
             [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGSWORD,
         },
 
@@ -500,13 +561,15 @@ const struct class_data class_database[] = {
         .glyph = 'b',
 
         .hit_die = "1d2",
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
     [CLASS_BUGBEAR] = {
         .name = "Bugbear",
         .color = {COLOR_BRASS},
         .glyph = 'b',
 
-        .hit_die = "1d8+1",
+        .hit_die = "1d8",
 
         .natural_armor_bonus = 3,
 
@@ -517,9 +580,11 @@ const struct class_data class_database[] = {
         .color = {COLOR_GRAY},
         .glyph = 'R',
 
-        .hit_die = "1d8+1",
+        .hit_die = "1d8",
 
         .natural_armor_bonus = 1,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
     [CLASS_DOG] = {
         .name = "Dog",
@@ -529,13 +594,24 @@ const struct class_data class_database[] = {
         .hit_die = "1d8",
 
         .natural_armor_bonus = 1,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
     [CLASS_GOBLIN] = {
         .name = "Goblin",
         .color = {COLOR_DARK_GREEN},
         .glyph = 'g',
 
-        .hit_die = "1d8+1",
+        .hit_die = "1d8",
+
+        .base_attack_bonus = 1,
+    },
+    [CLASS_HOBGOBLIN] = {
+        .name = "Hobgoblin",
+        .color = {COLOR_LIGHT_CRIMSON},
+        .glyph = 'h',
+
+        .hit_die = "1d8",
 
         .base_attack_bonus = 1,
     },
@@ -558,13 +634,15 @@ const struct class_data class_database[] = {
         .hit_die = "1d2",
 
         .natural_armor_bonus = 1,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
     [CLASS_RED_DRAGON_WYRMLING] = {
         .name = "Wyrmling Red Dragon",
         .color = {COLOR_LIGHT_RED},
         .glyph = 'D',
 
-        .hit_die = "1d12+2",
+        .hit_die = "1d12",
 
         .natural_armor_bonus = 6,
 
@@ -575,7 +653,7 @@ const struct class_data class_database[] = {
         .color = {COLOR_RED},
         .glyph = 'D',
 
-        .hit_die = "1d12+5",
+        .hit_die = "1d12",
 
         .natural_armor_bonus = 21,
 
@@ -586,11 +664,24 @@ const struct class_data class_database[] = {
         .color = {COLOR_DARK_RED},
         .glyph = 'D',
 
-        .hit_die = "1d12+9",
+        .hit_die = "1d12",
 
         .natural_armor_bonus = 33,
 
         .base_attack_bonus = 34,
+    },
+    [CLASS_TROLL] = {
+        .name = "Rat",
+        .color = {COLOR_GREEN},
+        .glyph = 'T',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 5,
+
+        .base_attack_bonus = 4,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_CLAW,
     },
     [CLASS_SKELETON_WARRIOR] = {
         .name = "Skeleton Warrior",
@@ -616,6 +707,30 @@ const struct base_attack_bonus_progression_data base_attack_bonus_progression_da
     },
 };
 
+const struct natural_weapon_data natural_weapon_database[] = {
+    [NATURAL_WEAPON_TYPE_UNARMED] = {
+        .name = "Unarmed",
+
+        .damage = "1d3",
+        .threat_range = 20,
+        .critical_multiplier = 2,
+    },
+    [NATURAL_WEAPON_TYPE_BITE] = {
+        .name = "Bite",
+
+        .damage = "1d4",
+        .threat_range = 20,
+        .critical_multiplier = 2,
+    },
+    [NATURAL_WEAPON_TYPE_CLAW] = {
+        .name = "Claw",
+
+        .damage = "1d6",
+        .threat_range = 20,
+        .critical_multiplier = 2,
+    },
+};
+
 const struct ability_data ability_database[] = {
     [ABILITY_STRENGTH] = {
         .name = "Strength",
@@ -635,6 +750,17 @@ const struct ability_data ability_database[] = {
     },
 };
 
+const struct special_ability_data special_ability_database[] = {
+    [SPECIAL_ABILITY_DARKVISION] = {
+        .name = "Darkvision",
+        .description = "Grants the ability to see in the dark.",
+    },
+    [SPECIAL_ABILITY_LOW_LIGHT_VISION] = {
+        .name = "Low-light Vision",
+        .description = "Grants the ability to see in the dark, but not as far as darkvision.",
+    },
+};
+
 const struct feat_data feat_database[] = {
     [FEAT_ARMOR_PROFICIENCY_LIGHT] = {
         .name = "Armor Proficiency: Light",
@@ -647,10 +773,6 @@ const struct feat_data feat_database[] = {
     [FEAT_ARMOR_PROFICIENCY_HEAVY] = {
         .name = "Armor Proficiency: Heavy",
         .description = "A character with this feat can equip heavy armor.",
-    },
-    [FEAT_LOW_LIGHT_VISION] = {
-        .name = "Low-light vision",
-        .description = "Grants the ability to see in the dark, but not as far as darkvision.",
     },
     [FEAT_QUICK_TO_MASTER] = {
         .name = "Quick to Master",
@@ -741,6 +863,7 @@ const struct actor_prototype monster_prototypes[] = {
 
         .race = RACE_ANIMAL_DIMINUTIVE,
         .class = CLASS_BAT,
+        .faction = FACTION_WILD_ANIMAL,
 
         .level = 1,
 
@@ -751,7 +874,13 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 2,
         },
 
-        .faction = FACTION_WILD_ANIMAL,
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+
+        .feats = {
+            [FEAT_WEAPON_FINESSE] = true,
+        },
     },
     [MONSTER_BUGBEAR] = {
         .name = "Bugbear",
@@ -769,15 +898,39 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 10,
         },
 
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        .feats = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_SHIELD_PROFICIENCY] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
+        },
+
         .equipment = {
-            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_LEATHER_ARMOR,
-            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_SMALL_SHIELD,
-            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGBOW,
-            [EQUIP_SLOT_AMMUNITION] = ITEM_TYPE_ARROW,
+            [EQUIP_SLOT_ARMOR] = {
+                .type = ITEM_TYPE_LEATHER_ARMOR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_SHIELD] = {
+                .type = ITEM_TYPE_LIGHT_SHIELD,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_MORNINGSTAR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
         },
 
         .items = {
-            [ITEM_TYPE_MACE] = 1,
+            [ITEM_TYPE_JAVELIN] = 1,
         },
     },
     [MONSTER_DIRE_RAT] = {
@@ -794,6 +947,14 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_DEXTERITY] = 17,
             [ABILITY_CONSTITUTION] = 12,
             [ABILITY_INTELLIGENCE] = 1,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+
+        .feats = {
+            [FEAT_WEAPON_FINESSE] = true,
         },
     },
     [MONSTER_GOBLIN] = {
@@ -812,10 +973,97 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 10,
         },
 
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        .feats = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_SHIELD_PROFICIENCY] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
+        },
+
         .equipment = {
-            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_LEATHER_ARMOR,
-            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_SMALL_SHIELD,
-            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_MACE,
+            [EQUIP_SLOT_ARMOR] = {
+                .type = ITEM_TYPE_LEATHER_ARMOR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_SHIELD] = {
+                .type = ITEM_TYPE_LIGHT_SHIELD,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_MORNINGSTAR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+        },
+
+        .items = {
+            [ITEM_TYPE_JAVELIN] = {
+                .min_stack = 0,
+                .max_stack = 3,
+            },
+        },
+    },
+    [MONSTER_HOBGOBLIN] = {
+        .name = "Hobgoblin",
+
+        .race = RACE_HUMANOID_MEDIUM,
+        .class = CLASS_HOBGOBLIN,
+        .faction = FACTION_GOBLINOID,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 13,
+            [ABILITY_DEXTERITY] = 13,
+            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_INTELLIGENCE] = 10,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        .feats = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_SHIELD_PROFICIENCY] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
+            [FEAT_WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
+
+        .equipment = {
+            [EQUIP_SLOT_ARMOR] = {
+                .type = ITEM_TYPE_STUDDED_LEATHER_ARMOR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_SHIELD] = {
+                .type = ITEM_TYPE_LIGHT_SHIELD,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_LONGSWORD,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+        },
+
+        .items = {
+            [ITEM_TYPE_JAVELIN] = {
+                .min_stack = 0,
+                .max_stack = 3,
+            },
         },
     },
     [MONSTER_KOBOLD] = {
@@ -834,9 +1082,44 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 10,
         },
 
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        .feats = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
+        },
+
+        .feats = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
+        },
+
         .equipment = {
-            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_LEATHER_ARMOR,
-            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_SPEAR,
+            [EQUIP_SLOT_ARMOR] = {
+                .type = ITEM_TYPE_LEATHER_ARMOR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_SHORTSPEAR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+        },
+
+        .items = {
+            [ITEM_TYPE_SLING] = {
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [ITEM_TYPE_BULLET] = {
+                .min_stack = 0,
+                .max_stack = 5,
+            },
         },
     },
     [MONSTER_RAT] = {
@@ -853,6 +1136,14 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_DEXTERITY] = 15,
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 2,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+
+        .feats = {
+            [FEAT_WEAPON_FINESSE] = true,
         },
     },
     [MONSTER_RED_DRAGON_WYRMLING] = {
@@ -903,6 +1194,26 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 24,
         },
     },
+    [MONSTER_TROLL] = {
+        .name = "Troll",
+
+        .race = RACE_GIANT_LARGE,
+        .class = CLASS_TROLL,
+        .faction = FACTION_TROLL,
+
+        .level = 6,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 23,
+            [ABILITY_DEXTERITY] = 14,
+            [ABILITY_CONSTITUTION] = 23,
+            [ABILITY_INTELLIGENCE] = 6,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+    },
     [MONSTER_SKELETON_WARRIOR] = {
         .name = "Skeleton Warrior",
 
@@ -919,9 +1230,23 @@ const struct actor_prototype monster_prototypes[] = {
             [ABILITY_INTELLIGENCE] = 0,
         },
 
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
         .equipment = {
-            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_LARGE_SHIELD,
-            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_SCIMITAR,
+            [EQUIP_SLOT_SHIELD] = {
+                .type = ITEM_TYPE_HEAVY_SHIELD,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_SCIMITAR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
         },
     },
 };
@@ -954,7 +1279,8 @@ const struct base_item_data base_item_database[] = {
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .size = SIZE_SMALL,
         .weight = 0.1f,
-        .max_stack = 100,
+        .max_stack = 20,
+        .cost = 1,
 
         .ammunition_type = AMMUNITION_TYPE_ARROW,
     },
@@ -964,12 +1290,13 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_ARMOR,
         .size = SIZE_LARGE,
-        .weight = 40,
+        .weight = 30,
         .max_stack = 1,
+        .cost = 200,
 
         .armor_class = 5,
-        .arcane_spell_failure = 0.3f,
-        .max_dexterity_bonus = 2,
+        .arcane_spell_failure = 0.25f,
+        .max_dexterity_bonus = 3,
         .armor_proficiency = ARMOR_PROFICIENCY_MEDIUM,
     },
     [BASE_ITEM_TYPE_BOLT] = {
@@ -979,7 +1306,8 @@ const struct base_item_data base_item_database[] = {
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .size = SIZE_SMALL,
         .weight = 0.1f,
-        .max_stack = 100,
+        .max_stack = 5,
+        .cost = 1,
 
         .ammunition_type = AMMUNITION_TYPE_BOLT,
     },
@@ -990,7 +1318,8 @@ const struct base_item_data base_item_database[] = {
         .equip_slot = EQUIP_SLOT_AMMUNITION,
         .size = SIZE_TINY,
         .weight = 0.1f,
-        .max_stack = 100,
+        .max_stack = 10,
+        .cost = 1,
 
         .ammunition_type = AMMUNITION_TYPE_BULLET,
     },
@@ -1002,6 +1331,7 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_MEDIUM,
         .weight = 1,
         .max_stack = 1,
+        .cost = 5,
     },
     [BASE_ITEM_TYPE_DAGGER] = {
         .name = "Dagger",
@@ -1011,8 +1341,10 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_TINY,
         .weight = 1,
         .max_stack = 1,
+        .cost = 2,
 
         .damage = "1d4",
+        .damage_type = DAMAGE_TYPE_PIERCING,
         .threat_range = 19,
         .critical_multiplier = 2,
         .finesse = true,
@@ -1028,6 +1360,7 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_TINY,
         .weight = 0.1f,
         .max_stack = INT32_MAX,
+        .cost = 1,
     },
     [BASE_ITEM_TYPE_FULL_PLATE] = {
         .name = "Full Plate",
@@ -1037,9 +1370,10 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_LARGE,
         .weight = 50,
         .max_stack = 1,
+        .cost = 1500,
 
         .armor_class = 8,
-        .arcane_spell_failure = 0.45f,
+        .arcane_spell_failure = 0.35f,
         .max_dexterity_bonus = 1,
         .armor_proficiency = ARMOR_PROFICIENCY_HEAVY,
     },
@@ -1050,6 +1384,7 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_TINY,
         .weight = 0.1f,
         .max_stack = INT32_MAX,
+        .cost = 1,
     },
     [BASE_ITEM_TYPE_GREATSWORD] = {
         .name = "Greatsword",
@@ -1057,10 +1392,12 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_LARGE,
-        .weight = 15,
+        .weight = 8,
         .max_stack = 1,
+        .cost = 50,
 
         .damage = "2d6",
+        .damage_type = DAMAGE_TYPE_SLASHING,
         .threat_range = 19,
         .critical_multiplier = 2,
         .weapon_proficiencies = {
@@ -1075,10 +1412,11 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_LARGE,
         .weight = 50,
         .max_stack = 1,
+        .cost = 600,
 
         .armor_class = 7,
         .arcane_spell_failure = 0.4f,
-        .max_dexterity_bonus = 1,
+        .max_dexterity_bonus = 0,
         .armor_proficiency = ARMOR_PROFICIENCY_HEAVY,
     },
     [BASE_ITEM_TYPE_HEAVY_CROSSBOW] = {
@@ -1087,10 +1425,12 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_MEDIUM,
-        .weight = 9,
+        .weight = 8,
         .max_stack = 1,
+        .cost = 50,
 
         .damage = "1d10",
+        .damage_type = DAMAGE_TYPE_PIERCING,
         .threat_range = 19,
         .critical_multiplier = 2,
         .ranged = true,
@@ -1100,18 +1440,56 @@ const struct base_item_data base_item_database[] = {
             [WEAPON_PROFICIENCY_WIZARD] = true,
         },
     },
-    [BASE_ITEM_TYPE_LARGE_SHIELD] = {
-        .name = "Large Shield",
+    [BASE_ITEM_TYPE_HEAVY_MACE] = {
+        .name = "Heavy Mace",
+        .glyph = '!',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_MEDIUM,
+        .weight = 8,
+        .max_stack = 1,
+        .cost = 12,
+
+        .damage = "1d8",
+        .damage_type = DAMAGE_TYPE_BLUDGEONING,
+        .threat_range = 20,
+        .critical_multiplier = 2,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_SIMPLE] = true,
+        },
+    },
+    [BASE_ITEM_TYPE_HEAVY_SHIELD] = {
+        .name = "Heavy Shield",
         .glyph = ')',
 
         .equip_slot = EQUIP_SLOT_SHIELD,
         .size = SIZE_MEDIUM,
-        .weight = 15,
+        .weight = 5,
         .max_stack = 1,
+        .cost = 20,
 
         .armor_class = 2,
         .arcane_spell_failure = 0.15f,
         .armor_proficiency = ARMOR_PROFICIENCY_SHIELD,
+    },
+    [BASE_ITEM_TYPE_JAVELIN] = {
+        .name = "Javelin",
+        .glyph = '|',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_MEDIUM,
+        .weight = 2,
+        .max_stack = 5,
+        .cost = 50,
+
+        .damage = "1d6",
+        .damage_type = DAMAGE_TYPE_PIERCING,
+        .threat_range = 20,
+        .critical_multiplier = 2,
+        .ranged = true,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_SIMPLE] = true,
+        },
     },
     [BASE_ITEM_TYPE_LEATHER_ARMOR] = {
         .name = "Leather Armor",
@@ -1121,6 +1499,7 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_MEDIUM,
         .weight = 10,
         .max_stack = 1,
+        .cost = 10,
 
         .armor_class = 2,
         .arcane_spell_failure = 0.10f,
@@ -1133,10 +1512,12 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_SMALL,
-        .weight = 6,
+        .weight = 4,
         .max_stack = 1,
+        .cost = 35,
 
         .damage = "1d8",
+        .damage_type = DAMAGE_TYPE_PIERCING,
         .threat_range = 19,
         .critical_multiplier = 2,
         .ranged = true,
@@ -1146,6 +1527,40 @@ const struct base_item_data base_item_database[] = {
             [WEAPON_PROFICIENCY_WIZARD] = true,
         },
     },
+    [BASE_ITEM_TYPE_LIGHT_MACE] = {
+        .name = "Light Mace",
+        .glyph = '!',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_SMALL,
+        .weight = 4,
+        .max_stack = 1,
+        .cost = 5,
+
+        .damage = "1d6",
+        .damage_type = DAMAGE_TYPE_BLUDGEONING,
+        .threat_range = 20,
+        .critical_multiplier = 2,
+        .finesse = true,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_ROGUE] = true,
+            [WEAPON_PROFICIENCY_SIMPLE] = true,
+        },
+    },
+    [BASE_ITEM_TYPE_LIGHT_SHIELD] = {
+        .name = "Light Shield",
+        .glyph = ')',
+
+        .equip_slot = EQUIP_SLOT_SHIELD,
+        .size = SIZE_SMALL,
+        .weight = 5,
+        .max_stack = 1,
+        .cost = 9,
+
+        .armor_class = 1,
+        .arcane_spell_failure = 0.05f,
+        .armor_proficiency = ARMOR_PROFICIENCY_SHIELD,
+    },
     [BASE_ITEM_TYPE_LONGBOW] = {
         .name = "Longbow",
         .glyph = '}',
@@ -1154,8 +1569,10 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_LARGE,
         .weight = 3,
         .max_stack = 1,
+        .cost = 75,
 
         .damage = "1d8",
+        .damage_type = DAMAGE_TYPE_PIERCING,
         .threat_range = 20,
         .critical_multiplier = 3,
         .ranged = true,
@@ -1173,8 +1590,10 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_MEDIUM,
         .weight = 4,
         .max_stack = 1,
+        .cost = 15,
 
         .damage = "1d8",
+        .damage_type = DAMAGE_TYPE_SLASHING,
         .threat_range = 19,
         .critical_multiplier = 2,
         .weapon_proficiencies = {
@@ -1182,21 +1601,21 @@ const struct base_item_data base_item_database[] = {
             [WEAPON_PROFICIENCY_MARTIAL] = true,
         },
     },
-    [BASE_ITEM_TYPE_MACE] = {
-        .name = "Mace",
+    [BASE_ITEM_TYPE_MORNINGSTAR] = {
+        .name = "Morningstar",
         .glyph = '!',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .size = SIZE_SMALL,
+        .size = SIZE_MEDIUM,
         .weight = 6,
         .max_stack = 1,
+        .cost = 8,
 
-        .damage = "1d6",
+        .damage = "1d8",
+        .damage_type = DAMAGE_TYPE_BLUDGEONING,
         .threat_range = 20,
         .critical_multiplier = 2,
-        .finesse = true,
         .weapon_proficiencies = {
-            [WEAPON_PROFICIENCY_ROGUE] = true,
             [WEAPON_PROFICIENCY_SIMPLE] = true,
         },
     },
@@ -1216,8 +1635,10 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_MEDIUM,
         .weight = 4,
         .max_stack = 1,
+        .cost = 15,
 
         .damage = "1d6",
+        .damage_type = DAMAGE_TYPE_SLASHING,
         .threat_range = 18,
         .critical_multiplier = 2,
         .weapon_proficiencies = {
@@ -1232,16 +1653,36 @@ const struct base_item_data base_item_database[] = {
         .weight = 0.5f,
         .max_stack = 10,
     },
+    [BASE_ITEM_TYPE_SHORTSPEAR] = {
+        .name = "Shortspear",
+        .glyph = '|',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_MEDIUM,
+        .weight = 3,
+        .max_stack = 1,
+        .cost = 1,
+
+        .damage = "1d6",
+        .damage_type = DAMAGE_TYPE_PIERCING,
+        .threat_range = 20,
+        .critical_multiplier = 2,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_SIMPLE] = true,
+        },
+    },
     [BASE_ITEM_TYPE_SLING] = {
         .name = "Sling",
         .glyph = '?',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_SMALL,
-        .weight = 1,
+        .weight = 0,
         .max_stack = 1,
+        .cost = 0,
 
         .damage = "1d4",
+        .damage_type = DAMAGE_TYPE_BLUDGEONING,
         .threat_range = 20,
         .critical_multiplier = 2,
         .ranged = true,
@@ -1251,34 +1692,38 @@ const struct base_item_data base_item_database[] = {
             [WEAPON_PROFICIENCY_SIMPLE] = true,
         },
     },
-    [BASE_ITEM_TYPE_SMALL_SHIELD] = {
-        .name = "Small Shield",
-        .glyph = ')',
-
-        .equip_slot = EQUIP_SLOT_SHIELD,
-        .size = SIZE_SMALL,
-        .weight = 6,
-        .max_stack = 1,
-
-        .armor_class = 1,
-        .arcane_spell_failure = 0.05f,
-        .armor_proficiency = ARMOR_PROFICIENCY_SHIELD,
-    },
     [BASE_ITEM_TYPE_SPEAR] = {
         .name = "Spear",
         .glyph = '|',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_LARGE,
-        .weight = 3,
+        .weight = 6,
         .max_stack = 1,
+        .cost = 2,
 
         .damage = "1d8",
+        .damage_type = DAMAGE_TYPE_PIERCING,
         .threat_range = 20,
         .critical_multiplier = 3,
         .weapon_proficiencies = {
             [WEAPON_PROFICIENCY_SIMPLE] = true,
         },
+    },
+    [BASE_ITEM_TYPE_STUDDED_LEATHER_ARMOR] = {
+        .name = "Studded Leather Armor",
+        .glyph = '[',
+
+        .equip_slot = EQUIP_SLOT_ARMOR,
+        .size = SIZE_MEDIUM,
+        .weight = 20,
+        .max_stack = 1,
+        .cost = 25,
+
+        .armor_class = 3,
+        .arcane_spell_failure = 0.15f,
+        .max_dexterity_bonus = 5,
+        .armor_proficiency = ARMOR_PROFICIENCY_LIGHT,
     },
     [BASE_ITEM_TYPE_TOME] = {
         .name = "Tome",
@@ -1296,6 +1741,7 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_LARGE,
         .weight = 45,
         .max_stack = 1,
+        .cost = 30,
 
         .armor_class = 3,
         .arcane_spell_failure = 0.5f,
@@ -1414,10 +1860,28 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
-    [ITEM_TYPE_LARGE_SHIELD] = {
-        .type = BASE_ITEM_TYPE_LARGE_SHIELD,
+    [ITEM_TYPE_HEAVY_MACE] = {
+        .type = BASE_ITEM_TYPE_HEAVY_MACE,
 
-        .name = "Large Shield",
+        .name = "Heavy Mace",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
+    [ITEM_TYPE_HEAVY_SHIELD] = {
+        .type = BASE_ITEM_TYPE_HEAVY_SHIELD,
+
+        .name = "Heavy Shield",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
+    [ITEM_TYPE_JAVELIN] = {
+        .type = BASE_ITEM_TYPE_JAVELIN,
+
+        .name = "Javelin",
         .description = "",
         .color = {COLOR_WHITE},
 
@@ -1441,6 +1905,24 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
+    [ITEM_TYPE_LIGHT_MACE] = {
+        .type = BASE_ITEM_TYPE_LIGHT_MACE,
+
+        .name = "Light Mace",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
+    [ITEM_TYPE_LIGHT_SHIELD] = {
+        .type = BASE_ITEM_TYPE_LIGHT_SHIELD,
+
+        .name = "Light Shield",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
     [ITEM_TYPE_LONGBOW] = {
         .type = BASE_ITEM_TYPE_LONGBOW,
 
@@ -1458,10 +1940,10 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
         .level = 1,
     },
-    [ITEM_TYPE_MACE] = {
-        .type = BASE_ITEM_TYPE_MACE,
+    [ITEM_TYPE_MORNINGSTAR] = {
+        .type = BASE_ITEM_TYPE_MORNINGSTAR,
 
-        .name = "Mace",
+        .name = "Morningstar",
         .description = "",
         .color = {COLOR_WHITE},
 
@@ -1509,6 +1991,15 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
+    [ITEM_TYPE_SHORTSPEAR] = {
+        .type = BASE_ITEM_TYPE_SHORTSPEAR,
+
+        .name = "Shortspear",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
     [ITEM_TYPE_SLING] = {
         .type = BASE_ITEM_TYPE_SLING,
 
@@ -1518,19 +2009,19 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
-    [ITEM_TYPE_SMALL_SHIELD] = {
-        .type = BASE_ITEM_TYPE_SMALL_SHIELD,
+    [ITEM_TYPE_SPEAR] = {
+        .type = BASE_ITEM_TYPE_SPEAR,
 
-        .name = "Small Shield",
+        .name = "Spear",
         .description = "",
         .color = {COLOR_WHITE},
 
         .level = 1,
     },
-    [ITEM_TYPE_SPEAR] = {
-        .type = BASE_ITEM_TYPE_SPEAR,
+    [ITEM_TYPE_STUDDED_LEATHER_ARMOR] = {
+        .type = BASE_ITEM_TYPE_STUDDED_LEATHER_ARMOR,
 
-        .name = "Spear",
+        .name = "Studded Leather Armor",
         .description = "",
         .color = {COLOR_WHITE},
 

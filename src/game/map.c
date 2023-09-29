@@ -572,7 +572,8 @@ void map_generate(struct map *const map)
                 FACTION_ADVENTURER,
                 map->floor + 1,
                 class_database[class].default_ability_scores,
-                (bool[NUM_FEATS]){0},
+                (bool[NUM_SPECIAL_ABILITIES]){false},
+                (bool[NUM_FEATS]){false},
                 map->floor,
                 x, y);
 
@@ -597,14 +598,16 @@ void map_generate(struct map *const map)
 
                 for (enum monster monster = 0; monster < NUM_MONSTERS; monster++)
                 {
-                    const int num_monsters = monster_pack_data->monsters[monster];
+                    const int min_count = monster_pack_data->monsters[monster].min_count;
+                    const int max_count = monster_pack_data->monsters[monster].max_count;
+                    const int count = TCOD_random_get_int(world->random, min_count, max_count);
 
-                    if (num_monsters > 0)
+                    if (count > 0)
                     {
                         const struct actor_prototype *const monster_prototype = &monster_prototypes[monster];
 
                         // TODO: spawn num_monsters monsters
-                        for (size_t i = 0; i < num_monsters; i++)
+                        for (size_t i = 0; i < count; i++)
                         {
                             int x, y;
                             do
@@ -621,25 +624,37 @@ void map_generate(struct map *const map)
                                 monster_prototype->faction,
                                 monster_prototype->level,
                                 monster_prototype->ability_scores,
+                                monster_prototype->special_abilities,
                                 monster_prototype->feats,
                                 map->floor,
                                 x, y);
 
                             for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                             {
-                                if (monster_prototype->equipment[equip_slot] != EQUIP_SLOT_NONE)
+                                const enum item_type item_type = monster_prototype->equipment[equip_slot].type;
+
+                                if (item_type != EQUIP_SLOT_NONE)
                                 {
-                                    actor->equipment[equip_slot] = item_new(
-                                        monster_prototype->equipment[equip_slot],
-                                        0,
-                                        0, 0,
-                                        base_item_database[item_database[monster_prototype->equipment[equip_slot]].type].max_stack);
+                                    const int min_stack = monster_prototype->equipment[equip_slot].min_stack;
+                                    const int max_stack = monster_prototype->equipment[equip_slot].max_stack;
+                                    const int stack = TCOD_random_get_int(world->random, min_stack, max_stack);
+
+                                    if (stack > 0)
+                                    {
+                                        actor->equipment[equip_slot] = item_new(
+                                            item_type,
+                                            0,
+                                            0, 0,
+                                            stack);
+                                    }
                                 }
                             }
 
                             for (enum item_type item_type = ITEM_TYPE_NONE + 1; item_type < NUM_ITEM_TYPES; item_type++)
                             {
-                                const int stack = monster_prototype->items[item_type];
+                                const int min_stack = monster_prototype->items[item_type].min_stack;
+                                const int max_stack = monster_prototype->items[item_type].max_stack;
+                                const int stack = TCOD_random_get_int(world->random, min_stack, max_stack);
 
                                 if (stack > 0)
                                 {

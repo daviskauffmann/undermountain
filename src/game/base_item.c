@@ -13,6 +13,24 @@ const struct base_item_data base_item_database[] = {
 
         .ammunition_type = AMMUNITION_TYPE_ARROW,
     },
+    [BASE_ITEM_TYPE_BATTLEAXE] = {
+        .name = "Battleaxe",
+        .glyph = 'T',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_MEDIUM,
+        .weight = 6,
+        .max_stack = 1,
+        .cost = 10,
+
+        .damage = "1d8",
+        .damage_type = DAMAGE_TYPE_SLASHING,
+        .threat_range = 19,
+        .critical_multiplier = 3,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
+    },
     [BASE_ITEM_TYPE_BREASTPLATE] = {
         .name = "Breastplate",
         .glyph = '[',
@@ -381,6 +399,27 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_SMALL,
         .weight = 0.5f,
         .max_stack = 10,
+    },
+    [BASE_ITEM_TYPE_SHORTBOW] = {
+        .name = "Shortbow",
+        .glyph = '}',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_LARGE,
+        .weight = 2,
+        .max_stack = 1,
+        .cost = 30,
+
+        .damage = "1d6",
+        .damage_type = DAMAGE_TYPE_PIERCING,
+        .threat_range = 20,
+        .critical_multiplier = 3,
+        .ranged = true,
+        .ammunition_type = AMMUNITION_TYPE_ARROW,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_ELF] = true,
+            [WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
     },
     [BASE_ITEM_TYPE_SHORTSPEAR] = {
         .name = "Shortspear",

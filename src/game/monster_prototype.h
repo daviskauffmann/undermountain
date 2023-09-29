@@ -7,6 +7,10 @@
 #include "monster.h"
 #include "special_ability.h"
 
+// TODO: maybe merge with monster.h?
+// monster -> monster_type
+// monster_prototype -> monster_data
+
 struct monster_prototype
 {
     const char *name;

@@ -42,18 +42,29 @@ const struct monster_pack_data monster_pack_database[] = {
             },
         },
     },
-    [MONSTER_PACK_RED_DRAGON] = {
-        .min_floor = 7,
-        .max_floor = 100,
+    [MONSTER_PACK_HYENAS] = {
+        .min_floor = 2,
+        .max_floor = 7,
 
         .monsters = {
-            [MONSTER_RED_DRAGON_WYRMLING] = {
+            [MONSTER_HYENA] = {
                 .min_count = 1,
-                .max_count = 1,
+                .max_count = 3,
             },
-            [MONSTER_RED_DRAGON_ADULT] = {
-                .min_count = 0,
-                .max_count = 1,
+        },
+    },
+    [MONSTER_PACK_GNOLLS] = {
+        .min_floor = 3,
+        .max_floor = 8,
+
+        .monsters = {
+            [MONSTER_GNOLL] = {
+                .min_count = 1,
+                .max_count = 3,
+            },
+            [MONSTER_HYENA] = {
+                .min_count = 1,
+                .max_count = 3,
             },
         },
     },
@@ -87,6 +98,21 @@ const struct monster_pack_data monster_pack_database[] = {
             [MONSTER_RAT] = {
                 .min_count = 1,
                 .max_count = 5,
+            },
+        },
+    },
+    [MONSTER_PACK_RED_DRAGON] = {
+        .min_floor = 7,
+        .max_floor = 100,
+
+        .monsters = {
+            [MONSTER_RED_DRAGON_WYRMLING] = {
+                .min_count = 1,
+                .max_count = 1,
+            },
+            [MONSTER_RED_DRAGON_ADULT] = {
+                .min_count = 0,
+                .max_count = 1,
             },
         },
     },

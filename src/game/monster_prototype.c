@@ -102,6 +102,78 @@ const struct monster_prototype monster_prototypes[] = {
             [FEAT_WEAPON_FINESSE] = true,
         },
     },
+    [MONSTER_HYENA] = {
+        .name = "Hyena",
+
+        .race = RACE_ANIMAL_MEDIUM,
+        .class = CLASS_HYENA,
+        .faction = FACTION_GNOLL,
+
+        .level = 2,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 14,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 15,
+            [ABILITY_INTELLIGENCE] = 2,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+    },
+    [MONSTER_GNOLL] = {
+        .name = "Gnoll",
+
+        .race = RACE_ANIMAL_MEDIUM,
+        .class = CLASS_HYENA,
+        .faction = FACTION_GNOLL,
+
+        .level = 2,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 15,
+            [ABILITY_DEXTERITY] = 10,
+            [ABILITY_CONSTITUTION] = 13,
+            [ABILITY_INTELLIGENCE] = 8,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        .equipment = {
+            [EQUIP_SLOT_ARMOR] = {
+                .type = ITEM_TYPE_LEATHER_ARMOR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_SHIELD] = {
+                .type = ITEM_TYPE_HEAVY_SHIELD,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_BATTLEAXE,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+        },
+
+        .items = {
+            [ITEM_TYPE_SHORTBOW] = {
+                .min_stack = 0,
+                .max_stack = 3,
+            },
+            [ITEM_TYPE_ARROW] = {
+                .min_stack = 0,
+                .max_stack = 10,
+            },
+        },
+    },
     [MONSTER_GOBLIN] = {
         .name = "Goblin",
 

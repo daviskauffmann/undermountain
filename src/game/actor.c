@@ -250,6 +250,30 @@ const struct class_data class_database[] = {
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
+    [CLASS_HYENA] = {
+        .name = "Hyena",
+        .color = {COLOR_DARK_AMBER},
+        .glyph = 'h',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus = 1,
+
+        .natural_armor_bonus = 1,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
+    [CLASS_GNOLL] = {
+        .name = "Gnoll",
+        .color = {COLOR_DARK_AMBER},
+        .glyph = 'g',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus = 1,
+
+        .natural_armor_bonus = 1,
+    },
     [CLASS_GOBLIN] = {
         .name = "Goblin",
         .color = {COLOR_DARK_GREEN},

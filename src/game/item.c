@@ -25,6 +25,15 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
+    [ITEM_TYPE_BATTLEAXE] = {
+        .type = BASE_ITEM_TYPE_BATTLEAXE,
+
+        .name = "Battleaxe",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
     [ITEM_TYPE_BREASTPLATE] = {
         .type = BASE_ITEM_TYPE_BREASTPLATE,
 
@@ -243,6 +252,15 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .spell_type = SPELL_TYPE_LIGHTNING,
+
+        .level = 1,
+    },
+    [ITEM_TYPE_SHORTBOW] = {
+        .type = BASE_ITEM_TYPE_SHORTBOW,
+
+        .name = "Shortbow",
+        .description = "",
+        .color = {COLOR_WHITE},
 
         .level = 1,
     },

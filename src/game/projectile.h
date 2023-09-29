@@ -42,6 +42,8 @@ struct projectile
     TCOD_Map *light_fov;
 };
 
+extern const struct projectile_data projectile_database[NUM_PROJECTILE_TYPES];
+
 struct projectile *projectile_new(
     enum projectile_type type,
     int floor,

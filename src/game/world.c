@@ -3,13 +3,13 @@
 #include "actor.h"
 #include "color.h"
 #include "corpse.h"
-#include "data.h"
 #include "explosion.h"
 #include "message.h"
 #include "object.h"
 #include "projectile.h"
 #include "room.h"
 #include "spell.h"
+#include "surface.h"
 #include "util.h"
 #include <malloc.h>
 #include <stdarg.h>

@@ -1,6 +1,8 @@
 #ifndef UM_GAME_SPELL_H
 #define UM_GAME_SPELL_H
 
+#include "spell_range.h"
+
 enum spell_type
 {
     SPELL_TYPE_NONE, // TODO: maybe remove this?
@@ -15,17 +17,13 @@ enum spell_type
     NUM_SPELL_TYPES
 };
 
-enum spell_range
-{
-    SPELL_RANGE_PERSONAL,
-    SPELL_RANGE_TOUCH
-};
-
 struct spell_data
 {
     const char *name;
     enum spell_range range;
     int level;
 };
+
+extern const struct spell_data spell_database[NUM_SPELL_TYPES];
 
 #endif

@@ -1,10 +1,16 @@
 #ifndef UM_GAME_ACTOR_H
 #define UM_GAME_ACTOR_H
 
+#include "ability.h"
+#include "base_attack_bonus_progression.h"
+#include "equip_slot.h"
+#include "faction.h"
 #include "item.h"
 #include "light.h"
 #include "list.h"
+#include "natural_weapon.h"
 #include "size.h"
+#include "special_ability.h"
 #include "spell.h"
 #include <libtcod.h>
 
@@ -69,54 +75,6 @@ enum class
 #define MONSTER_CLASS_END CLASS_SLIME
 #define NUM_MONSTER_CLASSES MONSTER_CLASS_END + 1
 
-enum faction
-{
-    FACTION_ADVENTURER,
-    FACTION_GOBLINOID,
-    FACTION_KOBOLD,
-    FACTION_RED_DRAGON,
-    FACTION_TROLL,
-    FACTION_UNDEAD,
-    FACTION_WILD_ANIMAL,
-};
-
-enum base_attack_bonus_progression
-{
-    BASE_ATTACK_BONUS_FIXED,
-    BASE_ATTACK_BONUS_PROGRESSION_COMBAT,
-    BASE_ATTACK_BONUS_PROGRESSION_MIDDLE,
-    BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT,
-
-    NUM_BASE_ATTACK_BONUS_PROGRESSIONS
-};
-
-enum natural_weapon_type
-{
-    NATURAL_WEAPON_TYPE_UNARMED,
-    NATURAL_WEAPON_TYPE_CLAW,
-    NATURAL_WEAPON_TYPE_BITE,
-
-    NUM_NATURAL_WEAPON_TYPES,
-};
-
-enum ability
-{
-    ABILITY_STRENGTH,
-    ABILITY_DEXTERITY,
-    ABILITY_CONSTITUTION,
-    ABILITY_INTELLIGENCE,
-
-    NUM_ABILITIES,
-};
-
-enum special_ability
-{
-    SPECIAL_ABILITY_DARKVISION,
-    SPECIAL_ABILITY_LOW_LIGHT_VISION,
-
-    NUM_SPECIAL_ABILITIES,
-};
-
 enum feat
 {
     FEAT_ARMOR_PROFICIENCY_LIGHT,
@@ -137,47 +95,6 @@ enum feat
     FEAT_WEAPON_PROFICIENCY_WIZARD,
 
     NUM_FEATS,
-};
-
-enum player
-{
-    PLAYER_FIGHTER,
-    PLAYER_ROGUE,
-    PLAYER_WIZARD,
-
-    NUM_PLAYERS,
-};
-
-enum monster
-{
-    MONSTER_BAT,
-    MONSTER_BUGBEAR,
-    MONSTER_DIRE_RAT,
-    MONSTER_GOBLIN,
-    MONSTER_HOBGOBLIN,
-    MONSTER_KOBOLD,
-    MONSTER_RAT,
-    MONSTER_RED_DRAGON_WYRMLING,
-    MONSTER_RED_DRAGON_ADULT,
-    MONSTER_RED_DRAGON_ANCIENT,
-    MONSTER_TROLL,
-    MONSTER_SKELETON_WARRIOR,
-
-    NUM_MONSTERS,
-};
-
-enum equippability
-{
-    EQUIPPABILITY_TOO_LARGE,
-    EQUIPPABILITY_BARELY,
-    EQUIPPABILITY_COMFORTABLY,
-    EQUIPPABILITY_EASILY,
-    EQUIPPABILITY_TOO_SMALL,
-};
-
-struct actor_metadata
-{
-    int turns_to_chase;
 };
 
 struct race_data
@@ -217,28 +134,6 @@ struct class_data
     enum natural_weapon_type natural_weapon_type;
 };
 
-struct base_attack_bonus_progression_data
-{
-    const char *name;
-    float multiplier;
-};
-
-struct natural_weapon_data
-{
-    const char *name;
-
-    const char *damage;
-    enum damage_type damage_type;
-    int threat_range;
-    int critical_multiplier;
-};
-
-struct ability_data
-{
-    const char *name;
-    const char *description;
-};
-
 struct feat_prerequisites
 {
     bool requires_race;
@@ -252,12 +147,6 @@ struct feat_prerequisites
     int base_attack_bonus;
 };
 
-struct special_ability_data
-{
-    const char *name;
-    const char *description;
-};
-
 struct feat_data
 {
     const char *name;
@@ -266,37 +155,9 @@ struct feat_data
     struct feat_prerequisites prerequisites;
 };
 
-struct actor_prototype
+struct actor_metadata
 {
-    const char *name;
-
-    enum race race;
-    enum class class;
-    enum faction faction;
-
-    int level;
-
-    int ability_scores[NUM_ABILITIES];
-
-    bool special_abilities[NUM_SPECIAL_ABILITIES];
-
-    bool feats[NUM_FEATS];
-
-    struct
-    {
-        enum item_type type;
-
-        int min_stack;
-        int max_stack;
-    } equipment[NUM_EQUIP_SLOTS];
-
-    struct
-    {
-        int min_stack;
-        int max_stack;
-    } items[NUM_ITEM_TYPES];
-
-    // TODO: spells
+    int turns_to_chase;
 };
 
 struct actor
@@ -356,6 +217,11 @@ struct actor
 
     bool dead;
 };
+
+extern const struct race_data race_database[NUM_RACES];
+extern const struct feat_data feat_database[NUM_FEATS];
+extern const struct class_data class_database[NUM_CLASSES];
+extern const struct actor_metadata actor_metadata;
 
 struct actor *actor_new(
     const char *name,

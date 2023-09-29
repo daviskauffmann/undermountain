@@ -42,6 +42,8 @@ struct object
     TCOD_Map *light_fov;
 };
 
+extern const struct object_data object_database[NUM_OBJECT_TYPES];
+
 struct object *object_new(
     enum object_type type,
     int floor,

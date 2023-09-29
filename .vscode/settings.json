@@ -4,5 +4,8 @@
     },
     "cmake.debugConfig": {
         "cwd": "${workspaceFolder}"
+    },
+    "files.associations": {
+        "*.h": "c"
     }
 }

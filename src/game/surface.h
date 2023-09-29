@@ -36,6 +36,8 @@ struct surface
     TCOD_Map *light_fov;
 };
 
+extern const struct surface_data surface_database[NUM_SURFACES];
+
 struct surface *surface_new(
     enum surface_type type,
     int floor,

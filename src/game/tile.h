@@ -40,6 +40,9 @@ struct tile
     struct surface *surface;
 };
 
+extern const struct tile_metadata tile_metadata;
+extern const struct tile_data tile_database[NUM_TILE_TYPES];
+
 void tile_init(
     struct tile *tile,
     enum tile_type type,

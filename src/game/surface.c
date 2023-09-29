@@ -1,8 +1,35 @@
 #include "surface.h"
 
-#include "data.h"
+#include "color.h"
 #include "world.h"
 #include <malloc.h>
+
+const struct surface_data surface_database[] = {
+    [SURFACE_TYPE_ACID] = {
+        .glyph = '\0',
+        .color = {COLOR_LIME},
+
+        .duration = 20,
+
+        .light_type = LIGHT_TYPE_ACID,
+    },
+    [SURFACE_TYPE_FIRE] = {
+        .glyph = '\0',
+        .color = {COLOR_FLAME},
+
+        .duration = 20,
+
+        .light_type = LIGHT_TYPE_FIRE,
+    },
+    [SURFACE_TYPE_WATER] = {
+        .glyph = '~',
+        .color = {COLOR_AZURE},
+
+        .duration = 0,
+
+        .light_type = LIGHT_TYPE_NONE,
+    },
+};
 
 struct surface *surface_new(
     const enum surface_type type,

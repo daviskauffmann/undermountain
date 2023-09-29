@@ -19,6 +19,8 @@ struct corpse
     int y;
 };
 
+extern const struct corpse_metadata corpse_metadata;
+
 struct corpse *corpse_new(
     const char *name,
     int level,

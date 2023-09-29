@@ -1,17 +1,449 @@
 #include "actor.h"
 
+#include "ammunition_type.h"
 #include "color.h"
-#include "data.h"
+#include "equippability.h"
 #include "explosion.h"
 #include "item.h"
+#include "object.h"
 #include "projectile.h"
 #include "room.h"
+#include "spell.h"
+#include "surface.h"
 #include "util.h"
 #include "world.h"
 #include <float.h>
 #include <malloc.h>
 #include <math.h>
 #include <string.h>
+
+const struct race_data race_database[] = {
+    // player races
+    [RACE_DWARF] = {
+        .name = "Dwarf",
+
+        .size = SIZE_SMALL,
+    },
+    [RACE_ELF] = {
+        .name = "Elf",
+
+        .size = SIZE_MEDIUM,
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+
+        .feats = {
+            [FEAT_WEAPON_PROFICIENCY_ELF] = true,
+        },
+    },
+    [RACE_HUMAN] = {
+        .name = "Human",
+
+        .size = SIZE_MEDIUM,
+
+        .feats = {
+            [FEAT_QUICK_TO_MASTER] = true,
+        },
+    },
+
+    // monster races
+    [RACE_ANIMAL_DIMINUTIVE] = {
+        .name = "Diminutive Animal",
+
+        .size = SIZE_DIMINUTIVE,
+    },
+    [RACE_ANIMAL_TINY] = {
+        .name = "Small Animal",
+
+        .size = SIZE_SMALL,
+    },
+    [RACE_ANIMAL_SMALL] = {
+        .name = "Small Animal",
+
+        .size = SIZE_TINY,
+    },
+    [RACE_DRAGON_ADULT] = {
+        .name = "Wyrmling Dragon",
+
+        .size = SIZE_MEDIUM,
+    },
+    [RACE_DRAGON_ADULT] = {
+        .name = "Adult Dragon",
+
+        .size = SIZE_HUGE,
+    },
+    [RACE_DRAGON_ADULT] = {
+        .name = "Ancient Dragon",
+
+        .size = SIZE_COLOSSAL,
+    },
+    [RACE_GIANT_LARGE] = {
+        .name = "Large Giant",
+
+        .size = SIZE_LARGE,
+    },
+    [RACE_HUMANOID_SMALL] = {
+        .name = "Small Humanoid",
+
+        .size = SIZE_SMALL,
+    },
+    [RACE_HUMANOID_MEDIUM] = {
+        .name = "Medium Humanoid",
+
+        .size = SIZE_MEDIUM,
+    },
+    [RACE_UNDEAD] = {
+        .name = "Undead",
+
+        .size = SIZE_MEDIUM,
+    },
+};
+
+const struct class_data class_database[] = {
+    // player classes
+    [CLASS_FIGHTER] = {
+        .name = "Fighter",
+        .color = {COLOR_BRASS},
+        .glyph = '@',
+
+        .hit_die = "1d10",
+
+        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_COMBAT,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 15,
+            [ABILITY_DEXTERITY] = 12,
+            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_INTELLIGENCE] = 10,
+        },
+
+        .feat_progression = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = 1,
+            [FEAT_ARMOR_PROFICIENCY_MEDIUM] = 1,
+            [FEAT_ARMOR_PROFICIENCY_HEAVY] = 1,
+            [FEAT_SHIELD_PROFICIENCY] = 1,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = 1,
+            [FEAT_WEAPON_PROFICIENCY_MARTIAL] = 1,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_BREASTPLATE,
+            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_HEAVY_SHIELD,
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGSWORD,
+        },
+
+        .starting_items = {
+            [ITEM_TYPE_FOOD] = 10,
+        },
+    },
+    [CLASS_ROGUE] = {
+        .name = "Rogue",
+        .color = {COLOR_YELLOW},
+        .glyph = '@',
+
+        .hit_die = "1d6",
+
+        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_MIDDLE,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 14,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 12,
+            [ABILITY_INTELLIGENCE] = 10,
+        },
+
+        .feat_progression = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = 1,
+            [FEAT_SNEAK_ATTACK] = 1,
+            [FEAT_WEAPON_PROFICIENCY_ROGUE] = 1,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_AMMUNITION] = ITEM_TYPE_ARROW,
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_LEATHER_ARMOR,
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGBOW,
+        },
+
+        .starting_items = {
+            [ITEM_TYPE_DAGGER] = 1,
+            [ITEM_TYPE_FOOD] = 10,
+        },
+    },
+    [CLASS_WIZARD] = {
+        .name = "Wizard",
+        .color = {COLOR_AZURE},
+        .glyph = '@',
+
+        .hit_die = "1d4",
+
+        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 10,
+            [ABILITY_DEXTERITY] = 14,
+            [ABILITY_CONSTITUTION] = 12,
+            [ABILITY_INTELLIGENCE] = 15,
+        },
+
+        .feat_progression = {
+            [FEAT_WEAPON_PROFICIENCY_WIZARD] = 1,
+        },
+
+        .spell_progression = {
+            [SPELL_TYPE_ACID_SPLASH] = 1,
+            [SPELL_TYPE_FIREBALL] = 1,
+            [SPELL_TYPE_SUMMON_FAMILIAR] = 1,
+            [SPELL_TYPE_LIGHTNING] = 2,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_WIZARDS_ROBE,
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_DAGGER,
+        },
+
+        .starting_items = {
+            [ITEM_TYPE_FOOD] = 10,
+        },
+    },
+
+    // monster classes
+    [CLASS_BAT] = {
+        .name = "Bat",
+        .color = {COLOR_GRAY},
+        .glyph = 'b',
+
+        .hit_die = "1d2",
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
+    [CLASS_BUGBEAR] = {
+        .name = "Bugbear",
+        .color = {COLOR_BRASS},
+        .glyph = 'b',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 3,
+
+        .base_attack_bonus = 2,
+    },
+    [CLASS_DIRE_RAT] = {
+        .name = "Dire Rat",
+        .color = {COLOR_GRAY},
+        .glyph = 'R',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 1,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
+    [CLASS_DOG] = {
+        .name = "Dog",
+        .color = {COLOR_LIGHTEST_GRAY},
+        .glyph = 'd',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 1,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
+    [CLASS_GOBLIN] = {
+        .name = "Goblin",
+        .color = {COLOR_DARK_GREEN},
+        .glyph = 'g',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus = 1,
+    },
+    [CLASS_HOBGOBLIN] = {
+        .name = "Hobgoblin",
+        .color = {COLOR_LIGHT_CRIMSON},
+        .glyph = 'h',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus = 1,
+    },
+    [CLASS_KOBOLD] = {
+        .name = "Kobold",
+        .color = {COLOR_LIGHT_GRAY},
+        .glyph = 'k',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus = 1,
+
+        .natural_armor_bonus = 1,
+    },
+    [CLASS_RAT] = {
+        .name = "Rat",
+        .color = {COLOR_LIGHTEST_GRAY},
+        .glyph = 'r',
+
+        .hit_die = "1d2",
+
+        .natural_armor_bonus = 1,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
+    [CLASS_RED_DRAGON_WYRMLING] = {
+        .name = "Wyrmling Red Dragon",
+        .color = {COLOR_LIGHT_RED},
+        .glyph = 'D',
+
+        .hit_die = "1d12",
+
+        .natural_armor_bonus = 6,
+
+        .base_attack_bonus = 7,
+    },
+    [CLASS_RED_DRAGON_ADULT] = {
+        .name = "Adult Red Dragon",
+        .color = {COLOR_RED},
+        .glyph = 'D',
+
+        .hit_die = "1d12",
+
+        .natural_armor_bonus = 21,
+
+        .base_attack_bonus = 22,
+    },
+    [CLASS_RED_DRAGON_ANCIENT] = {
+        .name = "Ancient Red Dragon",
+        .color = {COLOR_DARK_RED},
+        .glyph = 'D',
+
+        .hit_die = "1d12",
+
+        .natural_armor_bonus = 33,
+
+        .base_attack_bonus = 34,
+    },
+    [CLASS_TROLL] = {
+        .name = "Rat",
+        .color = {COLOR_GREEN},
+        .glyph = 'T',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 5,
+
+        .base_attack_bonus = 4,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_CLAW,
+    },
+    [CLASS_SKELETON_WARRIOR] = {
+        .name = "Skeleton Warrior",
+        .color = {COLOR_WHITE},
+        .glyph = 's',
+
+        .hit_die = "1d12",
+    },
+};
+
+const struct feat_data feat_database[] = {
+    [FEAT_ARMOR_PROFICIENCY_LIGHT] = {
+        .name = "Armor Proficiency: Light",
+        .description = "A character with this feat can equip light armor.",
+    },
+    [FEAT_ARMOR_PROFICIENCY_MEDIUM] = {
+        .name = "Armor Proficiency: Medium",
+        .description = "A character with this feat can equip medium armor.",
+    },
+    [FEAT_ARMOR_PROFICIENCY_HEAVY] = {
+        .name = "Armor Proficiency: Heavy",
+        .description = "A character with this feat can equip heavy armor.",
+    },
+    [FEAT_QUICK_TO_MASTER] = {
+        .name = "Quick to Master",
+        .description = "A character with this feat gains an additional feat at level 1.",
+
+        .prerequisites = {
+            .requires_race = true,
+            .race = RACE_HUMAN,
+        },
+    },
+    [FEAT_RAPID_RELOAD] = {
+        .name = "Rapid Reload",
+        .description = "A character gets the same number of attacks with any crossbow as a normal bow.",
+
+        .prerequisites = {
+            .base_attack_bonus = 2,
+        },
+    },
+    [FEAT_SHIELD_PROFICIENCY] = {
+        .name = "Shield Proficiency",
+        .description = "A character with this feat can equip shields.",
+    },
+    [FEAT_SNEAK_ATTACK] = {
+        .name = "Sneak Attack",
+        .description = "A character with this feat deals extra damage when undetected.",
+
+        .prerequisites = {
+            .requires_class = true,
+            .class = CLASS_ROGUE,
+        },
+    },
+    [FEAT_STILL_SPELL] = {
+        .name = "Still Spell",
+        .description = "A character with this feat ignores arcane spell failure.",
+    },
+    [FEAT_WEAPON_FINESSE] = {
+        .name = "Weapon Finesse",
+        .description = "A character with this feat is adept at using light weapons subtly and effectively, allowing him to make melee attack rolls with his dexterity modifier instead of strength (if his dexterity is higher than his strength).",
+
+        .prerequisites = {
+            .base_attack_bonus = 1,
+        },
+    },
+    [FEAT_WEAPON_PROFICIENCY_ELF] = {
+        .name = "Weapon Proficiency: Elf",
+        .description = "A character with this feat is proficient with elf weapons.",
+
+        .prerequisites = {
+            .requires_race = true,
+            .race = RACE_ELF,
+        },
+    },
+    [FEAT_WEAPON_PROFICIENCY_EXOTIC] = {
+        .name = "Weapon Proficiency: Exotic",
+        .description = "A character with this feat is proficient with exotic weapons.",
+    },
+    [FEAT_WEAPON_PROFICIENCY_MARTIAL] = {
+        .name = "Weapon Proficiency: Martial",
+        .description = "A character with this feat is proficient with martial weapons.",
+    },
+    [FEAT_WEAPON_PROFICIENCY_ROGUE] = {
+        .name = "Weapon Proficiency: Rogue",
+        .description = "A character with this feat is proficient with rogue weapons.",
+
+        .prerequisites = {
+            .requires_class = true,
+            .class = CLASS_ROGUE,
+        },
+    },
+    [FEAT_WEAPON_PROFICIENCY_SIMPLE] = {
+        .name = "Weapon Proficiency: Simple",
+        .description = "A character with this feat is proficient with simple weapons.",
+    },
+    [FEAT_WEAPON_PROFICIENCY_WIZARD] = {
+        .name = "Weapon Proficiency: Wizard",
+        .description = "A character with this feat is proficient with wizard weapons.",
+
+        .prerequisites = {
+            .requires_class = true,
+            .class = CLASS_WIZARD,
+        },
+    },
+};
+
+const struct actor_metadata actor_metadata = {
+    .turns_to_chase = 10,
+};
 
 struct actor *actor_new(
     const char *const name,

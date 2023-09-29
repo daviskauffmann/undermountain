@@ -28,4 +28,6 @@ struct light_data
     bool flicker;
 };
 
+extern const struct light_data light_database[NUM_LIGHT_TYPES];
+
 #endif

@@ -24,4 +24,6 @@ struct size_data
     float speed;
 };
 
+extern const struct size_data size_database[NUM_SIZES];
+
 #endif

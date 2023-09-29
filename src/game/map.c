@@ -1,10 +1,12 @@
 #include "map.h"
 
-#include "data.h"
+#include "corpse.h"
 #include "explosion.h"
+#include "monster_prototype.h"
 #include "object.h"
 #include "projectile.h"
 #include "room.h"
+#include "surface.h"
 #include "util.h"
 #include "world.h"
 
@@ -604,7 +606,7 @@ void map_generate(struct map *const map)
 
                     if (count > 0)
                     {
-                        const struct actor_prototype *const monster_prototype = &monster_prototypes[monster];
+                        const struct monster_prototype *const monster_prototype = &monster_prototypes[monster];
 
                         // TODO: spawn num_monsters monsters
                         for (size_t i = 0; i < count; i++)

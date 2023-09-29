@@ -3,7 +3,6 @@
 #include "../../config.h"
 #include "../../game/actor.h"
 #include "../../game/color.h"
-#include "../../game/data.h"
 #include "../../game/world.h"
 #include "../../print.h"
 #include "../../scene.h"
@@ -89,24 +88,26 @@ static void reset_feats(void)
 
 static bool feat_is_available(enum feat feat)
 {
-    if (feat_database[feat].prerequisites.requires_race &&
-        feat_database[feat].prerequisites.race != selected_race)
+    const struct feat_prerequisites *const prerequisites = &feat_database[feat].prerequisites;
+
+    if (prerequisites->requires_race &&
+        prerequisites->race != selected_race)
     {
         return false;
     }
 
-    if (feat_database[feat].prerequisites.requires_class &&
-        feat_database[feat].prerequisites.class != selected_class)
+    if (prerequisites->requires_class &&
+        prerequisites->class != selected_class)
     {
         return false;
     }
 
-    if (feat_database[feat].prerequisites.level > 1)
+    if (prerequisites->level > 1)
     {
         return false;
     }
 
-    if (feat_database[feat].prerequisites.base_attack_bonus > 0)
+    if (prerequisites->base_attack_bonus > 0)
     {
         return false;
     }

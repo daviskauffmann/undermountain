@@ -1,13 +1,42 @@
 #include "projectile.h"
 
 #include "actor.h"
-#include "data.h"
+#include "color.h"
 #include "explosion.h"
+#include "object.h"
+#include "surface.h"
 #include "util.h"
 #include "world.h"
 #include <malloc.h>
 #include <math.h>
 #include <stdio.h>
+
+const struct projectile_data projectile_database[] = {
+    [PROJECTILE_TYPE_ACID_SPLASH] = {
+        .glyph = '*',
+        .color = {COLOR_LIME},
+
+        .light_type = LIGHT_TYPE_ACID_SPLASH,
+
+        .speed = 30,
+    },
+    [PROJECTILE_TYPE_ARROW] = {
+        .glyph = '`',
+        .color = {COLOR_WHITE},
+
+        .light_type = LIGHT_TYPE_NONE,
+
+        .speed = 50,
+    },
+    [PROJECTILE_TYPE_FIREBALL] = {
+        .glyph = '*',
+        .color = {COLOR_FLAME},
+
+        .light_type = LIGHT_TYPE_FIREBALL,
+
+        .speed = 30,
+    },
+};
 
 struct projectile *projectile_new(
     const enum projectile_type type,

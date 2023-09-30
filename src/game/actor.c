@@ -83,7 +83,7 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d10",
 
-        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_COMBAT,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
 
         .default_ability_scores = {
             [ABILITY_STRENGTH] = 15,
@@ -119,7 +119,7 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d6",
 
-        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_MIDDLE,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .default_ability_scores = {
             [ABILITY_STRENGTH] = 14,
@@ -153,7 +153,7 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d4",
 
-        .base_attack_bonus_progression = BASE_ATTACK_BONUS_PROGRESSION_NON_COMBAT,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_POOR,
 
         .default_ability_scores = {
             [ABILITY_STRENGTH] = 10,
@@ -383,7 +383,7 @@ const struct class_data class_database[] = {
     },
     [CLASS_SPIDER] = {
         .name = "Spider",
-        .color = {COLOR_LIGHT_GREEN},
+        .color = {COLOR_BLACK},
         .glyph = 's',
 
         .hit_die = "1d8",
@@ -820,7 +820,7 @@ int actor_calc_attacks_per_round(const struct actor *const actor)
 {
     const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
 
-    int attacks_per_round = (base_attack_bonus - 5) / 5;
+    int attacks_per_round = ((base_attack_bonus - 1) / 5) + 1;
 
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
 
@@ -856,14 +856,14 @@ int actor_calc_attacks_per_round(const struct actor *const actor)
 
 int actor_calc_base_attack_bonus(const struct actor *const actor)
 {
-    const enum base_attack_bonus_progression base_attack_bonus_progression = class_database[actor->class].base_attack_bonus_progression;
+    const enum base_attack_bonus_type base_attack_bonus_type = class_database[actor->class].base_attack_bonus_type;
 
-    if (base_attack_bonus_progression == BASE_ATTACK_BONUS_FIXED)
+    if (base_attack_bonus_type == BASE_ATTACK_BONUS_TYPE_FIXED)
     {
         return class_database[actor->class].base_attack_bonus;
     }
 
-    return (int)floorf(actor->level * base_attack_bonus_progression_database[base_attack_bonus_progression].multiplier);
+    return (int)floorf(actor->level * base_attack_bonus_database[base_attack_bonus_type].multiplier);
 }
 
 int actor_calc_attack_bonus(const struct actor *const actor)

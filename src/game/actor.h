@@ -2,7 +2,7 @@
 #define UM_GAME_ACTOR_H
 
 #include "ability.h"
-#include "base_attack_bonus_progression.h"
+#include "base_attack_bonus_type.h"
 #include "equip_slot.h"
 #include "faction.h"
 #include "item.h"
@@ -125,7 +125,7 @@ struct class_data
 
     int natural_armor_bonus;
 
-    enum base_attack_bonus_progression base_attack_bonus_progression;
+    enum base_attack_bonus_type base_attack_bonus_type;
     int base_attack_bonus;
 
     int default_ability_scores[NUM_ABILITIES];

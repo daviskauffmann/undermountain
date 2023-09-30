@@ -2166,12 +2166,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 "Base Attack Bonus");
             const int base_attack_bonus = actor_calc_base_attack_bonus(world->player);
             char base_attack_bonus_string[20] = {0};
-            snprintf(base_attack_bonus_string, sizeof(base_attack_bonus_string), "%d", base_attack_bonus);
+            snprintf(base_attack_bonus_string, sizeof(base_attack_bonus_string), "+%d", base_attack_bonus);
             const int attacks_per_round = actor_calc_attacks_per_round(world->player);
             for (int i = 1; i < attacks_per_round; i++)
             {
                 char extra_attack_string[10] = {0};
-                snprintf(extra_attack_string, sizeof(extra_attack_string), "/%d", base_attack_bonus - i * 5);
+                snprintf(extra_attack_string, sizeof(extra_attack_string), "/+%d", base_attack_bonus - i * 5);
                 strcat(base_attack_bonus_string, extra_attack_string);
             }
             TCOD_console_printf_ex(

@@ -670,8 +670,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             TCOD_BKGND_NONE,
             TCOD_LEFT,
             "Base attack bonus: %s (level x%.2f)",
-            base_attack_bonus_progression_database[class_database[selected_class].base_attack_bonus_progression].name,
-            base_attack_bonus_progression_database[class_database[selected_class].base_attack_bonus_progression].multiplier);
+            base_attack_bonus_database[class_database[selected_class].base_attack_bonus_type].name,
+            base_attack_bonus_database[class_database[selected_class].base_attack_bonus_type].multiplier);
 
         console_print(
             console,

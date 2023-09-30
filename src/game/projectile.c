@@ -54,7 +54,8 @@ struct projectile *projectile_new(
     const int target_x,
     const int target_y,
     struct actor *const shooter,
-    struct item *const ammunition)
+    struct item *const ammunition,
+    const int caster_level)
 {
     struct projectile *const projectile = malloc(sizeof(*projectile));
 
@@ -71,6 +72,8 @@ struct projectile *projectile_new(
     projectile->shooter = shooter;
 
     projectile->ammunition = ammunition;
+
+    projectile->caster_level = caster_level;
 
     projectile->light_fov = NULL;
 
@@ -146,7 +149,8 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                     y,
                     3,
                     projectile_database[projectile->type].color,
-                    projectile->shooter));
+                    projectile->shooter,
+                    projectile->caster_level));
         }
     }
     break;
@@ -196,7 +200,8 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                     y,
                     5,
                     projectile_database[projectile->type].color,
-                    projectile->shooter));
+                    projectile->shooter,
+                    projectile->caster_level));
         }
     }
     break;
@@ -205,8 +210,29 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
         if (tile->actor &&
             tile->actor != projectile->shooter)
         {
-            // TODO: multiple missiles?
-            const int damage = TCOD_random_dice_roll_s(world->random, "1d4+1");
+            int num_missiles = 1;
+            if (projectile->caster_level >= 9)
+            {
+                num_missiles = 5;
+            }
+            else if (projectile->caster_level >= 7)
+            {
+                num_missiles = 4;
+            }
+            else if (projectile->caster_level >= 5)
+            {
+                num_missiles = 3;
+            }
+            else if (projectile->caster_level >= 3)
+            {
+                num_missiles = 2;
+            }
+
+            int damage = 0;
+            for (int i = 0; i < num_missiles; ++i)
+            {
+                damage += TCOD_random_dice_roll_s(world->random, "1d4+1");
+            }
 
             world_log(
                 projectile->shooter->floor,

@@ -40,6 +40,8 @@ struct projectile
 
     struct item *ammunition;
 
+    int caster_level;
+
     TCOD_Map *light_fov;
 };
 
@@ -53,7 +55,8 @@ struct projectile *projectile_new(
     int target_x,
     int target_y,
     struct actor *shooter,
-    struct item *ammunition);
+    struct item *ammunition,
+    int caster_level);
 void projectile_delete(struct projectile *projectile);
 bool projectile_move(struct projectile *projectile, float delta_time);
 void projectile_calc_light(struct projectile *projectile);

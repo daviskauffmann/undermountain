@@ -26,6 +26,8 @@ struct explosion
 
     float time;
 
+    int caster_level;
+
     TCOD_Map *fov;
 };
 
@@ -36,7 +38,8 @@ struct explosion *explosion_new(
     int y,
     int radius,
     TCOD_ColorRGB color,
-    struct actor *initiator);
+    struct actor *initiator,
+    int caster_level);
 void explosion_delete(struct explosion *explosion);
 bool explosion_update(struct explosion *explosion, float delta_time);
 

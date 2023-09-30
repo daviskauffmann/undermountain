@@ -168,9 +168,11 @@ const struct class_data class_database[] = {
 
         .spell_progression = {
             [SPELL_TYPE_ACID_SPLASH] = 1,
-            [SPELL_TYPE_MAGIC_MISSILE] = 1,
-            [SPELL_TYPE_FIREBALL] = 3,
             [SPELL_TYPE_CHAIN_LIGHTNING] = 6,
+            [SPELL_TYPE_DAZE] = 1,
+            [SPELL_TYPE_MAGIC_MISSILE] = 1,
+            [SPELL_TYPE_RAY_OF_FROST] = 1,
+            [SPELL_TYPE_FIREBALL] = 3,
             [SPELL_TYPE_SUMMON_FAMILIAR] = 1,
         },
 
@@ -3251,17 +3253,16 @@ bool actor_shoot(
     struct projectile *const projectile = projectile_new(
         PROJECTILE_TYPE_ARROW,
         actor->floor,
-        actor->x,
-        actor->y,
-        x,
-        y,
+        actor->x, actor->y,
+        x, y,
         actor,
         item_new(
             ammunition->type,
             ammunition->floor,
             ammunition->x,
             ammunition->y,
-            1));
+            1),
+        0);
 
     // add the projectile to the map
     struct map *const map = &world->maps[actor->floor];
@@ -3497,12 +3498,14 @@ bool actor_cast(
         actor->name,
         spell_data->name);
 
+    int caster_level = spell_data->level;
+
     if (from_memory)
     {
         actor->mana -= spell_data->level;
-    }
 
-    // TODO: add caster level if from memory, otherwise use the level of the item
+        caster_level = actor->level;
+    }
 
     switch (spell_type)
     {
@@ -3513,7 +3516,7 @@ bool actor_cast(
             return false;
         }
 
-        // create a fireball projectile
+        // create a projectile
         struct projectile *const projectile = projectile_new(
             PROJECTILE_TYPE_ACID_SPLASH,
             actor->floor,
@@ -3522,7 +3525,8 @@ bool actor_cast(
             x,
             y,
             actor,
-            NULL);
+            NULL,
+            caster_level);
 
         // add the projectile to the map
         struct map *const map = &world->maps[actor->floor];
@@ -3536,18 +3540,36 @@ bool actor_cast(
         struct actor *const other = tile->actor;
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "1d8");
+            const int health = TCOD_random_dice_roll_s(world->random, "1d8") + MIN(caster_level, 5);
 
-            world_log(
-                other->floor,
-                other->x,
-                other->y,
-                color_white,
-                "%s cures %d damage.",
-                other->name,
-                health);
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d damage.",
+                    actor->name,
+                    other->name,
+                    health);
 
-            actor_restore_hit_points(other, health);
+                actor_damage_hit_points(other, actor, health);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d damage.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
         }
     }
     break;
@@ -3558,7 +3580,11 @@ bool actor_cast(
         struct actor *const other = tile->actor;
         if (other)
         {
-            const int damage = TCOD_random_dice_roll_s(world->random, "1d4");
+            // TODO: spread to nearby enemies
+            TCOD_dice_t dice = TCOD_random_dice_new("1d6");
+            dice.nb_rolls = MIN(caster_level, 20);
+
+            const int damage = TCOD_random_dice_roll(world->random, dice);
 
             world_log(
                 actor->floor,
@@ -3587,6 +3613,39 @@ bool actor_cast(
         }
     }
     break;
+    case SPELL_TYPE_DAZE:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+        if (other)
+        {
+            // TODO: daze effect
+
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_white,
+                "%s dazes %s.",
+                actor->name,
+                other->name);
+        }
+        else
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_white,
+                "%s cannot cast %s here.",
+                actor->name,
+                spell_data->name);
+
+            return false;
+        }
+    }
+    break;
     case SPELL_TYPE_FIREBALL:
     {
         if (x == actor->x && y == actor->y)
@@ -3594,7 +3653,7 @@ bool actor_cast(
             return false;
         }
 
-        // create a fireball projectile
+        // create a projectile
         struct projectile *const projectile = projectile_new(
             PROJECTILE_TYPE_FIREBALL,
             actor->floor,
@@ -3603,7 +3662,8 @@ bool actor_cast(
             x,
             y,
             actor,
-            NULL);
+            NULL,
+            caster_level);
 
         // add the projectile to the map
         struct map *const map = &world->maps[actor->floor];
@@ -3617,7 +3677,7 @@ bool actor_cast(
             return false;
         }
 
-        // create a fireball projectile
+        // create a projectile
         struct projectile *const projectile = projectile_new(
             PROJECTILE_TYPE_MAGIC_MISSILE,
             actor->floor,
@@ -3626,11 +3686,48 @@ bool actor_cast(
             x,
             y,
             actor,
-            NULL);
+            NULL,
+            caster_level);
 
         // add the projectile to the map
         struct map *const map = &world->maps[actor->floor];
         list_add(map->projectiles, projectile);
+    }
+    break;
+    case SPELL_TYPE_RAY_OF_FROST:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+        if (other)
+        {
+            const int damage = TCOD_random_dice_roll_s(world->random, "1d3");
+
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_white,
+                "%s zaps %s for %d.",
+                actor->name,
+                other->name,
+                damage);
+
+            actor_damage_hit_points(other, actor, damage);
+        }
+        else
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_white,
+                "%s cannot cast %s here.",
+                actor->name,
+                spell_data->name);
+
+            return false;
+        }
     }
     break;
     case SPELL_TYPE_RECOVER_LIGHT_ARCANA:
@@ -3640,7 +3737,10 @@ bool actor_cast(
         struct actor *const other = tile->actor;
         if (other)
         {
-            const int mana = TCOD_random_dice_roll_s(world->random, "1d8");
+            TCOD_dice_t dice = TCOD_random_dice_new("1d8");
+            dice.addsub = (float)MIN(caster_level, 5);
+
+            const int mana = TCOD_random_dice_roll(world->random, dice);
 
             world_log(
                 other->floor,

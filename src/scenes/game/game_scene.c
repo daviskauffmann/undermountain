@@ -267,9 +267,11 @@ static bool do_spellbook_action(const enum spell_type spell_type)
             world->player->floor,
             world->player->x,
             world->player->y,
-            color_yellow,
-            "%s selected.",
+            color_purple,
+            "%s readied.",
             spell_database[spell_type].name);
+
+        took_turn = true;
     }
     break;
     }

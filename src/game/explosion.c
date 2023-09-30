@@ -14,7 +14,8 @@ struct explosion *explosion_new(
     const int y,
     const int radius,
     const TCOD_ColorRGB color,
-    struct actor *const initiator)
+    struct actor *const initiator,
+    const int caster_level)
 {
     struct explosion *const explosion = malloc(sizeof(*explosion));
 
@@ -36,6 +37,8 @@ struct explosion *explosion_new(
         explosion->x,
         explosion->y,
         explosion->radius);
+
+    explosion->caster_level = caster_level;
 
     for (int tile_x = 0; tile_x < MAP_WIDTH; tile_x++)
     {
@@ -90,7 +93,10 @@ struct explosion *explosion_new(
                     if (tile->actor &&
                         tile->actor != initiator)
                     {
-                        const int damage = TCOD_random_dice_roll_s(world->random, "3d6");
+                        TCOD_dice_t dice = TCOD_random_dice_new("1d6");
+                        dice.nb_rolls = MIN(explosion->caster_level, 10);
+
+                        const int damage = TCOD_random_dice_roll(world->random, dice);
 
                         world_log(
                             initiator->floor,

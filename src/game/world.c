@@ -370,6 +370,8 @@ void world_save(FILE *const file)
                 const bool has_ammunition = false;
                 fwrite(&has_ammunition, sizeof(has_ammunition), 1, file);
             }
+
+            fwrite(&projectile->caster_level, sizeof(projectile->caster_level), 1, file);
         }
 
         fwrite(&map->explosions->size, sizeof(map->explosions->size), 1, file);
@@ -709,6 +711,8 @@ void world_load(FILE *const file)
             {
                 projectile->ammunition = NULL;
             }
+
+            fread(&projectile->caster_level, sizeof(projectile->caster_level), 1, file);
 
             projectile->light_fov = NULL;
 

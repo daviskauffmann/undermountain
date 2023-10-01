@@ -11,6 +11,8 @@
 #include "state.h"
 #include <libtcod.h>
 
+#define STARTING_LEVEL 1
+
 static enum state state;
 
 static char name[32];
@@ -26,7 +28,8 @@ static enum ability selected_ability;
 
 static bool feats[NUM_FEATS];
 static int remaining_feats;
-static enum feat selected_feat;
+struct list *available_feats;
+static int selected_feat_index;
 
 static int calc_ability_score_cost(const int ability_score)
 {
@@ -66,6 +69,47 @@ static void set_default_ability_scores(void)
     ability_points = 0;
 }
 
+static bool feat_is_available(enum feat feat)
+{
+    const struct feat_prerequisites *const prerequisites = &feat_database[feat].prerequisites;
+
+    if (prerequisites->requires_race &&
+        prerequisites->race != selected_race)
+    {
+        return false;
+    }
+
+    if (prerequisites->requires_class &&
+        prerequisites->class != selected_class)
+    {
+        return false;
+    }
+
+    if (prerequisites->level > STARTING_LEVEL)
+    {
+        return false;
+    }
+
+    const enum base_attack_bonus_type base_attack_bonus_type = class_database[selected_class].base_attack_bonus_type;
+    const int base_attack_bonus = (int)floorf(STARTING_LEVEL * base_attack_bonus_database[base_attack_bonus_type].multiplier);
+
+    if (prerequisites->base_attack_bonus > base_attack_bonus)
+    {
+        return false;
+    }
+
+    for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
+    {
+        if (prerequisites->ability_scores[ability] > 0 &&
+            ability_scores[ability] < prerequisites->ability_scores[ability])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static void reset_feats(void)
 {
     for (enum feat feat = FEAT_NONE + 1; feat < NUM_FEATS; feat++)
@@ -84,35 +128,15 @@ static void reset_feats(void)
     {
         remaining_feats++;
     }
-}
 
-static bool feat_is_available(enum feat feat)
-{
-    const struct feat_prerequisites *const prerequisites = &feat_database[feat].prerequisites;
-
-    if (prerequisites->requires_race &&
-        prerequisites->race != selected_race)
+    list_clear(available_feats);
+    for (enum feat feat = FEAT_NONE + 1; feat < NUM_FEATS; feat++)
     {
-        return false;
+        if (feat_is_available(feat))
+        {
+            list_add(available_feats, (void *)(long long)feat);
+        }
     }
-
-    if (prerequisites->requires_class &&
-        prerequisites->class != selected_class)
-    {
-        return false;
-    }
-
-    if (prerequisites->level > 1)
-    {
-        return false;
-    }
-
-    if (prerequisites->base_attack_bonus > 0)
-    {
-        return false;
-    }
-
-    return true;
 }
 
 static void init(const struct scene *const previous_scene)
@@ -131,12 +155,14 @@ static void init(const struct scene *const previous_scene)
     set_default_ability_scores();
     selected_ability = ABILITY_NONE + 1;
 
+    available_feats = list_new();
     reset_feats();
-    selected_feat = FEAT_NONE + 1;
+    selected_feat_index = 0;
 }
 
 static void uninit(void)
 {
+    list_delete(available_feats);
 }
 
 static struct scene *handle_event(const SDL_Event *const event)
@@ -297,6 +323,8 @@ static struct scene *handle_event(const SDL_Event *const event)
 
                 if (event->key.keysym.sym == SDLK_x)
                 {
+                    const enum feat selected_feat = (enum feat)(long long)list_get(available_feats, selected_feat_index);
+
                     if (!race_database[selected_race].feats[selected_feat] &&
                         class_database[selected_class].feat_progression[selected_feat] == 0)
                     {
@@ -366,13 +394,13 @@ static struct scene *handle_event(const SDL_Event *const event)
             break;
             case STATE_FEATS:
             {
-                if (selected_feat == NUM_FEATS - 1)
+                if (selected_feat_index == available_feats->size - 1)
                 {
-                    selected_feat = FEAT_NONE + 1;
+                    selected_feat_index = 0;
                 }
                 else
                 {
-                    selected_feat++;
+                    selected_feat_index++;
                 }
             }
             break;
@@ -466,13 +494,13 @@ static struct scene *handle_event(const SDL_Event *const event)
             break;
             case STATE_FEATS:
             {
-                if (selected_feat == FEAT_NONE + 1)
+                if (selected_feat_index == 0)
                 {
-                    selected_feat = NUM_FEATS - 1;
+                    selected_feat_index = available_feats->size - 1;
                 }
                 else
                 {
-                    selected_feat--;
+                    selected_feat_index--;
                 }
             }
             break;
@@ -730,7 +758,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             TCOD_BKGND_NONE,
             TCOD_LEFT,
             "Feats:");
-        for (enum feat feat = 0; feat < NUM_FEATS; feat++)
+        for (enum feat feat = FEAT_NONE + 1; feat < NUM_FEATS; feat++)
         {
             if (class_database[selected_class].feat_progression[feat])
             {
@@ -878,12 +906,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
         int y = 2;
 
-        for (enum feat feat = 0; feat < NUM_FEATS; feat++)
+        const enum feat selected_feat = (enum feat)(long long)list_get(available_feats, selected_feat_index);
+
+        for (size_t available_feat_index = 0; available_feat_index < available_feats->size; available_feat_index++)
         {
-            if (!feat_is_available(feat))
-            {
-                continue;
-            }
+            const enum feat feat = (enum feat)(long long)list_get(available_feats, available_feat_index);
 
             const char *text = "[ ] %s";
 

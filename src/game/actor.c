@@ -1107,6 +1107,15 @@ bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
         return false;
     }
 
+    for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
+    {
+        if (prerequisites->ability_scores[ability] > 0 &&
+            actor->ability_scores[ability] < prerequisites->ability_scores[ability])
+        {
+            return false;
+        }
+    }
+
     return true;
 }
 

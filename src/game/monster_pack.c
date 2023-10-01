@@ -139,8 +139,8 @@ const struct monster_pack_data monster_pack_database[] = {
         },
     },
     [MONSTER_PACK_TYPE_OGRES] = {
-        .min_floor = 6,
-        .max_floor = 10,
+        .min_floor = 8,
+        .max_floor = 12,
 
         .monsters = {
             [MONSTER_TYPE_OGRE] = {
@@ -154,7 +154,7 @@ const struct monster_pack_data monster_pack_database[] = {
         .max_floor = 6,
 
         .monsters = {
-            [MONSTER_TYPE_OGRE] = {
+            [MONSTER_TYPE_ORC] = {
                 .min_count = 2,
                 .max_count = 4,
             },

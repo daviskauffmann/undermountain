@@ -37,22 +37,17 @@ struct room *map_get_random_room(const struct map *map);
 
 bool map_is_transparent(
     const struct map *map,
-    int x,
-    int y);
-
+    int x, int y);
 bool map_is_walkable(
     const struct map *map,
-    int x,
-    int y);
+    int x, int y);
 
 bool map_is_animation_playing(const struct map *map);
 
 TCOD_Map *map_to_TCOD_map(const struct map *map);
-
 TCOD_Map *map_to_fov_map(
     const struct map *map,
-    int x,
-    int y,
+    int x, int y,
     int radius);
 
 #endif

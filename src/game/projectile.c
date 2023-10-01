@@ -4,6 +4,7 @@
 #include "color.h"
 #include "explosion.h"
 #include "light.h"
+#include "list.h"
 #include "object.h"
 #include "surface.h"
 #include "util.h"

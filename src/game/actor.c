@@ -985,6 +985,8 @@ void actor_calc_fov(struct actor *const actor)
     {
         for (int y = 0; y < MAP_HEIGHT; y++)
         {
+            bool in_fov = false;
+
             if (!TCOD_map_is_in_fov(actor->fov, x, y) &&
                 TCOD_map_is_in_fov(los_map, x, y))
             {
@@ -995,7 +997,9 @@ void actor_calc_fov(struct actor *const actor)
                     if (object->light_fov &&
                         TCOD_map_is_in_fov(object->light_fov, x, y))
                     {
-                        TCOD_map_set_in_fov(actor->fov, x, y, true);
+                        in_fov = true;
+
+                        goto next_tile;
                     }
                 }
 
@@ -1006,7 +1010,9 @@ void actor_calc_fov(struct actor *const actor)
                     if (other->light_fov &&
                         TCOD_map_is_in_fov(other->light_fov, x, y))
                     {
-                        TCOD_map_set_in_fov(actor->fov, x, y, true);
+                        in_fov = true;
+
+                        goto next_tile;
                     }
                 }
 
@@ -1017,7 +1023,9 @@ void actor_calc_fov(struct actor *const actor)
                     if (projectile->light_fov &&
                         TCOD_map_is_in_fov(projectile->light_fov, x, y))
                     {
-                        TCOD_map_set_in_fov(actor->fov, x, y, true);
+                        in_fov = true;
+
+                        goto next_tile;
                     }
                 }
 
@@ -1028,7 +1036,9 @@ void actor_calc_fov(struct actor *const actor)
                     if (explosion->fov &&
                         TCOD_map_is_in_fov(explosion->fov, x, y))
                     {
-                        TCOD_map_set_in_fov(actor->fov, x, y, true);
+                        in_fov = true;
+
+                        goto next_tile;
                     }
                 }
 
@@ -1039,9 +1049,17 @@ void actor_calc_fov(struct actor *const actor)
                     if (surface->light_fov &&
                         TCOD_map_is_in_fov(surface->light_fov, x, y))
                     {
-                        TCOD_map_set_in_fov(actor->fov, x, y, true);
+                        in_fov = true;
+
+                        goto next_tile;
                     }
                 }
+            }
+
+        next_tile:;
+            if (in_fov)
+            {
+                TCOD_map_set_in_fov(actor->fov, x, y, true);
             }
         }
     }

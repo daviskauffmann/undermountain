@@ -292,6 +292,9 @@ static bool do_spellbook_action(const enum spell_type spell_type)
 static TCOD_noise_t noise;
 static float noise_x;
 
+/* Graphics settings */
+static bool complex_lighting = true;
+
 static void init(const struct scene *const previous_scene)
 {
     previous_scene;
@@ -921,6 +924,11 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
+        case SDLK_F1:
+        {
+            complex_lighting = !complex_lighting;
+        }
+        break;
         case SDLK_PAGEUP:
         {
             if (panel_rect.visible)
@@ -1054,7 +1062,50 @@ struct scene *handle_event(const SDL_Event *event)
     return &game_scene;
 }
 
-static struct scene *update(TCOD_Console *const console, const float delta_time)
+static int get_wall_glyph(const struct map *const map, const int x, const int y)
+{
+    static const int glyphs[] = {
+        0x25A0, //  0 - none = ■
+        0x2502, //  1 - N    = │
+        0x2500, //  2 - E    = ─
+        0x2514, //  3 - NE   = └
+        0x2502, //  4 - S    = │
+        0x2502, //  5 - NS   = │
+        0x250C, //  6 - SE   = ┌
+        0x251C, //  7 - NES  = ├
+        0x2500, //  8 - W    = ─
+        0x2518, //  9 - NW   = ┘
+        0x2500, // 10 - EW   = ─
+        0x2534, // 11 - NEW  = ┴
+        0x2510, // 12 - SW   = ┐
+        0x2524, // 13 - NSW  = ┤
+        0x252C, // 14 - ESW  = ┬
+        0x253C, // 15 - NESW = ┼
+    };
+
+    int index = 0;
+    if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
+    {
+        index |= 1 << 0;
+    }
+    if (x < MAP_WIDTH - 1 && map->tiles[x + 1][y].type == TILE_TYPE_WALL)
+    {
+        index |= 1 << 1;
+    }
+    if (y < MAP_HEIGHT - 1 && map->tiles[x][y + 1].type == TILE_TYPE_WALL)
+    {
+        index |= 1 << 2;
+    }
+    if (x > 0 && map->tiles[x - 1][y].type == TILE_TYPE_WALL)
+    {
+        index |= 1 << 3;
+    }
+
+    return glyphs[index];
+}
+
+static struct scene *
+update(TCOD_Console *const console, const float delta_time)
 {
     if (!world->player)
     {
@@ -1134,257 +1185,269 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             view_rect.y = 0;
         }
 
-        // calculate random noise coefficients
-        noise_x += delta_time * 10;
-        float noise_dx = noise_x + 20;
-        const float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-        noise_dx += 30;
-        const float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
-        const float di = 0.2f * TCOD_noise_get(noise, &noise_x);
-
         // get map to draw
         const struct map *const map = &world->maps[world->player->floor];
 
-        // draw tiles
-        for (int x = view_rect.x; x < view_rect.x + view_rect.width; x++)
+        if (complex_lighting)
         {
-            for (int y = view_rect.y; y < view_rect.y + view_rect.height; y++)
+            // calculate random noise coefficients
+            noise_x += delta_time * 10;
+            float noise_dx = noise_x + 20;
+            const float dx = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+            noise_dx += 30;
+            const float dy = TCOD_noise_get(noise, &noise_dx) * 0.5f;
+            const float di = 0.2f * TCOD_noise_get(noise, &noise_x);
+
+            // draw tiles
+            for (int x = view_rect.x; x < view_rect.x + view_rect.width; x++)
             {
-                if (map_is_inside(x, y))
+                for (int y = view_rect.y; y < view_rect.y + view_rect.height; y++)
                 {
-                    // ambient lighting
-                    float fg_r = tile_metadata.ambient_light_color.r;
-                    float fg_g = tile_metadata.ambient_light_color.g;
-                    float fg_b = tile_metadata.ambient_light_color.b;
-                    float bg_r = fg_r * tile_metadata.ambient_light_intensity;
-                    float bg_g = fg_g * tile_metadata.ambient_light_intensity;
-                    float bg_b = fg_b * tile_metadata.ambient_light_intensity;
-
-                    if (TCOD_map_is_in_fov(world->player->fov, x, y))
+                    if (map_is_inside(x, y))
                     {
-                        // calculate object lighting
-                        for (size_t object_index = 0; object_index < map->objects->size; object_index++)
+                        // ambient lighting
+                        float fg_r = tile_metadata.ambient_light_color.r;
+                        float fg_g = tile_metadata.ambient_light_color.g;
+                        float fg_b = tile_metadata.ambient_light_color.b;
+                        float bg_r = fg_r * tile_metadata.ambient_light_intensity;
+                        float bg_g = fg_g * tile_metadata.ambient_light_intensity;
+                        float bg_b = fg_b * tile_metadata.ambient_light_intensity;
+
+                        if (TCOD_map_is_in_fov(world->player->fov, x, y))
                         {
-                            const struct object *const object = list_get(map->objects, object_index);
-
-                            if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
+                            // calculate object lighting
+                            for (size_t object_index = 0; object_index < map->objects->size; object_index++)
                             {
-                                const struct object_data *const object_data = &object_database[object->type];
-                                const struct light_data *const light_data = &light_database[object_data->light_type];
+                                const struct object *const object = list_get(map->objects, object_index);
 
-                                const float radius_sq = powf((float)light_data->radius, 2);
-                                const float distance_sq =
-                                    powf((float)(x - object->x + (light_data->flicker ? dx : 0)), 2) +
-                                    powf((float)(y - object->y + (light_data->flicker ? dy : 0)), 2);
-                                const float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
+                                if (object->light_fov && TCOD_map_is_in_fov(object->light_fov, x, y))
+                                {
+                                    const struct object_data *const object_data = &object_database[object->type];
+                                    const struct light_data *const light_data = &light_database[object_data->light_type];
 
-                                fg_r += light_data->color.r * attenuation;
-                                fg_g += light_data->color.g * attenuation;
-                                fg_b += light_data->color.b * attenuation;
-                                bg_r += fg_r * light_data->intensity * attenuation;
-                                bg_g += fg_g * light_data->intensity * attenuation;
-                                bg_b += fg_b * light_data->intensity * attenuation;
+                                    const float radius_sq = powf((float)light_data->radius, 2);
+                                    const float distance_sq =
+                                        powf((float)(x - object->x + (light_data->flicker ? dx : 0)), 2) +
+                                        powf((float)(y - object->y + (light_data->flicker ? dy : 0)), 2);
+                                    const float attenuation = CLAMP(
+                                        0.0f,
+                                        1.0f,
+                                        (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
+
+                                    fg_r += light_data->color.r * attenuation;
+                                    fg_g += light_data->color.g * attenuation;
+                                    fg_b += light_data->color.b * attenuation;
+                                    bg_r += fg_r * light_data->intensity * attenuation;
+                                    bg_g += fg_g * light_data->intensity * attenuation;
+                                    bg_b += fg_b * light_data->intensity * attenuation;
+                                }
+                            }
+
+                            // calculate actor lighting
+                            for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+                            {
+                                const struct actor *const actor = list_get(map->actors, actor_index);
+
+                                if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
+                                {
+                                    const struct light_data *light_data = &light_database[actor->light_type];
+
+                                    const float radius_sq = powf((float)light_data->radius, 2);
+                                    const float distance_sq =
+                                        powf((float)(x - actor->x + (light_data->flicker ? dx : 0)), 2) +
+                                        powf((float)(y - actor->y + (light_data->flicker ? dy : 0)), 2);
+                                    const float attenuation = CLAMP(
+                                        0.0f,
+                                        1.0f,
+                                        (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
+
+                                    fg_r += light_data->color.r * attenuation;
+                                    fg_g += light_data->color.g * attenuation;
+                                    fg_b += light_data->color.b * attenuation;
+                                    bg_r += light_data->color.r * light_data->intensity * attenuation;
+                                    bg_g += light_data->color.g * light_data->intensity * attenuation;
+                                    bg_b += light_data->color.b * light_data->intensity * attenuation;
+                                }
+                            }
+
+                            // calculate projectile lighting
+                            for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
+                            {
+                                const struct projectile *const projectile = list_get(map->projectiles, projectile_index);
+
+                                if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
+                                {
+                                    const struct projectile_data *const projectile_data = &projectile_database[projectile->type];
+                                    const struct light_data *const light_data = &light_database[projectile_data->light_type];
+
+                                    const float radius_sq = powf((float)light_data->radius, 2);
+                                    const float distance_sq =
+                                        powf((float)(x - projectile->x + (light_data->flicker ? dx : 0)), 2) +
+                                        powf((float)(y - projectile->y + (light_data->flicker ? dy : 0)), 2);
+                                    const float attenuation = CLAMP(
+                                        0.0f,
+                                        1.0f,
+                                        (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
+
+                                    fg_r += light_data->color.r * attenuation;
+                                    fg_g += light_data->color.g * attenuation;
+                                    fg_b += light_data->color.b * attenuation;
+                                    bg_r += light_data->color.r * light_data->intensity * attenuation;
+                                    bg_g += light_data->color.g * light_data->intensity * attenuation;
+                                    bg_b += light_data->color.b * light_data->intensity * attenuation;
+                                }
+                            }
+
+                            // calculate explosion lighting
+                            for (size_t explosion_index = 0; explosion_index < map->explosions->size; explosion_index++)
+                            {
+                                const struct explosion *const explosion = list_get(map->explosions, explosion_index);
+
+                                if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
+                                {
+                                    const float radius_sq = powf((float)explosion->radius, 2);
+                                    const float distance_sq =
+                                        powf((float)(x - explosion->x + dx * 2), 2) +
+                                        powf((float)(y - explosion->y + dy * 2), 2);
+                                    const float attenuation = CLAMP(
+                                        0.0f,
+                                        1.0f,
+                                        (radius_sq - distance_sq) / radius_sq + di * 2);
+
+                                    fg_r += explosion->color.r * attenuation;
+                                    fg_g += explosion->color.g * attenuation;
+                                    fg_b += explosion->color.b * attenuation;
+                                    bg_r += explosion->color.r * 0.5f * attenuation;
+                                    bg_g += explosion->color.g * 0.5f * attenuation;
+                                    bg_b += explosion->color.b * 0.5f * attenuation;
+                                }
+                            }
+
+                            // calculate surface lighting
+                            for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
+                            {
+                                const struct surface *const surface = list_get(map->surfaces, surface_index);
+
+                                if (surface->light_fov && TCOD_map_is_in_fov(surface->light_fov, x, y))
+                                {
+                                    const struct surface_data *const surface_data = &surface_database[surface->type];
+                                    const struct light_data *const light_data = &light_database[surface_data->light_type];
+
+                                    const float radius_sq = powf((float)light_data->radius, 2);
+                                    const float distance_sq =
+                                        powf((float)(x - surface->x + (light_data->flicker ? dx : 0)), 2) +
+                                        powf((float)(y - surface->y + (light_data->flicker ? dy : 0)), 2);
+                                    const float attenuation = CLAMP(
+                                        0.0f,
+                                        1.0f,
+                                        (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
+
+                                    fg_r += light_data->color.r * attenuation;
+                                    fg_g += light_data->color.g * attenuation;
+                                    fg_b += light_data->color.b * attenuation;
+                                    bg_r += light_data->color.r * light_data->intensity * attenuation;
+                                    bg_g += light_data->color.g * light_data->intensity * attenuation;
+                                    bg_b += light_data->color.b * light_data->intensity * attenuation;
+                                }
                             }
                         }
 
-                        // calculate actor lighting
-                        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+                        // apply tonemapping
+                        const struct tile *const tile = &map->tiles[x][y];
+                        const struct tile_data *const tile_data = &tile_database[tile->type];
+
+                        const float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
+                        const float fg_mult = fg_max > 255 ? 255 / fg_max : 1;
+                        const TCOD_ColorRGB fg_color = TCOD_color_multiply(
+                            TCOD_color_RGB(
+                                (uint8_t)(fg_r * fg_mult),
+                                (uint8_t)(fg_g * fg_mult),
+                                (uint8_t)(fg_b * fg_mult)),
+                            tile_data->color);
+                        const float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
+                        const float bg_mult = bg_max > 255 ? 255 / bg_max : 1;
+                        const TCOD_ColorRGB bg_color = TCOD_color_multiply(
+                            TCOD_color_RGB(
+                                (uint8_t)(bg_r * bg_mult),
+                                (uint8_t)(bg_g * bg_mult),
+                                (uint8_t)(bg_b * bg_mult)),
+                            tile_data->color);
+
+                        if (tile->explored)
                         {
-                            const struct actor *const actor = list_get(map->actors, actor_index);
+                            int glyph = tile_data->glyph;
 
-                            if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
+                            // select appropriate wall graphic
+                            if (tile->type == TILE_TYPE_WALL)
                             {
-                                const struct light_data *light_data = &light_database[actor->light_type];
-
-                                const float radius_sq = powf((float)light_data->radius, 2);
-                                const float distance_sq =
-                                    powf((float)(x - actor->x + (light_data->flicker ? dx : 0)), 2) +
-                                    powf((float)(y - actor->y + (light_data->flicker ? dy : 0)), 2);
-                                const float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
-
-                                fg_r += light_data->color.r * attenuation;
-                                fg_g += light_data->color.g * attenuation;
-                                fg_b += light_data->color.b * attenuation;
-                                bg_r += light_data->color.r * light_data->intensity * attenuation;
-                                bg_g += light_data->color.g * light_data->intensity * attenuation;
-                                bg_b += light_data->color.b * light_data->intensity * attenuation;
+                                glyph = get_wall_glyph(map, x, y);
                             }
+
+                            TCOD_console_set_char_foreground(
+                                console,
+                                x - view_rect.x,
+                                y - view_rect.y,
+                                fg_color);
+                            TCOD_console_set_char(
+                                console,
+                                x - view_rect.x,
+                                y - view_rect.y,
+                                glyph);
                         }
 
-                        // calculate projectile lighting
-                        for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
-                        {
-                            const struct projectile *const projectile = list_get(map->projectiles, projectile_index);
-
-                            if (projectile->light_fov && TCOD_map_is_in_fov(projectile->light_fov, x, y))
-                            {
-                                const struct projectile_data *const projectile_data = &projectile_database[projectile->type];
-                                const struct light_data *const light_data = &light_database[projectile_data->light_type];
-
-                                const float radius_sq = powf((float)light_data->radius, 2);
-                                const float distance_sq =
-                                    powf((float)(x - projectile->x + (light_data->flicker ? dx : 0)), 2) +
-                                    powf((float)(y - projectile->y + (light_data->flicker ? dy : 0)), 2);
-                                const float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
-
-                                fg_r += light_data->color.r * attenuation;
-                                fg_g += light_data->color.g * attenuation;
-                                fg_b += light_data->color.b * attenuation;
-                                bg_r += light_data->color.r * light_data->intensity * attenuation;
-                                bg_g += light_data->color.g * light_data->intensity * attenuation;
-                                bg_b += light_data->color.b * light_data->intensity * attenuation;
-                            }
-                        }
-
-                        // calculate explosion lighting
-                        for (size_t explosion_index = 0; explosion_index < map->explosions->size; explosion_index++)
-                        {
-                            const struct explosion *const explosion = list_get(map->explosions, explosion_index);
-
-                            if (explosion->fov && TCOD_map_is_in_fov(explosion->fov, x, y))
-                            {
-                                const float radius_sq = powf((float)explosion->radius, 2);
-                                const float distance_sq =
-                                    powf((float)(x - explosion->x + dx * 2), 2) +
-                                    powf((float)(y - explosion->y + dy * 2), 2);
-                                const float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + di * 2);
-
-                                fg_r += explosion->color.r * attenuation;
-                                fg_g += explosion->color.g * attenuation;
-                                fg_b += explosion->color.b * attenuation;
-                                bg_r += explosion->color.r * 0.5f * attenuation;
-                                bg_g += explosion->color.g * 0.5f * attenuation;
-                                bg_b += explosion->color.b * 0.5f * attenuation;
-                            }
-                        }
-
-                        // calculate surface lighting
-                        for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
-                        {
-                            const struct surface *const surface = list_get(map->surfaces, surface_index);
-
-                            if (surface->light_fov && TCOD_map_is_in_fov(surface->light_fov, x, y))
-                            {
-                                const struct surface_data *const surface_data = &surface_database[surface->type];
-                                const struct light_data *const light_data = &light_database[surface_data->light_type];
-
-                                const float radius_sq = powf((float)light_data->radius, 2);
-                                const float distance_sq =
-                                    powf((float)(x - surface->x + (light_data->flicker ? dx : 0)), 2) +
-                                    powf((float)(y - surface->y + (light_data->flicker ? dy : 0)), 2);
-                                const float attenuation = CLAMP(
-                                    0.0f,
-                                    1.0f,
-                                    (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
-
-                                fg_r += light_data->color.r * attenuation;
-                                fg_g += light_data->color.g * attenuation;
-                                fg_b += light_data->color.b * attenuation;
-                                bg_r += light_data->color.r * light_data->intensity * attenuation;
-                                bg_g += light_data->color.g * light_data->intensity * attenuation;
-                                bg_b += light_data->color.b * light_data->intensity * attenuation;
-                            }
-                        }
-                    }
-
-                    // apply tonemapping
-                    const struct tile *const tile = &map->tiles[x][y];
-                    const struct tile_data *const tile_data = &tile_database[tile->type];
-
-                    const float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
-                    const float fg_mult = fg_max > 255 ? 255 / fg_max : 1;
-                    const TCOD_ColorRGB fg_color = TCOD_color_multiply(
-                        TCOD_color_RGB(
-                            (uint8_t)(fg_r * fg_mult),
-                            (uint8_t)(fg_g * fg_mult),
-                            (uint8_t)(fg_b * fg_mult)),
-                        tile_data->color);
-                    const float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
-                    const float bg_mult = bg_max > 255 ? 255 / bg_max : 1;
-                    const TCOD_ColorRGB bg_color = TCOD_color_multiply(
-                        TCOD_color_RGB(
-                            (uint8_t)(bg_r * bg_mult),
-                            (uint8_t)(bg_g * bg_mult),
-                            (uint8_t)(bg_b * bg_mult)),
-                        tile_data->color);
-
-                    if (tile->explored)
-                    {
-                        int glyph = tile_data->glyph;
-
-                        // select appropriate wall graphic
-                        if (tile->type == TILE_TYPE_WALL)
-                        {
-                            const int glyphs[] = {
-                                0x25A0, //  0 - none = ■
-                                0x2502, //  1 - N    = │
-                                0x2500, //  2 - E    = ─
-                                0x2514, //  3 - NE   = └
-                                0x2502, //  4 - S    = │
-                                0x2502, //  5 - NS   = │
-                                0x250C, //  6 - SE   = ┌
-                                0x251C, //  7 - NES  = ├
-                                0x2500, //  8 - W    = ─
-                                0x2518, //  9 - NW   = ┘
-                                0x2500, // 10 - EW   = ─
-                                0x2534, // 11 - NEW  = ┴
-                                0x2510, // 12 - SW   = ┐
-                                0x2524, // 13 - NSW  = ┤
-                                0x252C, // 14 - ESW  = ┬
-                                0x253C, // 15 - NESW = ┼
-                            };
-
-                            int index = 0;
-                            if (y > 0 && map->tiles[x][y - 1].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 0;
-                            }
-                            if (x < MAP_WIDTH - 1 && map->tiles[x + 1][y].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 1;
-                            }
-                            if (y < MAP_HEIGHT - 1 && map->tiles[x][y + 1].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 2;
-                            }
-                            if (x > 0 && map->tiles[x - 1][y].type == TILE_TYPE_WALL)
-                            {
-                                index |= 1 << 3;
-                            }
-
-                            glyph = glyphs[index];
-                        }
-
-                        TCOD_console_set_char_foreground(
+                        TCOD_console_set_char_background(
                             console,
                             x - view_rect.x,
                             y - view_rect.y,
-                            fg_color);
-                        TCOD_console_set_char(
+                            bg_color,
+                            TCOD_BKGND_SET);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // draw tiles
+            for (int x = view_rect.x; x < view_rect.x + view_rect.width; x++)
+            {
+                for (int y = view_rect.y; y < view_rect.y + view_rect.height; y++)
+                {
+                    if (map_is_inside(x, y))
+                    {
+                        const struct tile *const tile = &map->tiles[x][y];
+                        const struct tile_data *const tile_data = &tile_database[tile->type];
+
+                        if (tile->explored)
+                        {
+                            int glyph = tile_data->glyph;
+
+                            // select appropriate wall graphic
+                            if (tile->type == TILE_TYPE_WALL)
+                            {
+                                glyph = get_wall_glyph(map, x, y);
+                            }
+
+                            TCOD_console_set_char_foreground(
+                                console,
+                                x - view_rect.x,
+                                y - view_rect.y,
+                                TCOD_map_is_in_fov(world->player->fov, x, y)
+                                    ? color_white
+                                    : color_dark_gray);
+                            TCOD_console_set_char(
+                                console,
+                                x - view_rect.x,
+                                y - view_rect.y,
+                                glyph);
+                        }
+
+                        TCOD_console_set_char_background(
                             console,
                             x - view_rect.x,
                             y - view_rect.y,
-                            glyph);
+                            color_black,
+                            TCOD_BKGND_SET);
                     }
-
-                    TCOD_console_set_char_background(
-                        console,
-                        x - view_rect.x,
-                        y - view_rect.y,
-                        bg_color,
-                        TCOD_BKGND_SET);
                 }
             }
         }

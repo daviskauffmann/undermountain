@@ -18,14 +18,17 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 15,
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 2,
+            [ABILITY_WISDOM] = 14,
+            [ABILITY_CHARISMA] = 4,
         },
 
         .special_abilities = {
+            [SPECIAL_ABILITY_BLINDSENSE] = true,
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
         },
 
         .feats = {
-            [FEAT_WEAPON_FINESSE] = true,
+            [FEAT_ALERTNESS] = true,
         },
     },
     [MONSTER_TYPE_BUGBEAR] = {
@@ -43,14 +46,19 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 12,
             [ABILITY_CONSTITUTION] = 13,
             [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 10,
+            [ABILITY_CHARISMA] = 9,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .feats = {
+            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_WEAPON_FOCUS] = true,
             [FEAT_SHIELD_PROFICIENCY] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
         },
@@ -95,14 +103,51 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 17,
             [ABILITY_CONSTITUTION] = 12,
             [ABILITY_INTELLIGENCE] = 1,
+            [ABILITY_WISDOM] = 12,
+            [ABILITY_CHARISMA] = 4,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
+        },
+
+        .special_attacks = {
+            [SPECIAL_ATTACK_DISEASE] = true,
         },
 
         .feats = {
+            [FEAT_ALERTNESS] = true,
             [FEAT_WEAPON_FINESSE] = true,
+        },
+    },
+    [MONSTER_TYPE_DOG] = {
+        .name = "Dog",
+
+        .race = RACE_ANIMAL,
+        .class = CLASS_DOG,
+        .size = SIZE_SMALL,
+        .faction = FACTION_WILD_ANIMAL,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 13,
+            [ABILITY_DEXTERITY] = 17,
+            [ABILITY_CONSTITUTION] = 15,
+            [ABILITY_INTELLIGENCE] = 2,
+            [ABILITY_WISDOM] = 12,
+            [ABILITY_CHARISMA] = 6,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
+        },
+
+        .feats = {
+            [FEAT_ALERTNESS] = true,
+            [FEAT_TRACK] = true,
         },
     },
     [MONSTER_TYPE_FIRE_BEETLE] = {
@@ -120,6 +165,8 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 11,
             [ABILITY_CONSTITUTION] = 11,
             [ABILITY_INTELLIGENCE] = 0,
+            [ABILITY_WISDOM] = 10,
+            [ABILITY_CHARISMA] = 7,
         },
 
         .special_abilities = {
@@ -141,6 +188,20 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 10,
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 0,
+            [ABILITY_WISDOM] = 11,
+            [ABILITY_CHARISMA] = 9,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_SCENT] = true,
+        },
+
+        .special_attacks = {
+            [SPECIAL_ATTACK_IMPROVED_GRAB] = true,
+        },
+
+        .feats = {
+            [FEAT_TRACK] = true,
         },
     },
     [MONSTER_TYPE_GNOLL] = {
@@ -158,10 +219,20 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 10,
             [ABILITY_CONSTITUTION] = 13,
             [ABILITY_INTELLIGENCE] = 8,
+            [ABILITY_WISDOM] = 11,
+            [ABILITY_CHARISMA] = 8,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        .feats = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_POWER_ATTACK] = true,
+            [FEAT_SHIELD_PROFICIENCY] = true,
+            [FEAT_WEAPON_PROFICIENCY_MARTIAL] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
         },
 
         .equipment = {
@@ -211,6 +282,8 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 13,
             [ABILITY_CONSTITUTION] = 12,
             [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 9,
+            [ABILITY_CHARISMA] = 6,
         },
 
         .special_abilities = {
@@ -218,6 +291,7 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
+            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
             [FEAT_SHIELD_PROFICIENCY] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
@@ -266,6 +340,8 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 13,
             [ABILITY_CONSTITUTION] = 14,
             [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 9,
+            [ABILITY_CHARISMA] = 8,
         },
 
         .special_abilities = {
@@ -273,6 +349,7 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
+            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
             [FEAT_SHIELD_PROFICIENCY] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
@@ -322,10 +399,17 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 15,
             [ABILITY_CONSTITUTION] = 15,
             [ABILITY_INTELLIGENCE] = 2,
+            [ABILITY_WISDOM] = 13,
+            [ABILITY_CHARISMA] = 6,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
+        },
+
+        .feats = {
+            [FEAT_ALERTNESS] = true,
         },
     },
     [MONSTER_TYPE_KOBOLD] = {
@@ -343,18 +427,17 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 13,
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 9,
+            [ABILITY_CHARISMA] = 8,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
+            [SPECIAL_ABILITY_LIGHT_SENSITIVITY] = true,
         },
 
         .feats = {
-            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
-            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
-        },
-
-        .feats = {
+            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
         },
@@ -385,6 +468,114 @@ const struct monster_data monster_database[] = {
             },
         },
     },
+    [MONSTER_TYPE_OGRE] = {
+        .name = "Ogre",
+
+        .race = RACE_GIANT,
+        .class = CLASS_OGRE,
+        .size = SIZE_LARGE,
+        .faction = FACTION_OGRE,
+
+        .level = 4,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 21,
+            [ABILITY_DEXTERITY] = 8,
+            [ABILITY_CONSTITUTION] = 15,
+            [ABILITY_INTELLIGENCE] = 6,
+            [ABILITY_WISDOM] = 10,
+            [ABILITY_CHARISMA] = 7,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+
+        .feats = {
+            [FEAT_TOUGHNESS] = true,
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_ARMOR_PROFICIENCY_MEDIUM] = true,
+            [FEAT_WEAPON_FOCUS] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
+            [FEAT_WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
+
+        .equipment = {
+            [EQUIP_SLOT_ARMOR] = {
+                .type = ITEM_TYPE_HIDE_ARMOR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_GREATCLUB,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+        },
+
+        .items = {
+            [ITEM_TYPE_JAVELIN] = {
+                .min_stack = 0,
+                .max_stack = 3,
+            },
+        },
+    },
+    [MONSTER_TYPE_ORC] = {
+        .name = "Orc",
+
+        .race = RACE_HUMANOID,
+        .class = CLASS_ORC,
+        .size = SIZE_MEDIUM,
+        .faction = FACTION_ORC,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 17,
+            [ABILITY_DEXTERITY] = 11,
+            [ABILITY_CONSTITUTION] = 12,
+            [ABILITY_INTELLIGENCE] = 8,
+            [ABILITY_WISDOM] = 7,
+            [ABILITY_CHARISMA] = 6,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+            [SPECIAL_ABILITY_LIGHT_SENSITIVITY] = true,
+        },
+
+        .feats = {
+            [FEAT_ALERTNESS] = true,
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
+            [FEAT_WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
+
+        .equipment = {
+            [EQUIP_SLOT_ARMOR] = {
+                .type = ITEM_TYPE_STUDDED_LEATHER_ARMOR,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_FALCHION,
+
+                .min_stack = 1,
+                .max_stack = 1,
+            },
+        },
+
+        .items = {
+            [ITEM_TYPE_JAVELIN] = {
+                .min_stack = 0,
+                .max_stack = 3,
+            },
+        },
+    },
     [MONSTER_TYPE_KRENSHAR] = {
         .name = "Krenshar",
 
@@ -400,15 +591,57 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 14,
             [ABILITY_CONSTITUTION] = 11,
             [ABILITY_INTELLIGENCE] = 6,
+            [ABILITY_WISDOM] = 12,
+            [ABILITY_CHARISMA] = 13,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
         },
 
-        // .feats = {
-        //     [FEAT_WEAPON_MULTIATTACK] = true,
-        // },
+        .special_attacks = {
+            [SPECIAL_ATTACK_SCARE] = true,
+        },
+
+        .feats = {
+            [FEAT_MULTIATTACK] = true,
+        },
+    },
+    [MONSTER_TYPE_RAKSHASA] = {
+        .name = "Rakshasa",
+
+        .race = RACE_OUTSIDER,
+        .class = CLASS_RAKSHASA,
+        .size = SIZE_MEDIUM,
+        .faction = FACTION_OUTSIDER,
+
+        .level = 7,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 12,
+            [ABILITY_DEXTERITY] = 14,
+            [ABILITY_CONSTITUTION] = 16,
+            [ABILITY_INTELLIGENCE] = 13,
+            [ABILITY_WISDOM] = 13,
+            [ABILITY_CHARISMA] = 17,
+        },
+
+        .special_abilities = {
+            // TODO: shapeshift
+            // TODO: damage reduction
+            // TODO: spell resistance
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        // TODO: spells
+
+        .feats = {
+            [FEAT_ALERTNESS] = true,
+            [FEAT_COMBAT_CASTING] = true,
+            [FEAT_DODGE] = true,
+        },
     },
     [MONSTER_TYPE_RAT] = {
         .name = "Rat",
@@ -425,20 +658,24 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 15,
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 2,
+            [ABILITY_WISDOM] = 12,
+            [ABILITY_CHARISMA] = 2,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .feats = {
             [FEAT_WEAPON_FINESSE] = true,
+            [FEAT_STEALTHY] = true,
         },
     },
     [MONSTER_TYPE_RED_DRAGON_WYRMLING] = {
         .name = "Wyrmling Red Dragon",
 
-        .race = RACE_RED_DRAGON_WYRMLING,
+        .race = RACE_RED_DRAGON,
         .class = CLASS_RED_DRAGON_WYRMLING,
         .size = SIZE_MEDIUM,
         .faction = FACTION_RED_DRAGON,
@@ -450,12 +687,14 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 10,
             [ABILITY_CONSTITUTION] = 15,
             [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 11,
+            [ABILITY_CHARISMA] = 10,
         },
     },
     [MONSTER_TYPE_RED_DRAGON_ADULT] = {
         .name = "Adult Red Dragon",
 
-        .race = RACE_RED_DRAGON_ADULT,
+        .race = RACE_RED_DRAGON,
         .class = CLASS_RED_DRAGON_ADULT,
         .size = SIZE_HUGE,
         .faction = FACTION_RED_DRAGON,
@@ -467,12 +706,14 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 10,
             [ABILITY_CONSTITUTION] = 21,
             [ABILITY_INTELLIGENCE] = 16,
+            [ABILITY_WISDOM] = 19,
+            [ABILITY_CHARISMA] = 16,
         },
     },
     [MONSTER_TYPE_RED_DRAGON_ANCIENT] = {
         .name = "Ancient Red Dragon",
 
-        .race = RACE_RED_DRAGON_ANCIENT,
+        .race = RACE_RED_DRAGON,
         .class = CLASS_RED_DRAGON_ANCIENT,
         .size = SIZE_GARGANTUAN,
         .faction = FACTION_RED_DRAGON,
@@ -484,6 +725,8 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 10,
             [ABILITY_CONSTITUTION] = 29,
             [ABILITY_INTELLIGENCE] = 24,
+            [ABILITY_WISDOM] = 25,
+            [ABILITY_CHARISMA] = 24,
         },
     },
     [MONSTER_TYPE_SKELETON_WARRIOR] = {
@@ -501,10 +744,19 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 13,
             [ABILITY_CONSTITUTION] = 0,
             [ABILITY_INTELLIGENCE] = 0,
+            [ABILITY_WISDOM] = 10,
+            [ABILITY_CHARISMA] = 1,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
+        },
+
+        .feats = {
+            [FEAT_IMPROVED_INITIATIVE] = true,
+            [FEAT_SHIELD_PROFICIENCY] = true,
+            [FEAT_WEAPON_PROFICIENCY_MARTIAL] = true,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
         },
 
         .equipment = {
@@ -537,6 +789,21 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 17,
             [ABILITY_CONSTITUTION] = 11,
             [ABILITY_INTELLIGENCE] = 1,
+            [ABILITY_WISDOM] = 12,
+            [ABILITY_CHARISMA] = 2,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_SCENT] = true,
+        },
+
+        .special_attacks = {
+            [SPECIAL_ATTACK_POISON] = true,
+        },
+
+        .feats = {
+            [FEAT_IMPROVED_INITIATIVE] = true,
+            [FEAT_WEAPON_FINESSE] = true,
         },
     },
     [MONSTER_TYPE_SPIDER] = {
@@ -554,6 +821,18 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 17,
             [ABILITY_CONSTITUTION] = 10,
             [ABILITY_INTELLIGENCE] = 0,
+            [ABILITY_WISDOM] = 10,
+            [ABILITY_CHARISMA] = 2,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+            [SPECIAL_ABILITY_TREMORSENSE] = true,
+        },
+
+        .special_attacks = {
+            [SPECIAL_ATTACK_POISON] = true,
+            [SPECIAL_ATTACK_WEB] = true,
         },
 
         .feats = {
@@ -575,10 +854,25 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 14,
             [ABILITY_CONSTITUTION] = 23,
             [ABILITY_INTELLIGENCE] = 6,
+            [ABILITY_WISDOM] = 9,
+            [ABILITY_CHARISMA] = 6,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_REGENERATION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
+        },
+
+        .special_attacks = {
+            [SPECIAL_ATTACK_REND] = true,
+        },
+
+        .feats = {
+            [FEAT_ALERTNESS] = true,
+            [FEAT_IRON_WILL] = true,
+            [FEAT_TRACK] = true,
         },
     },
     [MONSTER_TYPE_WOLF] = {
@@ -596,10 +890,22 @@ const struct monster_data monster_database[] = {
             [ABILITY_DEXTERITY] = 15,
             [ABILITY_CONSTITUTION] = 15,
             [ABILITY_INTELLIGENCE] = 2,
+            [ABILITY_WISDOM] = 12,
+            [ABILITY_CHARISMA] = 6,
         },
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
+        },
+
+        .special_attacks = {
+            [SPECIAL_ATTACK_TRIP] = true,
+        },
+
+        .feats = {
+            [FEAT_TRACK] = true,
+            [FEAT_WEAPON_FOCUS] = true,
         },
     },
 };

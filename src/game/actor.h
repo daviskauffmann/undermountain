@@ -11,6 +11,7 @@
 #include "natural_weapon.h"
 #include "size.h"
 #include "special_ability.h"
+#include "special_attack.h"
 #include "spell.h"
 #include <libtcod.h>
 
@@ -28,9 +29,8 @@ enum race
     RACE_GIANT,
     RACE_HUMANOID,
     RACE_MAGICAL_BEAST,
-    RACE_RED_DRAGON_WYRMLING,
-    RACE_RED_DRAGON_ADULT,
-    RACE_RED_DRAGON_ANCIENT,
+    RACE_OUTSIDER,
+    RACE_RED_DRAGON,
     RACE_UNDEAD,
     RACE_VERMIN,
 
@@ -46,7 +46,9 @@ enum race
 enum class
 {
     // player classes
+    CLASS_CLERIC,
     CLASS_FIGHTER,
+    CLASS_PALADIN,
     CLASS_ROGUE,
     CLASS_WIZARD,
 
@@ -63,6 +65,9 @@ enum class
     CLASS_HOBGOBLIN,
     CLASS_KOBOLD,
     CLASS_KRENSHAR,
+    CLASS_OGRE,
+    CLASS_ORC,
+    CLASS_RAKSHASA,
     CLASS_RAT,
     CLASS_RED_DRAGON_WYRMLING,
     CLASS_RED_DRAGON_ADULT,
@@ -75,7 +80,7 @@ enum class
 
     NUM_CLASSES,
 };
-#define PLAYER_CLASS_BEGIN CLASS_FIGHTER
+#define PLAYER_CLASS_BEGIN CLASS_CLERIC
 #define PLAYER_CLASS_END CLASS_WIZARD
 #define NUM_PLAYER_CLASSES PLAYER_CLASS_END + 1
 #define MONSTER_CLASS_BEGIN CLASS_DOG
@@ -84,16 +89,29 @@ enum class
 
 enum feat
 {
+    FEAT_NONE,
+
+    FEAT_ALERTNESS,
     FEAT_ARMOR_PROFICIENCY_LIGHT,
     FEAT_ARMOR_PROFICIENCY_MEDIUM,
     FEAT_ARMOR_PROFICIENCY_HEAVY,
+    FEAT_COMBAT_CASTING,
+    FEAT_DODGE,
+    FEAT_IMPROVED_INITIATIVE,
+    FEAT_IRON_WILL,
+    FEAT_MULTIATTACK,
     FEAT_POINT_BLANK_SHOT,
+    FEAT_POWER_ATTACK,
     FEAT_QUICK_TO_MASTER,
     FEAT_RAPID_RELOAD,
     FEAT_SHIELD_PROFICIENCY,
     FEAT_SNEAK_ATTACK,
+    FEAT_STEALTHY,
     FEAT_STILL_SPELL,
+    FEAT_TOUGHNESS,
+    FEAT_TRACK,
     FEAT_WEAPON_FINESSE,
+    FEAT_WEAPON_FOCUS, // TODO: split into different weapon types
     FEAT_WEAPON_PROFICIENCY_ELF,
     FEAT_WEAPON_PROFICIENCY_EXOTIC,
     FEAT_WEAPON_PROFICIENCY_MARTIAL,
@@ -109,6 +127,8 @@ struct race_data
     const char *name;
 
     enum size size;
+
+    int ability_adjustments[NUM_ABILITIES];
 
     bool special_abilities[NUM_SPECIAL_ABILITIES];
 
@@ -126,19 +146,19 @@ struct class_data
     int natural_armor_bonus;
 
     enum base_attack_bonus_type base_attack_bonus_type;
-    int base_attack_bonus;
+
+    enum natural_weapon_type natural_weapon_type;
 
     int default_ability_scores[NUM_ABILITIES];
 
     int feat_progression[NUM_FEATS];
 
+    enum ability spellcasting_ability;
     int spell_progression[NUM_SPELL_TYPES];
 
     enum item_type starting_equipment[NUM_EQUIP_SLOTS];
 
     int starting_items[NUM_ITEM_TYPES];
-
-    enum natural_weapon_type natural_weapon_type;
 };
 
 struct feat_prerequisites
@@ -152,6 +172,8 @@ struct feat_prerequisites
     int level;
 
     int base_attack_bonus;
+
+    int ability_scores[NUM_ABILITIES];
 };
 
 struct feat_data
@@ -184,20 +206,20 @@ struct actor
 
     bool special_abilities[NUM_SPECIAL_ABILITIES];
 
+    bool special_attacks[NUM_SPECIAL_ATTACKS];
+
     bool feats[NUM_FEATS];
 
     int base_hit_points;
     int hit_points;
 
-    int gold;
-
-    struct item *equipment[NUM_EQUIP_SLOTS];
-
-    struct list *items;
-
     int mana;
-    struct list *known_spells;
+    bool memorized_spells[NUM_SPELL_TYPES];
     enum spell_type readied_spell;
+
+    int gold;
+    struct item *equipment[NUM_EQUIP_SLOTS];
+    struct list *items;
 
     int floor;
     int x;
@@ -240,6 +262,7 @@ struct actor *actor_new(
     int level,
     const int ability_scores[NUM_ABILITIES],
     const bool special_abilities[NUM_SPECIAL_ABILITIES],
+    const bool special_attacks[NUM_SPECIAL_ATTACKS],
     const bool feats[NUM_FEATS],
     int floor,
     int x,
@@ -247,10 +270,25 @@ struct actor *actor_new(
 void actor_delete(struct actor *actor);
 
 int actor_calc_experience_for_level(int level);
-int actor_calc_ability_modifer(const struct actor *actor, enum ability ability);
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
-void actor_add_ability_point(struct actor *actor, enum ability ability);
+
+int actor_calc_ability_score(const struct actor *actor, enum ability ability);
+int actor_calc_ability_modifer(const struct actor *actor, enum ability ability);
+void actor_spend_ability_point(struct actor *actor, enum ability ability);
+
+void actor_calc_special_abilities(const struct actor *actor, bool (*special_abilities)[NUM_SPECIAL_ABILITIES]);
+bool actor_has_special_ability(const struct actor *actor, enum special_ability special_ability);
+
+void actor_calc_special_attacks(const struct actor *actor, bool (*special_attacks)[NUM_SPECIAL_ATTACKS]);
+bool actor_has_special_attack(const struct actor *actor, enum special_attack special_attack);
+
+void actor_calc_feats(const struct actor *actor, bool (*feats)[NUM_FEATS]);
+bool actor_has_feat(const struct actor *actor, enum feat feat);
+bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat);
+
+void actor_calc_known_spells(const struct actor *actor, bool (*known_spells)[NUM_SPELL_TYPES]);
+bool actor_knows_spell(const struct actor *actor, enum spell_type spell_type);
 
 int actor_calc_max_hit_points(const struct actor *actor);
 void actor_restore_hit_points(struct actor *actor, int health);
@@ -259,6 +297,7 @@ bool actor_damage_hit_points(struct actor *actor, struct actor *attacker, int da
 int actor_calc_armor_class(const struct actor *actor);
 
 int actor_calc_attacks_per_round(const struct actor *actor);
+int actor_calc_secondary_attack_penalty(const struct actor *actor);
 int actor_calc_base_attack_bonus(const struct actor *actor);
 int actor_calc_attack_bonus(const struct actor *actor);
 int actor_calc_ranged_attack_penalty(const struct actor *actor, const struct actor *other);
@@ -282,16 +321,6 @@ void actor_calc_fade(struct actor *actor, float delta_time);
 
 int actor_calc_sight_radius(const struct actor *actor);
 void actor_calc_fov(struct actor *actor);
-
-void actor_calc_feats(const struct actor *actor, bool (*feats)[NUM_FEATS]);
-bool actor_has_feat(const struct actor *actor, enum feat feat);
-bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat);
-
-void actor_calc_special_abilities(const struct actor *actor, bool (*special_abilities)[NUM_SPECIAL_ABILITIES]);
-bool actor_has_special_ability(const struct actor *actor, enum special_ability special_ability);
-
-void actor_calc_known_spells(const struct actor *actor, bool (*known_spells)[NUM_SPELL_TYPES]);
-bool actor_knows_spell(const struct actor *actor, enum spell_type spell_type);
 
 bool actor_can_take_turn(const struct actor *actor);
 

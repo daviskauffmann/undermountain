@@ -81,6 +81,15 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
+    [ITEM_TYPE_FALCHION] = {
+        .type = BASE_ITEM_TYPE_FALCHION,
+
+        .name = "Falchion",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
     [ITEM_TYPE_FOOD] = {
         .type = BASE_ITEM_TYPE_FOOD,
 
@@ -105,6 +114,15 @@ const struct item_data item_database[] = {
         .name = "Gold",
         .description = "",
         .color = {COLOR_GOLD},
+
+        .level = 1,
+    },
+    [ITEM_TYPE_GREATCLUB] = {
+        .type = BASE_ITEM_TYPE_GREATCLUB,
+
+        .name = "Greatclub",
+        .description = "",
+        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -148,6 +166,15 @@ const struct item_data item_database[] = {
         .type = BASE_ITEM_TYPE_HEAVY_SHIELD,
 
         .name = "Heavy Shield",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .level = 1,
+    },
+    [ITEM_TYPE_HIDE_ARMOR] = {
+        .type = BASE_ITEM_TYPE_HIDE_ARMOR,
+
+        .name = "Hide Armor",
         .description = "",
         .color = {COLOR_WHITE},
 
@@ -227,7 +254,7 @@ const struct item_data item_database[] = {
     [ITEM_TYPE_POTION_RECOVER_LIGHT_ARCANA] = {
         .type = BASE_ITEM_TYPE_POTION,
 
-        .name = "Recover Light Mana Potion",
+        .name = "Recover Light Arcana Potion",
         .description = "",
         .color = {COLOR_LIGHT_AZURE},
 

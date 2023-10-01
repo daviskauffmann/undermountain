@@ -576,6 +576,7 @@ void map_generate(struct map *const map)
                 map->floor + 1,
                 class_database[class].default_ability_scores,
                 (bool[NUM_SPECIAL_ABILITIES]){false},
+                (bool[NUM_SPECIAL_ATTACKS]){false},
                 (bool[NUM_FEATS]){false},
                 map->floor,
                 x, y);
@@ -628,6 +629,7 @@ void map_generate(struct map *const map)
                                 monster_data->level,
                                 monster_data->ability_scores,
                                 monster_data->special_abilities,
+                                monster_data->special_attacks,
                                 monster_data->feats,
                                 map->floor,
                                 x, y);

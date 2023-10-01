@@ -17,4 +17,12 @@ const struct ability_data ability_database[] = {
         .name = "Intelligence",
         .description = "Intelligence determines how well a character learns and reasons.",
     },
+    [ABILITY_WISDOM] = {
+        .name = "Wisdom",
+        .description = "Wisdom describes a character's willpower, common sense, perception, and intuition.",
+    },
+    [ABILITY_CHARISMA] = {
+        .name = "Charisma",
+        .description = "Charisma measures a character's force of personality, persuasiveness, ability to lead, and physical attractiveness.",
+    },
 };

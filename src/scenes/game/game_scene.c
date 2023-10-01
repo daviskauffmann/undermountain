@@ -202,7 +202,7 @@ static bool do_character_action_ability(const enum ability ability)
     {
         if (world->player->ability_points > 0)
         {
-            actor_add_ability_point(world->player, ability);
+            actor_spend_ability_point(world->player, ability);
         }
     }
     break;
@@ -442,11 +442,11 @@ struct scene *handle_event(const SDL_Event *event)
                 handled = true;
             }
             else if ((character_action == CHARACTER_ACTION_ABILITY_ADD_POINT) &&
-                     alpha >= 0 && alpha < NUM_ABILITIES)
+                     alpha >= 0 && alpha < NUM_ABILITIES - 1)
             {
                 if (world_can_player_take_turn())
                 {
-                    const enum ability_type ability = alpha;
+                    const enum ability_type ability = alpha + 1;
 
                     world->player->took_turn = do_character_action_ability(ability);
                 }
@@ -889,8 +889,24 @@ struct scene *handle_event(const SDL_Event *event)
                         else
                         {
                             targeting_action = TARGETING_ACTION_SPELL;
-                            target_x = world->player->x;
-                            target_y = world->player->y;
+
+                            if (spell_database[world->player->readied_spell].harmful)
+                            {
+                                const struct actor *nearest_enemy = actor_find_nearest_enemy(world->player);
+
+                                if (!nearest_enemy)
+                                {
+                                    nearest_enemy = world->player;
+                                }
+
+                                target_x = nearest_enemy->x;
+                                target_y = nearest_enemy->y;
+                            }
+                            else
+                            {
+                                target_x = world->player->x;
+                                target_y = world->player->y;
+                            }
                         }
                     }
                     break;
@@ -1712,24 +1728,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             int y = 1;
 
-            console_print(
-                status_rect.console,
-                1,
-                y++,
-                &color_white,
-                NULL,
-                TCOD_BKGND_NONE,
-                TCOD_LEFT,
-                "Level: %d%s",
-                world->player->level,
-                world->player->ability_points > 0 ? "*" : "");
-
             {
-                const int max_health = actor_calc_max_hit_points(world->player);
+                const int max_hit_points = actor_calc_max_hit_points(world->player);
                 const TCOD_ColorRGB fg =
-                    (float)world->player->hit_points / max_health > 0.5f
-                        ? TCOD_color_lerp(color_yellow, color_green, world->player->hit_points / (max_health * 0.5f))
-                        : TCOD_color_lerp(color_red, color_yellow, world->player->hit_points / (max_health * 0.5f));
+                    (float)world->player->hit_points / max_hit_points > 0.5f
+                        ? TCOD_color_lerp(color_yellow, color_green, world->player->hit_points / (max_hit_points * 0.5f))
+                        : TCOD_color_lerp(color_red, color_yellow, world->player->hit_points / (max_hit_points * 0.5f));
 
                 console_print(
                     status_rect.console,
@@ -1741,9 +1745,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_LEFT,
                     "HP: %d/%d",
                     world->player->hit_points,
-                    max_health);
+                    max_hit_points);
             }
 
+            if (class_database[world->player->class].spellcasting_ability != ABILITY_NONE)
             {
                 const int max_mana = actor_calc_max_mana(world->player);
                 const TCOD_ColorRGB fg = TCOD_color_lerp(color_gray, color_azure, (float)world->player->mana / max_mana);
@@ -1756,7 +1761,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     NULL,
                     TCOD_BKGND_NONE,
                     TCOD_LEFT,
-                    "Mana: %d/%d",
+                    "MP: %d/%d",
                     world->player->mana,
                     max_mana);
             }
@@ -1769,8 +1774,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 NULL,
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
-                "Floor: %d",
-                world->player->floor + 1);
+                "CL: %d%s",
+                world->player->level,
+                world->player->ability_points > 0 ? "*" : "");
 
             console_print(
                 status_rect.console,
@@ -1780,8 +1786,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 NULL,
                 TCOD_BKGND_NONE,
                 TCOD_LEFT,
-                "Time: %d",
-                world->time);
+                "DL: %d",
+                world->player->floor + 1);
 
             TCOD_console_printf_frame(
                 status_rect.console,
@@ -1996,7 +2002,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 world->player->ability_points);
             y++;
 
-            for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+            for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
             {
                 if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
                 {
@@ -2009,7 +2015,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         "%c) %s",
-                        ability + SDLK_a,
+                        ability - 1 + SDLK_a,
                         ability_database[ability].name);
                 }
                 else
@@ -2035,7 +2041,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
                     "%d (%d)",
-                    world->player->ability_scores[ability],
+                    actor_calc_ability_score(world->player, ability),
                     actor_calc_ability_modifer(world->player, ability));
                 y++;
             }
@@ -2142,6 +2148,41 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_RIGHT,
                 "%d",
                 actor_calc_armor_class(world->player));
+            y++;
+
+            const struct item *const armor = world->player->equipment[EQUIP_SLOT_ARMOR];
+
+            if (armor)
+            {
+                TCOD_console_printf(
+                    panel_rect.console,
+                    1,
+                    y - current_panel_status->scroll,
+                    "Max Dexterity Bonus");
+                TCOD_console_printf_ex(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%d",
+                    base_item_database[item_database[armor->type].type].max_dexterity_bonus);
+            }
+            else
+            {
+                TCOD_console_printf(
+                    panel_rect.console,
+                    1,
+                    y - current_panel_status->scroll,
+                    "Max Dexterity Bonus");
+                TCOD_console_printf_ex(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "None");
+            }
             y++;
 
             TCOD_console_printf(

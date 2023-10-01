@@ -48,7 +48,7 @@ static int calc_ability_score_cost(const int ability_score)
 
 static void reset_ability_scores(void)
 {
-    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+    for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
     {
         ability_scores[ability] = 8;
     }
@@ -58,7 +58,7 @@ static void reset_ability_scores(void)
 
 static void set_default_ability_scores(void)
 {
-    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+    for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
     {
         ability_scores[ability] = class_database[selected_class].default_ability_scores[ability];
     }
@@ -68,7 +68,7 @@ static void set_default_ability_scores(void)
 
 static void reset_feats(void)
 {
-    for (enum feat feat = 0; feat < NUM_FEATS; feat++)
+    for (enum feat feat = FEAT_NONE + 1; feat < NUM_FEATS; feat++)
     {
         feats[feat] = false;
     }
@@ -126,13 +126,13 @@ static void init(const struct scene *const previous_scene)
 
     selected_race = RACE_HUMAN;
 
-    selected_class = CLASS_FIGHTER;
+    selected_class = CLASS_CLERIC;
 
     set_default_ability_scores();
-    selected_ability = 0;
+    selected_ability = ABILITY_NONE + 1;
 
     reset_feats();
-    selected_feat = 0;
+    selected_feat = FEAT_NONE + 1;
 }
 
 static void uninit(void)
@@ -189,10 +189,10 @@ static struct scene *handle_event(const SDL_Event *const event)
                     1,
                     ability_scores,
                     (bool[NUM_SPECIAL_ABILITIES]){false},
+                    (bool[NUM_SPECIAL_ATTACKS]){false},
                     feats,
                     0,
-                    0,
-                    0);
+                    0, 0);
 
                 for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                 {
@@ -356,7 +356,7 @@ static struct scene *handle_event(const SDL_Event *const event)
             {
                 if (selected_ability == NUM_ABILITIES - 1)
                 {
-                    selected_ability = 0;
+                    selected_ability = ABILITY_NONE + 1;
                 }
                 else
                 {
@@ -368,7 +368,7 @@ static struct scene *handle_event(const SDL_Event *const event)
             {
                 if (selected_feat == NUM_FEATS - 1)
                 {
-                    selected_feat = 0;
+                    selected_feat = FEAT_NONE + 1;
                 }
                 else
                 {
@@ -454,7 +454,7 @@ static struct scene *handle_event(const SDL_Event *const event)
             break;
             case STATE_ABILITY_SCORES:
             {
-                if (selected_ability == 0)
+                if (selected_ability == ABILITY_NONE + 1)
                 {
                     selected_ability = NUM_ABILITIES - 1;
                 }
@@ -466,7 +466,7 @@ static struct scene *handle_event(const SDL_Event *const event)
             break;
             case STATE_FEATS:
             {
-                if (selected_feat == 0)
+                if (selected_feat == FEAT_NONE + 1)
                 {
                     selected_feat = NUM_FEATS - 1;
                 }
@@ -589,6 +589,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             "Size: %s",
             size_database[race_database[selected_race].size].name);
 
+        y++;
+
         console_print(
             console,
             1, y++,
@@ -596,8 +598,53 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             &color_black,
             TCOD_BKGND_NONE,
             TCOD_LEFT,
-            "Speed: %.2f",
-            size_database[race_database[selected_race].size].speed);
+            "Ability adjustments:");
+        for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
+        {
+            const int ability_adjustment = race_database[selected_race].ability_adjustments[ability];
+
+            if (ability_adjustment != 0)
+            {
+                console_print(
+                    console,
+                    1, y++,
+                    &color_white,
+                    &color_black,
+                    TCOD_BKGND_NONE,
+                    TCOD_LEFT,
+                    "- %s: %d",
+                    ability_database[ability].name,
+                    ability_adjustment);
+            }
+        }
+
+        y++;
+
+        console_print(
+            console,
+            1, y++,
+            &color_white,
+            &color_black,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
+            "Special abilities:");
+        for (enum special_ability special_ability = 0; special_ability < NUM_SPECIAL_ABILITIES; special_ability++)
+        {
+            if (race_database[selected_race].special_abilities[special_ability] != SPECIAL_ABILITY_NONE)
+            {
+                console_print(
+                    console,
+                    1, y++,
+                    &color_white,
+                    &color_black,
+                    TCOD_BKGND_NONE,
+                    TCOD_LEFT,
+                    "- %s",
+                    special_ability_database[special_ability].name);
+            }
+        }
+
+        y++;
 
         console_print(
             console,
@@ -607,9 +654,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             TCOD_BKGND_NONE,
             TCOD_LEFT,
             "Feats:");
-        for (enum feat feat = 0; feat < NUM_FEATS; feat++)
+        for (enum feat feat = FEAT_NONE + 1; feat < NUM_FEATS; feat++)
         {
-            if (race_database[selected_race].feats[feat])
+            if (race_database[selected_race].feats[feat] != FEAT_NONE)
             {
                 console_print(
                     console,
@@ -673,6 +720,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             base_attack_bonus_database[class_database[selected_class].base_attack_bonus_type].name,
             base_attack_bonus_database[class_database[selected_class].base_attack_bonus_type].multiplier);
 
+        y++;
+
         console_print(
             console,
             1, y++,
@@ -695,6 +744,46 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_LEFT,
                     "- %s",
                     feat_database[feat].name);
+            }
+        }
+
+        y++;
+
+        if (class_database[selected_class].spellcasting_ability != ABILITY_NONE)
+        {
+            console_print(
+                console,
+                1, y++,
+                &color_white,
+                &color_black,
+                TCOD_BKGND_NONE,
+                TCOD_LEFT,
+                "Spellcasting ability: %s",
+                ability_database[class_database[selected_class].spellcasting_ability].name);
+
+            console_print(
+                console,
+                1, y++,
+                &color_white,
+                &color_black,
+                TCOD_BKGND_NONE,
+                TCOD_LEFT,
+                "Starting spells:");
+            for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
+            {
+                if (class_database[selected_class].spell_progression[spell_type] == 1)
+                {
+                    console_print(
+                        console,
+                        1,
+                        y++,
+                        &color_white,
+                        &color_black,
+                        TCOD_BKGND_NONE,
+                        TCOD_LEFT,
+                        "- %s",
+                        spell_database[spell_type].name);
+                }
             }
         }
     }
@@ -721,10 +810,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
         int y = 2;
 
-        for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+        for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
         {
-            const int modifier = (ability_scores[ability] - 10) / 2;
-            const int cost = calc_ability_score_cost(ability_scores[ability] + 1);
+            const int base_score = ability_scores[ability];
+            const int adjusted_score = base_score + race_database[selected_race].ability_adjustments[ability];
+            const int modifier = (int)floorf((adjusted_score - 10) / 2.0f);
+            const int cost = calc_ability_score_cost(base_score + 1);
 
             console_print(
                 console,
@@ -735,7 +826,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_LEFT,
                 "%s: %d (%d) (cost: %d)",
                 ability_database[ability].name,
-                ability_scores[ability],
+                adjusted_score,
                 modifier,
                 cost);
         }

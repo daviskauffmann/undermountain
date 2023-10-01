@@ -7,11 +7,14 @@
 #include "monster.h"
 #include "special_ability.h"
 
+// TODO: maybe just merge all/some of this into the class data?
+
 enum monster_type
 {
     MONSTER_TYPE_BAT,
     MONSTER_TYPE_BUGBEAR,
     MONSTER_TYPE_DIRE_RAT,
+    MONSTER_TYPE_DOG,
     MONSTER_TYPE_FIRE_BEETLE,
     MONSTER_TYPE_HYENA,
     MONSTER_TYPE_GIANT_ANT,
@@ -20,6 +23,9 @@ enum monster_type
     MONSTER_TYPE_HOBGOBLIN,
     MONSTER_TYPE_KOBOLD,
     MONSTER_TYPE_KRENSHAR,
+    MONSTER_TYPE_OGRE,
+    MONSTER_TYPE_ORC,
+    MONSTER_TYPE_RAKSHASA,
     MONSTER_TYPE_RAT,
     MONSTER_TYPE_RED_DRAGON_WYRMLING,
     MONSTER_TYPE_RED_DRAGON_ADULT,
@@ -47,6 +53,8 @@ struct monster_data
     int ability_scores[NUM_ABILITIES];
 
     bool special_abilities[NUM_SPECIAL_ABILITIES];
+
+    bool special_attacks[NUM_SPECIAL_ATTACKS];
 
     bool feats[NUM_FEATS];
 

@@ -23,14 +23,29 @@ const struct race_data race_database[] = {
         .name = "Dwarf",
 
         .size = SIZE_SMALL,
+
+        .ability_adjustments = {
+            [ABILITY_CONSTITUTION] = 2,
+            [ABILITY_CHARISMA] = -2,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
     },
     [RACE_ELF] = {
         .name = "Elf",
 
         .size = SIZE_MEDIUM,
 
+        .ability_adjustments = {
+            [ABILITY_DEXTERITY] = 2,
+            [ABILITY_CONSTITUTION] = -2,
+        },
+
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_SLEEP_IMMUNITY] = true,
         },
 
         .feats = {
@@ -57,25 +72,81 @@ const struct race_data race_database[] = {
     [RACE_HUMANOID] = {
         .name = "Humanoid",
     },
-    [RACE_RED_DRAGON_ADULT] = {
-        .name = "Wyrmling Red Dragon",
+    [RACE_MAGICAL_BEAST] = {
+        .name = "Magical Beast",
     },
-    [RACE_RED_DRAGON_ADULT] = {
-        .name = "Adult Red Dragon",
+    [RACE_OUTSIDER] = {
+        .name = "Outsider",
     },
-    [RACE_RED_DRAGON_ADULT] = {
-        .name = "Ancient Red Dragon",
+    [RACE_RED_DRAGON] = {
+        .name = "Red Dragon",
     },
     [RACE_UNDEAD] = {
         .name = "Undead",
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+            // TODO: damage reduction
+            // TODO: immunities
+        },
     },
     [RACE_VERMIN] = {
         .name = "Small Vermin",
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_DARKVISION] = true,
+        },
     },
 };
 
 const struct class_data class_database[] = {
     // player classes
+    [CLASS_CLERIC] = {
+        .name = "Cleric",
+        .color = {COLOR_AMBER},
+        .glyph = '@',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 14,
+            [ABILITY_DEXTERITY] = 8,
+            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 16,
+            [ABILITY_CHARISMA] = 14,
+        },
+
+        .feat_progression = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = 1,
+            [FEAT_ARMOR_PROFICIENCY_MEDIUM] = 1,
+            [FEAT_ARMOR_PROFICIENCY_HEAVY] = 1,
+            [FEAT_SHIELD_PROFICIENCY] = 1,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = 1,
+        },
+
+        .spellcasting_ability = ABILITY_WISDOM,
+        .spell_progression = {
+            [SPELL_TYPE_CURE_MINOR_WOUNDS] = 1,
+            [SPELL_TYPE_CURE_LIGHT_WOUNDS] = 1,
+            [SPELL_TYPE_INFLICT_MINOR_WOUNDS] = 1,
+            [SPELL_TYPE_INFLICT_LIGHT_WOUNDS] = 1,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_BREASTPLATE,
+            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_LIGHT_SHIELD,
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_HEAVY_MACE,
+        },
+
+        .starting_items = {
+            [ITEM_TYPE_FOOD] = 10,
+            [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
+            [ITEM_TYPE_POTION_RECOVER_LIGHT_ARCANA] = 10,
+        },
+    },
     [CLASS_FIGHTER] = {
         .name = "Fighter",
         .color = {COLOR_BRASS},
@@ -86,10 +157,12 @@ const struct class_data class_database[] = {
         .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
 
         .default_ability_scores = {
-            [ABILITY_STRENGTH] = 15,
-            [ABILITY_DEXTERITY] = 12,
-            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_STRENGTH] = 16,
+            [ABILITY_DEXTERITY] = 13,
+            [ABILITY_CONSTITUTION] = 16,
             [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 10,
+            [ABILITY_CHARISMA] = 9,
         },
 
         .feat_progression = {
@@ -102,7 +175,7 @@ const struct class_data class_database[] = {
         },
 
         .starting_equipment = {
-            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_BREASTPLATE,
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_FULL_PLATE,
             [EQUIP_SLOT_SHIELD] = ITEM_TYPE_HEAVY_SHIELD,
             [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGSWORD,
         },
@@ -110,6 +183,50 @@ const struct class_data class_database[] = {
         .starting_items = {
             [ITEM_TYPE_FOOD] = 10,
             [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
+        },
+    },
+    [CLASS_PALADIN] = {
+        .name = "Paladin",
+        .color = {COLOR_LIGHTEST_PINK},
+        .glyph = '@',
+
+        .hit_die = "1d10",
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 15,
+            [ABILITY_DEXTERITY] = 9,
+            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 13,
+            [ABILITY_CHARISMA] = 15,
+        },
+
+        .feat_progression = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = 1,
+            [FEAT_ARMOR_PROFICIENCY_MEDIUM] = 1,
+            [FEAT_ARMOR_PROFICIENCY_HEAVY] = 1,
+            [FEAT_SHIELD_PROFICIENCY] = 1,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = 1,
+            [FEAT_WEAPON_PROFICIENCY_MARTIAL] = 1,
+        },
+
+        .spellcasting_ability = ABILITY_WISDOM,
+        .spell_progression = {
+            [SPELL_TYPE_CURE_LIGHT_WOUNDS] = 1,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_FULL_PLATE,
+            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_HEAVY_SHIELD,
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGSWORD,
+        },
+
+        .starting_items = {
+            [ITEM_TYPE_FOOD] = 10,
+            [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
+            [ITEM_TYPE_POTION_RECOVER_LIGHT_ARCANA] = 10,
         },
     },
     [CLASS_ROGUE] = {
@@ -122,10 +239,12 @@ const struct class_data class_database[] = {
         .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .default_ability_scores = {
-            [ABILITY_STRENGTH] = 14,
-            [ABILITY_DEXTERITY] = 15,
-            [ABILITY_CONSTITUTION] = 12,
-            [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_STRENGTH] = 12,
+            [ABILITY_DEXTERITY] = 16,
+            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_INTELLIGENCE] = 14,
+            [ABILITY_WISDOM] = 8,
+            [ABILITY_CHARISMA] = 12,
         },
 
         .feat_progression = {
@@ -158,14 +277,17 @@ const struct class_data class_database[] = {
         .default_ability_scores = {
             [ABILITY_STRENGTH] = 10,
             [ABILITY_DEXTERITY] = 14,
-            [ABILITY_CONSTITUTION] = 12,
-            [ABILITY_INTELLIGENCE] = 15,
+            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_INTELLIGENCE] = 16,
+            [ABILITY_WISDOM] = 12,
+            [ABILITY_CHARISMA] = 10,
         },
 
         .feat_progression = {
             [FEAT_WEAPON_PROFICIENCY_WIZARD] = 1,
         },
 
+        .spellcasting_ability = ABILITY_INTELLIGENCE,
         .spell_progression = {
             [SPELL_TYPE_ACID_SPLASH] = 1,
             [SPELL_TYPE_CHAIN_LIGHTNING] = 6,
@@ -196,6 +318,8 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d2",
 
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_POOR,
+
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
     [CLASS_BUGBEAR] = {
@@ -207,7 +331,7 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 3,
 
-        .base_attack_bonus = 2,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
     },
     [CLASS_DIRE_RAT] = {
         .name = "Dire Rat",
@@ -217,6 +341,8 @@ const struct class_data class_database[] = {
         .hit_die = "1d8",
 
         .natural_armor_bonus = 1,
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
@@ -229,6 +355,8 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 1,
 
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
+
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
     [CLASS_FIRE_BEETLE] = {
@@ -240,18 +368,7 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 5,
 
-        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
-    },
-    [CLASS_HYENA] = {
-        .name = "Hyena",
-        .color = {COLOR_DARK_AMBER},
-        .glyph = 'h',
-
-        .hit_die = "1d8",
-
-        .natural_armor_bonus = 1,
-
-        .base_attack_bonus = 1,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
@@ -264,7 +381,7 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 7,
 
-        .base_attack_bonus = 1,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
@@ -275,7 +392,7 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d8",
 
-        .base_attack_bonus = 1,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .natural_armor_bonus = 1,
     },
@@ -286,7 +403,7 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d8",
 
-        .base_attack_bonus = 1,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
     },
     [CLASS_HOBGOBLIN] = {
         .name = "Hobgoblin",
@@ -295,7 +412,20 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d8",
 
-        .base_attack_bonus = 1,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
+    },
+    [CLASS_HYENA] = {
+        .name = "Hyena",
+        .color = {COLOR_DARK_AMBER},
+        .glyph = 'h',
+
+        .hit_die = "1d8",
+
+        .natural_armor_bonus = 1,
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
     [CLASS_KOBOLD] = {
         .name = "Kobold",
@@ -304,7 +434,7 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d8",
 
-        .base_attack_bonus = 1,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
 
         .natural_armor_bonus = 1,
     },
@@ -315,9 +445,40 @@ const struct class_data class_database[] = {
 
         .hit_die = "1d10",
 
-        .base_attack_bonus = 2,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
 
         .natural_armor_bonus = 3,
+    },
+    [CLASS_OGRE] = {
+        .name = "Ogre",
+        .color = {COLOR_LIGHTEST_AMBER},
+        .glyph = 'O',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
+
+        .natural_armor_bonus = 5,
+    },
+    [CLASS_ORC] = {
+        .name = "Orc",
+        .color = {COLOR_LIGHTEST_AMBER},
+        .glyph = 'o',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
+    },
+    [CLASS_RAKSHASA] = {
+        .name = "Rakshasa",
+        .color = {COLOR_LIGHT_SEPIA},
+        .glyph = 'R',
+
+        .hit_die = "1d8",
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
+
+        .natural_armor_bonus = 2,
     },
     [CLASS_RAT] = {
         .name = "Rat",
@@ -327,6 +488,8 @@ const struct class_data class_database[] = {
         .hit_die = "1d2",
 
         .natural_armor_bonus = 1,
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_POOR,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
@@ -339,7 +502,9 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 6,
 
-        .base_attack_bonus = 7,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_CLAW,
     },
     [CLASS_RED_DRAGON_ADULT] = {
         .name = "Adult Red Dragon",
@@ -350,7 +515,9 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 21,
 
-        .base_attack_bonus = 22,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_CLAW,
     },
     [CLASS_RED_DRAGON_ANCIENT] = {
         .name = "Ancient Red Dragon",
@@ -361,7 +528,9 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 33,
 
-        .base_attack_bonus = 34,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
+
+        .natural_weapon_type = NATURAL_WEAPON_TYPE_CLAW,
     },
     [CLASS_SKELETON_WARRIOR] = {
         .name = "Skeleton Warrior",
@@ -369,6 +538,10 @@ const struct class_data class_database[] = {
         .glyph = 's',
 
         .hit_die = "1d12",
+
+        .natural_armor_bonus = 2,
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
     },
     [CLASS_SNAKE] = {
         .name = "Snake",
@@ -379,6 +552,8 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 3,
 
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
+
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
     [CLASS_SPIDER] = {
@@ -387,6 +562,8 @@ const struct class_data class_database[] = {
         .glyph = 's',
 
         .hit_die = "1d8",
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
@@ -399,7 +576,7 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 5,
 
-        .base_attack_bonus = 4,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_CLAW,
     },
@@ -412,13 +589,17 @@ const struct class_data class_database[] = {
 
         .natural_armor_bonus = 2,
 
-        .base_attack_bonus = 1,
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
     },
 };
 
 const struct feat_data feat_database[] = {
+    [FEAT_ALERTNESS] = {
+        .name = "Alertness",
+        .description = "A character with this feat gets a +2 bonus on all spot and listen checks.",
+    },
     [FEAT_ARMOR_PROFICIENCY_LIGHT] = {
         .name = "Armor Proficiency: Light",
         .description = "A character with this feat can equip light armor.",
@@ -430,6 +611,50 @@ const struct feat_data feat_database[] = {
     [FEAT_ARMOR_PROFICIENCY_HEAVY] = {
         .name = "Armor Proficiency: Heavy",
         .description = "A character with this feat can equip heavy armor.",
+    },
+    [FEAT_COMBAT_CASTING] = {
+        .name = "Combat Casting",
+        .description = "A character with this feat gets a +4 bonus on concentration checks made to cast a spell or use a spell-like ability when on the defensive or while grappling or pinned.",
+    },
+    [FEAT_DODGE] = {
+        .name = "Dodge",
+        .description = "A character with this feat gets a +1 dodge bonus to armor class.",
+
+        .prerequisites = {
+            .ability_scores = {
+                [ABILITY_DEXTERITY] = 13,
+            },
+        },
+    },
+    [FEAT_IMPROVED_INITIATIVE] = {
+        .name = "Improved Initiative",
+        .description = "A character with this feat gets a +4 bonus on initiative checks.",
+    },
+    [FEAT_IRON_WILL] = {
+        .name = "Iron Will",
+        .description = "A character with this feat gets a +2 bonus on all will saving throws.",
+    },
+    [FEAT_MULTIATTACK] = {
+        .name = "Multiattack",
+        .description = "A creature with this feat is particularly skilled at making multiple attacks.",
+
+        .prerequisites = {
+            .base_attack_bonus = 6,
+        },
+    },
+    [FEAT_POINT_BLANK_SHOT] = {
+        .name = "Point Blank Shot",
+        .description = "A character with this feat does not suffer a -4 penalty on ranged attack rolls when firing into melee.",
+    },
+    [FEAT_POWER_ATTACK] = {
+        .name = "Power Attack",
+        .description = "A character with this feat can make exceptionally powerful melee attacks.",
+
+        .prerequisites = {
+            .ability_scores = {
+                [ABILITY_STRENGTH] = 13,
+            },
+        },
     },
     [FEAT_QUICK_TO_MASTER] = {
         .name = "Quick to Master",
@@ -461,13 +686,33 @@ const struct feat_data feat_database[] = {
             .class = CLASS_ROGUE,
         },
     },
+    [FEAT_STEALTHY] = {
+        .name = "Stealthy",
+        .description = "A character with this feat gets a +2 bonus on all hide and move silently checks.",
+    },
     [FEAT_STILL_SPELL] = {
         .name = "Still Spell",
         .description = "A character with this feat ignores arcane spell failure.",
     },
+    [FEAT_TOUGHNESS] = {
+        .name = "Toughness",
+        .description = "A character with this feat retroactively gains 1 hit point per level.",
+    },
+    [FEAT_TRACK] = {
+        .name = "Track",
+        .description = "A character with this feat can track creatures by following their tracks.",
+    },
     [FEAT_WEAPON_FINESSE] = {
         .name = "Weapon Finesse",
         .description = "A character with this feat is adept at using light weapons subtly and effectively, allowing him to make melee attack rolls with his dexterity modifier instead of strength (if his dexterity is higher than his strength).",
+
+        .prerequisites = {
+            .base_attack_bonus = 1,
+        },
+    },
+    [FEAT_WEAPON_FOCUS] = {
+        .name = "Weapon Focus",
+        .description = "A character with this feat gains a +1 bonus on all attack rolls he makes using the selected weapon.",
 
         .prerequisites = {
             .base_attack_bonus = 1,
@@ -527,6 +772,7 @@ struct actor *actor_new(
     const int level,
     const int ability_scores[NUM_ABILITIES],
     const bool special_abilities[NUM_SPECIAL_ABILITIES],
+    const bool special_attacks[NUM_SPECIAL_ATTACKS],
     const bool feats[NUM_FEATS],
     const int floor,
     const int x,
@@ -545,14 +791,9 @@ struct actor *actor_new(
     actor->experience = actor_calc_experience_for_level(level);
 
     actor->ability_points = 0;
-    for (enum ability ability = 0; ability < NUM_ABILITIES; ability++)
+    for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
     {
         actor->ability_scores[ability] = ability_scores[ability];
-    }
-
-    for (enum feat feat = 0; feat < NUM_FEATS; feat++)
-    {
-        actor->feats[feat] = feats[feat];
     }
 
     for (enum special_ability special_ability = 0; special_ability < NUM_SPECIAL_ABILITIES; special_ability++)
@@ -560,8 +801,17 @@ struct actor *actor_new(
         actor->special_abilities[special_ability] = special_abilities[special_ability];
     }
 
-    actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
+    for (enum special_attack special_attack = 0; special_attack < NUM_SPECIAL_ATTACKS; special_attack++)
+    {
+        actor->special_attacks[special_attack] = special_attacks[special_attack];
+    }
 
+    for (enum feat feat = 0; feat < NUM_FEATS; feat++)
+    {
+        actor->feats[feat] = feats[feat];
+    }
+
+    actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
     actor->hit_points = actor_calc_max_hit_points(actor);
 
     actor->gold = 0;
@@ -574,7 +824,10 @@ struct actor *actor_new(
     actor->items = list_new();
 
     actor->mana = actor_calc_max_mana(actor);
-    actor->known_spells = list_new();
+    for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
+    {
+        actor->memorized_spells[spell_type] = false;
+    }
     actor->readied_spell = SPELL_TYPE_NONE;
 
     actor->floor = floor;
@@ -623,7 +876,13 @@ void actor_delete(struct actor *const actor)
         TCOD_map_delete(actor->fov);
     }
 
-    list_delete(actor->known_spells);
+    for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+    {
+        if (actor->equipment[equip_slot] != NULL)
+        {
+            item_delete(actor->equipment[equip_slot]);
+        }
+    }
 
     for (size_t item_index = 0; item_index < actor->items->size; item_index++)
     {
@@ -674,7 +933,7 @@ void actor_level_up(struct actor *const actor)
     const float current_mana_percent = (float)actor->mana / actor_calc_max_mana(actor);
 
     actor->level++;
-    actor->ability_points++;
+    actor->ability_points++; // TODO: revisit this, may be unbalanced to grant an ability point every level
     actor->base_hit_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].hit_die);
 
     actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_point_percent);
@@ -690,30 +949,14 @@ void actor_level_up(struct actor *const actor)
     }
 }
 
-void actor_add_ability_point(struct actor *const actor, const enum ability ability)
+int actor_calc_ability_score(const struct actor *const actor, const enum ability ability)
 {
-    const float current_hit_point_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
-    const float current_mana_percent = (float)actor->mana / actor_calc_max_mana(actor);
-
-    actor->ability_scores[ability]++;
-    actor->ability_points--;
-
-    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_point_percent);
-    actor->mana = (int)(actor_calc_max_mana(actor) * current_mana_percent);
-
-    if (actor->hit_points <= 0)
-    {
-        actor_die(actor, NULL);
-    }
-    if (actor->mana <= 0)
-    {
-        actor->mana = 0;
-    }
+    return actor->ability_scores[ability] + race_database[actor->race].ability_adjustments[ability];
 }
 
 int actor_calc_ability_modifer(const struct actor *const actor, const enum ability ability)
 {
-    int modifier = (actor->ability_scores[ability] - 10) / 2;
+    int modifier = (int)floorf((actor_calc_ability_score(actor, ability) - 10) / 2.0f);
 
     if (ability == ABILITY_DEXTERITY)
     {
@@ -735,9 +978,180 @@ int actor_calc_ability_modifer(const struct actor *const actor, const enum abili
     return modifier;
 }
 
+void actor_spend_ability_point(struct actor *const actor, const enum ability ability)
+{
+    const float current_hit_point_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
+    const float current_mana_percent = (float)actor->mana / actor_calc_max_mana(actor);
+
+    actor->ability_scores[ability]++;
+    actor->ability_points--;
+
+    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_point_percent);
+    actor->mana = (int)(actor_calc_max_mana(actor) * current_mana_percent);
+
+    if (actor->hit_points <= 0)
+    {
+        actor_die(actor, NULL);
+    }
+    if (actor->mana <= 0)
+    {
+        actor->mana = 0;
+    }
+}
+
+void actor_calc_special_abilities(const struct actor *const actor, bool (*const special_abilities)[NUM_SPECIAL_ABILITIES])
+{
+    for (enum special_ability special_ability = 0; special_ability < NUM_SPECIAL_ABILITIES; special_ability++)
+    {
+        if (race_database[actor->race].special_abilities[special_ability])
+        {
+            (*special_abilities)[special_ability] = true;
+        }
+
+        if (actor->special_abilities[special_ability])
+        {
+            (*special_abilities)[special_ability] = true;
+        }
+    }
+}
+
+bool actor_has_special_ability(const struct actor *const actor, const enum special_ability special_ability)
+{
+    bool special_abilities[NUM_SPECIAL_ABILITIES] = {false};
+    actor_calc_special_abilities(actor, &special_abilities);
+
+    return special_abilities[special_ability];
+}
+
+void actor_calc_special_attacks(const struct actor *const actor, bool (*const special_attacks)[NUM_SPECIAL_ATTACKS])
+{
+    for (enum special_attack special_attack = 0; special_attack < NUM_SPECIAL_ATTACKS; special_attack++)
+    {
+        if (actor->special_abilities[special_attack])
+        {
+            (*special_attacks)[special_attack] = true;
+        }
+    }
+}
+
+bool actor_has_special_attack(const struct actor *const actor, const enum special_attack special_attack)
+{
+    bool special_attacks[NUM_SPECIAL_ATTACKS] = {false};
+    actor_calc_special_attacks(actor, &special_attacks);
+
+    return special_attacks[special_attack];
+}
+
+void actor_calc_feats(const struct actor *actor, bool (*const feats)[NUM_FEATS])
+{
+    for (enum feat feat = 0; feat < NUM_FEATS; feat++)
+    {
+        if (race_database[actor->race].feats[feat])
+        {
+            (*feats)[feat] = true;
+        }
+
+        const int level = class_database[actor->class].feat_progression[feat];
+
+        if (level > 0 && level <= actor->level)
+        {
+            (*feats)[feat] = true;
+        }
+
+        if (actor->feats[feat])
+        {
+            (*feats)[feat] = true;
+        }
+
+        // TODO: feats from equipment
+    }
+}
+
+bool actor_has_feat(const struct actor *const actor, const enum feat feat)
+{
+    bool known_feats[NUM_FEATS] = {false};
+    actor_calc_feats(actor, &known_feats);
+
+    return known_feats[feat];
+}
+
+bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
+{
+    // TODO: if getting the feat from equipment, the actor should still be able to learn it
+    if (actor_has_feat(actor, feat))
+    {
+        return false;
+    }
+
+    const struct feat_prerequisites *const prerequisites = &feat_database[feat].prerequisites;
+
+    if (prerequisites->requires_race &&
+        prerequisites->race != actor->race)
+    {
+        return false;
+    }
+
+    if (prerequisites->requires_class &&
+        prerequisites->class != actor->class)
+    {
+        return false;
+    }
+
+    if (prerequisites->level > actor->level)
+    {
+        return false;
+    }
+
+    if (feat_database[feat].prerequisites.base_attack_bonus > actor_calc_base_attack_bonus(actor))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void actor_calc_known_spells(const struct actor *const actor, bool (*const known_spells)[NUM_SPELL_TYPES])
+{
+    for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
+    {
+        const struct class_data *class_data = &class_database[actor->class];
+        const int level = class_data->spell_progression[spell_type];
+
+        if (level > 0 &&
+            level <= actor->level &&
+            level <= 10 + actor->ability_scores[class_data->spellcasting_ability])
+        {
+            (*known_spells)[spell_type] = true;
+        }
+
+        if (actor->memorized_spells[spell_type])
+        {
+            (*known_spells)[spell_type] = true;
+        }
+    }
+}
+
+bool actor_knows_spell(const struct actor *const actor, const enum spell_type spell_type)
+{
+    bool known_spells[NUM_SPELL_TYPES] = {false};
+    actor_calc_known_spells(actor, &known_spells);
+
+    return known_spells[spell_type];
+}
+
 int actor_calc_max_hit_points(const struct actor *const actor)
 {
-    return actor->base_hit_points + (actor->level * actor_calc_ability_modifer(actor, ABILITY_CONSTITUTION));
+    const int base_hit_points = actor->base_hit_points;
+    const int constitution_modifer = actor_calc_ability_modifer(actor, ABILITY_CONSTITUTION);
+
+    int max_hit_points = base_hit_points + constitution_modifer;
+
+    if (actor_has_feat(actor, FEAT_TOUGHNESS))
+    {
+        max_hit_points += actor->level;
+    }
+
+    return max_hit_points;
 }
 
 void actor_restore_hit_points(struct actor *const actor, const int health)
@@ -746,10 +1160,10 @@ void actor_restore_hit_points(struct actor *const actor, const int health)
     actor->flash_color = color_green;
     actor->flash_fade_coef = 1;
 
-    const int max_health = actor_calc_max_hit_points(actor);
-    if (actor->hit_points > max_health)
+    const int max_hit_points = actor_calc_max_hit_points(actor);
+    if (actor->hit_points > max_hit_points)
     {
-        actor->hit_points = max_health;
+        actor->hit_points = max_hit_points;
     }
 }
 
@@ -813,15 +1227,17 @@ int actor_calc_armor_class(const struct actor *const actor)
         armor_class += shield_data->enhancement_bonus;
     }
 
+    if (actor_has_feat(actor, FEAT_DODGE))
+    {
+        armor_class += 1;
+    }
+
     return armor_class;
 }
 
 int actor_calc_attacks_per_round(const struct actor *const actor)
 {
-    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
-
-    int attacks_per_round = ((base_attack_bonus - 1) / 5) + 1;
-
+    // actors using crossbows without the rapid reload feat can only make one attack per round
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
 
     if (weapon)
@@ -834,8 +1250,24 @@ int actor_calc_attacks_per_round(const struct actor *const actor)
              weapon_data->type == BASE_ITEM_TYPE_HEAVY_CROSSBOW) &&
             !actor_has_feat(actor, FEAT_RAPID_RELOAD))
         {
-            attacks_per_round = 1;
+            return 1;
         }
+    }
+
+    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
+
+    int attacks_per_round = 1;
+    if (base_attack_bonus > 5)
+    {
+        attacks_per_round++;
+    }
+    if (base_attack_bonus > 10)
+    {
+        attacks_per_round++;
+    }
+    if (base_attack_bonus > 15)
+    {
+        attacks_per_round++;
     }
 
     // TODO: monk using unarmed or kama
@@ -846,22 +1278,22 @@ int actor_calc_attacks_per_round(const struct actor *const actor)
     // TODO: rapid shot feat, gives extra attack per round if ranged (not crossbow)
     // need to implement this in the attack code as well, since all attacks in round suffer -2 penalty
 
-    if (attacks_per_round < 1)
+    return attacks_per_round;
+}
+
+int actor_calc_secondary_attack_penalty(const struct actor *actor)
+{
+    if (actor_has_feat(actor, FEAT_MULTIATTACK))
     {
-        return 1;
+        return 2;
     }
 
-    return attacks_per_round;
+    return 5;
 }
 
 int actor_calc_base_attack_bonus(const struct actor *const actor)
 {
     const enum base_attack_bonus_type base_attack_bonus_type = class_database[actor->class].base_attack_bonus_type;
-
-    if (base_attack_bonus_type == BASE_ATTACK_BONUS_TYPE_FIXED)
-    {
-        return class_database[actor->class].base_attack_bonus;
-    }
 
     return (int)floorf(actor->level * base_attack_bonus_database[base_attack_bonus_type].multiplier);
 }
@@ -912,6 +1344,11 @@ int actor_calc_attack_bonus(const struct actor *const actor)
                 attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
             }
         }
+
+        if (actor_has_feat(actor, FEAT_WEAPON_FOCUS))
+        {
+            attack_bonus += 1;
+        }
     }
     else
     {
@@ -924,6 +1361,11 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         {
             attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
         }
+    }
+
+    if (actor_has_feat(actor, FEAT_POWER_ATTACK))
+    {
+        attack_bonus -= 5;
     }
 
     return attack_bonus;
@@ -1030,11 +1472,23 @@ int actor_calc_damage_bonus(const struct actor *const actor)
             {
                 damage_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
             }
+
+            // power attack only works with melee attacks
+            if (actor_has_feat(actor, FEAT_POWER_ATTACK))
+            {
+                damage_bonus += 5;
+            }
         }
     }
     else
     {
         damage_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+
+        // power attack only works with melee attacks
+        if (actor_has_feat(actor, FEAT_POWER_ATTACK))
+        {
+            damage_bonus += 5;
+        }
     }
 
     return damage_bonus;
@@ -1059,8 +1513,15 @@ const char *actor_calc_damage(const struct actor *const actor)
 
 int actor_calc_max_mana(const struct actor *const actor)
 {
+    const enum ability spellcasting_ability = class_database[actor->class].spellcasting_ability;
+
+    if (spellcasting_ability == ABILITY_NONE)
+    {
+        return 0;
+    }
+
     // TODO: better formula
-    return actor->level * actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+    return actor->level * actor_calc_ability_modifer(actor, spellcasting_ability);
 }
 
 void actor_restore_mana(struct actor *const actor, const int mana)
@@ -1213,18 +1674,22 @@ void actor_calc_fade(struct actor *const actor, const float delta_time)
 
 int actor_calc_sight_radius(const struct actor *actor)
 {
+    // TODO: want to think about this more
+    // extending sight radius like this kinda breaks rogue sneak attacks, which are pretty fun
+    // so before implementing this, find another way to make sneak attacks fun
+
     bool special_abilities[NUM_SPECIAL_ABILITIES] = {false};
     actor_calc_special_abilities(actor, &special_abilities);
 
-    if (special_abilities[SPECIAL_ABILITY_DARKVISION])
-    {
-        return 3;
-    }
+    // if (special_abilities[SPECIAL_ABILITY_DARKVISION])
+    // {
+    //     return 3;
+    // }
 
-    if (special_abilities[SPECIAL_ABILITY_LOW_LIGHT_VISION])
-    {
-        return 2;
-    }
+    // if (special_abilities[SPECIAL_ABILITY_LOW_LIGHT_VISION])
+    // {
+    //     return 2;
+    // }
 
     return 1;
 }
@@ -1322,126 +1787,6 @@ void actor_calc_fov(struct actor *const actor)
     }
 
     TCOD_map_delete(los_map);
-}
-
-void actor_calc_feats(const struct actor *actor, bool (*const feats)[NUM_FEATS])
-{
-    for (enum feat feat = 0; feat < NUM_FEATS; feat++)
-    {
-        if (race_database[actor->race].feats[feat])
-        {
-            (*feats)[feat] = true;
-        }
-
-        const int level = class_database[actor->class].feat_progression[feat];
-
-        if (level > 0 && level <= actor->level)
-        {
-            (*feats)[feat] = true;
-        }
-
-        if (actor->feats[feat])
-        {
-            (*feats)[feat] = true;
-        }
-
-        // TODO: feats from equipment
-    }
-}
-
-bool actor_has_feat(const struct actor *const actor, const enum feat feat)
-{
-    bool known_feats[NUM_FEATS] = {false};
-    actor_calc_feats(actor, &known_feats);
-
-    return known_feats[feat];
-}
-
-bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
-{
-    // TODO: if getting the feat from equipment, the actor should still be able to learn it
-    if (actor_has_feat(actor, feat))
-    {
-        return false;
-    }
-
-    const struct feat_prerequisites *const prerequisites = &feat_database[feat].prerequisites;
-
-    if (prerequisites->requires_race &&
-        prerequisites->race != actor->race)
-    {
-        return false;
-    }
-
-    if (prerequisites->requires_class &&
-        prerequisites->class != actor->class)
-    {
-        return false;
-    }
-
-    if (prerequisites->level > actor->level)
-    {
-        return false;
-    }
-
-    if (feat_database[feat].prerequisites.base_attack_bonus > actor_calc_base_attack_bonus(actor))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-void actor_calc_special_abilities(const struct actor *const actor, bool (*const special_abilities)[NUM_SPECIAL_ABILITIES])
-{
-    for (enum special_ability special_ability = 0; special_ability < NUM_SPECIAL_ABILITIES; special_ability++)
-    {
-        if (race_database[actor->race].special_abilities[special_ability])
-        {
-            (*special_abilities)[special_ability] = true;
-        }
-
-        if (actor->special_abilities[special_ability])
-        {
-            (*special_abilities)[special_ability] = true;
-        }
-    }
-}
-
-bool actor_has_special_ability(const struct actor *const actor, const enum special_ability special_ability)
-{
-    bool special_abilities[NUM_SPECIAL_ABILITIES] = {false};
-    actor_calc_special_abilities(actor, &special_abilities);
-
-    return special_abilities[special_ability];
-}
-
-void actor_calc_known_spells(const struct actor *const actor, bool (*const known_spells)[NUM_SPELL_TYPES])
-{
-    for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
-    {
-        const int level = class_database[actor->class].spell_progression[spell_type];
-
-        if (level > 0 && level <= actor->level)
-        {
-            (*known_spells)[spell_type] = true;
-        }
-    }
-
-    for (size_t spell_index = 0; spell_index < actor->known_spells->size; spell_index++)
-    {
-        const enum spell_type spell_type = (enum spell_type)(long long)list_get(actor->known_spells, spell_index);
-
-        (*known_spells)[spell_type] = true;
-    }
-}
-
-bool actor_knows_spell(const struct actor *const actor, const enum spell_type spell_type)
-{
-    bool known_spells[NUM_SPELL_TYPES] = {false};
-    actor_calc_known_spells(actor, &known_spells);
-
-    return known_spells[spell_type];
 }
 
 bool actor_can_take_turn(const struct actor *const actor)
@@ -2551,6 +2896,8 @@ bool actor_open_chest(
     }
 
     // TODO: give item
+    // this should dynamically figure out what the player might need
+    // with a little randomness thrown in
 
     list_remove(map->objects, tile->object);
 
@@ -3101,7 +3448,7 @@ bool actor_read(struct actor *const actor, struct item *const item, const int x,
         // TODO: if already known, do nothing
 
         // add spell to known spells
-        list_add(actor->known_spells, (void *)(size_t)item_data->spell_type);
+        actor->memorized_spells[item_data->spell_type] = true;
 
         // remove from inventory
         list_remove(actor->items, item);
@@ -3303,7 +3650,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
         // calculate hit
         const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
         const int attack_bonus = actor_calc_attack_bonus(actor);
-        const int successive_attack_penalty = attack * 5;
+        const int successive_attack_penalty = attack * actor_calc_secondary_attack_penalty(actor);
         const int ranged_attack_penalty = actor_calc_ranged_attack_penalty(actor, other);
         const int hit_challenge = attack_roll + attack_bonus - ranged_attack_penalty - successive_attack_penalty;
 
@@ -3372,6 +3719,19 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const st
         if (damage < 1)
         {
             damage = 1;
+        }
+
+        // adamantine breastplate
+        const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
+
+        if (armor && armor->type == ITEM_TYPE_ADAMANTINE_BREASTPLATE)
+        {
+            damage -= 2;
+
+            if (damage < 0)
+            {
+                damage = 0;
+            }
         }
 
         // TODO: when projectiles come at the player from the dark, nothing gets logged
@@ -3464,7 +3824,7 @@ bool actor_cast(
         // arcane spell failure
         const float arcane_spell_failure = actor_calc_arcane_spell_failure(actor);
 
-        if (arcane_spell_failure > 0)
+        if (arcane_spell_failure > 0 && spell_data->magic_type == MAGIC_TYPE_ARCANE)
         {
             const float roll = TCOD_random_get_float(world->random, 0, 1);
 
@@ -3533,11 +3893,51 @@ bool actor_cast(
         list_add(map->projectiles, projectile);
     }
     break;
+    case SPELL_TYPE_CURE_MINOR_WOUNDS:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for 1.",
+                    actor->name,
+                    other->name,
+                    1);
+
+                actor_damage_hit_points(other, actor, 1);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for 1.",
+                    actor->name,
+                    other->name,
+                    1);
+
+                actor_restore_hit_points(other, 1);
+            }
+        }
+    }
+    break;
     case SPELL_TYPE_CURE_LIGHT_WOUNDS:
     {
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
+
         if (other)
         {
             const int health = TCOD_random_dice_roll_s(world->random, "1d8") + MIN(caster_level, 5);
@@ -3549,7 +3949,7 @@ bool actor_cast(
                     other->x,
                     other->y,
                     color_white,
-                    "%s damages %s for %d damage.",
+                    "%s damages %s for %d.",
                     actor->name,
                     other->name,
                     health);
@@ -3563,7 +3963,7 @@ bool actor_cast(
                     other->x,
                     other->y,
                     color_white,
-                    "%s heals %s for %d damage.",
+                    "%s heals %s for %d.",
                     actor->name,
                     other->name,
                     health);
@@ -3578,6 +3978,7 @@ bool actor_cast(
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
+
         if (other)
         {
             // TODO: spread to nearby enemies
@@ -3618,6 +4019,7 @@ bool actor_cast(
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
+
         if (other)
         {
             // TODO: daze effect
@@ -3670,6 +4072,86 @@ bool actor_cast(
         list_add(map->projectiles, projectile);
     }
     break;
+    case SPELL_TYPE_INFLICT_MINOR_WOUNDS:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for 1.",
+                    actor->name,
+                    other->name,
+                    1);
+
+                actor_restore_hit_points(other, 1);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for 1.",
+                    actor->name,
+                    other->name,
+                    1);
+
+                actor_damage_hit_points(other, actor, 1);
+            }
+        }
+    }
+    break;
+    case SPELL_TYPE_INFLICT_LIGHT_WOUNDS:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            const int health = TCOD_random_dice_roll_s(world->random, "1d8") + MIN(caster_level, 5);
+
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_damage_hit_points(other, actor, health);
+            }
+        }
+    }
+    break;
     case SPELL_TYPE_MAGIC_MISSILE:
     {
         if (x == actor->x && y == actor->y)
@@ -3699,6 +4181,7 @@ bool actor_cast(
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
+
         if (other)
         {
             const int damage = TCOD_random_dice_roll_s(world->random, "1d3");
@@ -3708,7 +4191,7 @@ bool actor_cast(
                 actor->x,
                 actor->y,
                 color_white,
-                "%s zaps %s for %d.",
+                "%s freezes %s for %d.",
                 actor->name,
                 other->name,
                 damage);
@@ -3735,6 +4218,7 @@ bool actor_cast(
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
+
         if (other)
         {
             TCOD_dice_t dice = TCOD_random_dice_new("1d8");

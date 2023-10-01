@@ -53,17 +53,6 @@ const struct monster_pack_data monster_pack_database[] = {
             },
         },
     },
-    [MONSTER_PACK_TYPE_HYENAS] = {
-        .min_floor = 2,
-        .max_floor = 6,
-
-        .monsters = {
-            [MONSTER_TYPE_HYENA] = {
-                .min_count = 1,
-                .max_count = 3,
-            },
-        },
-    },
     [MONSTER_PACK_TYPE_GIANT_ANTS] = {
         .min_floor = 2,
         .max_floor = 6,
@@ -101,6 +90,32 @@ const struct monster_pack_data monster_pack_database[] = {
             },
         },
     },
+    [MONSTER_PACK_TYPE_HOBGOBLINS] = {
+        .min_floor = 4,
+        .max_floor = 8,
+
+        .monsters = {
+            [MONSTER_TYPE_HOBGOBLIN] = {
+                .min_count = 1,
+                .max_count = 3,
+            },
+            [MONSTER_TYPE_GOBLIN] = {
+                .min_count = 0,
+                .max_count = 3,
+            },
+        },
+    },
+    [MONSTER_PACK_TYPE_HYENAS] = {
+        .min_floor = 2,
+        .max_floor = 6,
+
+        .monsters = {
+            [MONSTER_TYPE_HYENA] = {
+                .min_count = 1,
+                .max_count = 3,
+            },
+        },
+    },
     [MONSTER_PACK_TYPE_KOBOLDS] = {
         .min_floor = 2,
         .max_floor = 6,
@@ -120,6 +135,39 @@ const struct monster_pack_data monster_pack_database[] = {
             [MONSTER_TYPE_KRENSHAR] = {
                 .min_count = 1,
                 .max_count = 2,
+            },
+        },
+    },
+    [MONSTER_PACK_TYPE_OGRES] = {
+        .min_floor = 6,
+        .max_floor = 10,
+
+        .monsters = {
+            [MONSTER_TYPE_OGRE] = {
+                .min_count = 1,
+                .max_count = 4,
+            },
+        },
+    },
+    [MONSTER_PACK_TYPE_ORCS] = {
+        .min_floor = 2,
+        .max_floor = 6,
+
+        .monsters = {
+            [MONSTER_TYPE_OGRE] = {
+                .min_count = 2,
+                .max_count = 4,
+            },
+        },
+    },
+    [MONSTER_PACK_TYPE_RAKSHASAS] = {
+        .min_floor = 8,
+        .max_floor = 12,
+
+        .monsters = {
+            [MONSTER_TYPE_RAKSHASA] = {
+                .min_count = 1,
+                .max_count = 1,
             },
         },
     },

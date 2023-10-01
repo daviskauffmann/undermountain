@@ -36,7 +36,7 @@ const struct base_item_data base_item_database[] = {
         .glyph = '[',
 
         .equip_slot = EQUIP_SLOT_ARMOR,
-        .size = SIZE_LARGE,
+        .size = SIZE_MEDIUM,
         .weight = 30,
         .max_stack = 1,
         .cost = 200,
@@ -101,6 +101,25 @@ const struct base_item_data base_item_database[] = {
             [WEAPON_PROFICIENCY_WIZARD] = true,
         },
     },
+    [BASE_ITEM_TYPE_FALCHION] = {
+        .name = "Falchion",
+        .glyph = '|',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_LARGE,
+        .weight = 8,
+        .max_stack = 1,
+        .cost = 75,
+
+        .damage = "2d4",
+        .damage_type = DAMAGE_TYPE_SLASHING,
+        .threat_range = 18,
+        .critical_multiplier = 2,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_ELF] = true,
+            [WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
+    },
     [BASE_ITEM_TYPE_FOOD] = {
         .name = "Food",
         .glyph = '#',
@@ -133,6 +152,24 @@ const struct base_item_data base_item_database[] = {
         .weight = 0.1f,
         .max_stack = INT32_MAX,
         .cost = 1,
+    },
+    [BASE_ITEM_TYPE_GREATCLUB] = {
+        .name = "Greatclub",
+        .glyph = '!',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_LARGE,
+        .weight = 8,
+        .max_stack = 1,
+        .cost = 5,
+
+        .damage = "1d10",
+        .damage_type = DAMAGE_TYPE_BLUDGEONING,
+        .threat_range = 20,
+        .critical_multiplier = 2,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
     },
     [BASE_ITEM_TYPE_GREATSWORD] = {
         .name = "Greatsword",
@@ -220,6 +257,21 @@ const struct base_item_data base_item_database[] = {
         .arcane_spell_failure = 0.15f,
         .armor_proficiency = ARMOR_PROFICIENCY_SHIELD,
     },
+    [BASE_ITEM_TYPE_HIDE_ARMOR] = {
+        .name = "Hide Armor",
+        .glyph = '[',
+
+        .equip_slot = EQUIP_SLOT_ARMOR,
+        .size = SIZE_MEDIUM,
+        .weight = 25,
+        .max_stack = 1,
+        .cost = 15,
+
+        .armor_class = 3,
+        .arcane_spell_failure = 0.20f,
+        .max_dexterity_bonus = 4,
+        .armor_proficiency = ARMOR_PROFICIENCY_MEDIUM,
+    },
     [BASE_ITEM_TYPE_JAVELIN] = {
         .name = "Javelin",
         .glyph = '|',
@@ -245,7 +297,7 @@ const struct base_item_data base_item_database[] = {
 
         .equip_slot = EQUIP_SLOT_ARMOR,
         .size = SIZE_MEDIUM,
-        .weight = 10,
+        .weight = 15,
         .max_stack = 1,
         .cost = 10,
 
@@ -406,7 +458,7 @@ const struct base_item_data base_item_database[] = {
         .glyph = '}',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .size = SIZE_LARGE,
+        .size = SIZE_MEDIUM,
         .weight = 2,
         .max_stack = 1,
         .cost = 30,

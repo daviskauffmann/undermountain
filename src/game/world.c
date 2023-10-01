@@ -5,6 +5,7 @@
 #include "corpse.h"
 #include "explosion.h"
 #include "message.h"
+#include "monster.h"
 #include "object.h"
 #include "projectile.h"
 #include "room.h"
@@ -103,26 +104,21 @@ void world_create(struct actor *hero)
 
         // create pet
         {
+            const struct monster_data *const monster_data = &monster_database[MONSTER_TYPE_DOG];
+
             struct actor *const pet = actor_new(
                 "Spot",
-                RACE_ANIMAL,
-                CLASS_DOG,
-                SIZE_SMALL,
+                monster_data->race,
+                monster_data->class,
+                monster_data->size,
                 hero->faction,
                 hero->level,
-                (int[]){
-                    [ABILITY_STRENGTH] = 13,
-                    [ABILITY_DEXTERITY] = 17,
-                    [ABILITY_CONSTITUTION] = 15,
-                    [ABILITY_INTELLIGENCE] = 2,
-                },
-                (bool[NUM_SPECIAL_ABILITIES]){
-                    [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-                },
-                (bool[NUM_FEATS]){false},
+                monster_data->ability_scores,
+                monster_data->special_abilities,
+                monster_data->special_attacks,
+                monster_data->feats,
                 floor,
-                map->stair_up_x + 1,
-                map->stair_up_y + 1);
+                map->stair_up_x + 1, map->stair_up_y + 1);
             pet->leader = hero;
 
             list_add(map->actors, pet);
@@ -217,11 +213,16 @@ void world_save(FILE *const file)
 
             fwrite(&actor->special_abilities, sizeof(actor->special_abilities), 1, file);
 
+            fwrite(&actor->special_attacks, sizeof(actor->special_attacks), 1, file);
+
             fwrite(&actor->feats, sizeof(actor->feats), 1, file);
 
             fwrite(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
-
             fwrite(&actor->hit_points, sizeof(actor->hit_points), 1, file);
+
+            fwrite(&actor->mana, sizeof(actor->mana), 1, file);
+            fwrite(&actor->memorized_spells, sizeof(actor->memorized_spells), 1, file);
+            fwrite(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
 
             fwrite(&actor->gold, sizeof(actor->gold), 1, file);
 
@@ -254,18 +255,6 @@ void world_save(FILE *const file)
 
                 fwrite(&item->stack, sizeof(item->stack), 1, file);
             }
-
-            fwrite(&actor->mana, sizeof(actor->mana), 1, file);
-
-            fwrite(&actor->known_spells->size, sizeof(actor->known_spells->size), 1, file);
-            for (size_t known_spell_index = 0; known_spell_index < actor->known_spells->size; known_spell_index++)
-            {
-                const enum spell_type spell_type = (size_t)(list_get(actor->known_spells, known_spell_index));
-
-                fwrite(&spell_type, sizeof(spell_type), 1, file);
-            }
-
-            fwrite(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
 
             fwrite(&actor->x, sizeof(actor->x), 1, file);
             fwrite(&actor->y, sizeof(actor->y), 1, file);
@@ -514,11 +503,16 @@ void world_load(FILE *const file)
 
             fread(&actor->special_abilities, sizeof(actor->special_abilities), 1, file);
 
+            fread(&actor->special_attacks, sizeof(actor->special_attacks), 1, file);
+
             fread(&actor->feats, sizeof(actor->feats), 1, file);
 
             fread(&actor->base_hit_points, sizeof(actor->base_hit_points), 1, file);
-
             fread(&actor->hit_points, sizeof(actor->hit_points), 1, file);
+
+            fread(&actor->mana, sizeof(actor->mana), 1, file);
+            fread(&actor->memorized_spells, sizeof(actor->memorized_spells), 1, file);
+            fread(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
 
             fread(&actor->gold, sizeof(actor->gold), 1, file);
 
@@ -556,21 +550,6 @@ void world_load(FILE *const file)
 
                 list_add(actor->items, item);
             }
-
-            fread(&actor->mana, sizeof(actor->mana), 1, file);
-
-            actor->known_spells = list_new();
-            size_t num_known_spells;
-            fread(&num_known_spells, sizeof(num_known_spells), 1, file);
-            for (size_t known_spell_index = 0; known_spell_index < num_known_spells; known_spell_index++)
-            {
-                enum spell_type spell_type;
-                fread(&spell_type, sizeof(spell_type), 1, file);
-
-                list_add(actor->known_spells, (void *)(size_t)spell_type);
-            }
-
-            fread(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
 
             actor->floor = map->floor;
             fread(&actor->x, sizeof(actor->x), 1, file);
@@ -977,8 +956,9 @@ void world_update(float delta_time)
             {
                 struct actor *const actor = list_get(map->actors, actor_index);
 
-                actor->took_turn = false;
                 actor->energy += actor_calc_speed(actor);
+
+                actor->took_turn = false;
 
                 if (actor->controllable)
                 {

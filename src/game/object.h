@@ -1,7 +1,6 @@
 #ifndef UM_GAME_OBJECT_H
 #define UM_GAME_OBJECT_H
 
-#include "light.h"
 #include <libtcod.h>
 
 enum object_type

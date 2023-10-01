@@ -2,10 +2,6 @@
 #define UM_GAME_BASE_ITEM_H
 
 #include "ammunition_type.h"
-#include "armor_proficiency.h"
-#include "damage_type.h"
-#include "equip_slot.h"
-#include "size.h"
 #include "weapon_proficiency.h"
 #include <libtcod.h>
 

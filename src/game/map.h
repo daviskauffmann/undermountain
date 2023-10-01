@@ -1,8 +1,6 @@
 #ifndef UM_GAME_MAP_H
 #define UM_GAME_MAP_H
 
-#include "actor.h"
-#include "list.h"
 #include "tile.h"
 #include <libtcod.h>
 
@@ -25,7 +23,7 @@ struct map
     struct list *projectiles;
     struct list *explosions;
     struct list *surfaces;
-    int current_actor_index;
+    size_t current_actor_index;
 };
 
 void map_init(struct map *map, int floor);

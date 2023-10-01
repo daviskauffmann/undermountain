@@ -1,9 +1,11 @@
 #include "world.h"
 
 #include "actor.h"
+#include "class.h"
 #include "color.h"
 #include "corpse.h"
 #include "explosion.h"
+#include "list.h"
 #include "message.h"
 #include "monster.h"
 #include "object.h"
@@ -102,12 +104,12 @@ void world_create(struct actor *hero)
             map->tiles[hero->x][hero->y].actor = hero;
         }
 
-        // create pet
+        // create companion
         {
-            const struct monster_data *const monster_data = &monster_database[MONSTER_TYPE_DOG];
+            const struct monster_data *const monster_data = &monster_database[class_database[hero->class].companion];
 
-            struct actor *const pet = actor_new(
-                "Spot",
+            struct actor *const companion = actor_new(
+                monster_data->name,
                 monster_data->race,
                 monster_data->class,
                 monster_data->size,
@@ -119,11 +121,11 @@ void world_create(struct actor *hero)
                 monster_data->feats,
                 floor,
                 map->stair_up_x + 1, map->stair_up_y + 1);
-            pet->leader = hero;
+            companion->leader = hero;
 
-            list_add(map->actors, pet);
+            list_add(map->actors, companion);
 
-            map->tiles[pet->x][pet->y].actor = pet;
+            map->tiles[companion->x][companion->y].actor = companion;
         }
     }
 

@@ -2,10 +2,10 @@
 #define UM_GAME_MONSTER_H
 
 #include "ability.h"
-#include "actor.h"
+#include "feat.h"
 #include "item.h"
-#include "monster.h"
 #include "special_ability.h"
+#include "special_attack.h"
 
 // TODO: maybe just merge all/some of this into the class data?
 
@@ -13,6 +13,7 @@ enum monster_type
 {
     MONSTER_TYPE_BAT,
     MONSTER_TYPE_BUGBEAR,
+    MONSTER_TYPE_CAT,
     MONSTER_TYPE_DIRE_RAT,
     MONSTER_TYPE_DOG,
     MONSTER_TYPE_FIRE_BEETLE,
@@ -25,6 +26,8 @@ enum monster_type
     MONSTER_TYPE_KRENSHAR,
     MONSTER_TYPE_OGRE,
     MONSTER_TYPE_ORC,
+    MONSTER_TYPE_OWL,
+    MONSTER_TYPE_PONY,
     MONSTER_TYPE_RAKSHASA,
     MONSTER_TYPE_RAT,
     MONSTER_TYPE_RED_DRAGON_WYRMLING,

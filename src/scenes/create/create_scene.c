@@ -2,7 +2,16 @@
 
 #include "../../config.h"
 #include "../../game/actor.h"
+#include "../../game/base_attack_bonus_type.h"
+#include "../../game/base_item.h"
+#include "../../game/class.h"
 #include "../../game/color.h"
+#include "../../game/faction.h"
+#include "../../game/feat.h"
+#include "../../game/light.h"
+#include "../../game/list.h"
+#include "../../game/monster.h"
+#include "../../game/race.h"
 #include "../../game/world.h"
 #include "../../print.h"
 #include "../../scene.h"
@@ -29,7 +38,7 @@ static enum ability selected_ability;
 static bool feats[NUM_FEATS];
 static int remaining_feats;
 struct list *available_feats;
-static int selected_feat_index;
+static size_t selected_feat_index;
 
 static int calc_ability_score_cost(const int ability_score)
 {
@@ -814,6 +823,18 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 }
             }
         }
+
+        y++;
+
+        console_print(
+            console,
+            1, y++,
+            &color_white,
+            &color_black,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
+            "Companion: %s",
+            monster_database[class_database[selected_class].companion].name);
     }
     break;
     case STATE_ABILITY_SCORES:

@@ -1,10 +1,8 @@
 #ifndef UM_GAME_ITEM_H
 #define UM_GAME_ITEM_H
 
-#include "base_item.h"
 #include "equip_slot.h"
 #include "size.h"
-#include "spell.h"
 #include <libtcod.h>
 
 enum item_type

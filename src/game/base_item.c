@@ -1,5 +1,10 @@
 #include "base_item.h"
 
+#include "armor_proficiency.h"
+#include "damage_type.h"
+#include "equip_slot.h"
+#include "size.h"
+
 const struct base_item_data base_item_database[] = {
     [BASE_ITEM_TYPE_ARROW] = {
         .name = "Arrow",

@@ -1,5 +1,8 @@
 #include "spell.h"
 
+#include "magic_type.h"
+#include "spell_range.h"
+
 const struct spell_data spell_database[] = {
     [SPELL_TYPE_ACID_SPLASH] = {
         .name = "Acid Splash",

@@ -1,6 +1,9 @@
 #include "item.h"
 
+#include "base_item.h"
 #include "color.h"
+#include "list.h"
+#include "spell.h"
 #include "world.h"
 #include <malloc.h>
 

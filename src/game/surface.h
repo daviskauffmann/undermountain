@@ -1,7 +1,6 @@
 #ifndef UM_SURFACE_H
 #define UM_SURFACE_H
 
-#include "light.h"
 #include <libtcod.h>
 
 enum surface_type

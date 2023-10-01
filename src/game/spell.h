@@ -1,8 +1,6 @@
 #ifndef UM_GAME_SPELL_H
 #define UM_GAME_SPELL_H
 
-#include "magic_type.h"
-#include "spell_range.h"
 #include <libtcod.h>
 
 enum spell_type

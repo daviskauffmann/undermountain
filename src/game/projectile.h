@@ -1,7 +1,6 @@
 #ifndef UM_GAME_PROJECTILE_H
 #define UM_GAME_PROJECTILE_H
 
-#include "light.h"
 #include <libtcod.h>
 
 enum projectile_type

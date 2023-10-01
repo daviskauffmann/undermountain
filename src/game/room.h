@@ -1,8 +1,6 @@
 #ifndef UM_GAME_ROOM_H
 #define UM_GAME_ROOM_H
 
-#include <stdint.h>
-
 struct room
 {
     int x;

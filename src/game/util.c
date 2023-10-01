@@ -16,7 +16,9 @@ float distance_between(
     const int x1, const int y1,
     const int x2, const int y2)
 {
-    return sqrtf(distance_between_sq(x1, y1, x2, y2));
+    const float distance_sq = distance_between_sq(x1, y1, x2, y2);
+
+    return sqrtf(distance_sq);
 }
 
 float angle_between(

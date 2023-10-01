@@ -1,6 +1,7 @@
 #include "surface.h"
 
 #include "color.h"
+#include "light.h"
 #include "world.h"
 #include <malloc.h>
 

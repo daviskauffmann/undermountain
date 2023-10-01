@@ -1,6 +1,7 @@
 #include "tile.h"
 
 #include "color.h"
+#include "list.h"
 
 const struct tile_metadata tile_metadata = {
     .ambient_light_color = {64, 64, 64},

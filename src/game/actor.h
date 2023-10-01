@@ -2,187 +2,14 @@
 #define UM_GAME_ACTOR_H
 
 #include "ability.h"
-#include "base_attack_bonus_type.h"
-#include "equip_slot.h"
-#include "faction.h"
+#include "feat.h"
 #include "item.h"
-#include "light.h"
-#include "list.h"
-#include "natural_weapon.h"
-#include "size.h"
 #include "special_ability.h"
 #include "special_attack.h"
 #include "spell.h"
 #include <libtcod.h>
 
 struct object;
-
-enum race
-{
-    // player races
-    RACE_HUMAN,
-    RACE_DWARF,
-    RACE_ELF,
-
-    // monster races
-    RACE_ANIMAL,
-    RACE_GIANT,
-    RACE_HUMANOID,
-    RACE_MAGICAL_BEAST,
-    RACE_OUTSIDER,
-    RACE_RED_DRAGON,
-    RACE_UNDEAD,
-    RACE_VERMIN,
-
-    NUM_RACES,
-};
-#define PLAYER_RACE_BEGIN RACE_HUMAN
-#define PLAYER_RACE_END RACE_ELF
-#define NUM_PLAYER_RACES PLAYER_RACE_END + 1
-#define MONSTER_RACE_BEGIN RACE_BUGBEAR
-#define MONSTER_RACE_END RACE_SLIME
-#define NUM_MONSTER_RACES = MONSTER_RACE_END + 1
-
-enum class
-{
-    // player classes
-    CLASS_CLERIC,
-    CLASS_FIGHTER,
-    CLASS_PALADIN,
-    CLASS_ROGUE,
-    CLASS_WIZARD,
-
-    // monster classes
-    CLASS_BAT,
-    CLASS_BUGBEAR,
-    CLASS_DIRE_RAT,
-    CLASS_DOG,
-    CLASS_FIRE_BEETLE,
-    CLASS_HYENA,
-    CLASS_GIANT_ANT,
-    CLASS_GNOLL,
-    CLASS_GOBLIN,
-    CLASS_HOBGOBLIN,
-    CLASS_KOBOLD,
-    CLASS_KRENSHAR,
-    CLASS_OGRE,
-    CLASS_ORC,
-    CLASS_RAKSHASA,
-    CLASS_RAT,
-    CLASS_RED_DRAGON_WYRMLING,
-    CLASS_RED_DRAGON_ADULT,
-    CLASS_RED_DRAGON_ANCIENT,
-    CLASS_SKELETON_WARRIOR,
-    CLASS_SNAKE,
-    CLASS_SPIDER,
-    CLASS_TROLL,
-    CLASS_WOLF,
-
-    NUM_CLASSES,
-};
-#define PLAYER_CLASS_BEGIN CLASS_CLERIC
-#define PLAYER_CLASS_END CLASS_WIZARD
-#define NUM_PLAYER_CLASSES PLAYER_CLASS_END + 1
-#define MONSTER_CLASS_BEGIN CLASS_DOG
-#define MONSTER_CLASS_END CLASS_SLIME
-#define NUM_MONSTER_CLASSES MONSTER_CLASS_END + 1
-
-enum feat
-{
-    FEAT_NONE,
-
-    FEAT_ALERTNESS,
-    FEAT_ARMOR_PROFICIENCY_LIGHT,
-    FEAT_ARMOR_PROFICIENCY_MEDIUM,
-    FEAT_ARMOR_PROFICIENCY_HEAVY,
-    FEAT_COMBAT_CASTING,
-    FEAT_DODGE,
-    FEAT_IMPROVED_INITIATIVE,
-    FEAT_IRON_WILL,
-    FEAT_MULTIATTACK,
-    FEAT_POINT_BLANK_SHOT,
-    FEAT_POWER_ATTACK,
-    FEAT_QUICK_TO_MASTER,
-    FEAT_RAPID_RELOAD,
-    FEAT_SHIELD_PROFICIENCY,
-    FEAT_SNEAK_ATTACK,
-    FEAT_STEALTHY,
-    FEAT_STILL_SPELL,
-    FEAT_TOUGHNESS,
-    FEAT_TRACK,
-    FEAT_WEAPON_FINESSE,
-    FEAT_WEAPON_FOCUS, // TODO: split into different weapon types
-    FEAT_WEAPON_PROFICIENCY_ELF,
-    FEAT_WEAPON_PROFICIENCY_EXOTIC,
-    FEAT_WEAPON_PROFICIENCY_MARTIAL,
-    FEAT_WEAPON_PROFICIENCY_ROGUE,
-    FEAT_WEAPON_PROFICIENCY_SIMPLE,
-    FEAT_WEAPON_PROFICIENCY_WIZARD,
-
-    NUM_FEATS,
-};
-
-struct race_data
-{
-    const char *name;
-
-    enum size size;
-
-    int ability_adjustments[NUM_ABILITIES];
-
-    bool special_abilities[NUM_SPECIAL_ABILITIES];
-
-    bool feats[NUM_FEATS];
-};
-
-struct class_data
-{
-    const char *name;
-    TCOD_ColorRGB color;
-    unsigned char glyph;
-
-    const char *hit_die;
-
-    int natural_armor_bonus;
-
-    enum base_attack_bonus_type base_attack_bonus_type;
-
-    enum natural_weapon_type natural_weapon_type;
-
-    int default_ability_scores[NUM_ABILITIES];
-
-    int feat_progression[NUM_FEATS];
-
-    enum ability spellcasting_ability;
-    int spell_progression[NUM_SPELL_TYPES];
-
-    enum item_type starting_equipment[NUM_EQUIP_SLOTS];
-
-    int starting_items[NUM_ITEM_TYPES];
-};
-
-struct feat_prerequisites
-{
-    bool requires_race;
-    enum race race;
-
-    bool requires_class;
-    enum class class;
-
-    int level;
-
-    int base_attack_bonus;
-
-    int ability_scores[NUM_ABILITIES];
-};
-
-struct feat_data
-{
-    const char *name;
-    const char *description;
-
-    struct feat_prerequisites prerequisites;
-};
 
 struct actor_metadata
 {
@@ -248,9 +75,6 @@ struct actor
     bool dead;
 };
 
-extern const struct race_data race_database[NUM_RACES];
-extern const struct feat_data feat_database[NUM_FEATS];
-extern const struct class_data class_database[NUM_CLASSES];
 extern const struct actor_metadata actor_metadata;
 
 struct actor *actor_new(

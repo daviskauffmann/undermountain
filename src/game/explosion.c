@@ -2,6 +2,7 @@
 
 #include "actor.h"
 #include "color.h"
+#include "list.h"
 #include "surface.h"
 #include "world.h"
 #include <malloc.h>

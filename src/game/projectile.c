@@ -3,6 +3,7 @@
 #include "actor.h"
 #include "color.h"
 #include "explosion.h"
+#include "light.h"
 #include "object.h"
 #include "surface.h"
 #include "util.h"

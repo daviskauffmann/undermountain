@@ -2,7 +2,6 @@
 #define UM_GAME_WORLD_H
 
 #include "map.h"
-#include "spell.h"
 #include <libtcod.h>
 
 #define NUM_MAPS 40

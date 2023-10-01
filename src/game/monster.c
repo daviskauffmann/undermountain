@@ -1,6 +1,9 @@
 #include "monster.h"
 
+#include "class.h"
 #include "faction.h"
+#include "race.h"
+#include "size.h"
 
 const struct monster_data monster_database[] = {
     [MONSTER_TYPE_BAT] = {
@@ -86,6 +89,35 @@ const struct monster_data monster_database[] = {
 
         .items = {
             [ITEM_TYPE_JAVELIN] = 1,
+        },
+    },
+    [MONSTER_TYPE_CAT] = {
+        .name = "Cat",
+
+        .race = RACE_ANIMAL,
+        .class = CLASS_CAT,
+        .size = SIZE_TINY,
+        .faction = FACTION_WILD_ANIMAL,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 3,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 10,
+            [ABILITY_INTELLIGENCE] = 2,
+            [ABILITY_WISDOM] = 12,
+            [ABILITY_CHARISMA] = 7,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+            [SPECIAL_ABILITY_SCENT] = true,
+        },
+
+        .feats = {
+            [FEAT_STEALTHY] = true,
+            [FEAT_WEAPON_FINESSE] = true,
         },
     },
     [MONSTER_TYPE_DIRE_RAT] = {
@@ -574,6 +606,62 @@ const struct monster_data monster_database[] = {
                 .min_stack = 0,
                 .max_stack = 3,
             },
+        },
+    },
+    [MONSTER_TYPE_OWL] = {
+        .name = "Owl",
+
+        .race = RACE_ANIMAL,
+        .class = CLASS_OWL,
+        .size = SIZE_TINY,
+        .faction = FACTION_WILD_ANIMAL,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 4,
+            [ABILITY_DEXTERITY] = 17,
+            [ABILITY_CONSTITUTION] = 10,
+            [ABILITY_INTELLIGENCE] = 2,
+            [ABILITY_WISDOM] = 14,
+            [ABILITY_CHARISMA] = 4,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+
+        .feats = {
+            [FEAT_ALERTNESS] = true,
+            [FEAT_WEAPON_FINESSE] = true,
+        },
+    },
+    [MONSTER_TYPE_PONY] = {
+        .name = "Pony",
+
+        .race = RACE_ANIMAL,
+        .class = CLASS_PONY,
+        .size = SIZE_MEDIUM,
+        .faction = FACTION_WILD_ANIMAL,
+
+        .level = 1,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 4,
+            [ABILITY_DEXTERITY] = 17,
+            [ABILITY_CONSTITUTION] = 10,
+            [ABILITY_INTELLIGENCE] = 2,
+            [ABILITY_WISDOM] = 14,
+            [ABILITY_CHARISMA] = 4,
+        },
+
+        .special_abilities = {
+            [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
+        },
+
+        .feats = {
+            [FEAT_ALERTNESS] = true,
+            [FEAT_WEAPON_FINESSE] = true,
         },
     },
     [MONSTER_TYPE_KRENSHAR] = {

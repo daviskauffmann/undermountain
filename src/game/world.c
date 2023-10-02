@@ -375,9 +375,6 @@ void world_save(FILE *const file)
             fwrite(&explosion->x, sizeof(explosion->x), 1, file);
             fwrite(&explosion->y, sizeof(explosion->y), 1, file);
 
-            fwrite(&explosion->radius, sizeof(explosion->radius), 1, file);
-            fwrite(&explosion->color, sizeof(explosion->color), 1, file);
-
             fwrite(&explosion->time, sizeof(explosion->time), 1, file);
         }
 
@@ -712,16 +709,13 @@ void world_load(FILE *const file)
             fread(&explosion->x, sizeof(explosion->x), 1, file);
             fread(&explosion->y, sizeof(explosion->y), 1, file);
 
-            fread(&explosion->radius, sizeof(explosion->radius), 1, file);
-            fread(&explosion->color, sizeof(explosion->color), 1, file);
-
             fread(&explosion->time, sizeof(explosion->time), 1, file);
 
             explosion->fov = map_to_fov_map(
                 map,
                 explosion->x,
                 explosion->y,
-                explosion->radius);
+                explosion_database[explosion->type].radius);
 
             list_add(map->explosions, explosion);
         }

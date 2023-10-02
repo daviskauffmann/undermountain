@@ -149,8 +149,6 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                     projectile->floor,
                     x,
                     y,
-                    3,
-                    projectile_database[projectile->type].color,
                     projectile->shooter,
                     projectile->caster_level));
         }
@@ -200,8 +198,6 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                     projectile->floor,
                     x,
                     y,
-                    5,
-                    projectile_database[projectile->type].color,
                     projectile->shooter,
                     projectile->caster_level));
         }

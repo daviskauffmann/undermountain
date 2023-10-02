@@ -13,6 +13,13 @@ enum explosion_type
     NUM_EXPLOSION_TYPES
 };
 
+struct explosion_data
+{
+    float intensity;
+    int radius;
+    TCOD_ColorRGB color;
+};
+
 struct explosion
 {
     enum explosion_type type;
@@ -21,9 +28,6 @@ struct explosion
     int x;
     int y;
 
-    int radius;
-    TCOD_ColorRGB color;
-
     float time;
 
     int caster_level;
@@ -31,13 +35,13 @@ struct explosion
     TCOD_Map *fov;
 };
 
+extern const struct explosion_data explosion_database[NUM_EXPLOSION_TYPES];
+
 struct explosion *explosion_new(
     enum explosion_type type,
     int floor,
     int x,
     int y,
-    int radius,
-    TCOD_ColorRGB color,
     struct actor *initiator,
     int caster_level);
 void explosion_delete(struct explosion *explosion);

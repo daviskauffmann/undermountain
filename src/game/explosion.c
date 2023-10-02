@@ -8,13 +8,24 @@
 #include <malloc.h>
 #include <math.h>
 
+const struct explosion_data explosion_database[NUM_EXPLOSION_TYPES] = {
+    [EXPLOSION_TYPE_ACID_SPLASH] = {
+        .intensity = 0.5f,
+        .radius = 3,
+        .color = COLOR_LIME,
+    },
+    [EXPLOSION_TYPE_FIREBALL] = {
+        .intensity = 0.5f,
+        .radius = 5,
+        .color = COLOR_FLAME,
+    },
+};
+
 struct explosion *explosion_new(
     const enum explosion_type type,
     const int floor,
     const int x,
     const int y,
-    const int radius,
-    const TCOD_ColorRGB color,
     struct actor *const initiator,
     const int caster_level)
 {
@@ -26,9 +37,6 @@ struct explosion *explosion_new(
     explosion->x = x;
     explosion->y = y;
 
-    explosion->radius = radius;
-    explosion->color = color;
-
     explosion->time = 0;
 
     struct map *const map = &world->maps[explosion->floor];
@@ -37,7 +45,7 @@ struct explosion *explosion_new(
         map,
         explosion->x,
         explosion->y,
-        explosion->radius);
+        explosion_database[explosion->type].radius);
 
     explosion->caster_level = caster_level;
 

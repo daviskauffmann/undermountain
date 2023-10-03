@@ -1389,41 +1389,6 @@ update(TCOD_Console *const console, const float delta_time)
 
                         if (TCOD_map_is_in_fov(world->player->fov, x, y))
                         {
-                            if (tile->corpse)
-                            {
-                                fg_color = corpse_metadata.color;
-                                glyph = corpse_metadata.glyph;
-                            }
-
-                            if (tile->object)
-                            {
-                                const struct object_data *const object_data = &object_database[tile->object->type];
-
-                                fg_color = object_data->color;
-                                glyph = object_data->glyph;
-                            }
-
-                            if (tile->item)
-                            {
-                                const struct item_data *const item_data = &item_database[tile->item->type];
-                                const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-
-                                fg_color = item_data->color;
-                                glyph = base_item_data->glyph;
-                            }
-
-                            if (tile->surface)
-                            {
-                                const struct surface_data *const surface_data = &surface_database[tile->surface->type];
-
-                                fg_color = surface_data->color;
-
-                                if (surface_data->glyph)
-                                {
-                                    glyph = surface_data->glyph;
-                                }
-                            }
-
                             if (tile->actor)
                             {
                                 const struct actor *const actor = tile->actor;
@@ -1437,8 +1402,55 @@ update(TCOD_Console *const console, const float delta_time)
 
                                 fg_color = color;
                                 glyph = class_data->glyph;
+
+                                goto draw_tile;
+                            }
+
+                            if (tile->object)
+                            {
+                                const struct object_data *const object_data = &object_database[tile->object->type];
+
+                                fg_color = object_data->color;
+                                glyph = object_data->glyph;
+
+                                goto draw_tile;
+                            }
+
+                            if (tile->item)
+                            {
+                                const struct item_data *const item_data = &item_database[tile->item->type];
+                                const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                                fg_color = item_data->color;
+                                glyph = base_item_data->glyph;
+
+                                goto draw_tile;
+                            }
+
+                            if (tile->corpse)
+                            {
+                                fg_color = corpse_metadata.color;
+                                glyph = corpse_metadata.glyph;
+
+                                goto draw_tile;
+                            }
+
+                            if (tile->surface)
+                            {
+                                const struct surface_data *const surface_data = &surface_database[tile->surface->type];
+
+                                fg_color = surface_data->color;
+
+                                if (surface_data->glyph)
+                                {
+                                    glyph = surface_data->glyph;
+                                }
+
+                                goto draw_tile;
                             }
                         }
+
+                    draw_tile:;
 
                         TCOD_console_set_char_foreground(
                             console,
@@ -1487,41 +1499,6 @@ update(TCOD_Console *const console, const float delta_time)
 
                             if (TCOD_map_is_in_fov(world->player->fov, x, y))
                             {
-                                if (tile->corpse)
-                                {
-                                    fg_color = corpse_metadata.color;
-                                    glyph = corpse_metadata.glyph;
-                                }
-
-                                if (tile->object)
-                                {
-                                    const struct object_data *const object_data = &object_database[tile->object->type];
-
-                                    fg_color = object_data->color;
-                                    glyph = object_data->glyph;
-                                }
-
-                                if (tile->item)
-                                {
-                                    const struct item_data *const item_data = &item_database[tile->item->type];
-                                    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-
-                                    fg_color = item_data->color;
-                                    glyph = base_item_data->glyph;
-                                }
-
-                                if (tile->surface)
-                                {
-                                    const struct surface_data *const surface_data = &surface_database[tile->surface->type];
-
-                                    fg_color = surface_data->color;
-
-                                    if (surface_data->glyph)
-                                    {
-                                        glyph = surface_data->glyph;
-                                    }
-                                }
-
                                 if (tile->actor)
                                 {
                                     const struct actor *const actor = tile->actor;
@@ -1535,8 +1512,55 @@ update(TCOD_Console *const console, const float delta_time)
 
                                     fg_color = color;
                                     glyph = class_data->glyph;
+
+                                    goto draw_tile_simple;
+                                }
+
+                                if (tile->object)
+                                {
+                                    const struct object_data *const object_data = &object_database[tile->object->type];
+
+                                    fg_color = object_data->color;
+                                    glyph = object_data->glyph;
+
+                                    goto draw_tile_simple;
+                                }
+
+                                if (tile->item)
+                                {
+                                    const struct item_data *const item_data = &item_database[tile->item->type];
+                                    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+                                    fg_color = item_data->color;
+                                    glyph = base_item_data->glyph;
+
+                                    goto draw_tile_simple;
+                                }
+
+                                if (tile->corpse)
+                                {
+                                    fg_color = corpse_metadata.color;
+                                    glyph = corpse_metadata.glyph;
+
+                                    goto draw_tile_simple;
+                                }
+
+                                if (tile->surface)
+                                {
+                                    const struct surface_data *const surface_data = &surface_database[tile->surface->type];
+
+                                    fg_color = surface_data->color;
+
+                                    if (surface_data->glyph)
+                                    {
+                                        glyph = surface_data->glyph;
+                                    }
+
+                                    goto draw_tile_simple;
                                 }
                             }
+
+                        draw_tile_simple:;
 
                             TCOD_console_set_char_foreground(
                                 console,

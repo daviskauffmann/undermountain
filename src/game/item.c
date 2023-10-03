@@ -84,7 +84,7 @@ const struct item_data item_database[] = {
 
         .spell_type = SPELL_TYPE_CURE_MODERATE_WOUNDS,
 
-        .level = 1,
+        .level = 3,
     },
     [ITEM_TYPE_POTION_CURE_SERIOUS_WOUNDS] = {
         .type = BASE_ITEM_TYPE_POTION,
@@ -95,7 +95,7 @@ const struct item_data item_database[] = {
 
         .spell_type = SPELL_TYPE_CURE_SERIOUS_WOUNDS,
 
-        .level = 1,
+        .level = 5,
     },
     [ITEM_TYPE_POTION_CURE_CRITICAL_WOUNDS] = {
         .type = BASE_ITEM_TYPE_POTION,
@@ -106,7 +106,7 @@ const struct item_data item_database[] = {
 
         .spell_type = SPELL_TYPE_CURE_CRITICAL_WOUNDS,
 
-        .level = 1,
+        .level = 7,
     },
     [ITEM_TYPE_POTION_HEAL] = {
         .type = BASE_ITEM_TYPE_POTION,
@@ -117,7 +117,7 @@ const struct item_data item_database[] = {
 
         .spell_type = SPELL_TYPE_HEAL,
 
-        .level = 1,
+        .level = 9,
     },
     [ITEM_TYPE_DAGGER] = {
         .type = BASE_ITEM_TYPE_DAGGER,

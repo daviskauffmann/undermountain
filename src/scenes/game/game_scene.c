@@ -481,16 +481,16 @@ struct scene *handle_event(const SDL_Event *event)
                 {
                     enum spell_type spell_type = SPELL_TYPE_NONE;
 
-                    bool known_spells[NUM_SPELL_TYPES] = {false};
-                    actor_calc_known_spells(world->player, &known_spells);
-                    int known_spell_count = 0;
+                    bool spells[NUM_SPELL_TYPES] = {false};
+                    actor_calc_spells(world->player, &spells);
+                    int spell_count = 0;
                     for (enum spell_type _spell_type = SPELL_TYPE_NONE + 1; _spell_type < NUM_SPELL_TYPES; _spell_type++)
                     {
-                        if (known_spells[_spell_type])
+                        if (spells[_spell_type])
                         {
-                            known_spell_count++;
+                            spell_count++;
 
-                            if (alpha + 1 == known_spell_count)
+                            if (alpha + 1 == spell_count)
                             {
                                 spell_type = _spell_type;
                                 break;
@@ -1389,7 +1389,7 @@ update(TCOD_Console *const console, const float delta_time)
 
                         if (TCOD_map_is_in_fov(world->player->fov, x, y))
                         {
-                            if (tile->corpses->size > 0)
+                            if (tile->corpse)
                             {
                                 fg_color = corpse_metadata.color;
                                 glyph = corpse_metadata.glyph;
@@ -1403,10 +1403,9 @@ update(TCOD_Console *const console, const float delta_time)
                                 glyph = object_data->glyph;
                             }
 
-                            if (tile->items->size > 0)
+                            if (tile->item)
                             {
-                                const struct item *const item = list_get(tile->items, 0);
-                                const struct item_data *const item_data = &item_database[item->type];
+                                const struct item_data *const item_data = &item_database[tile->item->type];
                                 const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
                                 fg_color = item_data->color;
@@ -1488,7 +1487,7 @@ update(TCOD_Console *const console, const float delta_time)
 
                             if (TCOD_map_is_in_fov(world->player->fov, x, y))
                             {
-                                if (tile->corpses->size > 0)
+                                if (tile->corpse)
                                 {
                                     fg_color = corpse_metadata.color;
                                     glyph = corpse_metadata.glyph;
@@ -1502,10 +1501,9 @@ update(TCOD_Console *const console, const float delta_time)
                                     glyph = object_data->glyph;
                                 }
 
-                                if (tile->items->size > 0)
+                                if (tile->item)
                                 {
-                                    const struct item *const item = list_get(tile->items, 0);
-                                    const struct item_data *const item_data = &item_database[item->type];
+                                    const struct item_data *const item_data = &item_database[tile->item->type];
                                     const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
                                     fg_color = item_data->color;
@@ -1671,8 +1669,7 @@ update(TCOD_Console *const console, const float delta_time)
                         goto done;
                     }
 
-                    const struct corpse *const corpse = list_get(tile->corpses, 0);
-                    if (corpse)
+                    if (tile->corpse)
                     {
                         TCOD_console_printf_ex(
                             console,
@@ -1681,36 +1678,21 @@ update(TCOD_Console *const console, const float delta_time)
                             TCOD_BKGND_NONE,
                             TCOD_CENTER,
                             "Lv.%d %s (dead)",
-                            corpse->level,
-                            corpse->name);
+                            tile->corpse->level,
+                            tile->corpse->name);
 
                         goto done;
                     }
 
-                    const struct item *const item = list_get(tile->items, 0);
-                    if (item)
+                    if (tile->item)
                     {
-                        if (tile->items->size > 1)
-                        {
-                            TCOD_console_printf_ex(
-                                console,
-                                view_rect.width / 2,
-                                view_rect.height - 2,
-                                TCOD_BKGND_NONE,
-                                TCOD_CENTER,
-                                "%s (multiple)",
-                                item_database[item->type].name);
-                        }
-                        else
-                        {
-                            TCOD_console_printf_ex(
-                                console,
-                                view_rect.width / 2,
-                                view_rect.height - 2,
-                                TCOD_BKGND_NONE,
-                                TCOD_CENTER,
-                                item_database[item->type].name);
-                        }
+                        TCOD_console_printf_ex(
+                            console,
+                            view_rect.width / 2,
+                            view_rect.height - 2,
+                            TCOD_BKGND_NONE,
+                            TCOD_CENTER,
+                            item_database[tile->item->type].name);
 
                         goto done;
                     }
@@ -2426,11 +2408,11 @@ update(TCOD_Console *const console, const float delta_time)
         {
             int y = 1;
 
-            bool known_spells[NUM_SPELL_TYPES] = {false};
-            actor_calc_known_spells(world->player, &known_spells);
+            bool spells[NUM_SPELL_TYPES] = {false};
+            actor_calc_spells(world->player, &spells);
             for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
             {
-                if (known_spells[spell_type])
+                if (spells[spell_type])
                 {
                     const struct spell_data *const spell_data = &spell_database[spell_type];
 
@@ -2471,7 +2453,7 @@ update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_RIGHT,
                         "%d",
-                        spell_data->level);
+                        actor_calc_spell_mana_cost(world->player, spell_type));
 
                     y++;
                 }

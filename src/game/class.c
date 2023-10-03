@@ -37,8 +37,16 @@ const struct class_data class_database[] = {
         .spell_progression = {
             [SPELL_TYPE_CURE_MINOR_WOUNDS] = 1,
             [SPELL_TYPE_CURE_LIGHT_WOUNDS] = 1,
+            [SPELL_TYPE_CURE_MODERATE_WOUNDS] = 2,
+            [SPELL_TYPE_CURE_SERIOUS_WOUNDS] = 3,
+            [SPELL_TYPE_CURE_CRITICAL_WOUNDS] = 4,
+            [SPELL_TYPE_HARM] = 6,
+            [SPELL_TYPE_HEAL] = 6,
             [SPELL_TYPE_INFLICT_MINOR_WOUNDS] = 1,
             [SPELL_TYPE_INFLICT_LIGHT_WOUNDS] = 1,
+            [SPELL_TYPE_INFLICT_MODERATE_WOUNDS] = 2,
+            [SPELL_TYPE_INFLICT_SERIOUS_WOUNDS] = 3,
+            [SPELL_TYPE_INFLICT_CRITICAL_WOUNDS] = 4,
         },
 
         .starting_equipment = {
@@ -50,7 +58,7 @@ const struct class_data class_database[] = {
         .starting_items = {
             [ITEM_TYPE_FOOD] = 10,
             [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
-            [ITEM_TYPE_POTION_RECOVER_LIGHT_ARCANA] = 10,
+            [ITEM_TYPE_POTION_RESTORE_MANA] = 10,
         },
 
         .companion = MONSTER_TYPE_DOG,
@@ -124,7 +132,10 @@ const struct class_data class_database[] = {
 
         .spellcasting_ability = ABILITY_WISDOM,
         .spell_progression = {
+            [SPELL_TYPE_CURE_MINOR_WOUNDS] = 1,
             [SPELL_TYPE_CURE_LIGHT_WOUNDS] = 1,
+            [SPELL_TYPE_CURE_MODERATE_WOUNDS] = 2,
+            [SPELL_TYPE_CURE_SERIOUS_WOUNDS] = 3,
         },
 
         .starting_equipment = {
@@ -136,7 +147,7 @@ const struct class_data class_database[] = {
         .starting_items = {
             [ITEM_TYPE_FOOD] = 10,
             [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
-            [ITEM_TYPE_POTION_RECOVER_LIGHT_ARCANA] = 10,
+            [ITEM_TYPE_POTION_RESTORE_MANA] = 10,
         },
 
         .companion = MONSTER_TYPE_PONY,
@@ -220,7 +231,7 @@ const struct class_data class_database[] = {
         .starting_items = {
             [ITEM_TYPE_FOOD] = 10,
             [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
-            [ITEM_TYPE_POTION_RECOVER_LIGHT_ARCANA] = 10,
+            [ITEM_TYPE_POTION_RESTORE_MANA] = 10,
         },
 
         .companion = MONSTER_TYPE_CAT,

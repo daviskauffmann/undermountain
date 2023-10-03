@@ -223,7 +223,7 @@ void world_save(FILE *const file)
             fwrite(&actor->hit_points, sizeof(actor->hit_points), 1, file);
 
             fwrite(&actor->mana, sizeof(actor->mana), 1, file);
-            fwrite(&actor->memorized_spells, sizeof(actor->memorized_spells), 1, file);
+            fwrite(&actor->spells, sizeof(actor->spells), 1, file);
             fwrite(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
 
             fwrite(&actor->gold, sizeof(actor->gold), 1, file);
@@ -510,7 +510,7 @@ void world_load(FILE *const file)
             fread(&actor->hit_points, sizeof(actor->hit_points), 1, file);
 
             fread(&actor->mana, sizeof(actor->mana), 1, file);
-            fread(&actor->memorized_spells, sizeof(actor->memorized_spells), 1, file);
+            fread(&actor->spells, sizeof(actor->spells), 1, file);
             fread(&actor->readied_spell, sizeof(actor->readied_spell), 1, file);
 
             fread(&actor->gold, sizeof(actor->gold), 1, file);
@@ -631,7 +631,7 @@ void world_load(FILE *const file)
             fread(&corpse->y, sizeof(corpse->y), 1, file);
 
             list_add(map->corpses, corpse);
-            list_add(map->tiles[corpse->x][corpse->y].corpses, corpse);
+            map->tiles[corpse->x][corpse->y].corpse = corpse;
         }
 
         size_t num_items;
@@ -649,7 +649,7 @@ void world_load(FILE *const file)
             fread(&item->stack, sizeof(item->stack), 1, file);
 
             list_add(map->items, item);
-            list_add(map->tiles[item->x][item->y].items, item);
+            map->tiles[item->x][item->y].item = item;
         }
 
         size_t num_projectiles;
@@ -866,8 +866,11 @@ void world_update(float delta_time)
                         actor->floor,
                         actor->x,
                         actor->y);
+
+                    map_find_empty_tile(map, &corpse->x, &corpse->y);
+
                     list_add(map->corpses, corpse);
-                    list_add(tile->corpses, corpse);
+                    map->tiles[corpse->x][corpse->y].corpse = corpse;
 
                     // drop items
                     if (actor != world->hero)
@@ -883,8 +886,10 @@ void world_update(float delta_time)
                                 equipment->x = actor->x;
                                 equipment->y = actor->y;
 
-                                list_add(tile->items, equipment);
+                                map_find_empty_tile(map, &equipment->x, &equipment->y);
+
                                 list_add(map->items, equipment);
+                                map->tiles[equipment->x][equipment->y].item = equipment;
 
                                 actor->equipment[equip_slot] = NULL;
                             }
@@ -899,8 +904,10 @@ void world_update(float delta_time)
                             item->x = actor->x;
                             item->y = actor->y;
 
-                            list_add(tile->items, item);
+                            map_find_empty_tile(map, &item->x, &item->y);
+
                             list_add(map->items, item);
+                            map->tiles[item->x][item->y].item = item;
 
                             list_remove_at(actor->items, item_index--);
                         }

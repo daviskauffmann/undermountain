@@ -2,7 +2,6 @@
 #define UM_GAME_FEAT_H
 
 #include "ability.h"
-#include <libtcod.h>
 
 enum feat
 {
@@ -44,10 +43,8 @@ enum class;
 
 struct feat_prerequisites
 {
-    bool requires_race;
     enum race race;
 
-    bool requires_class;
     enum class class;
 
     int level;

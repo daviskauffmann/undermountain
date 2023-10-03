@@ -34,8 +34,8 @@ struct tile
     bool explored;
     struct object *object;
     struct actor *actor;
-    struct list *corpses;
-    struct list *items;
+    struct corpse *corpse;
+    struct item *item;
     struct surface *surface;
 };
 

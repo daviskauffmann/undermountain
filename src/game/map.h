@@ -35,6 +35,8 @@ bool map_is_inside(int x, int y);
 
 struct room *map_get_random_room(const struct map *map);
 
+void map_find_empty_tile(const struct map *map, int *x, int *y);
+
 bool map_is_transparent(
     const struct map *map,
     int x, int y);

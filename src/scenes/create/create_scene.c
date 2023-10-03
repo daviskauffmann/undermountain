@@ -82,13 +82,13 @@ static bool feat_is_available(enum feat feat)
 {
     const struct feat_prerequisites *const prerequisites = &feat_database[feat].prerequisites;
 
-    if (prerequisites->requires_race &&
+    if (prerequisites->race != RACE_NONE &&
         prerequisites->race != selected_race)
     {
         return false;
     }
 
-    if (prerequisites->requires_class &&
+    if (prerequisites->class != CLASS_NONE &&
         prerequisites->class != selected_class)
     {
         return false;

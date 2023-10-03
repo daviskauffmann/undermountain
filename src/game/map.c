@@ -400,7 +400,7 @@ void map_generate(struct map *const map)
             stair_down_room = map_get_random_room(map);
 
             room_get_random_pos(stair_down_room, &map->stair_down_x, &map->stair_down_y);
-        } while (map->tiles[map->stair_down_x][map->stair_down_y].type == TILE_TYPE_FLOOR &&
+        } while (map->tiles[map->stair_down_x][map->stair_down_y].type != TILE_TYPE_FLOOR ||
                  map->tiles[map->stair_down_x][map->stair_down_y].object != NULL);
 
         struct object *const stair_down = object_new(
@@ -422,7 +422,7 @@ void map_generate(struct map *const map)
             stair_up_room = map_get_random_room(map);
 
             room_get_random_pos(stair_up_room, &map->stair_up_x, &map->stair_up_y);
-        } while (map->tiles[map->stair_up_x][map->stair_up_y].type == TILE_TYPE_FLOOR &&
+        } while (map->tiles[map->stair_up_x][map->stair_up_y].type != TILE_TYPE_FLOOR ||
                  map->tiles[map->stair_up_x][map->stair_up_y].object != NULL);
 
         struct object *const stair_up = object_new(
@@ -448,7 +448,7 @@ void map_generate(struct map *const map)
             do
             {
                 room_get_random_pos(room, &x, &y);
-            } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
+            } while (map->tiles[x][y].type != TILE_TYPE_FLOOR ||
                      map->tiles[x][y].object != NULL);
 
             enum object_type object_type = 0;
@@ -504,8 +504,9 @@ void map_generate(struct map *const map)
             do
             {
                 room_get_random_pos(room, &x, &y);
-            } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                     map->tiles[x][y].object != NULL);
+            } while (map->tiles[x][y].type != TILE_TYPE_FLOOR ||
+                     map->tiles[x][y].object != NULL ||
+                     map->tiles[x][y].item != NULL);
 
             enum item_type type;
             do
@@ -524,7 +525,7 @@ void map_generate(struct map *const map)
 
             list_add(map->items, item);
 
-            list_add(map->tiles[x][y].items, item);
+            map->tiles[x][y].item = item;
         }
 
         // spawn adventurer
@@ -537,8 +538,8 @@ void map_generate(struct map *const map)
                 room_get_random_pos(
                     map_get_random_room(map),
                     &x, &y);
-            } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                     map->tiles[x][y].actor != NULL &&
+            } while (map->tiles[x][y].type != TILE_TYPE_FLOOR ||
+                     map->tiles[x][y].actor != NULL ||
                      map->tiles[x][y].object != NULL);
 
             enum race race = TCOD_random_get_int(world->random, PLAYER_RACE_BEGIN, PLAYER_RACE_END);
@@ -622,8 +623,8 @@ void map_generate(struct map *const map)
                             do
                             {
                                 room_get_random_pos(room, &x, &y);
-                            } while (map->tiles[x][y].type == TILE_TYPE_FLOOR &&
-                                     map->tiles[x][y].actor != NULL &&
+                            } while (map->tiles[x][y].type != TILE_TYPE_FLOOR ||
+                                     map->tiles[x][y].actor != NULL ||
                                      map->tiles[x][y].object != NULL);
 
                             struct actor *const actor = actor_new(
@@ -699,6 +700,19 @@ bool map_is_inside(const int x, const int y)
 struct room *map_get_random_room(const struct map *const map)
 {
     return list_get(map->rooms, TCOD_random_get_int(world->random, 0, (int)map->rooms->size - 1));
+}
+
+void map_find_empty_tile(const struct map *map, int *x, int *y)
+{
+    while (!map_is_inside(*x, *y) ||
+           map->tiles[*x][*y].type != TILE_TYPE_FLOOR ||
+           map->tiles[*x][*y].object != NULL ||
+           map->tiles[*x][*y].item != NULL ||
+           map->tiles[*x][*y].corpse != NULL)
+    {
+        *x += TCOD_random_get_int(world->random, -1, 1);
+        *y += TCOD_random_get_int(world->random, -1, 1);
+    }
 }
 
 bool map_is_transparent(

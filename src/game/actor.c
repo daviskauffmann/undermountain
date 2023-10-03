@@ -56,42 +56,28 @@ struct actor *actor_new(
     actor->experience = actor_calc_experience_for_level(level);
 
     actor->ability_points = 0;
-    for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
-    {
-        actor->ability_scores[ability] = ability_scores[ability];
-    }
+    memcpy(actor->ability_scores, ability_scores, sizeof(actor->ability_scores));
 
-    for (enum special_ability special_ability = 0; special_ability < NUM_SPECIAL_ABILITIES; special_ability++)
-    {
-        actor->special_abilities[special_ability] = special_abilities[special_ability];
-    }
+    memcpy(actor->special_abilities, special_abilities, sizeof(actor->special_abilities));
 
-    for (enum special_attack special_attack = 0; special_attack < NUM_SPECIAL_ATTACKS; special_attack++)
-    {
-        actor->special_attacks[special_attack] = special_attacks[special_attack];
-    }
+    memcpy(actor->special_attacks, special_attacks, sizeof(actor->special_attacks));
 
-    for (enum feat feat = 0; feat < NUM_FEATS; feat++)
-    {
-        actor->feats[feat] = feats[feat];
-    }
+    memcpy(actor->feats, feats, sizeof(actor->feats));
 
     actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
     actor->hit_points = actor_calc_max_hit_points(actor);
 
     actor->gold = 0;
-
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
         actor->equipment[equip_slot] = NULL;
     }
-
     actor->items = list_new();
 
     actor->mana = actor_calc_max_mana(actor);
     for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
     {
-        actor->memorized_spells[spell_type] = false;
+        actor->spells[spell_type] = false;
     }
     actor->readied_spell = SPELL_TYPE_NONE;
 
@@ -292,7 +278,7 @@ void actor_calc_special_attacks(const struct actor *const actor, bool (*const sp
 {
     for (enum special_attack special_attack = 0; special_attack < NUM_SPECIAL_ATTACKS; special_attack++)
     {
-        if (actor->special_abilities[special_attack])
+        if (actor->special_attacks[special_attack])
         {
             (*special_attacks)[special_attack] = true;
         }
@@ -334,10 +320,10 @@ void actor_calc_feats(const struct actor *actor, bool (*const feats)[NUM_FEATS])
 
 bool actor_has_feat(const struct actor *const actor, const enum feat feat)
 {
-    bool known_feats[NUM_FEATS] = {false};
-    actor_calc_feats(actor, &known_feats);
+    bool feats[NUM_FEATS] = {false};
+    actor_calc_feats(actor, &feats);
 
-    return known_feats[feat];
+    return feats[feat];
 }
 
 bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
@@ -350,13 +336,13 @@ bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
 
     const struct feat_prerequisites *const prerequisites = &feat_database[feat].prerequisites;
 
-    if (prerequisites->requires_race &&
+    if (prerequisites->race != RACE_NONE &&
         prerequisites->race != actor->race)
     {
         return false;
     }
 
-    if (prerequisites->requires_class &&
+    if (prerequisites->class != CLASS_NONE &&
         prerequisites->class != actor->class)
     {
         return false;
@@ -384,7 +370,7 @@ bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
     return true;
 }
 
-void actor_calc_known_spells(const struct actor *const actor, bool (*const known_spells)[NUM_SPELL_TYPES])
+void actor_calc_spells(const struct actor *const actor, bool (*const spells)[NUM_SPELL_TYPES])
 {
     for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
     {
@@ -395,22 +381,22 @@ void actor_calc_known_spells(const struct actor *const actor, bool (*const known
             level <= actor->level &&
             level <= 10 + actor->ability_scores[class_data->spellcasting_ability])
         {
-            (*known_spells)[spell_type] = true;
+            (*spells)[spell_type] = true;
         }
 
-        if (actor->memorized_spells[spell_type])
+        if (actor->spells[spell_type])
         {
-            (*known_spells)[spell_type] = true;
+            (*spells)[spell_type] = true;
         }
     }
 }
 
-bool actor_knows_spell(const struct actor *const actor, const enum spell_type spell_type)
+bool actor_has_spell(const struct actor *const actor, const enum spell_type spell_type)
 {
-    bool known_spells[NUM_SPELL_TYPES] = {false};
-    actor_calc_known_spells(actor, &known_spells);
+    bool spells[NUM_SPELL_TYPES] = {false};
+    actor_calc_spells(actor, &spells);
 
-    return known_spells[spell_type];
+    return spells[spell_type];
 }
 
 int actor_calc_max_hit_points(const struct actor *const actor)
@@ -839,6 +825,18 @@ float actor_calc_arcane_spell_failure(const struct actor *const actor)
     }
 
     return arcane_spell_failure;
+}
+
+int actor_calc_spell_mana_cost(const struct actor *const actor, const enum spell_type spell_type)
+{
+    int mana_cost = spell_database[spell_type].level;
+
+    if (actor_has_feat(actor, FEAT_STILL_SPELL))
+    {
+        mana_cost++;
+    }
+
+    return mana_cost;
 }
 
 enum equippability actor_calc_item_equippability(const struct actor *const actor, const struct item *const item)
@@ -1642,7 +1640,7 @@ bool actor_ai(struct actor *const actor)
     // TODO: look for items to pick up
 
     // pick up items on ground
-    if (tile->items->size > 0)
+    if (tile->item)
     {
         if (actor_grab(actor, actor->x, actor->y))
         {
@@ -2385,7 +2383,7 @@ bool actor_grab(
     struct map *const map = &world->maps[actor->floor];
     struct tile *const tile = &map->tiles[x][y];
 
-    if (tile->items->size == 0)
+    if (!tile->item)
     {
         world_log(
             actor->floor,
@@ -2411,9 +2409,9 @@ bool actor_grab(
         return false;
     }
 
-    struct item *const item = list_get(tile->items, 0);
+    struct item *const item = tile->item;
     list_remove(map->items, item);
-    list_remove(tile->items, item);
+    tile->item = NULL;
 
     if (item->type == ITEM_TYPE_GOLD)
     {
@@ -2450,6 +2448,8 @@ bool actor_grab(
 
 bool actor_drop(struct actor *const actor, struct item *const item)
 {
+    struct map *const map = &world->maps[item->floor];
+
     // remove from actor's inventory
     list_remove(actor->items, item);
 
@@ -2458,13 +2458,16 @@ bool actor_drop(struct actor *const actor, struct item *const item)
     item->x = actor->x;
     item->y = actor->y;
 
+    // find a clear tile to drop the item on
+    map_find_empty_tile(map, &item->x, &item->y);
+
     // add item to map
-    struct map *const map = &world->maps[item->floor];
     list_add(map->items, item);
 
     // add item to tile
     struct tile *const tile = &map->tiles[item->x][item->y];
-    list_add(tile->items, item);
+
+    tile->item = item;
 
     world_log(
         actor->floor,
@@ -2740,7 +2743,7 @@ bool actor_read(struct actor *const actor, struct item *const item, const int x,
         // TODO: if already known, do nothing
 
         // add spell to known spells
-        actor->memorized_spells[item_data->spell_type] = true;
+        actor->spells[item_data->spell_type] = true;
 
         // remove from inventory
         list_remove(actor->items, item);
@@ -3064,13 +3067,14 @@ bool actor_cast(
     }
 
     const struct spell_data *const spell_data = &spell_database[spell_type];
+    const int mana_cost = actor_calc_spell_mana_cost(actor, spell_type);
 
     if (from_memory)
     {
         // does the actor know the spell?
         // this should never happen, but just in case
         // an actor should only be able to "ready" a spell they know
-        if (!actor_knows_spell(actor, spell_type))
+        if (!actor_has_spell(actor, spell_type))
         {
             world_log(
                 actor->floor,
@@ -3099,7 +3103,7 @@ bool actor_cast(
         }
 
         // does the actor have enough mana?
-        if (actor->mana < spell_data->level)
+        if (actor->mana < mana_cost)
         {
             world_log(
                 actor->floor,
@@ -3133,7 +3137,7 @@ bool actor_cast(
 
                 if (from_memory)
                 {
-                    actor->mana -= spell_data->level;
+                    actor->mana -= mana_cost;
                 }
 
                 return true;
@@ -3154,7 +3158,7 @@ bool actor_cast(
 
     if (from_memory)
     {
-        actor->mana -= spell_data->level;
+        actor->mana -= mana_cost;
 
         caster_level = actor->level;
     }
@@ -3265,8 +3269,136 @@ bool actor_cast(
         }
     }
     break;
+    case SPELL_TYPE_CURE_MODERATE_WOUNDS:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            const int health = TCOD_random_dice_roll_s(world->random, "2d8") + MIN(caster_level, 10);
+
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_damage_hit_points(other, actor, health);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+        }
+    }
+    break;
+    case SPELL_TYPE_CURE_SERIOUS_WOUNDS:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            const int health = TCOD_random_dice_roll_s(world->random, "3d8") + MIN(caster_level, 15);
+
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_damage_hit_points(other, actor, health);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+        }
+    }
+    break;
+    case SPELL_TYPE_CURE_CRITICAL_WOUNDS:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            const int health = TCOD_random_dice_roll_s(world->random, "4d8") + MIN(caster_level, 20);
+
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_damage_hit_points(other, actor, health);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+        }
+    }
+    break;
     case SPELL_TYPE_CHAIN_LIGHTNING:
     {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
@@ -3308,6 +3440,11 @@ bool actor_cast(
     break;
     case SPELL_TYPE_DAZE:
     {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
@@ -3364,8 +3501,106 @@ bool actor_cast(
         list_add(map->projectiles, projectile);
     }
     break;
+    case SPELL_TYPE_HARM:
+    {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            if (other->race == RACE_UNDEAD)
+            {
+                const int health = actor_calc_max_hit_points(other) - other->hit_points;
+
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+            else
+            {
+                const int health = TCOD_random_dice_roll_s(world->random, "1d4");
+                const int damage = other->hit_points - health;
+
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    damage);
+
+                actor_damage_hit_points(other, actor, damage);
+            }
+        }
+    }
+    break;
+    case SPELL_TYPE_HEAL:
+    {
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            if (other->race == RACE_UNDEAD)
+            {
+                const int health = TCOD_random_dice_roll_s(world->random, "1d4");
+                const int damage = other->hit_points - health;
+
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    damage);
+
+                actor_damage_hit_points(other, actor, damage);
+            }
+            else
+            {
+                const int health = actor_calc_max_hit_points(other) - other->hit_points;
+
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+        }
+    }
+    break;
     case SPELL_TYPE_INFLICT_MINOR_WOUNDS:
     {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
@@ -3405,6 +3640,11 @@ bool actor_cast(
     break;
     case SPELL_TYPE_INFLICT_LIGHT_WOUNDS:
     {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
@@ -3412,6 +3652,144 @@ bool actor_cast(
         if (other)
         {
             const int health = TCOD_random_dice_roll_s(world->random, "1d8") + MIN(caster_level, 5);
+
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_damage_hit_points(other, actor, health);
+            }
+        }
+    }
+    break;
+    case SPELL_TYPE_INFLICT_MODERATE_WOUNDS:
+    {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            const int health = TCOD_random_dice_roll_s(world->random, "2d8") + MIN(caster_level, 10);
+
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_damage_hit_points(other, actor, health);
+            }
+        }
+    }
+    break;
+    case SPELL_TYPE_INFLICT_SERIOUS_WOUNDS:
+    {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            const int health = TCOD_random_dice_roll_s(world->random, "3d8") + MIN(caster_level, 15);
+
+            if (other->race == RACE_UNDEAD)
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s heals %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_restore_hit_points(other, health);
+            }
+            else
+            {
+                world_log(
+                    other->floor,
+                    other->x,
+                    other->y,
+                    color_white,
+                    "%s damages %s for %d.",
+                    actor->name,
+                    other->name,
+                    health);
+
+                actor_damage_hit_points(other, actor, health);
+            }
+        }
+    }
+    break;
+    case SPELL_TYPE_INFLICT_CRITICAL_WOUNDS:
+    {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
+        struct map *const map = &world->maps[actor->floor];
+        struct tile *const tile = &map->tiles[x][y];
+        struct actor *const other = tile->actor;
+
+        if (other)
+        {
+            const int health = TCOD_random_dice_roll_s(world->random, "4d8") + MIN(caster_level, 20);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3470,6 +3848,11 @@ bool actor_cast(
     break;
     case SPELL_TYPE_RAY_OF_FROST:
     {
+        if (x == actor->x && y == actor->y)
+        {
+            return false;
+        }
+
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
         struct actor *const other = tile->actor;
@@ -3505,7 +3888,7 @@ bool actor_cast(
         }
     }
     break;
-    case SPELL_TYPE_RECOVER_LIGHT_ARCANA:
+    case SPELL_TYPE_RESTORE_MANA:
     {
         struct map *const map = &world->maps[actor->floor];
         struct tile *const tile = &map->tiles[x][y];
@@ -3513,10 +3896,7 @@ bool actor_cast(
 
         if (other)
         {
-            TCOD_dice_t dice = TCOD_random_dice_new("1d8");
-            dice.addsub = (float)MIN(caster_level, 5);
-
-            const int mana = TCOD_random_dice_roll(world->random, dice);
+            const int mana = actor_calc_max_mana(other) - other->mana;
 
             world_log(
                 other->floor,

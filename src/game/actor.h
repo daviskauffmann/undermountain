@@ -41,7 +41,7 @@ struct actor
     int hit_points;
 
     int mana;
-    bool memorized_spells[NUM_SPELL_TYPES];
+    bool spells[NUM_SPELL_TYPES];
     enum spell_type readied_spell;
 
     int gold;
@@ -111,8 +111,8 @@ void actor_calc_feats(const struct actor *actor, bool (*feats)[NUM_FEATS]);
 bool actor_has_feat(const struct actor *actor, enum feat feat);
 bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat);
 
-void actor_calc_known_spells(const struct actor *actor, bool (*known_spells)[NUM_SPELL_TYPES]);
-bool actor_knows_spell(const struct actor *actor, enum spell_type spell_type);
+void actor_calc_spells(const struct actor *actor, bool (*spells)[NUM_SPELL_TYPES]);
+bool actor_has_spell(const struct actor *actor, enum spell_type spell_type);
 
 int actor_calc_max_hit_points(const struct actor *actor);
 void actor_restore_hit_points(struct actor *actor, int health);
@@ -133,6 +133,7 @@ const char *actor_calc_damage(const struct actor *actor);
 int actor_calc_max_mana(const struct actor *actor);
 void actor_restore_mana(struct actor *actor, int mana);
 float actor_calc_arcane_spell_failure(const struct actor *actor);
+int actor_calc_spell_mana_cost(const struct actor *actor, enum spell_type spell_type);
 
 enum equippability actor_calc_item_equippability(const struct actor *actor, const struct item *item);
 

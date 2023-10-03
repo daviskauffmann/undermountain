@@ -69,7 +69,6 @@ const struct feat_data feat_database[] = {
         .description = "A character with this feat gains an additional feat at level 1.",
 
         .prerequisites = {
-            .requires_race = true,
             .race = RACE_HUMAN,
         },
     },
@@ -90,7 +89,6 @@ const struct feat_data feat_database[] = {
         .description = "A character with this feat deals extra damage when undetected.",
 
         .prerequisites = {
-            .requires_class = true,
             .class = CLASS_ROGUE,
         },
     },
@@ -100,7 +98,7 @@ const struct feat_data feat_database[] = {
     },
     [FEAT_STILL_SPELL] = {
         .name = "Still Spell",
-        .description = "A character with this feat ignores arcane spell failure.",
+        .description = "A character with this feat ignores arcane spell failure, but all arcane spell mana costs are increased by 1.",
     },
     [FEAT_TOUGHNESS] = {
         .name = "Toughness",
@@ -131,7 +129,6 @@ const struct feat_data feat_database[] = {
         .description = "A character with this feat is proficient with elf weapons.",
 
         .prerequisites = {
-            .requires_race = true,
             .race = RACE_ELF,
         },
     },
@@ -148,7 +145,6 @@ const struct feat_data feat_database[] = {
         .description = "A character with this feat is proficient with rogue weapons.",
 
         .prerequisites = {
-            .requires_class = true,
             .class = CLASS_ROGUE,
         },
     },
@@ -161,7 +157,6 @@ const struct feat_data feat_database[] = {
         .description = "A character with this feat is proficient with wizard weapons.",
 
         .prerequisites = {
-            .requires_class = true,
             .class = CLASS_WIZARD,
         },
     },

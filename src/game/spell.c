@@ -23,6 +23,24 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
     },
+    [SPELL_TYPE_CURE_MODERATE_WOUNDS] = {
+        .name = "Cure Moderate Wounds",
+        .level = 2,
+        .magic_type = MAGIC_TYPE_DIVINE,
+        .range = SPELL_RANGE_TOUCH,
+    },
+    [SPELL_TYPE_CURE_SERIOUS_WOUNDS] = {
+        .name = "Cure Serious Wounds",
+        .level = 3,
+        .magic_type = MAGIC_TYPE_DIVINE,
+        .range = SPELL_RANGE_TOUCH,
+    },
+    [SPELL_TYPE_CURE_CRITICAL_WOUNDS] = {
+        .name = "Cure Critical Wounds",
+        .level = 4,
+        .magic_type = MAGIC_TYPE_DIVINE,
+        .range = SPELL_RANGE_TOUCH,
+    },
     [SPELL_TYPE_CHAIN_LIGHTNING] = {
         .name = "Lightning",
         .level = 6,
@@ -44,6 +62,19 @@ const struct spell_data spell_database[] = {
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
     },
+    [SPELL_TYPE_HARM] = {
+        .name = "Harm",
+        .level = 6,
+        .magic_type = MAGIC_TYPE_DIVINE,
+        .range = SPELL_RANGE_TOUCH,
+        .harmful = true,
+    },
+    [SPELL_TYPE_HEAL] = {
+        .name = "Heal",
+        .level = 6,
+        .magic_type = MAGIC_TYPE_DIVINE,
+        .range = SPELL_RANGE_TOUCH,
+    },
     [SPELL_TYPE_INFLICT_MINOR_WOUNDS] = {
         .name = "Inflict Minor Wounds",
         .level = 0,
@@ -54,6 +85,27 @@ const struct spell_data spell_database[] = {
     [SPELL_TYPE_INFLICT_LIGHT_WOUNDS] = {
         .name = "Inflict Light Wounds",
         .level = 1,
+        .magic_type = MAGIC_TYPE_DIVINE,
+        .range = SPELL_RANGE_TOUCH,
+        .harmful = true,
+    },
+    [SPELL_TYPE_INFLICT_MODERATE_WOUNDS] = {
+        .name = "Inflict Moderate Wounds",
+        .level = 2,
+        .magic_type = MAGIC_TYPE_DIVINE,
+        .range = SPELL_RANGE_TOUCH,
+        .harmful = true,
+    },
+    [SPELL_TYPE_INFLICT_SERIOUS_WOUNDS] = {
+        .name = "Inflict Serious Wounds",
+        .level = 3,
+        .magic_type = MAGIC_TYPE_DIVINE,
+        .range = SPELL_RANGE_TOUCH,
+        .harmful = true,
+    },
+    [SPELL_TYPE_INFLICT_CRITICAL_WOUNDS] = {
+        .name = "Inflict Critical Wounds",
+        .level = 4,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
@@ -72,9 +124,9 @@ const struct spell_data spell_database[] = {
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
     },
-    [SPELL_TYPE_RECOVER_LIGHT_ARCANA] = {
-        .name = "Recover Light Arcana",
-        .level = 1,
+    [SPELL_TYPE_RESTORE_MANA] = {
+        .name = "Restore Mana",
+        .level = 0,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
     },

@@ -4,9 +4,12 @@
 #include "ability.h"
 #include "feat.h"
 #include "special_ability.h"
+#include <libtcod.h>
 
 enum race
 {
+    RACE_NONE,
+
     // player races
     RACE_HUMAN,
     RACE_DWARF,
@@ -27,8 +30,8 @@ enum race
 #define PLAYER_RACE_BEGIN RACE_HUMAN
 #define PLAYER_RACE_END RACE_ELF
 #define NUM_PLAYER_RACES PLAYER_RACE_END + 1
-#define MONSTER_RACE_BEGIN RACE_BUGBEAR
-#define MONSTER_RACE_END RACE_SLIME
+#define MONSTER_RACE_BEGIN RACE_ANIMAL
+#define MONSTER_RACE_END RACE_VERMIN
 #define NUM_MONSTER_RACES = MONSTER_RACE_END + 1
 
 struct race_data

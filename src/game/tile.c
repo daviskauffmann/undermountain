@@ -48,13 +48,12 @@ void tile_init(
     tile->explored = seen;
     tile->object = NULL;
     tile->actor = NULL;
-    tile->corpses = list_new();
-    tile->items = list_new();
+    tile->corpse = NULL;
+    tile->item = NULL;
     tile->surface = NULL;
 }
 
 void tile_uninit(struct tile *const tile)
 {
-    list_delete(tile->items);
-    list_delete(tile->corpses);
+    tile;
 }

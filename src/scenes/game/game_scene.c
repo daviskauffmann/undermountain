@@ -122,6 +122,11 @@ static bool do_directional_action(const enum direction direction)
         took_turn = actor_dip(world->player, x, y);
     }
     break;
+    case DIRECTIONAL_ACTION_OPEN_DOOR:
+    {
+        took_turn = actor_open_door(world->player, x, y);
+    }
+    break;
     }
 
     directional_action = DIRECTIONAL_ACTION_NONE;
@@ -204,7 +209,7 @@ static bool do_character_action_ability(const enum ability ability)
 
     switch (character_action)
     {
-    case CHARACTER_ACTION_ABILITY_ADD_POINT:
+    case CHARACTER_ACTION_ABILITY_SPEND_POINT:
     {
         if (world->player->ability_points > 0)
         {
@@ -233,7 +238,7 @@ static bool do_character_action_equipment(const enum equip_slot equip_slot)
 
     switch (character_action)
     {
-    case CHARACTER_ACTION_ABILITY_ADD_POINT:
+    case CHARACTER_ACTION_ABILITY_SPEND_POINT:
     {
     }
     break;
@@ -265,7 +270,7 @@ static bool do_spellbook_action(const enum spell_type spell_type)
 
     switch (spellbook_action)
     {
-    case SPELLBOOK_ACTION_SELECT:
+    case SPELLBOOK_ACTION_READY:
     {
         world->player->readied_spell = spell_type;
 
@@ -432,9 +437,10 @@ struct scene *handle_event(const SDL_Event *event)
     {
         // determine if player is selecting something in a list
         // if so, don't process any other keyboard input
-        bool handled = false;
-
-        if (event->key.keysym.sym >= SDLK_a && event->key.keysym.sym <= SDLK_z)
+        if (event->key.keysym.sym >= SDLK_a && event->key.keysym.sym <= SDLK_z &&
+            (inventory_action != INVENTORY_ACTION_NONE ||
+             character_action != CHARACTER_ACTION_NONE ||
+             spellbook_action != SPELLBOOK_ACTION_NONE))
         {
             const int alpha = event->key.keysym.sym - SDLK_a;
 
@@ -447,10 +453,8 @@ struct scene *handle_event(const SDL_Event *event)
 
                     world->player->took_turn = do_inventory_action(item);
                 }
-
-                handled = true;
             }
-            else if ((character_action == CHARACTER_ACTION_ABILITY_ADD_POINT) &&
+            else if ((character_action == CHARACTER_ACTION_ABILITY_SPEND_POINT) &&
                      alpha >= 0 && alpha < NUM_ABILITIES - 1)
             {
                 if (world_can_player_take_turn())
@@ -459,8 +463,6 @@ struct scene *handle_event(const SDL_Event *event)
 
                     world->player->took_turn = do_character_action_ability(ability);
                 }
-
-                handled = true;
             }
             else if ((character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
                       character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP) &&
@@ -472,8 +474,6 @@ struct scene *handle_event(const SDL_Event *event)
 
                     world->player->took_turn = do_character_action_equipment(equip_slot);
                 }
-
-                handled = true;
             }
             else if (spellbook_action != SPELLBOOK_ACTION_NONE)
             {
@@ -503,13 +503,8 @@ struct scene *handle_event(const SDL_Event *event)
                         world->player->took_turn = do_spellbook_action(spell_type);
                     }
                 }
-
-                handled = true;
             }
-        }
 
-        if (handled)
-        {
             break;
         }
 
@@ -520,19 +515,14 @@ struct scene *handle_event(const SDL_Event *event)
             if (directional_action != DIRECTIONAL_ACTION_NONE ||
                 inventory_action != INVENTORY_ACTION_NONE ||
                 character_action != CHARACTER_ACTION_NONE ||
-                spellbook_action != SPELLBOOK_ACTION_NONE)
+                spellbook_action != SPELLBOOK_ACTION_NONE ||
+                targeting_action != TARGETING_ACTION_NONE)
             {
                 directional_action = DIRECTIONAL_ACTION_NONE;
                 inventory_action = INVENTORY_ACTION_NONE;
                 character_action = CHARACTER_ACTION_NONE;
                 spellbook_action = SPELLBOOK_ACTION_NONE;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Action cancelled.");
+                targeting_action = TARGETING_ACTION_NONE;
             }
             else if (panel_rect.visible)
             {
@@ -566,17 +556,18 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
+        case SDLK_SLASH:
+        {
+            if (event->key.keysym.mod & KMOD_SHIFT)
+            {
+                show_panel(PANEL_HELP);
+            }
+        }
+        break;
         case SDLK_a:
         {
             show_panel(PANEL_CHARACTER);
-            character_action = CHARACTER_ACTION_ABILITY_ADD_POINT;
-
-            world_log(
-                world->player->floor,
-                world->player->x,
-                world->player->y,
-                color_yellow,
-                "Choose abilities to add points to. Press 'ESC' to stop.");
+            character_action = CHARACTER_ACTION_ABILITY_SPEND_POINT;
         }
         break;
         case SDLK_b:
@@ -593,13 +584,6 @@ struct scene *handle_event(const SDL_Event *event)
             else
             {
                 directional_action = DIRECTIONAL_ACTION_CLOSE_DOOR;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose a direction to close door. Press 'ESC' to cancel.");
             }
         }
         break;
@@ -609,25 +593,11 @@ struct scene *handle_event(const SDL_Event *event)
             {
                 toggle_panel(PANEL_CHARACTER);
                 directional_action = DIRECTIONAL_ACTION_DIP;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose a direction to dip. Press 'ESC' to cancel.");
             }
             else
             {
                 show_panel(PANEL_INVENTORY);
                 inventory_action = INVENTORY_ACTION_DROP;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose an item to drop. Press 'ESC' to cancel.");
             }
         }
         break;
@@ -635,13 +605,6 @@ struct scene *handle_event(const SDL_Event *event)
         {
             show_panel(PANEL_INVENTORY);
             inventory_action = INVENTORY_ACTION_EQUIP;
-
-            world_log(
-                world->player->floor,
-                world->player->x,
-                world->player->y,
-                color_yellow,
-                "Choose an item to equip. Press 'ESC' to cancel.");
         }
         break;
         case SDLK_f:
@@ -705,17 +668,15 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
+        case SDLK_o:
+        {
+            directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
+        }
+        break;
         case SDLK_q:
         {
             show_panel(PANEL_INVENTORY);
             inventory_action = INVENTORY_ACTION_QUAFF;
-
-            world_log(
-                world->player->floor,
-                world->player->x,
-                world->player->y,
-                color_yellow,
-                "Choose an item to quaff. Press 'ESC' to cancel.");
         }
         break;
         case SDLK_r:
@@ -742,13 +703,6 @@ struct scene *handle_event(const SDL_Event *event)
                 {
                     show_panel(PANEL_INVENTORY);
                     inventory_action = INVENTORY_ACTION_READ;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose an item to read. Press 'ESC' to cancel.");
                 }
             }
         }
@@ -793,13 +747,6 @@ struct scene *handle_event(const SDL_Event *event)
         {
             show_panel(PANEL_CHARACTER);
             character_action = CHARACTER_ACTION_EQUIPMENT_UNEQUIP;
-
-            world_log(
-                world->player->floor,
-                world->player->x,
-                world->player->y,
-                color_yellow,
-                "Choose an item to unequip. Press 'ESC' to cancel.");
         }
         break;
         case SDLK_x:
@@ -808,13 +755,6 @@ struct scene *handle_event(const SDL_Event *event)
             {
                 show_panel(PANEL_INVENTORY);
                 inventory_action = INVENTORY_ACTION_EXAMINE;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose an item to examine. Press 'ESC' to cancel.");
             }
             else
             {
@@ -822,13 +762,6 @@ struct scene *handle_event(const SDL_Event *event)
                 {
                     show_panel(PANEL_CHARACTER);
                     character_action = CHARACTER_ACTION_EQUIPMENT_EXAMINE;
-
-                    world_log(
-                        world->player->floor,
-                        world->player->x,
-                        world->player->y,
-                        color_yellow,
-                        "Choose an equipment to examine. Press 'ESC' to cancel.");
                 }
                 else
                 {
@@ -852,14 +785,7 @@ struct scene *handle_event(const SDL_Event *event)
             if (event->key.keysym.mod & KMOD_SHIFT)
             {
                 show_panel(PANEL_SPELLBOOK);
-                spellbook_action = SPELLBOOK_ACTION_SELECT;
-
-                world_log(
-                    world->player->floor,
-                    world->player->x,
-                    world->player->y,
-                    color_yellow,
-                    "Choose a spell. Press 'ESC' to cancel.");
+                spellbook_action = SPELLBOOK_ACTION_READY;
             }
             else
             {
@@ -1104,8 +1030,7 @@ static int get_wall_glyph(const struct map *const map, const int x, const int y)
     return glyphs[index];
 }
 
-static struct scene *
-update(TCOD_Console *const console, const float delta_time)
+static struct scene *update(TCOD_Console *const console, const float delta_time)
 {
     if (!world->player)
     {
@@ -2057,7 +1982,7 @@ update(TCOD_Console *const console, const float delta_time)
 
             for (enum ability ability = ABILITY_NONE + 1; ability < NUM_ABILITIES; ability++)
             {
-                if (character_action == CHARACTER_ACTION_ABILITY_ADD_POINT)
+                if (character_action == CHARACTER_ACTION_ABILITY_SPEND_POINT)
                 {
                     console_print(
                         panel_rect.console,
@@ -2428,6 +2353,16 @@ update(TCOD_Console *const console, const float delta_time)
                 "Inventory");
         }
         break;
+        case PANEL_HELP:
+        {
+            TCOD_console_printf_frame(
+                panel_rect.console,
+                0, 0, panel_rect.width, panel_rect.height,
+                false,
+                TCOD_BKGND_SET,
+                "Help");
+        }
+        break;
         case PANEL_SPELLBOOK:
         {
             int y = 1;
@@ -2500,6 +2435,161 @@ update(TCOD_Console *const console, const float delta_time)
             panel_rect.x,
             panel_rect.y,
             1, 1);
+    }
+
+    if (directional_action != DIRECTIONAL_ACTION_NONE ||
+        inventory_action != INVENTORY_ACTION_NONE ||
+        character_action != CHARACTER_ACTION_NONE ||
+        spellbook_action != SPELLBOOK_ACTION_NONE ||
+        targeting_action != TARGETING_ACTION_NONE)
+    {
+        // TODO: data driven
+        const char *command = "";
+        const char *controls = "";
+
+        if (directional_action != DIRECTIONAL_ACTION_NONE)
+        {
+            switch (directional_action)
+            {
+            case DIRECTIONAL_ACTION_CLOSE_DOOR:
+            {
+                command = "Close Door";
+            }
+            break;
+            case DIRECTIONAL_ACTION_DIP:
+            {
+                command = "Dip";
+            }
+            break;
+            case DIRECTIONAL_ACTION_OPEN_DOOR:
+            {
+                command = "Open Door";
+            }
+            break;
+            }
+
+            controls = "u/d/l/r: Select, ESC: Cancel";
+        }
+        else if (inventory_action != INVENTORY_ACTION_NONE)
+        {
+            switch (inventory_action)
+            {
+            case INVENTORY_ACTION_DROP:
+            {
+                command = "Drop";
+            }
+            break;
+            case INVENTORY_ACTION_EQUIP:
+            {
+                command = "Equip";
+            }
+            break;
+            case INVENTORY_ACTION_EXAMINE:
+            {
+                command = "Examine";
+            }
+            break;
+            case INVENTORY_ACTION_QUAFF:
+            {
+                command = "Quaff";
+            }
+            break;
+            case INVENTORY_ACTION_READ:
+            {
+                command = "Read";
+            }
+            break;
+            }
+
+            controls = "a-z: Select, ESC: Cancel";
+        }
+        else if (character_action != CHARACTER_ACTION_NONE)
+        {
+            switch (character_action)
+            {
+            case CHARACTER_ACTION_ABILITY_SPEND_POINT:
+            {
+                command = "Spend Ability Point";
+            }
+            break;
+            case CHARACTER_ACTION_EQUIPMENT_EXAMINE:
+            {
+                command = "Examine";
+            }
+            break;
+            case CHARACTER_ACTION_EQUIPMENT_UNEQUIP:
+            {
+                command = "Unequip";
+            }
+            break;
+            }
+
+            controls = "a-z: Select, ESC: Cancel";
+        }
+        else if (spellbook_action != SPELLBOOK_ACTION_NONE)
+        {
+            switch (spellbook_action)
+            {
+            case SPELLBOOK_ACTION_READY:
+            {
+                command = "Ready";
+            }
+            break;
+            }
+
+            controls = "a-z: Select, ESC: Cancel";
+        }
+        else if (targeting_action != TARGETING_ACTION_NONE)
+        {
+            switch (targeting_action)
+            {
+            case TARGETING_ACTION_LOOK:
+            {
+                command = "Look";
+            }
+            break;
+            case TARGETING_ACTION_EXAMINE:
+            {
+                command = "Examine";
+            }
+            break;
+            case TARGETING_ACTION_READ:
+            {
+                command = "Read";
+            }
+            break;
+            case TARGETING_ACTION_SHOOT:
+            {
+                command = "Shoot";
+            }
+            break;
+            case TARGETING_ACTION_SPELL:
+            {
+                command = "Cast Spell";
+            }
+            break;
+            }
+
+            controls = "u/d/l/r: Move, ESC: Cancel";
+        }
+
+        console_print(
+            console,
+            0, 0,
+            &color_white,
+            NULL,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
+            command);
+
+        console_print(
+            console,
+            0, 1,
+            &color_white,
+            NULL,
+            TCOD_BKGND_NONE,
+            TCOD_LEFT,
+            controls);
     }
 
     if (!world->doomed && !world_can_player_take_turn())

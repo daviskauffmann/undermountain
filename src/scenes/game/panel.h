@@ -5,6 +5,7 @@ enum panel
 {
     PANEL_CHARACTER,
     PANEL_EXAMINE,
+    PANEL_HELP,
     PANEL_INVENTORY,
     PANEL_SPELLBOOK,
 

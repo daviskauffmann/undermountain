@@ -11,6 +11,7 @@ enum directional_action
 
     DIRECTIONAL_ACTION_CLOSE_DOOR,
     DIRECTIONAL_ACTION_DIP,
+    DIRECTIONAL_ACTION_OPEN_DOOR,
 };
 
 #endif

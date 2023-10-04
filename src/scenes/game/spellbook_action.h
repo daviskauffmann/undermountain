@@ -5,7 +5,7 @@ enum spellbook_action
 {
     SPELLBOOK_ACTION_NONE,
 
-    SPELLBOOK_ACTION_SELECT
+    SPELLBOOK_ACTION_READY
 };
 
 #endif

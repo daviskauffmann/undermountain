@@ -389,6 +389,9 @@ void world_save(FILE *const file)
             fwrite(&surface->y, sizeof(surface->y), 1, file);
 
             fwrite(&surface->time, sizeof(surface->time), 1, file);
+
+            const size_t initiator_index = list_index_of(map->actors, surface->initiator);
+            fwrite(&initiator_index, sizeof(initiator_index), 1, file);
         }
 
         fwrite(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
@@ -734,6 +737,10 @@ void world_load(FILE *const file)
 
             fread(&surface->time, sizeof(surface->time), 1, file);
 
+            size_t initiator_index;
+            fread(&initiator_index, sizeof(initiator_index), 1, file);
+            surface->initiator = list_get(map->actors, initiator_index);
+
             surface->light_fov = NULL;
 
             list_add(map->surfaces, surface);
@@ -845,10 +852,55 @@ void world_update(float delta_time)
             // update world state
             world->time++;
 
+            // update surfaces
+            for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
+            {
+                struct surface *const surface = list_get(map->surfaces, surface_index);
+                const struct surface_data *const surface_data = &surface_database[surface->type];
+
+                surface->time++;
+
+                if (surface->time >= surface_data->duration)
+                {
+                    list_remove_at(map->surfaces, surface_index--);
+
+                    struct tile *const tile = &map->tiles[surface->x][surface->y];
+                    tile->surface = NULL;
+
+                    surface_delete(surface);
+
+                    continue;
+                }
+            }
+
             // process dead actors
             for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
             {
                 struct actor *const actor = list_get(map->actors, actor_index);
+
+                struct tile *const tile = &map->tiles[actor->x][actor->y];
+
+                if (tile->surface)
+                {
+                    const struct surface_data *const surface_data = &surface_database[tile->surface->type];
+
+                    if (surface_data->damage)
+                    {
+                        const int damage = TCOD_random_dice_roll_s(world->random, surface_data->damage);
+
+                        world_log(
+                            actor->floor,
+                            actor->x,
+                            actor->y,
+                            color_white,
+                            "%s damages %s for %d",
+                            surface_data->name,
+                            actor->name,
+                            damage);
+
+                        actor_damage_hit_points(actor, tile->surface->initiator, damage);
+                    }
+                }
 
                 if (actor->dead)
                 {
@@ -856,7 +908,6 @@ void world_update(float delta_time)
                     list_remove_at(map->actors, actor_index--);
 
                     // remove from tile
-                    struct tile *const tile = &map->tiles[actor->x][actor->y];
                     tile->actor = NULL;
 
                     // create a corpse
@@ -928,25 +979,6 @@ void world_update(float delta_time)
                     {
                         actor_delete(actor);
                     }
-                }
-            }
-
-            // update surfaces
-            for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
-            {
-                struct surface *const surface = list_get(map->surfaces, surface_index);
-                const struct surface_data *const surface_data = &surface_database[surface->type];
-
-                surface->time++;
-
-                if (surface->time >= surface_data->duration)
-                {
-                    list_remove_at(map->surfaces, surface_index--);
-
-                    struct tile *const tile = &map->tiles[surface->x][surface->y];
-                    tile->surface = NULL;
-
-                    surface_delete(surface);
 
                     continue;
                 }

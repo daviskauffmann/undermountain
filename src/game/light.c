@@ -10,13 +10,13 @@ const struct light_data light_database[] = {
         .flicker = false,
     },
     [LIGHT_TYPE_ACID] = {
-        .radius = 2,
+        .radius = 1,
         .color = {COLOR_LIME},
         .intensity = 0.1f,
         .flicker = true,
     },
     [LIGHT_TYPE_ACID_SPLASH] = {
-        .radius = 3,
+        .radius = 2,
         .color = {COLOR_LIME},
         .intensity = 0.5f,
         .flicker = true,
@@ -34,7 +34,7 @@ const struct light_data light_database[] = {
         .flicker = true,
     },
     [LIGHT_TYPE_FIRE] = {
-        .radius = 2,
+        .radius = 1,
         .color = {COLOR_FLAME},
         .intensity = 0.1f,
         .flicker = true,

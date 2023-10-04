@@ -160,6 +160,11 @@ static bool do_inventory_action(struct item *const item)
         show_panel(PANEL_EXAMINE);
     }
     break;
+    case INVENTORY_ACTION_LEARN:
+    {
+        took_turn = world_can_player_take_turn() && actor_learn(world->player, item);
+    }
+    break;
     case INVENTORY_ACTION_QUAFF:
     {
         took_turn = world_can_player_take_turn() && actor_quaff(world->player, item);
@@ -368,7 +373,7 @@ static bool player_swing(const enum direction direction)
         {
             whiff = false;
 
-            if (actor_attack(world->player, tile->actor, NULL))
+            if (actor_attack(world->player, tile->actor))
             {
                 return true;
             }
@@ -656,15 +661,23 @@ struct scene *handle_event(const SDL_Event *event)
         break;
         case SDLK_l:
         {
-            if (targeting_action == TARGETING_ACTION_LOOK)
+            if (event->key.keysym.mod & KMOD_SHIFT)
             {
-                targeting_action = TARGETING_ACTION_NONE;
+                show_panel(PANEL_INVENTORY);
+                inventory_action = INVENTORY_ACTION_LEARN;
             }
             else
             {
-                targeting_action = TARGETING_ACTION_LOOK;
-                target_x = world->player->x;
-                target_y = world->player->y;
+                if (targeting_action == TARGETING_ACTION_LOOK)
+                {
+                    targeting_action = TARGETING_ACTION_NONE;
+                }
+                else
+                {
+                    targeting_action = TARGETING_ACTION_LOOK;
+                    target_x = world->player->x;
+                    target_y = world->player->y;
+                }
             }
         }
         break;
@@ -2489,6 +2502,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 command = "Examine";
             }
             break;
+            case INVENTORY_ACTION_LEARN:
+            {
+                command = "Learn";
+            }
+            break;
             case INVENTORY_ACTION_QUAFF:
             {
                 command = "Quaff";
@@ -2546,31 +2564,34 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             case TARGETING_ACTION_LOOK:
             {
                 command = "Look";
+                controls = "u/d/l/r: Move, ESC: Cancel";
             }
             break;
             case TARGETING_ACTION_EXAMINE:
             {
                 command = "Examine";
+                controls = "u/d/l/r: Move, ESC: Cancel";
             }
             break;
             case TARGETING_ACTION_READ:
             {
                 command = "Read";
+                controls = "r: Read, u/d/l/r: Move, ESC: Cancel";
             }
             break;
             case TARGETING_ACTION_SHOOT:
             {
                 command = "Shoot";
+                controls = "f: Shoot, u/d/l/r: Move, ESC: Cancel";
             }
             break;
             case TARGETING_ACTION_SPELL:
             {
                 command = "Cast Spell";
+                controls = "z: Cast, u/d/l/r: Move, ESC: Cancel";
             }
             break;
             }
-
-            controls = "u/d/l/r: Move, ESC: Cancel";
         }
 
         console_print(

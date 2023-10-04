@@ -11,7 +11,7 @@
 const struct explosion_data explosion_database[NUM_EXPLOSION_TYPES] = {
     [EXPLOSION_TYPE_ACID_SPLASH] = {
         .intensity = 0.5f,
-        .radius = 3,
+        .radius = 2,
         .color = COLOR_LIME,
     },
     [EXPLOSION_TYPE_FIREBALL] = {
@@ -89,7 +89,8 @@ struct explosion *explosion_new(
                             SURFACE_TYPE_ACID,
                             explosion->floor,
                             tile_x,
-                            tile_y);
+                            tile_y,
+                            initiator);
 
                         list_add(map->surfaces, surface);
 
@@ -127,7 +128,8 @@ struct explosion *explosion_new(
                             SURFACE_TYPE_FIRE,
                             explosion->floor,
                             tile_x,
-                            tile_y);
+                            tile_y,
+                            initiator);
 
                         list_add(map->surfaces, surface);
 

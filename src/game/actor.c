@@ -592,9 +592,9 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         {
             const enum equippability equippability = actor_calc_item_equippability(actor, weapon);
 
-            // if the actor has the weapon finesse feat, the weapon is finessable, and is not two-handed, then use dexterity modifier instead of strength modifier
+            // if the actor has the weapon finesse feat, the weapon is light, and is not two-handed, then use dexterity modifier instead of strength modifier
             if (actor_has_feat(actor, FEAT_WEAPON_FINESSE) &&
-                base_weapon_data->finesssable &&
+                base_weapon_data->light &&
                 equippability != EQUIPPABILITY_BARELY)
             {
                 attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
@@ -612,7 +612,7 @@ int actor_calc_attack_bonus(const struct actor *const actor)
     }
     else
     {
-        // unarmed attacks are always finessable, so if the actor has the weapon finesse feat, then use dexterity modifier instead of strength modifier
+        // unarmed attacks are always considered light, so if the actor has the weapon finesse feat, then use dexterity modifier instead of strength modifier
         if (actor_has_feat(actor, FEAT_WEAPON_FINESSE))
         {
             attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
@@ -705,7 +705,7 @@ int actor_calc_damage_bonus(const struct actor *const actor)
             {
                 damage_bonus += strength_modifier;
             }
-            else if (strength_modifier < 0 /*TODO: && weapon_data->type != BASE_ITEM_TYPE_COMPOSITE_BOW*/)
+            else if (strength_modifier < 0 && weapon_data->type != BASE_ITEM_TYPE_COMPOSITE_BOW)
             {
                 damage_bonus += strength_modifier;
             }
@@ -1418,7 +1418,7 @@ bool actor_ai(struct actor *const actor)
             }
 
             // enemy is in melee range, so melee attack
-            if (actor_attack(actor, nearest_enemy, NULL))
+            if (actor_attack(actor, nearest_enemy))
             {
                 return true;
             }
@@ -1851,7 +1851,7 @@ bool actor_move(
             }
             else
             {
-                return actor_attack(actor, tile->actor, NULL);
+                return actor_attack(actor, tile->actor);
             }
         }
     }
@@ -2692,8 +2692,7 @@ bool actor_read(struct actor *const actor, struct item *const item, const int x,
     // is the item readable?
     const struct item_data *const item_data = &item_database[item->type];
 
-    if (item_data->type != BASE_ITEM_TYPE_SCROLL &&
-        item_data->type != BASE_ITEM_TYPE_TOME)
+    if (item_data->type != BASE_ITEM_TYPE_SCROLL)
     {
         world_log(
             actor->floor,
@@ -2738,19 +2737,54 @@ bool actor_read(struct actor *const actor, struct item *const item, const int x,
             item_delete(item);
         }
     }
-    else if (item_data->type == BASE_ITEM_TYPE_TOME)
+
+    return true;
+}
+
+bool actor_learn(struct actor *const actor, struct item *const item)
+{
+    // TODO: only certain classes can learn spells from scrolls?
+    // and differentiate between magic type, maybe only wizards can learn arcane and only clerics can learn divine
+
+    // is the item learnable?
+    const struct item_data *const item_data = &item_database[item->type];
+
+    if (item_data->type != BASE_ITEM_TYPE_SCROLL)
     {
-        // TODO: if already known, do nothing
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            color_white,
+            "%s cannot learn from %s.",
+            actor->name,
+            item_data->name);
 
-        // add spell to known spells
-        actor->spells[item_data->spell_type] = true;
-
-        // remove from inventory
-        list_remove(actor->items, item);
-
-        // delete the item
-        item_delete(item);
+        return false;
     }
+
+    if (actor->spells[item_data->spell_type])
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            color_white,
+            "%s already knows %s.",
+            actor->name,
+            spell_database[item_data->spell_type].name);
+
+        return false;
+    }
+
+    // add spell to known spells
+    actor->spells[item_data->spell_type] = true;
+
+    // remove from inventory
+    list_remove(actor->items, item);
+
+    // delete the item
+    item_delete(item);
 
     return true;
 }
@@ -2929,11 +2963,8 @@ bool actor_shoot(
     return true;
 }
 
-// TODO: rename this function to actor_do_damage and replace all calls with actor_melee, which will do distance checking
-bool actor_attack(struct actor *const actor, struct actor *const other, const struct item *const ammunition)
+bool actor_attack(struct actor *const actor, struct actor *const other)
 {
-    ammunition;
-
     // calculate other armor class
     const int armor_class = actor_calc_armor_class(other);
 

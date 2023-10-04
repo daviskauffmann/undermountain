@@ -329,6 +329,17 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
+    [ITEM_TYPE_SCROLL_FIREBALL] = {
+        .type = BASE_ITEM_TYPE_SCROLL,
+
+        .name = "Scroll of Fireball",
+        .description = "",
+        .color = {COLOR_WHITE},
+
+        .spell_type = SPELL_TYPE_FIREBALL,
+
+        .level = 1,
+    },
     [ITEM_TYPE_SHORTBOW] = {
         .type = BASE_ITEM_TYPE_SHORTBOW,
 
@@ -371,17 +382,6 @@ const struct item_data item_database[] = {
         .name = "Studded Leather Armor",
         .description = "",
         .color = {COLOR_WHITE},
-
-        .level = 1,
-    },
-    [ITEM_TYPE_TOME_FIREBALL] = {
-        .type = BASE_ITEM_TYPE_TOME,
-
-        .name = "Tome of Fireball",
-        .description = "",
-        .color = {COLOR_WHITE},
-
-        .spell_type = SPELL_TYPE_FIREBALL,
 
         .level = 1,
     },

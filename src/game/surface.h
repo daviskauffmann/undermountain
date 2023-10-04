@@ -14,10 +14,14 @@ enum surface_type
 
 struct surface_data
 {
+    const char *name;
     char glyph;
     TCOD_color_t color;
 
     int duration;
+
+    const char *damage;
+    enum damage_type damage_type;
 
     enum light_type light_type;
 };
@@ -32,6 +36,8 @@ struct surface
 
     int time;
 
+    struct actor *initiator;
+
     TCOD_Map *light_fov;
 };
 
@@ -41,7 +47,8 @@ struct surface *surface_new(
     enum surface_type type,
     int floor,
     int x,
-    int y);
+    int y,
+    struct actor *initiator);
 void surface_delete(struct surface *surface);
 void surface_calc_light(struct surface *surface);
 

@@ -515,13 +515,20 @@ void map_generate(struct map *const map)
             } while (item_database[type].level > map->floor + 1 ||
                      (item_database[type].unique && list_contains(world->spawned_unique_item_types, (void *)(size_t)type)));
 
+            int stack = TCOD_random_get_int(world->random, 1, base_item_database[item_database[type].type].max_stack);
+
+            if (type == ITEM_TYPE_GOLD)
+            {
+                const int min_stack = 10 * (map->floor + 1);
+                const int max_stack = 100 * (map->floor + 1);
+                stack = TCOD_random_get_int(world->random, min_stack, max_stack);
+            }
+
             struct item *const item = item_new(
                 type,
                 map->floor,
                 x, y,
-                type == ITEM_TYPE_GOLD
-                    ? TCOD_random_get_int(world->random, 1, 10 * (map->floor + 1))
-                    : base_item_database[item_database[type].type].max_stack);
+                stack);
 
             list_add(map->items, item);
 

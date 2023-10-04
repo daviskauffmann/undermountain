@@ -85,6 +85,26 @@ const struct base_item_data base_item_database[] = {
         .max_stack = 1,
         .cost = 5,
     },
+    [BASE_ITEM_TYPE_COMPOSITE_BOW] = {
+        .name = "Composite Bow",
+        .glyph = '}',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_LARGE,
+        .weight = 3,
+        .max_stack = 1,
+        .cost = 75,
+
+        .damage = "1d8",
+        .damage_type = DAMAGE_TYPE_PIERCING,
+        .threat_range = 20,
+        .critical_multiplier = 3,
+        .ranged = true,
+        .ammunition_type = AMMUNITION_TYPE_ARROW,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
+    },
     [BASE_ITEM_TYPE_DAGGER] = {
         .name = "Dagger",
         .glyph = '|',
@@ -99,7 +119,7 @@ const struct base_item_data base_item_database[] = {
         .damage_type = DAMAGE_TYPE_PIERCING,
         .threat_range = 19,
         .critical_multiplier = 2,
-        .finesssable = true,
+        .light = true,
         .weapon_proficiencies = {
             [WEAPON_PROFICIENCY_ROGUE] = true,
             [WEAPON_PROFICIENCY_SIMPLE] = true,
@@ -190,6 +210,24 @@ const struct base_item_data base_item_database[] = {
         .damage_type = DAMAGE_TYPE_SLASHING,
         .threat_range = 19,
         .critical_multiplier = 2,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_MARTIAL] = true,
+        },
+    },
+    [BASE_ITEM_TYPE_HALBERD] = {
+        .name = "Halberd",
+        .glyph = 'P',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_LARGE,
+        .weight = 12,
+        .max_stack = 1,
+        .cost = 10,
+
+        .damage = "1d10",
+        .damage_type = DAMAGE_TYPE_PIERCING_SLASHING,
+        .threat_range = 20,
+        .critical_multiplier = 3,
         .weapon_proficiencies = {
             [WEAPON_PROFICIENCY_MARTIAL] = true,
         },
@@ -346,7 +384,7 @@ const struct base_item_data base_item_database[] = {
         .damage_type = DAMAGE_TYPE_BLUDGEONING,
         .threat_range = 20,
         .critical_multiplier = 2,
-        .finesssable = true,
+        .light = true,
         .weapon_proficiencies = {
             [WEAPON_PROFICIENCY_ROGUE] = true,
             [WEAPON_PROFICIENCY_SIMPLE] = true,
@@ -431,6 +469,27 @@ const struct base_item_data base_item_database[] = {
         .size = SIZE_SMALL,
         .weight = 0.5f,
         .max_stack = 10,
+    },
+    [BASE_ITEM_TYPE_RAPIER] = {
+        .name = "Rapier",
+        .glyph = '|',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_MEDIUM,
+        .weight = 2,
+        .max_stack = 1,
+        .cost = 20,
+
+        .damage = "1d6",
+        .damage_type = DAMAGE_TYPE_PIERCING,
+        .threat_range = 18,
+        .critical_multiplier = 2,
+        .light = true,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_ELF] = true,
+            [WEAPON_PROFICIENCY_MARTIAL] = true,
+            [WEAPON_PROFICIENCY_ROGUE] = true,
+        },
     },
     [BASE_ITEM_TYPE_SCIMITAR] = {
         .name = "Scimitar",
@@ -550,14 +609,6 @@ const struct base_item_data base_item_database[] = {
         .arcane_spell_failure = 0.15f,
         .max_dexterity_bonus = 5,
         .armor_proficiency = ARMOR_PROFICIENCY_LIGHT,
-    },
-    [BASE_ITEM_TYPE_TOME] = {
-        .name = "Tome",
-        .glyph = '=',
-
-        .size = SIZE_SMALL,
-        .weight = 0.5f,
-        .max_stack = 1,
     },
     [BASE_ITEM_TYPE_TOWER_SHIELD] = {
         .name = "Tower Shield",

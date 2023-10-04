@@ -203,11 +203,14 @@ bool actor_read(
     struct actor *actor,
     struct item *item,
     int x, int y);
+bool actor_learn(
+    struct actor *actor,
+    struct item *item);
 bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(
     struct actor *actor,
     int x, int y);
-bool actor_attack(struct actor *actor, struct actor *other, const struct item *ammunition);
+bool actor_attack(struct actor *actor, struct actor *other);
 bool actor_cast(
     struct actor *actor,
     enum spell_type spell_type,

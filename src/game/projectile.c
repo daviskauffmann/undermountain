@@ -159,7 +159,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
         if (tile->actor &&
             tile->actor != projectile->shooter)
         {
-            actor_attack(projectile->shooter, tile->actor, projectile->ammunition);
+            actor_attack(projectile->shooter, tile->actor);
 
             should_move = false;
         }

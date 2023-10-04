@@ -13,6 +13,7 @@ enum base_item_type
     BASE_ITEM_TYPE_BOLT,
     BASE_ITEM_TYPE_BULLET,
     BASE_ITEM_TYPE_CLOTHING,
+    BASE_ITEM_TYPE_COMPOSITE_BOW,
     BASE_ITEM_TYPE_DAGGER,
     BASE_ITEM_TYPE_FALCHION,
     BASE_ITEM_TYPE_FOOD,
@@ -20,6 +21,7 @@ enum base_item_type
     BASE_ITEM_TYPE_GOLD,
     BASE_ITEM_TYPE_GREATCLUB,
     BASE_ITEM_TYPE_GREATSWORD,
+    BASE_ITEM_TYPE_HALBERD,
     BASE_ITEM_TYPE_HALF_PLATE,
     BASE_ITEM_TYPE_HEAVY_CROSSBOW,
     BASE_ITEM_TYPE_HEAVY_MACE,
@@ -34,6 +36,7 @@ enum base_item_type
     BASE_ITEM_TYPE_LONGSWORD,
     BASE_ITEM_TYPE_MORNINGSTAR,
     BASE_ITEM_TYPE_POTION,
+    BASE_ITEM_TYPE_RAPIER,
     BASE_ITEM_TYPE_SCIMITAR,
     BASE_ITEM_TYPE_SCROLL,
     BASE_ITEM_TYPE_SHORTBOW,
@@ -41,7 +44,6 @@ enum base_item_type
     BASE_ITEM_TYPE_SLING,
     BASE_ITEM_TYPE_SPEAR,
     BASE_ITEM_TYPE_STUDDED_LEATHER_ARMOR,
-    BASE_ITEM_TYPE_TOME,
     BASE_ITEM_TYPE_TOWER_SHIELD,
 
     NUM_BASE_ITEM_TYPES
@@ -62,7 +64,7 @@ struct base_item_data
     enum damage_type damage_type;
     int threat_range;
     int critical_multiplier;
-    bool finesssable;
+    bool light;
     bool ranged;
     enum ammunition_type ammunition_type;
     bool weapon_proficiencies[NUM_WEAPON_PROFICIENCIES];

@@ -16,6 +16,7 @@
 #include "projectile.h"
 #include "race.h"
 #include "room.h"
+#include "saving_throw.h"
 #include "surface.h"
 #include "util.h"
 #include "world.h"
@@ -326,7 +327,7 @@ bool actor_has_feat(const struct actor *const actor, const enum feat feat)
     return feats[feat];
 }
 
-bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat)
+bool actor_has_prerequisites_for_feat(const struct actor *actor, const enum feat feat)
 {
     // TODO: if getting the feat from equipment, the actor should still be able to learn it
     if (actor_has_feat(actor, feat))
@@ -456,6 +457,95 @@ bool actor_damage_hit_points(struct actor *const actor, struct actor *const atta
 
     return false;
 }
+int actor_calc_max_mana(const struct actor *const actor)
+{
+    const enum ability spellcasting_ability = class_database[actor->class].spellcasting_ability;
+
+    if (spellcasting_ability == ABILITY_NONE)
+    {
+        return 0;
+    }
+
+    // TODO: better formula
+    return actor->level * actor_calc_ability_modifer(actor, spellcasting_ability);
+}
+
+void actor_restore_mana(struct actor *const actor, const int mana)
+{
+    actor->mana += mana;
+
+    const int max_mana = actor_calc_max_mana(actor);
+    if (actor->mana > max_mana)
+    {
+        actor->mana = max_mana;
+    }
+}
+
+float actor_calc_arcane_spell_failure(const struct actor *const actor)
+{
+    float arcane_spell_failure = 0;
+
+    if (actor_has_feat(actor, FEAT_STILL_SPELL))
+    {
+        return 0;
+    }
+
+    for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
+    {
+        const struct item *const item = actor->equipment[equip_slot];
+
+        if (item)
+        {
+            const struct item_data *const item_data = &item_database[item->type];
+            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+            arcane_spell_failure += base_item_data->arcane_spell_failure;
+        }
+    }
+
+    return arcane_spell_failure;
+}
+
+int actor_calc_spell_mana_cost(const struct actor *const actor, const enum spell_type spell_type)
+{
+    int mana_cost = spell_database[spell_type].level;
+
+    if (actor_has_feat(actor, FEAT_STILL_SPELL))
+    {
+        mana_cost++;
+    }
+
+    return mana_cost;
+}
+
+int actor_calc_saving_throw(const struct actor *const actor, const enum saving_throw saving_throw)
+{
+    const enum ability saving_throw_ability = saving_throw_database[saving_throw].ability;
+    const int base_save = actor->level / 2 + 2;
+    const int ability_modifer = actor_calc_ability_modifer(actor, saving_throw_ability);
+
+    int value = base_save + ability_modifer;
+
+    bool feats[NUM_FEATS] = {false};
+    actor_calc_feats(actor, &feats);
+
+    if (saving_throw == SAVING_THROW_FORTITUDE && feats[FEAT_GREAT_FORTITUDE])
+    {
+        value += 2;
+    }
+
+    if (saving_throw == SAVING_THROW_REFLEX && feats[FEAT_LIGHTNING_REFLEXES])
+    {
+        value += 2;
+    }
+
+    if (saving_throw == SAVING_THROW_WILL && feats[FEAT_IRON_WILL])
+    {
+        value += 2;
+    }
+
+    return value;
+}
 
 int actor_calc_armor_class(const struct actor *const actor)
 {
@@ -465,26 +555,18 @@ int actor_calc_armor_class(const struct actor *const actor)
 
     int armor_class = 10 + dexterity_modifer + natural_armor_bonus + size_modifer;
 
-    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
-
-    if (armor)
+    for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
-        const struct item_data *const armor_data = &item_database[armor->type];
-        const struct base_item_data *const base_armor_data = &base_item_database[armor_data->type];
+        const struct item *const item = actor->equipment[equip_slot];
 
-        armor_class += base_armor_data->armor_class;
-        armor_class += armor_data->enhancement_bonus;
-    }
+        if (item)
+        {
+            const struct item_data *const item_data = &item_database[item->type];
+            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
-    const struct item *const shield = actor->equipment[EQUIP_SLOT_SHIELD];
-
-    if (shield)
-    {
-        const struct item_data *const shield_data = &item_database[shield->type];
-        const struct base_item_data *const base_shield_data = &base_item_database[shield_data->type];
-
-        armor_class += base_shield_data->armor_class;
-        armor_class += shield_data->enhancement_bonus;
+            armor_class += base_item_data->armor_class;
+            armor_class += item_data->enhancement_bonus;
+        }
     }
 
     if (actor_has_feat(actor, FEAT_DODGE))
@@ -541,7 +623,7 @@ int actor_calc_attacks_per_round(const struct actor *const actor)
     return attacks_per_round;
 }
 
-int actor_calc_secondary_attack_penalty(const struct actor *actor)
+int actor_calc_secondary_attack_penalty(const struct actor *const actor)
 {
     if (actor_has_feat(actor, FEAT_MULTIATTACK))
     {
@@ -769,74 +851,6 @@ const char *actor_calc_damage(const struct actor *const actor)
     const struct class_data *const class_data = &class_database[actor->class];
 
     return natural_weapon_database[class_data->natural_weapon_type].damage;
-}
-
-int actor_calc_max_mana(const struct actor *const actor)
-{
-    const enum ability spellcasting_ability = class_database[actor->class].spellcasting_ability;
-
-    if (spellcasting_ability == ABILITY_NONE)
-    {
-        return 0;
-    }
-
-    // TODO: better formula
-    return actor->level * actor_calc_ability_modifer(actor, spellcasting_ability);
-}
-
-void actor_restore_mana(struct actor *const actor, const int mana)
-{
-    actor->mana += mana;
-
-    const int max_mana = actor_calc_max_mana(actor);
-    if (actor->mana > max_mana)
-    {
-        actor->mana = max_mana;
-    }
-}
-
-float actor_calc_arcane_spell_failure(const struct actor *const actor)
-{
-    float arcane_spell_failure = 0;
-
-    if (actor_has_feat(actor, FEAT_STILL_SPELL))
-    {
-        return 0;
-    }
-
-    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
-
-    if (armor)
-    {
-        const struct item_data *const armor_data = &item_database[armor->type];
-        const struct base_item_data *const base_armor_data = &base_item_database[armor_data->type];
-
-        arcane_spell_failure += base_armor_data->arcane_spell_failure;
-    }
-
-    const struct item *const shield = actor->equipment[EQUIP_SLOT_SHIELD];
-
-    if (shield)
-    {
-        const struct item_data *const shield_data = &item_database[shield->type];
-        const struct base_item_data *const base_shield_data = &base_item_database[shield_data->type];
-
-        arcane_spell_failure += base_shield_data->arcane_spell_failure;
-    }
-
-    return arcane_spell_failure;
-}
-
-int actor_calc_spell_mana_cost(const struct actor *const actor, const enum spell_type spell_type)
-{
-    int mana_cost = spell_database[spell_type].level;
-
-    if (actor_has_feat(actor, FEAT_STILL_SPELL))
-    {
-        mana_cost++;
-    }
-
-    return mana_cost;
 }
 
 enum equippability actor_calc_item_equippability(const struct actor *const actor, const struct item *const item)
@@ -1236,6 +1250,48 @@ bool actor_is_proficient(const struct actor *const actor, const struct item *con
                 return false;
             }
         }
+    }
+
+    return true;
+}
+
+bool actor_melee_touch_attack(struct actor *const actor, struct actor *const other)
+{
+    // calculate other armor class
+    const int dexterity_bonus = actor_calc_ability_modifer(other, ABILITY_DEXTERITY);
+    const int armor_class = 10 + dexterity_bonus;
+
+    // calculate hit
+    const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
+    const int attack_bonus = actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+    const int hit_challenge = attack_roll + base_attack_bonus + attack_bonus;
+
+    if (attack_roll == 1 ||
+        (attack_roll != 20 && hit_challenge < armor_class))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool actor_ranged_touch_attack(struct actor *const actor, struct actor *const other)
+{
+    // calculate other armor class
+    const int dexterity_bonus = actor_calc_ability_modifer(other, ABILITY_DEXTERITY);
+    const int armor_class = 10 + dexterity_bonus;
+
+    // calculate hit
+    const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
+    const int attack_bonus = actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+    const int hit_challenge = attack_roll + base_attack_bonus + attack_bonus;
+
+    if (attack_roll == 1 ||
+        (attack_roll != 20 && hit_challenge < armor_class))
+    {
+        return false;
     }
 
     return true;
@@ -1820,20 +1876,41 @@ bool actor_move(
 
         if (tile->object->type == OBJECT_TYPE_TRAP)
         {
-            // TODO: trap effects
+            const int reflex_save = actor_calc_saving_throw(actor, SAVING_THROW_REFLEX);
+            const int roll = TCOD_random_dice_roll_s(world->random, "1d20") + reflex_save;
+            const int challenge_rating = 10; // object_database[tile->object->type].challenge_rating;
+
+            if (roll == 1 ||
+                (roll != 20 &&
+                 roll < challenge_rating))
+            {
+                const int damage = TCOD_random_dice_roll_s(world->random, "1d6");
+
+                world_log(
+                    actor->floor,
+                    actor->x,
+                    actor->y,
+                    color_white,
+                    "%s triggers a trap!",
+                    actor->name);
+
+                actor_damage_hit_points(actor, NULL, damage);
+            }
+            else
+            {
+                world_log(
+                    actor->floor,
+                    actor->x,
+                    actor->y,
+                    color_white,
+                    "%s avoids a trap!",
+                    actor->name);
+            }
 
             list_remove(map->objects, tile->object);
 
             object_delete(tile->object);
             tile->object = NULL;
-
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s triggers a trap!",
-                actor->name);
         }
     }
 
@@ -2448,7 +2525,7 @@ bool actor_grab(
 
 bool actor_drop(struct actor *const actor, struct item *const item)
 {
-    struct map *const map = &world->maps[item->floor];
+    struct map *const map = &world->maps[actor->floor];
 
     // remove from actor's inventory
     list_remove(actor->items, item);
@@ -3230,17 +3307,31 @@ bool actor_cast(
         {
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for 1.",
-                    actor->name,
-                    other->name,
-                    1);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        1);
 
-                actor_damage_hit_points(other, actor, 1);
+                    actor_damage_hit_points(other, actor, 1);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
             else
             {
@@ -3271,17 +3362,31 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        health);
 
-                actor_damage_hit_points(other, actor, health);
+                    actor_damage_hit_points(other, actor, health);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
             else
             {
@@ -3312,17 +3417,31 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        health);
 
-                actor_damage_hit_points(other, actor, health);
+                    actor_damage_hit_points(other, actor, health);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
             else
             {
@@ -3353,17 +3472,31 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        health);
 
-                actor_damage_hit_points(other, actor, health);
+                    actor_damage_hit_points(other, actor, health);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
             else
             {
@@ -3394,17 +3527,31 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        health);
 
-                actor_damage_hit_points(other, actor, health);
+                    actor_damage_hit_points(other, actor, health);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
             else
             {
@@ -3563,20 +3710,34 @@ bool actor_cast(
             }
             else
             {
-                const int health = TCOD_random_dice_roll_s(world->random, "1d4");
-                const int damage = other->hit_points - health;
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    const int health = TCOD_random_dice_roll_s(world->random, "1d4");
+                    const int damage = other->hit_points - health;
 
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    damage);
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        damage);
 
-                actor_damage_hit_points(other, actor, damage);
+                    actor_damage_hit_points(other, actor, damage);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
         }
     }
@@ -3591,20 +3752,34 @@ bool actor_cast(
         {
             if (other->race == RACE_UNDEAD)
             {
-                const int health = TCOD_random_dice_roll_s(world->random, "1d4");
-                const int damage = other->hit_points - health;
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    const int health = TCOD_random_dice_roll_s(world->random, "1d4");
+                    const int damage = other->hit_points - health;
 
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    damage);
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        damage);
 
-                actor_damage_hit_points(other, actor, damage);
+                    actor_damage_hit_points(other, actor, damage);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
             else
             {
@@ -3654,17 +3829,31 @@ bool actor_cast(
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for 1.",
-                    actor->name,
-                    other->name,
-                    1);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        1);
 
-                actor_damage_hit_points(other, actor, 1);
+                    actor_damage_hit_points(other, actor, 1);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
         }
     }
@@ -3700,17 +3889,31 @@ bool actor_cast(
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        health);
 
-                actor_damage_hit_points(other, actor, health);
+                    actor_damage_hit_points(other, actor, health);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
         }
     }
@@ -3746,17 +3949,31 @@ bool actor_cast(
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        health);
 
-                actor_damage_hit_points(other, actor, health);
+                    actor_damage_hit_points(other, actor, health);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
         }
     }
@@ -3792,17 +4009,31 @@ bool actor_cast(
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        health);
 
-                actor_damage_hit_points(other, actor, health);
+                    actor_damage_hit_points(other, actor, health);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
         }
     }
@@ -3838,17 +4069,31 @@ bool actor_cast(
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s damages %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                if (actor_ranged_touch_attack(actor, other))
+                {
+                    world_log(
+                        other->floor,
+                        other->x,
+                        other->y,
+                        color_white,
+                        "%s damages %s for %d.",
+                        actor->name,
+                        other->name,
+                        health);
 
-                actor_damage_hit_points(other, actor, health);
+                    actor_damage_hit_points(other, actor, health);
+                }
+                else
+                {
+                    world_log(
+                        actor->floor,
+                        actor->x,
+                        actor->y,
+                        color_light_gray,
+                        "%s misses %s.",
+                        actor->name,
+                        other->name);
+                }
             }
         }
     }

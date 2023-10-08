@@ -929,18 +929,18 @@ void world_update(float delta_time)
                         // move equipment to ground
                         for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
                         {
-                            struct item *const equipment = actor->equipment[equip_slot];
+                            struct item *const item = actor->equipment[equip_slot];
 
-                            if (equipment)
+                            if (item)
                             {
-                                equipment->floor = actor->floor;
-                                equipment->x = actor->x;
-                                equipment->y = actor->y;
+                                item->floor = actor->floor;
+                                item->x = actor->x;
+                                item->y = actor->y;
 
-                                map_find_empty_tile(map, &equipment->x, &equipment->y);
+                                map_find_empty_tile(map, &item->x, &item->y);
 
-                                list_add(map->items, equipment);
-                                map->tiles[equipment->x][equipment->y].item = equipment;
+                                list_add(map->items, item);
+                                map->tiles[item->x][item->y].item = item;
 
                                 actor->equipment[equip_slot] = NULL;
                             }

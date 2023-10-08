@@ -34,6 +34,10 @@ const struct feat_data feat_database[] = {
             },
         },
     },
+    [FEAT_GREAT_FORTITUDE] = {
+        .name = "Great Fortitude",
+        .description = "A character with this feat gets a +2 bonus on all fortitude saving throws.",
+    },
     [FEAT_IMPROVED_INITIATIVE] = {
         .name = "Improved Initiative",
         .description = "A character with this feat gets a +4 bonus on initiative checks.",
@@ -41,6 +45,10 @@ const struct feat_data feat_database[] = {
     [FEAT_IRON_WILL] = {
         .name = "Iron Will",
         .description = "A character with this feat gets a +2 bonus on all will saving throws.",
+    },
+    [FEAT_LIGHTNING_REFLEXES] = {
+        .name = "Lightning Reflexes",
+        .description = "A character with this feat gets a +2 bonus on all reflex saving throws.",
     },
     [FEAT_MULTIATTACK] = {
         .name = "Multiattack",

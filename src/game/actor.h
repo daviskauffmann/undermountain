@@ -4,6 +4,7 @@
 #include "ability.h"
 #include "feat.h"
 #include "item.h"
+#include "saving_throw.h"
 #include "special_ability.h"
 #include "special_attack.h"
 #include "spell.h"
@@ -118,6 +119,13 @@ int actor_calc_max_hit_points(const struct actor *actor);
 void actor_restore_hit_points(struct actor *actor, int health);
 bool actor_damage_hit_points(struct actor *actor, struct actor *attacker, int damage);
 
+int actor_calc_max_mana(const struct actor *actor);
+void actor_restore_mana(struct actor *actor, int mana);
+float actor_calc_arcane_spell_failure(const struct actor *actor);
+int actor_calc_spell_mana_cost(const struct actor *actor, enum spell_type spell_type);
+
+int actor_calc_saving_throw(const struct actor *actor, enum saving_throw saving_throw);
+
 int actor_calc_armor_class(const struct actor *actor);
 
 int actor_calc_attacks_per_round(const struct actor *actor);
@@ -129,11 +137,6 @@ int actor_calc_threat_range(const struct actor *actor);
 int actor_calc_critical_multiplier(const struct actor *actor);
 int actor_calc_damage_bonus(const struct actor *actor);
 const char *actor_calc_damage(const struct actor *actor);
-
-int actor_calc_max_mana(const struct actor *actor);
-void actor_restore_mana(struct actor *actor, int mana);
-float actor_calc_arcane_spell_failure(const struct actor *actor);
-int actor_calc_spell_mana_cost(const struct actor *actor, enum spell_type spell_type);
 
 enum equippability actor_calc_item_equippability(const struct actor *actor, const struct item *item);
 
@@ -155,6 +158,9 @@ struct actor *actor_find_nearest_enemy(const struct actor *actor);
 
 bool actor_has_ranged_weapon(const struct actor *actor);
 bool actor_is_proficient(const struct actor *actor, const struct item *item);
+
+bool actor_melee_touch_attack(struct actor *actor, struct actor *other);
+bool actor_ranged_touch_attack(struct actor *actor, struct actor *other);
 
 bool actor_ai(struct actor *actor);
 bool actor_rest(struct actor *actor);

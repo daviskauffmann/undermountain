@@ -2073,8 +2073,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                 if (world->player->equipment[equip_slot])
                 {
-                    const struct item *const equipment = world->player->equipment[equip_slot];
-                    const struct item_data equipment_data = item_database[equipment->type];
+                    const struct item *const item = world->player->equipment[equip_slot];
+                    const struct item_data *const item_data = &item_database[item->type];
 
                     console_print(
                         panel_rect.console,
@@ -2084,9 +2084,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_RIGHT,
-                        equipment->stack > 1 ? "%s (%d)" : "%s",
-                        equipment_data.name,
-                        equipment->stack);
+                        item->stack > 1 ? "%s (%d)" : "%s",
+                        item_data->name,
+                        item->stack);
                 }
 
                 y++;
@@ -2110,21 +2110,52 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 actor_calc_max_hit_points(world->player));
             y++;
 
-            TCOD_console_printf(
-                panel_rect.console,
-                1,
-                y - current_panel_status->scroll,
-                "Mana Points");
-            TCOD_console_printf_ex(
-                panel_rect.console,
-                panel_rect.width - 2,
-                y - current_panel_status->scroll,
-                TCOD_BKGND_NONE,
-                TCOD_RIGHT,
-                "%d/%d",
-                world->player->mana,
-                actor_calc_max_mana(world->player));
-            y++;
+            const int max_mana = actor_calc_max_mana(world->player);
+
+            if (max_mana > 0)
+            {
+                TCOD_console_printf(
+                    panel_rect.console,
+                    1,
+                    y - current_panel_status->scroll,
+                    "Mana");
+                TCOD_console_printf_ex(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%d/%d",
+                    world->player->mana,
+                    max_mana);
+                y++;
+            }
+
+            for (enum saving_throw saving_throw = SAVING_THROW_NONE + 1; saving_throw < NUM_SAVING_THROWS; saving_throw++)
+            {
+                console_print(
+                    panel_rect.console,
+                    1,
+                    y - current_panel_status->scroll,
+                    &color_white,
+                    NULL,
+                    TCOD_BKGND_NONE,
+                    TCOD_LEFT,
+                    "%s",
+                    saving_throw_database[saving_throw].name);
+
+                console_print(
+                    panel_rect.console,
+                    panel_rect.width - 2,
+                    y - current_panel_status->scroll,
+                    &color_white,
+                    NULL,
+                    TCOD_BKGND_NONE,
+                    TCOD_RIGHT,
+                    "%d",
+                    actor_calc_saving_throw(world->player, saving_throw));
+                y++;
+            }
 
             TCOD_console_printf(
                 panel_rect.console,

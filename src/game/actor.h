@@ -138,6 +138,9 @@ int actor_calc_critical_multiplier(const struct actor *actor);
 int actor_calc_damage_bonus(const struct actor *actor);
 const char *actor_calc_damage(const struct actor *actor);
 
+bool actor_melee_touch_attack(struct actor *actor, struct actor *other);
+bool actor_ranged_touch_attack(struct actor *actor, struct actor *other);
+
 enum equippability actor_calc_item_equippability(const struct actor *actor, const struct item *item);
 
 float actor_calc_max_carry_weight(const struct actor *actor);
@@ -156,11 +159,12 @@ bool actor_is_enemy(const struct actor *actor, const struct actor *other);
 bool actor_is_enemy_nearby(const struct actor *actor);
 struct actor *actor_find_nearest_enemy(const struct actor *actor);
 
-bool actor_has_ranged_weapon(const struct actor *actor);
 bool actor_is_proficient(const struct actor *actor, const struct item *item);
-
-bool actor_melee_touch_attack(struct actor *actor, struct actor *other);
-bool actor_ranged_touch_attack(struct actor *actor, struct actor *other);
+struct item *actor_find_melee_weapon(const struct actor *actor);
+bool actor_has_ranged_weapon(const struct actor *actor);
+struct item *actor_find_ranged_weapon(const struct actor *actor);
+bool actor_has_ammunition(const struct actor *actor, const struct item *weapon);
+struct item *actor_find_ammunition(const struct actor *actor, const struct item *weapon);
 
 bool actor_ai(struct actor *actor);
 bool actor_rest(struct actor *actor);

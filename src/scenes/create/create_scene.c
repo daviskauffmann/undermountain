@@ -2,7 +2,7 @@
 
 #include "../../config.h"
 #include "../../game/actor.h"
-#include "../../game/base_attack_bonus_type.h"
+#include "../../game/base_attack_bonus.h"
 #include "../../game/base_item.h"
 #include "../../game/class.h"
 #include "../../game/color.h"
@@ -221,7 +221,7 @@ static struct scene *handle_event(const SDL_Event *const event)
                     selected_class,
                     race_database[selected_race].size,
                     FACTION_ADVENTURER,
-                    1,
+                    STARTING_LEVEL,
                     ability_scores,
                     (bool[NUM_SPECIAL_ABILITIES]){false},
                     (bool[NUM_SPECIAL_ATTACKS]){false},

@@ -1,6 +1,6 @@
 #include "class.h"
 
-#include "base_attack_bonus_type.h"
+#include "base_attack_bonus.h"
 #include "color.h"
 #include "monster.h"
 #include "natural_weapon.h"

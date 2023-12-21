@@ -1,4 +1,4 @@
-#include "base_attack_bonus_type.h"
+#include "base_attack_bonus.h"
 
 const struct base_attack_bonus_data base_attack_bonus_database[] = {
     [BASE_ATTACK_BONUS_TYPE_GOOD] = {

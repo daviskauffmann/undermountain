@@ -776,7 +776,7 @@ bool map_is_animation_playing(const struct map *const map)
 
 TCOD_Map *map_to_TCOD_map(const struct map *const map)
 {
-    TCOD_Map *TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
+    TCOD_Map *const TCOD_map = TCOD_map_new(MAP_WIDTH, MAP_HEIGHT);
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -801,6 +801,6 @@ TCOD_Map *map_to_fov_map(
     const int radius)
 {
     TCOD_Map *fov_map = map_to_TCOD_map(map);
-    TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_SHADOW);
+    TCOD_map_compute_fov(fov_map, x, y, radius, true, FOV_BASIC);
     return fov_map;
 }

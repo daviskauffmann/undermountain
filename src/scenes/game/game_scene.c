@@ -1344,7 +1344,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 goto draw_tile;
                             }
 
-                            if (tile->object)
+                            if (tile->object && tile->object->trap_detection_state == OBJECT_TRAP_DETECTION_STATE_DETECTED)
                             {
                                 const struct object_data *const object_data = &object_database[tile->object->type];
 

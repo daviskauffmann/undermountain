@@ -1401,7 +1401,8 @@ struct item *actor_find_ammunition(const struct actor *const actor, const struct
         const struct item_data *const item_data = &item_database[item->type];
         const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
-        if (base_item_data->ammunition_type == base_weapon_data->ammunition_type &&
+        if (base_item_data->equip_slot == EQUIP_SLOT_AMMUNITION &&
+            base_item_data->ammunition_type == base_weapon_data->ammunition_type &&
             actor_is_proficient(actor, item))
         {
             return item;
@@ -1871,21 +1872,23 @@ bool actor_move(
         {
             const int reflex_save = actor_calc_saving_throw(actor, SAVING_THROW_REFLEX);
             const int roll = TCOD_random_dice_roll_s(world->random, "1d20") + reflex_save;
-            const int challenge_rating = 10; // object_database[tile->object->type].challenge_rating;
+            const int dungeon_level = map_calc_dungeon_level(map);
+            const int challenge_rating = 10 + dungeon_level; // object_database[tile->object->type].challenge_rating;
 
             if (roll == 1 ||
                 (roll != 20 &&
                  roll < challenge_rating))
             {
-                const int damage = TCOD_random_dice_roll_s(world->random, "1d6");
+                const int damage = TCOD_random_dice_roll_s(world->random, "1d6") * dungeon_level;
 
                 world_log(
                     actor->floor,
                     actor->x,
                     actor->y,
-                    color_white,
-                    "%s triggers a trap!",
-                    actor->name);
+                    color_red,
+                    "%s triggers a trap and takes %d damage!",
+                    actor->name,
+                    damage);
 
                 actor_damage_hit_points(actor, NULL, damage);
             }
@@ -2300,7 +2303,10 @@ bool actor_pray(
         return false;
     }
 
-    // TODO: prayer effects
+    const enum ability ability = TCOD_random_get_int(world->random, ABILITY_NONE + 1, NUM_ABILITIES - 1);
+    const int score = 1;
+
+    actor->ability_scores[ability] += score;
 
     list_remove(map->objects, tile->object);
 
@@ -2312,8 +2318,10 @@ bool actor_pray(
         actor->x,
         actor->y,
         color_orange,
-        "%s prays at the altar.",
-        actor->name);
+        "%s prays at the altar. The gods grant %d %s.",
+        actor->name,
+        score,
+        ability_database[ability].name);
 
     return true;
 }
@@ -3183,10 +3191,33 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
             damage,
             sneak_attack ? " (sneak)" : "");
 
+        // weapon breakage
+        bool weapon_broken = false;
+        struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
+        if (weapon && item_database[weapon->type].breakable &&
+            TCOD_random_get_float(world->random, 0, 1) <= 0.01f)
+        {
+            weapon_broken = true;
+
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_red,
+                "%s's %s breaks!",
+                actor->name,
+                item_database[weapon->type].name);
+
+            actor->equipment[EQUIP_SLOT_WEAPON] = NULL;
+
+            item_delete(weapon);
+        }
+
         // deal damage
         const bool killed = actor_damage_hit_points(other, actor, damage);
 
-        if (killed)
+        if (weapon_broken || killed)
         {
             break;
         }

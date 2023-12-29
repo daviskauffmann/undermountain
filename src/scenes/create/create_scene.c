@@ -20,7 +20,7 @@
 #include "state.h"
 #include <libtcod.h>
 
-#define STARTING_LEVEL 1
+#define STARTING_LEVEL 5
 
 static enum state state;
 

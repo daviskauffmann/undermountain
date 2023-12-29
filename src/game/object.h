@@ -30,6 +30,13 @@ struct object_data
     bool is_transparent;
 };
 
+enum object_trap_detection_state
+{
+    OBJECT_TRAP_DETECTION_STATE_UNCHECKED,
+    OBJECT_TRAP_DETECTION_STATE_DETECTED,
+    OBJECT_TRAP_DETECTION_STATE_UNDETECTED
+};
+
 struct object
 {
     enum object_type type;
@@ -39,6 +46,8 @@ struct object
     int y;
 
     TCOD_Map *light_fov;
+
+    enum object_trap_detection_state trap_detection_state;
 };
 
 extern const struct object_data object_database[NUM_OBJECT_TYPES];

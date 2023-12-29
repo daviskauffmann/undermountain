@@ -69,6 +69,8 @@ struct item_data
 
     int level;
 
+    bool breakable;
+
     bool unique;
     bool no_spawn;
 };

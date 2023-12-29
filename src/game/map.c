@@ -491,6 +491,11 @@ void map_generate(struct map *const map)
                 map->floor,
                 x, y);
 
+            if (object_type == OBJECT_TYPE_TRAP)
+            {
+                object->trap_detection_state = OBJECT_TRAP_DETECTION_STATE_UNCHECKED;
+            }
+
             list_add(map->objects, object);
 
             map->tiles[x][y].object = object;
@@ -696,6 +701,11 @@ void map_generate(struct map *const map)
             }
         }
     }
+}
+
+int map_calc_dungeon_level(const struct map *map)
+{
+    return map->floor + 1;
 }
 
 bool map_is_inside(const int x, const int y)

@@ -123,24 +123,25 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
         should_move = false;
     }
 
-    switch (projectile->type)
+    if (tile->actor &&
+        tile->actor != projectile->shooter &&
+        (tile->actor == world->player || tile->actor->faction != projectile->shooter->faction))
     {
-    case PROJECTILE_TYPE_ACID_SPLASH:
+        should_move = false;
+    }
+
+    if (tile->object &&
+        !object_database[tile->object->type].is_walkable &&
+        tile->object->type != OBJECT_TYPE_DOOR_OPEN)
     {
-        if (tile->actor &&
-            tile->actor != projectile->shooter)
-        {
-            should_move = false;
-        }
+        should_move = false;
+    }
 
-        if (tile->object &&
-            !object_database[tile->object->type].is_walkable &&
-            tile->object->type != OBJECT_TYPE_DOOR_OPEN)
+    if (!should_move)
+    {
+        switch (projectile->type)
         {
-            should_move = false;
-        }
-
-        if (!should_move)
+        case PROJECTILE_TYPE_ACID_SPLASH:
         {
             list_add(
                 map->explosions,
@@ -152,44 +153,24 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                     projectile->shooter,
                     projectile->caster_level));
         }
-    }
-    break;
-    case PROJECTILE_TYPE_ARROW:
-    {
-        if (tile->actor &&
-            tile->actor != projectile->shooter)
+        break;
+        case PROJECTILE_TYPE_ARROW:
         {
-            actor_attack(projectile->shooter, tile->actor);
+            if (tile->actor)
+            {
+                actor_attack(projectile->shooter, tile->actor);
 
-            should_move = false;
+                should_move = false;
+            }
+            else if (tile->object)
+            {
+                actor_bash(projectile->shooter, tile->object);
+
+                should_move = false;
+            }
         }
-
-        if (tile->object &&
-            !object_database[tile->object->type].is_walkable &&
-            tile->object->type != OBJECT_TYPE_DOOR_OPEN)
-        {
-            actor_bash(projectile->shooter, tile->object);
-
-            should_move = false;
-        }
-    }
-    break;
-    case PROJECTILE_TYPE_FIREBALL:
-    {
-        if (tile->actor &&
-            tile->actor != projectile->shooter)
-        {
-            should_move = false;
-        }
-
-        if (tile->object &&
-            !object_database[tile->object->type].is_walkable &&
-            tile->object->type != OBJECT_TYPE_DOOR_OPEN)
-        {
-            should_move = false;
-        }
-
-        if (!should_move)
+        break;
+        case PROJECTILE_TYPE_FIREBALL:
         {
             list_add(
                 map->explosions,
@@ -201,53 +182,50 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                     projectile->shooter,
                     projectile->caster_level));
         }
-    }
-    break;
-    case PROJECTILE_TYPE_MAGIC_MISSILE:
-    {
-        if (tile->actor &&
-            tile->actor != projectile->shooter)
+        break;
+        case PROJECTILE_TYPE_MAGIC_MISSILE:
         {
-            int num_missiles = 1;
-            if (projectile->caster_level >= 9)
+            if (tile->actor)
             {
-                num_missiles = 5;
-            }
-            else if (projectile->caster_level >= 7)
-            {
-                num_missiles = 4;
-            }
-            else if (projectile->caster_level >= 5)
-            {
-                num_missiles = 3;
-            }
-            else if (projectile->caster_level >= 3)
-            {
-                num_missiles = 2;
-            }
+                int num_missiles = 1;
+                if (projectile->caster_level >= 9)
+                {
+                    num_missiles = 5;
+                }
+                else if (projectile->caster_level >= 7)
+                {
+                    num_missiles = 4;
+                }
+                else if (projectile->caster_level >= 5)
+                {
+                    num_missiles = 3;
+                }
+                else if (projectile->caster_level >= 3)
+                {
+                    num_missiles = 2;
+                }
 
-            int damage = 0;
-            for (int i = 0; i < num_missiles; ++i)
-            {
-                damage += TCOD_random_dice_roll_s(world->random, "1d4+1");
+                int damage = 0;
+                for (int i = 0; i < num_missiles; ++i)
+                {
+                    damage += TCOD_random_dice_roll_s(world->random, "1d4+1");
+                }
+
+                world_log(
+                    projectile->shooter->floor,
+                    projectile->shooter->x,
+                    projectile->shooter->y,
+                    color_white,
+                    "%s bombards %s for %d damage.",
+                    projectile->shooter->name,
+                    tile->actor->name,
+                    damage);
+
+                actor_damage_hit_points(tile->actor, projectile->shooter, damage);
             }
-
-            world_log(
-                projectile->shooter->floor,
-                projectile->shooter->x,
-                projectile->shooter->y,
-                color_white,
-                "%s bombards %s for %d damage.",
-                projectile->shooter->name,
-                tile->actor->name,
-                damage);
-
-            actor_damage_hit_points(tile->actor, projectile->shooter, damage);
-
-            should_move = false;
         }
-    }
-    break;
+        break;
+        }
     }
 
 done:

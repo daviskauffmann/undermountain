@@ -36,6 +36,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_BREASTPLATE] = {
         .type = BASE_ITEM_TYPE_BREASTPLATE,
@@ -127,6 +129,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_FALCHION] = {
         .type = BASE_ITEM_TYPE_FALCHION,
@@ -136,6 +140,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_FOOD] = {
         .type = BASE_ITEM_TYPE_FOOD,
@@ -172,6 +178,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_GREATSWORD] = {
         .type = BASE_ITEM_TYPE_GREATSWORD,
@@ -181,6 +189,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_HALF_PLATE] = {
         .type = BASE_ITEM_TYPE_HALF_PLATE,
@@ -208,6 +218,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_HEAVY_SHIELD] = {
         .type = BASE_ITEM_TYPE_HEAVY_SHIELD,
@@ -262,6 +274,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_LIGHT_SHIELD] = {
         .type = BASE_ITEM_TYPE_LIGHT_SHIELD,
@@ -287,7 +301,10 @@ const struct item_data item_database[] = {
         .name = "Longsword",
         .description = "",
         .color = {COLOR_WHITE},
+
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_MORNINGSTAR] = {
         .type = BASE_ITEM_TYPE_MORNINGSTAR,
@@ -297,6 +314,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_POTION_RESTORE_MANA] = {
         .type = BASE_ITEM_TYPE_POTION,
@@ -317,6 +336,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_SCROLL_CHAIN_LIGHTNING] = {
         .type = BASE_ITEM_TYPE_SCROLL,
@@ -357,6 +378,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_SLING] = {
         .type = BASE_ITEM_TYPE_SLING,
@@ -375,6 +398,8 @@ const struct item_data item_database[] = {
         .color = {COLOR_WHITE},
 
         .level = 1,
+
+        .breakable = true,
     },
     [ITEM_TYPE_STUDDED_LEATHER_ARMOR] = {
         .type = BASE_ITEM_TYPE_STUDDED_LEATHER_ARMOR,

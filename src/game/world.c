@@ -191,6 +191,8 @@ void world_save(FILE *const file)
 
             fwrite(&object->x, sizeof(object->x), 1, file);
             fwrite(&object->y, sizeof(object->y), 1, file);
+
+            fwrite(&object->trap_detection_state, sizeof(object->trap_detection_state), 1, file);
         }
 
         fwrite(&map->actors->size, sizeof(map->actors->size), 1, file);
@@ -475,6 +477,8 @@ void world_load(FILE *const file)
             fread(&object->y, sizeof(object->y), 1, file);
 
             object->light_fov = NULL;
+
+            fread(&object->trap_detection_state, sizeof(object->trap_detection_state), 1, file);
 
             list_add(map->objects, object);
             map->tiles[object->x][object->y].object = object;
@@ -991,9 +995,55 @@ void world_update(float delta_time)
             {
                 struct actor *const actor = list_get(map->actors, actor_index);
 
+                // give energy
                 actor->energy += actor_calc_speed(actor);
 
+                // reset took_turn status
                 actor->took_turn = false;
+
+                // detect traps for player
+                if (actor == world->player)
+                {
+                    for (size_t object_index = 0; object_index < map->objects->size; object_index++)
+                    {
+                        struct object *const object = list_get(map->objects, object_index);
+
+                        if (object->trap_detection_state == OBJECT_TRAP_DETECTION_STATE_UNCHECKED &&
+                            TCOD_map_is_in_fov(actor->fov, object->x, object->y))
+                        {
+                            const int roll = TCOD_random_dice_roll_s(world->random, "1d20") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+                            const int dungeon_level = map_calc_dungeon_level(map);
+                            const int challenge_rating = 10 + dungeon_level; // object_database[tile->object->type].challenge_rating;
+
+                            if (roll != 1 &&
+                                (roll == 20 ||
+                                 roll >= challenge_rating))
+                            {
+                                object->trap_detection_state = OBJECT_TRAP_DETECTION_STATE_DETECTED;
+
+                                world_log(
+                                    actor->floor,
+                                    actor->x,
+                                    actor->y,
+                                    color_red,
+                                    "%s detects a trap!",
+                                    actor->name);
+                            }
+                            else
+                            {
+                                object->trap_detection_state = OBJECT_TRAP_DETECTION_STATE_UNDETECTED;
+
+                                world_log(
+                                    actor->floor,
+                                    actor->x,
+                                    actor->y,
+                                    color_red,
+                                    "%s failed to detect trap!",
+                                    actor->name);
+                            }
+                        }
+                    }
+                }
 
                 if (actor->controllable)
                 {

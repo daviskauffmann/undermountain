@@ -31,6 +31,8 @@ void map_uninit(struct map *map);
 
 void map_generate(struct map *map);
 
+int map_calc_dungeon_level(const struct map *map);
+
 bool map_is_inside(int x, int y);
 
 struct room *map_get_random_room(const struct map *map);

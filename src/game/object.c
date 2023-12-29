@@ -108,6 +108,8 @@ struct object *object_new(
 
     object->light_fov = NULL;
 
+    object->trap_detection_state = OBJECT_TRAP_DETECTION_STATE_DETECTED;
+
     return object;
 }
 

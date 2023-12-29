@@ -19,6 +19,7 @@
 #include "../menu/menu_scene.h"
 #include "state.h"
 #include <libtcod.h>
+#include <time.h>
 
 #define STARTING_LEVEL 5
 
@@ -251,7 +252,7 @@ static struct scene *handle_event(const SDL_Event *const event)
 
                 hero->light_type = LIGHT_TYPE_TORCH;
 
-                world_create(hero);
+                world_create(hero, (unsigned int)time(0)); // TODO: user input seed
 
                 create_scene.uninit();
                 game_scene.init(&create_scene);

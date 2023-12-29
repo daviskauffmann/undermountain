@@ -19,15 +19,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 struct world *world;
 
 void world_init(void)
 {
     world = malloc(sizeof(*world));
-
-    world->random = NULL;
 
     world->time = 0;
 
@@ -61,12 +58,6 @@ void world_uninit(void)
 
     list_delete(world->spawned_unique_item_types);
 
-    if (world->random)
-    {
-        TCOD_random_delete(world->random);
-        TCOD_namegen_destroy();
-    }
-
     if (world->doomed)
     {
         actor_delete(world->hero);
@@ -76,15 +67,20 @@ void world_uninit(void)
     world = NULL;
 }
 
-void world_create(struct actor *hero)
+void world_create(struct actor *hero, unsigned int seed)
 {
-    world->random = TCOD_random_new_from_seed(TCOD_RNG_MT, (unsigned int)time(0));
-    TCOD_namegen_parse("data/namegen.cfg", world->random);
+    TCOD_Random *random = TCOD_random_new_from_seed(TCOD_RNG_MT, seed);
+
+    TCOD_namegen_parse("data/namegen.cfg", random);
 
     for (size_t floor = 0; floor < NUM_MAPS; floor++)
     {
-        map_generate(&world->maps[floor]);
+        map_generate(&world->maps[floor], random);
     }
+
+    TCOD_namegen_destroy();
+
+    TCOD_random_delete(random);
 
     world->hero = hero;
 
@@ -140,8 +136,6 @@ void world_create(struct actor *hero)
 
 void world_save(FILE *const file)
 {
-    fwrite(world->random, sizeof(*world->random), 1, file);
-
     fwrite(&world->spawned_unique_item_types->size, sizeof(world->spawned_unique_item_types->size), 1, file);
     for (size_t spawned_unique_item_type_index = 0; spawned_unique_item_type_index < world->spawned_unique_item_types->size; spawned_unique_item_type_index++)
     {
@@ -414,11 +408,6 @@ void world_save(FILE *const file)
 
 void world_load(FILE *const file)
 {
-    world->random = TCOD_random_new(TCOD_RNG_MT);
-    fread(world->random, sizeof(*world->random), 1, file);
-
-    TCOD_namegen_parse("data/namegen.cfg", world->random);
-
     size_t spawned_unique_item_types;
     fread(&spawned_unique_item_types, sizeof(spawned_unique_item_types), 1, file);
     for (size_t spawned_unique_item_type_index = 0; spawned_unique_item_type_index < spawned_unique_item_types; spawned_unique_item_type_index++)
@@ -890,7 +879,7 @@ void world_update(float delta_time)
 
                     if (surface_data->damage)
                     {
-                        const int damage = TCOD_random_dice_roll_s(world->random, surface_data->damage);
+                        const int damage = TCOD_random_dice_roll_s(NULL, surface_data->damage);
 
                         world_log(
                             actor->floor,
@@ -1011,7 +1000,7 @@ void world_update(float delta_time)
                         if (object->trap_detection_state == OBJECT_TRAP_DETECTION_STATE_UNCHECKED &&
                             TCOD_map_is_in_fov(actor->fov, object->x, object->y))
                         {
-                            const int roll = TCOD_random_dice_roll_s(world->random, "1d20") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
+                            const int roll = TCOD_random_dice_roll_s(NULL, "1d20") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
                             const int dungeon_level = map_calc_dungeon_level(map);
                             const int challenge_rating = 10 + dungeon_level; // object_database[tile->object->type].challenge_rating;
 

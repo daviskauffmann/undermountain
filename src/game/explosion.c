@@ -67,7 +67,7 @@ struct explosion *explosion_new(
                     if (tile->actor &&
                         tile->actor != initiator)
                     {
-                        const int damage = TCOD_random_dice_roll_s(world->random, "1d3");
+                        const int damage = TCOD_random_dice_roll_s(NULL, "1d3");
 
                         world_log(
                             initiator->floor,
@@ -106,7 +106,7 @@ struct explosion *explosion_new(
                         TCOD_dice_t dice = TCOD_random_dice_new("1d6");
                         dice.nb_rolls = MIN(explosion->caster_level, 10);
 
-                        const int damage = TCOD_random_dice_roll(world->random, dice);
+                        const int damage = TCOD_random_dice_roll(NULL, dice);
 
                         world_log(
                             initiator->floor,

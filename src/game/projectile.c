@@ -208,7 +208,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                 int damage = 0;
                 for (int i = 0; i < num_missiles; ++i)
                 {
-                    damage += TCOD_random_dice_roll_s(world->random, "1d4+1");
+                    damage += TCOD_random_dice_roll_s(NULL, "1d4+1");
                 }
 
                 world_log(

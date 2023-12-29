@@ -29,7 +29,7 @@ struct map
 void map_init(struct map *map, int floor);
 void map_uninit(struct map *map);
 
-void map_generate(struct map *map);
+void map_generate(struct map *map, TCOD_Random *random);
 
 int map_calc_dungeon_level(const struct map *map);
 

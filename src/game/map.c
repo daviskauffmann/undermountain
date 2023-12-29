@@ -208,7 +208,7 @@ static void vline_down(
     }
 }
 
-void map_generate(struct map *const map)
+void map_generate(struct map *const map, TCOD_Random *random)
 {
     // setup default tile state
     for (size_t x = 0; x < MAP_WIDTH; x++)
@@ -222,18 +222,18 @@ void map_generate(struct map *const map)
     }
 
     // create rooms
-    const int num_room_attempts = TCOD_random_get_int(world->random, MIN_ROOM_ATTEMPTS, MAX_ROOM_ATTEMPTS);
-    const int min_room_size = TCOD_random_get_int(world->random, MIN_ROOM_SIZE_VARIATION, MID_ROOM_SIZE_VARIATION);
-    const int max_room_size = TCOD_random_get_int(world->random, MID_ROOM_SIZE_VARIATION, MAX_ROOM_SIZE_VARIATION);
-    const int room_buffer = TCOD_random_get_int(world->random, MIN_ROOM_BUFFER, MAX_ROOM_BUFFER);
-    const float prevent_overlap_chance = TCOD_random_get_float(world->random, MIN_PREVENT_OVERLAP_CHANCE, MAX_PREVENT_OVERLAP_CHANCE);
+    const int num_room_attempts = TCOD_random_get_int(random, MIN_ROOM_ATTEMPTS, MAX_ROOM_ATTEMPTS);
+    const int min_room_size = TCOD_random_get_int(random, MIN_ROOM_SIZE_VARIATION, MID_ROOM_SIZE_VARIATION);
+    const int max_room_size = TCOD_random_get_int(random, MID_ROOM_SIZE_VARIATION, MAX_ROOM_SIZE_VARIATION);
+    const int room_buffer = TCOD_random_get_int(random, MIN_ROOM_BUFFER, MAX_ROOM_BUFFER);
+    const float prevent_overlap_chance = TCOD_random_get_float(random, MIN_PREVENT_OVERLAP_CHANCE, MAX_PREVENT_OVERLAP_CHANCE);
 
     for (size_t i = 0; i < num_room_attempts; i++)
     {
-        const int room_x = TCOD_random_get_int(world->random, 0, MAP_WIDTH);
-        const int room_y = TCOD_random_get_int(world->random, 0, MAP_HEIGHT);
-        const int room_w = TCOD_random_get_int(world->random, min_room_size, max_room_size);
-        const int room_h = TCOD_random_get_int(world->random, min_room_size, max_room_size);
+        const int room_x = TCOD_random_get_int(random, 0, MAP_WIDTH);
+        const int room_y = TCOD_random_get_int(random, 0, MAP_HEIGHT);
+        const int room_w = TCOD_random_get_int(random, min_room_size, max_room_size);
+        const int room_h = TCOD_random_get_int(random, min_room_size, max_room_size);
         if (room_x < room_buffer ||
             room_x + room_w > MAP_WIDTH - room_buffer ||
             room_y < room_buffer ||
@@ -242,7 +242,7 @@ void map_generate(struct map *const map)
             continue;
         }
 
-        if (TCOD_random_get_float(world->random, 0, 1) < prevent_overlap_chance)
+        if (TCOD_random_get_float(random, 0, 1) < prevent_overlap_chance)
         {
             bool overlap = false;
 
@@ -288,7 +288,7 @@ void map_generate(struct map *const map)
             list_get(map->rooms, i + 1),
             &x2, &y2);
 
-        if (TCOD_random_get_int(world->random, 0, 1) == 0)
+        if (TCOD_random_get_int(random, 0, 1) == 0)
         {
             vline(map, x1, y1, y2);
             hline(map, x1, y2, x2);
@@ -329,7 +329,7 @@ void map_generate(struct map *const map)
     }
 
     // populate doors
-    const float door_chance = TCOD_random_get_float(world->random, MIN_DOOR_CHANCE, MAX_DOOR_CHANCE);
+    const float door_chance = TCOD_random_get_float(random, MIN_DOOR_CHANCE, MAX_DOOR_CHANCE);
 
     for (int x = 0; x < MAP_WIDTH; x++)
     {
@@ -378,7 +378,7 @@ void map_generate(struct map *const map)
                 }
             }
 
-            if (put_door && TCOD_random_get_float(world->random, 0, 1) < door_chance)
+            if (put_door && TCOD_random_get_float(random, 0, 1) < door_chance)
             {
                 struct object *const object = object_new(
                     OBJECT_TYPE_DOOR_CLOSED,
@@ -441,8 +441,8 @@ void map_generate(struct map *const map)
         const struct room *const room = list_get(map->rooms, room_index);
 
         // spawn object
-        const float object_chance = TCOD_random_get_float(world->random, MIN_OBJECT_CHANCE, MAX_OBJECT_CHANCE);
-        if (TCOD_random_get_float(world->random, 0, 1) < object_chance)
+        const float object_chance = TCOD_random_get_float(random, MIN_OBJECT_CHANCE, MAX_OBJECT_CHANCE);
+        if (TCOD_random_get_float(random, 0, 1) < object_chance)
         {
             int x, y;
             do
@@ -452,7 +452,7 @@ void map_generate(struct map *const map)
                      map->tiles[x][y].object != NULL);
 
             enum object_type object_type = 0;
-            switch (TCOD_random_get_int(world->random, 0, 5))
+            switch (TCOD_random_get_int(random, 0, 5))
             {
             case 0:
             {
@@ -502,8 +502,8 @@ void map_generate(struct map *const map)
         }
 
         // spawn item
-        const float item_chance = TCOD_random_get_float(world->random, MIN_ITEM_CHANCE, MAX_ITEM_CHANCE);
-        if (TCOD_random_get_float(world->random, 0, 1) < item_chance)
+        const float item_chance = TCOD_random_get_float(random, MIN_ITEM_CHANCE, MAX_ITEM_CHANCE);
+        if (TCOD_random_get_float(random, 0, 1) < item_chance)
         {
             int x, y;
             do
@@ -516,17 +516,17 @@ void map_generate(struct map *const map)
             enum item_type type;
             do
             {
-                type = TCOD_random_get_int(world->random, ITEM_TYPE_NONE + 1, NUM_ITEM_TYPES - 1);
+                type = TCOD_random_get_int(random, ITEM_TYPE_NONE + 1, NUM_ITEM_TYPES - 1);
             } while (item_database[type].level > map->floor + 1 ||
                      (item_database[type].unique && list_contains(world->spawned_unique_item_types, (void *)(size_t)type)));
 
-            int stack = TCOD_random_get_int(world->random, 1, base_item_database[item_database[type].type].max_stack);
+            int stack = TCOD_random_get_int(random, 1, base_item_database[item_database[type].type].max_stack);
 
             if (type == ITEM_TYPE_GOLD)
             {
                 const int min_stack = 10 * (map->floor + 1);
                 const int max_stack = 100 * (map->floor + 1);
-                stack = TCOD_random_get_int(world->random, min_stack, max_stack);
+                stack = TCOD_random_get_int(random, min_stack, max_stack);
             }
 
             struct item *const item = item_new(
@@ -541,8 +541,8 @@ void map_generate(struct map *const map)
         }
 
         // spawn adventurer
-        const float adventurer_chance = TCOD_random_get_float(world->random, MIN_ADVENTURER_CHANCE, MAX_ADVENTURER_CHANCE);
-        if (TCOD_random_get_float(world->random, 0, 1) < adventurer_chance)
+        const float adventurer_chance = TCOD_random_get_float(random, MIN_ADVENTURER_CHANCE, MAX_ADVENTURER_CHANCE);
+        if (TCOD_random_get_float(random, 0, 1) < adventurer_chance)
         {
             int x, y;
             do
@@ -554,13 +554,13 @@ void map_generate(struct map *const map)
                      map->tiles[x][y].actor != NULL ||
                      map->tiles[x][y].object != NULL);
 
-            enum race race = TCOD_random_get_int(world->random, PLAYER_RACE_BEGIN, PLAYER_RACE_END);
+            enum race race = TCOD_random_get_int(random, PLAYER_RACE_BEGIN, PLAYER_RACE_END);
             char *name;
             switch (race)
             {
             case RACE_DWARF:
             {
-                if (TCOD_random_get_int(world->random, 0, 1) == 0)
+                if (TCOD_random_get_int(random, 0, 1) == 0)
                 {
                     name = "dwarf male";
                 }
@@ -572,7 +572,7 @@ void map_generate(struct map *const map)
             break;
             default:
             {
-                if (TCOD_random_get_int(world->random, 0, 1) == 0)
+                if (TCOD_random_get_int(random, 0, 1) == 0)
                 {
                     name = "standard male";
                 }
@@ -584,7 +584,7 @@ void map_generate(struct map *const map)
             break;
             }
 
-            const enum class class = TCOD_random_get_int(world->random, PLAYER_CLASS_BEGIN, PLAYER_CLASS_END);
+            const enum class class = TCOD_random_get_int(random, PLAYER_CLASS_BEGIN, PLAYER_CLASS_END);
 
             struct actor *const actor = actor_new(
                 TCOD_namegen_generate(name, false),
@@ -608,13 +608,13 @@ void map_generate(struct map *const map)
         // spawn monster pack if not the entrance room
         if (room != stair_up_room)
         {
-            const float monster_pack_chance = TCOD_random_get_float(world->random, MIN_MONSTER_PACK_CHANCE, MAX_MONSTER_PACK_CHANCE);
-            if (TCOD_random_get_float(world->random, 0, 1) < monster_pack_chance)
+            const float monster_pack_chance = TCOD_random_get_float(random, MIN_MONSTER_PACK_CHANCE, MAX_MONSTER_PACK_CHANCE);
+            if (TCOD_random_get_float(random, 0, 1) < monster_pack_chance)
             {
                 const struct monster_pack_data *monster_pack_data;
                 do
                 {
-                    const enum monster_pack_type monster_pack_type = TCOD_random_get_int(world->random, 0, NUM_MONSTER_PACK_TYPES - 1);
+                    const enum monster_pack_type monster_pack_type = TCOD_random_get_int(random, 0, NUM_MONSTER_PACK_TYPES - 1);
                     monster_pack_data = &monster_pack_database[monster_pack_type];
                 } while (map->floor < monster_pack_data->min_floor ||
                          map->floor > monster_pack_data->max_floor);
@@ -623,7 +623,7 @@ void map_generate(struct map *const map)
                 {
                     const int min_count = monster_pack_data->monsters[monster_type].min_count;
                     const int max_count = monster_pack_data->monsters[monster_type].max_count;
-                    const int count = TCOD_random_get_int(world->random, min_count, max_count);
+                    const int count = TCOD_random_get_int(random, min_count, max_count);
 
                     if (count > 0)
                     {
@@ -661,7 +661,7 @@ void map_generate(struct map *const map)
                                 {
                                     const int min_stack = monster_data->equipment[equip_slot].min_stack;
                                     const int max_stack = monster_data->equipment[equip_slot].max_stack;
-                                    const int stack = TCOD_random_get_int(world->random, min_stack, max_stack);
+                                    const int stack = TCOD_random_get_int(random, min_stack, max_stack);
 
                                     if (stack > 0)
                                     {
@@ -678,7 +678,7 @@ void map_generate(struct map *const map)
                             {
                                 const int min_stack = monster_data->items[item_type].min_stack;
                                 const int max_stack = monster_data->items[item_type].max_stack;
-                                const int stack = TCOD_random_get_int(world->random, min_stack, max_stack);
+                                const int stack = TCOD_random_get_int(random, min_stack, max_stack);
 
                                 if (stack > 0)
                                 {
@@ -716,7 +716,7 @@ bool map_is_inside(const int x, const int y)
 
 struct room *map_get_random_room(const struct map *const map)
 {
-    return list_get(map->rooms, TCOD_random_get_int(world->random, 0, (int)map->rooms->size - 1));
+    return list_get(map->rooms, TCOD_random_get_int(NULL, 0, (int)map->rooms->size - 1));
 }
 
 void map_find_empty_tile(const struct map *map, int *x, int *y)
@@ -727,8 +727,8 @@ void map_find_empty_tile(const struct map *map, int *x, int *y)
            map->tiles[*x][*y].item != NULL ||
            map->tiles[*x][*y].corpse != NULL)
     {
-        *x += TCOD_random_get_int(world->random, -1, 1);
-        *y += TCOD_random_get_int(world->random, -1, 1);
+        *x += TCOD_random_get_int(NULL, -1, 1);
+        *y += TCOD_random_get_int(NULL, -1, 1);
     }
 }
 

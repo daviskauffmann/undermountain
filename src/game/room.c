@@ -30,11 +30,11 @@ void room_get_random_pos(
     int *const x, int *const y)
 {
     *x = TCOD_random_get_int(
-        world->random,
+        NULL,
         room->x,
         room->x + room->w - 1);
     *y = TCOD_random_get_int(
-        world->random,
+        NULL,
         room->y,
         room->y + room->h - 1);
 }

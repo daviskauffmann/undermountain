@@ -186,7 +186,7 @@ void actor_level_up(struct actor *const actor)
 
     actor->level++;
     actor->ability_points++; // TODO: revisit this, may be unbalanced to grant an ability point every level
-    actor->base_hit_points += TCOD_random_dice_roll_s(world->random, class_database[actor->class].hit_die);
+    actor->base_hit_points += TCOD_random_dice_roll_s(NULL, class_database[actor->class].hit_die);
 
     actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_point_percent);
     actor->mana = (int)(actor_calc_max_mana(actor) * current_mana_percent);
@@ -860,7 +860,7 @@ bool actor_melee_touch_attack(struct actor *const actor, struct actor *const oth
     const int armor_class = 10 + dexterity_bonus;
 
     // calculate hit
-    const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+    const int attack_roll = TCOD_random_dice_roll_s(NULL, "1d20");
     const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
     const int attack_bonus = actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
     const int hit_challenge = attack_roll + base_attack_bonus + attack_bonus;
@@ -881,7 +881,7 @@ bool actor_ranged_touch_attack(struct actor *const actor, struct actor *const ot
     const int armor_class = 10 + dexterity_bonus;
 
     // calculate hit
-    const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+    const int attack_roll = TCOD_random_dice_roll_s(NULL, "1d20");
     const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
     const int attack_bonus = actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
     const int hit_challenge = attack_roll + base_attack_bonus + attack_bonus;
@@ -1699,10 +1699,10 @@ bool actor_ai(struct actor *const actor)
     }
 
     // move randomly
-    if (TCOD_random_get_int(world->random, 0, 1) == 0)
+    if (TCOD_random_get_int(NULL, 0, 1) == 0)
     {
-        const int x = actor->x + TCOD_random_get_int(world->random, -1, 1);
-        const int y = actor->y + TCOD_random_get_int(world->random, -1, 1);
+        const int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
+        const int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
         actor_move(actor, x, y);
 
         return true;
@@ -1871,7 +1871,7 @@ bool actor_move(
         if (tile->object->type == OBJECT_TYPE_TRAP)
         {
             const int reflex_save = actor_calc_saving_throw(actor, SAVING_THROW_REFLEX);
-            const int roll = TCOD_random_dice_roll_s(world->random, "1d20") + reflex_save;
+            const int roll = TCOD_random_dice_roll_s(NULL, "1d20") + reflex_save;
             const int dungeon_level = map_calc_dungeon_level(map);
             const int challenge_rating = 10 + dungeon_level; // object_database[tile->object->type].challenge_rating;
 
@@ -1879,7 +1879,7 @@ bool actor_move(
                 (roll != 20 &&
                  roll < challenge_rating))
             {
-                const int damage = TCOD_random_dice_roll_s(world->random, "1d6") * dungeon_level;
+                const int damage = TCOD_random_dice_roll_s(NULL, "1d6") * dungeon_level;
 
                 world_log(
                     actor->floor,
@@ -2303,7 +2303,7 @@ bool actor_pray(
         return false;
     }
 
-    const enum ability ability = TCOD_random_get_int(world->random, ABILITY_NONE + 1, NUM_ABILITIES - 1);
+    const enum ability ability = TCOD_random_get_int(NULL, ABILITY_NONE + 1, NUM_ABILITIES - 1);
     const int score = 1;
 
     actor->ability_scores[ability] += score;
@@ -3091,7 +3091,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
     for (int attack = 0; attack < attacks_per_round; attack++)
     {
         // calculate hit
-        const int attack_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+        const int attack_roll = TCOD_random_dice_roll_s(NULL, "1d20");
         const int attack_bonus = actor_calc_attack_bonus(actor);
         const int successive_attack_penalty = attack * actor_calc_secondary_attack_penalty(actor);
         const int ranged_attack_penalty = actor_calc_ranged_attack_penalty(actor, other);
@@ -3120,7 +3120,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
 
         if (attack_roll >= actor_calc_threat_range(actor))
         {
-            const int threat_roll = TCOD_random_dice_roll_s(world->random, "1d20");
+            const int threat_roll = TCOD_random_dice_roll_s(NULL, "1d20");
             const int crit_challenge = threat_roll + attack_bonus;
 
             if (crit_challenge >= armor_class)
@@ -3140,7 +3140,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
 
         for (size_t i = 0; i < num_attack_rolls; i++)
         {
-            const int weapon_damage = TCOD_random_dice_roll_s(world->random, actor_calc_damage(actor));
+            const int weapon_damage = TCOD_random_dice_roll_s(NULL, actor_calc_damage(actor));
 
             damage += weapon_damage + damage_bonus;
         }
@@ -3154,7 +3154,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
 
             for (size_t i = 0; i < actor->level / 2; i++)
             {
-                damage += TCOD_random_dice_roll_s(world->random, "1d6");
+                damage += TCOD_random_dice_roll_s(NULL, "1d6");
             }
         }
 
@@ -3196,7 +3196,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
 
         if (weapon && item_database[weapon->type].breakable &&
-            TCOD_random_get_float(world->random, 0, 1) <= 0.01f)
+            TCOD_random_get_float(NULL, 0, 1) <= 0.01f)
         {
             weapon_broken = true;
 
@@ -3293,7 +3293,7 @@ bool actor_cast(
 
         if (arcane_spell_failure > 0 && spell_data->magic_type == MAGIC_TYPE_ARCANE)
         {
-            const float roll = TCOD_random_get_float(world->random, 0, 1);
+            const float roll = TCOD_random_get_float(NULL, 0, 1);
 
             if (roll < arcane_spell_failure)
             {
@@ -3421,7 +3421,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "1d8") + MIN(caster_level, 5);
+            const int health = TCOD_random_dice_roll_s(NULL, "1d8") + MIN(caster_level, 5);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3476,7 +3476,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "2d8") + MIN(caster_level, 10);
+            const int health = TCOD_random_dice_roll_s(NULL, "2d8") + MIN(caster_level, 10);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3531,7 +3531,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "3d8") + MIN(caster_level, 15);
+            const int health = TCOD_random_dice_roll_s(NULL, "3d8") + MIN(caster_level, 15);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3586,7 +3586,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "4d8") + MIN(caster_level, 20);
+            const int health = TCOD_random_dice_roll_s(NULL, "4d8") + MIN(caster_level, 20);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3650,7 +3650,7 @@ bool actor_cast(
             TCOD_dice_t dice = TCOD_random_dice_new("1d6");
             dice.nb_rolls = MIN(caster_level, 20);
 
-            const int damage = TCOD_random_dice_roll(world->random, dice);
+            const int damage = TCOD_random_dice_roll(NULL, dice);
 
             world_log(
                 actor->floor,
@@ -3775,7 +3775,7 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    const int health = TCOD_random_dice_roll_s(world->random, "1d4");
+                    const int health = TCOD_random_dice_roll_s(NULL, "1d4");
                     const int damage = other->hit_points - health;
 
                     world_log(
@@ -3817,7 +3817,7 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    const int health = TCOD_random_dice_roll_s(world->random, "1d4");
+                    const int health = TCOD_random_dice_roll_s(NULL, "1d4");
                     const int damage = other->hit_points - health;
 
                     world_log(
@@ -3934,7 +3934,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "1d8") + MIN(caster_level, 5);
+            const int health = TCOD_random_dice_roll_s(NULL, "1d8") + MIN(caster_level, 5);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3994,7 +3994,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "2d8") + MIN(caster_level, 10);
+            const int health = TCOD_random_dice_roll_s(NULL, "2d8") + MIN(caster_level, 10);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -4054,7 +4054,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "3d8") + MIN(caster_level, 15);
+            const int health = TCOD_random_dice_roll_s(NULL, "3d8") + MIN(caster_level, 15);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -4114,7 +4114,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(world->random, "4d8") + MIN(caster_level, 20);
+            const int health = TCOD_random_dice_roll_s(NULL, "4d8") + MIN(caster_level, 20);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -4198,7 +4198,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int damage = TCOD_random_dice_roll_s(world->random, "1d3");
+            const int damage = TCOD_random_dice_roll_s(NULL, "1d3");
 
             world_log(
                 actor->floor,

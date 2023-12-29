@@ -8,8 +8,6 @@
 
 struct world
 {
-    TCOD_Random *random;
-
     size_t time;
 
     struct list *spawned_unique_item_types;
@@ -29,7 +27,7 @@ extern struct world *world;
 void world_init(void);
 void world_uninit(void);
 
-void world_create(struct actor *hero);
+void world_create(struct actor *hero, unsigned int seed);
 
 void world_save(FILE *file);
 void world_load(FILE *file);

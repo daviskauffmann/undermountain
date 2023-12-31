@@ -7,6 +7,43 @@
 
 const struct class_data class_database[] = {
     // player classes
+    [CLASS_BARBARIAN] = {
+        .name = "Barbarian",
+        .color = {COLOR_LIGHT_RED},
+        .glyph = '@',
+
+        .hit_die = "1d12",
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
+
+        .default_ability_scores = {
+            [ABILITY_STRENGTH] = 16,
+            [ABILITY_DEXTERITY] = 15,
+            [ABILITY_CONSTITUTION] = 14,
+            [ABILITY_INTELLIGENCE] = 10,
+            [ABILITY_WISDOM] = 10,
+            [ABILITY_CHARISMA] = 10,
+        },
+
+        .feat_progression = {
+            [FEAT_ARMOR_PROFICIENCY_LIGHT] = 1,
+            [FEAT_ARMOR_PROFICIENCY_MEDIUM] = 1,
+            [FEAT_WEAPON_PROFICIENCY_MARTIAL] = 1,
+            [FEAT_WEAPON_PROFICIENCY_SIMPLE] = 1,
+        },
+
+        .starting_equipment = {
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_STUDDED_LEATHER_ARMOR,
+            [EQUIP_SLOT_WEAPON] = ITEM_TYPE_BATTLEAXE,
+        },
+
+        .starting_items = {
+            [ITEM_TYPE_FOOD] = 10,
+            [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = 10,
+        },
+
+        .companion = MONSTER_TYPE_DOG,
+    },
     [CLASS_CLERIC] = {
         .name = "Cleric",
         .color = {COLOR_AMBER},
@@ -555,5 +592,16 @@ const struct class_data class_database[] = {
         .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
 
         .natural_weapon_type = NATURAL_WEAPON_TYPE_BITE,
+    },
+    [CLASS_ZOMBIE] = {
+        .name = "Zombie",
+        .color = {COLOR_WHITE},
+        .glyph = 'z',
+
+        .hit_die = "1d12",
+
+        .natural_armor_bonus = 2,
+
+        .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_AVERAGE,
     },
 };

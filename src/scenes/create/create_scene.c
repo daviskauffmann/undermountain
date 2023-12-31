@@ -21,7 +21,7 @@
 #include <libtcod.h>
 #include <time.h>
 
-#define STARTING_LEVEL 5
+#define STARTING_LEVEL 1
 
 static enum state state;
 
@@ -160,7 +160,7 @@ static void init(const struct scene *const previous_scene)
 
     selected_race = RACE_HUMAN;
 
-    selected_class = CLASS_CLERIC;
+    selected_class = CLASS_FIGHTER;
 
     set_default_ability_scores();
     selected_ability = ABILITY_NONE + 1;

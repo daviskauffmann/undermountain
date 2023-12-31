@@ -105,19 +105,19 @@ const struct base_item_data base_item_database[] = {
             [WEAPON_PROFICIENCY_MARTIAL] = true,
         },
     },
-    [BASE_ITEM_TYPE_DAGGER] = {
-        .name = "Dagger",
-        .glyph = '|',
+    [BASE_ITEM_TYPE_CLUB] = {
+        .name = "Club",
+        .glyph = '!',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
-        .size = SIZE_TINY,
-        .weight = 1,
+        .size = SIZE_MEDIUM,
+        .weight = 3,
         .max_stack = 1,
-        .cost = 2,
+        .cost = 0,
 
-        .damage = "1d4",
-        .damage_type = DAMAGE_TYPE_PIERCING,
-        .threat_range = 19,
+        .damage = "1d6",
+        .damage_type = DAMAGE_TYPE_BLUDGEONING,
+        .threat_range = 20,
         .critical_multiplier = 2,
         .light = true,
         .weapon_proficiencies = {

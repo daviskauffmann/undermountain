@@ -252,4 +252,15 @@ const struct monster_pack_data monster_pack_database[] = {
             },
         },
     },
+    [MONSTER_PACK_TYPE_ZOMBIES] = {
+        .min_floor = 2,
+        .max_floor = 6,
+
+        .monsters = {
+            [MONSTER_TYPE_ZOMBIE] = {
+                .min_count = 1,
+                .max_count = 5,
+            },
+        },
+    },
 };

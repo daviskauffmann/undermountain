@@ -996,4 +996,36 @@ const struct monster_data monster_database[] = {
             [FEAT_WEAPON_FOCUS] = true,
         },
     },
+    [MONSTER_TYPE_ZOMBIE] = {
+        .name = "Zombie",
+
+        .race = RACE_UNDEAD,
+        .class = CLASS_ZOMBIE,
+        .size = SIZE_MEDIUM,
+        .faction = FACTION_UNDEAD,
+
+        .level = 2,
+
+        .ability_scores = {
+            [ABILITY_STRENGTH] = 13,
+            [ABILITY_DEXTERITY] = 8,
+            [ABILITY_CONSTITUTION] = 0,
+            [ABILITY_INTELLIGENCE] = 0,
+            [ABILITY_WISDOM] = 10,
+            [ABILITY_CHARISMA] = 1,
+        },
+
+        .feats = {
+            [FEAT_TOUGHNESS] = true,
+        },
+
+        .equipment = {
+            [EQUIP_SLOT_WEAPON] = {
+                .type = ITEM_TYPE_CLUB,
+
+                .min_stack = 0,
+                .max_stack = 1,
+            },
+        },
+    },
 };

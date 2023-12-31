@@ -9,4 +9,8 @@ const struct special_ability_data special_ability_database[] = {
         .name = "Low-light Vision",
         .description = "Grants the ability to see in the dark, but not as far as darkvision.",
     },
+    [SPECIAL_ABILITY_SLEEP_IMMUNITY] = {
+        .name = "Sleep Immunity",
+        .description = "Grants immunity to sleep effects.",
+    },
 };

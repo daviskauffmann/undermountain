@@ -66,60 +66,16 @@ const struct item_data item_database[] = {
 
         .level = 1,
     },
-    [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = {
-        .type = BASE_ITEM_TYPE_POTION,
+    [ITEM_TYPE_CLUB] = {
+        .type = BASE_ITEM_TYPE_CLUB,
 
-        .name = "Potion of Cure Light Wounds",
+        .name = "Club",
         .description = "",
-        .color = {COLOR_LIGHT_RED},
-
-        .spell_type = SPELL_TYPE_CURE_LIGHT_WOUNDS,
+        .color = {COLOR_WHITE},
 
         .level = 1,
-    },
-    [ITEM_TYPE_POTION_CURE_MODERATE_WOUNDS] = {
-        .type = BASE_ITEM_TYPE_POTION,
 
-        .name = "Potion of Cure Moderate Wounds",
-        .description = "",
-        .color = {COLOR_LIGHT_RED},
-
-        .spell_type = SPELL_TYPE_CURE_MODERATE_WOUNDS,
-
-        .level = 3,
-    },
-    [ITEM_TYPE_POTION_CURE_SERIOUS_WOUNDS] = {
-        .type = BASE_ITEM_TYPE_POTION,
-
-        .name = "Potion of Cure Serious Wounds",
-        .description = "",
-        .color = {COLOR_LIGHT_RED},
-
-        .spell_type = SPELL_TYPE_CURE_SERIOUS_WOUNDS,
-
-        .level = 5,
-    },
-    [ITEM_TYPE_POTION_CURE_CRITICAL_WOUNDS] = {
-        .type = BASE_ITEM_TYPE_POTION,
-
-        .name = "Potion of Cure Critical Wounds",
-        .description = "",
-        .color = {COLOR_LIGHT_RED},
-
-        .spell_type = SPELL_TYPE_CURE_CRITICAL_WOUNDS,
-
-        .level = 7,
-    },
-    [ITEM_TYPE_POTION_HEAL] = {
-        .type = BASE_ITEM_TYPE_POTION,
-
-        .name = "Potion of Heal",
-        .description = "",
-        .color = {COLOR_LIGHT_RED},
-
-        .spell_type = SPELL_TYPE_HEAL,
-
-        .level = 9,
+        .breakable = true,
     },
     [ITEM_TYPE_DAGGER] = {
         .type = BASE_ITEM_TYPE_DAGGER,
@@ -316,6 +272,61 @@ const struct item_data item_database[] = {
         .level = 1,
 
         .breakable = true,
+    },
+    [ITEM_TYPE_POTION_CURE_LIGHT_WOUNDS] = {
+        .type = BASE_ITEM_TYPE_POTION,
+
+        .name = "Potion of Cure Light Wounds",
+        .description = "",
+        .color = {COLOR_LIGHT_RED},
+
+        .spell_type = SPELL_TYPE_CURE_LIGHT_WOUNDS,
+
+        .level = 1,
+    },
+    [ITEM_TYPE_POTION_CURE_MODERATE_WOUNDS] = {
+        .type = BASE_ITEM_TYPE_POTION,
+
+        .name = "Potion of Cure Moderate Wounds",
+        .description = "",
+        .color = {COLOR_LIGHT_RED},
+
+        .spell_type = SPELL_TYPE_CURE_MODERATE_WOUNDS,
+
+        .level = 3,
+    },
+    [ITEM_TYPE_POTION_CURE_SERIOUS_WOUNDS] = {
+        .type = BASE_ITEM_TYPE_POTION,
+
+        .name = "Potion of Cure Serious Wounds",
+        .description = "",
+        .color = {COLOR_LIGHT_RED},
+
+        .spell_type = SPELL_TYPE_CURE_SERIOUS_WOUNDS,
+
+        .level = 5,
+    },
+    [ITEM_TYPE_POTION_CURE_CRITICAL_WOUNDS] = {
+        .type = BASE_ITEM_TYPE_POTION,
+
+        .name = "Potion of Cure Critical Wounds",
+        .description = "",
+        .color = {COLOR_LIGHT_RED},
+
+        .spell_type = SPELL_TYPE_CURE_CRITICAL_WOUNDS,
+
+        .level = 7,
+    },
+    [ITEM_TYPE_POTION_HEAL] = {
+        .type = BASE_ITEM_TYPE_POTION,
+
+        .name = "Potion of Heal",
+        .description = "",
+        .color = {COLOR_LIGHT_RED},
+
+        .spell_type = SPELL_TYPE_HEAL,
+
+        .level = 9,
     },
     [ITEM_TYPE_POTION_RESTORE_MANA] = {
         .type = BASE_ITEM_TYPE_POTION,

@@ -3130,17 +3130,18 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         }
 
         // calculate damage
+        const char *const damage_die = actor_calc_damage(actor);
+        const int damage_bonus = actor_calc_damage_bonus(actor);
         const int num_attack_rolls =
             crit
                 ? actor_calc_critical_multiplier(actor)
                 : 1;
-        const int damage_bonus = actor_calc_damage_bonus(actor);
 
         int damage = 0;
 
         for (size_t i = 0; i < num_attack_rolls; i++)
         {
-            const int weapon_damage = TCOD_random_dice_roll_s(NULL, actor_calc_damage(actor));
+            const int weapon_damage = TCOD_random_dice_roll_s(NULL, damage_die);
 
             damage += weapon_damage + damage_bonus;
         }

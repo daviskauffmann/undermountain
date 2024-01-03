@@ -85,6 +85,27 @@ const struct base_item_data base_item_database[] = {
         .max_stack = 1,
         .cost = 5,
     },
+    [BASE_ITEM_TYPE_CLUB] = {
+        .name = "Club",
+        .glyph = '!',
+
+        .equip_slot = EQUIP_SLOT_WEAPON,
+        .size = SIZE_MEDIUM,
+        .weight = 3,
+        .max_stack = 1,
+        .cost = 0,
+
+        .damage = "1d6",
+        .damage_type = DAMAGE_TYPE_BLUDGEONING,
+        .threat_range = 20,
+        .critical_multiplier = 2,
+        .light = true,
+        .weapon_proficiencies = {
+            [WEAPON_PROFICIENCY_ROGUE] = true,
+            [WEAPON_PROFICIENCY_SIMPLE] = true,
+            [WEAPON_PROFICIENCY_WIZARD] = true,
+        },
+    },
     [BASE_ITEM_TYPE_COMPOSITE_BOW] = {
         .name = "Composite Bow",
         .glyph = '}',
@@ -105,19 +126,19 @@ const struct base_item_data base_item_database[] = {
             [WEAPON_PROFICIENCY_MARTIAL] = true,
         },
     },
-    [BASE_ITEM_TYPE_CLUB] = {
-        .name = "Club",
-        .glyph = '!',
+    [BASE_ITEM_TYPE_DAGGER] = {
+        .name = "Dagger",
+        .glyph = '-',
 
         .equip_slot = EQUIP_SLOT_WEAPON,
         .size = SIZE_MEDIUM,
-        .weight = 3,
+        .weight = 1,
         .max_stack = 1,
-        .cost = 0,
+        .cost = 2,
 
-        .damage = "1d6",
-        .damage_type = DAMAGE_TYPE_BLUDGEONING,
-        .threat_range = 20,
+        .damage = "1d4",
+        .damage_type = DAMAGE_TYPE_PIERCING_SLASHING,
+        .threat_range = 19,
         .critical_multiplier = 2,
         .light = true,
         .weapon_proficiencies = {

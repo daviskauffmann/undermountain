@@ -2512,7 +2512,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             break;
             }
 
-            controls = "u/d/l/r: Select, ESC: Cancel";
+            controls = "↕/↔: Select, ESC: Cancel";
         }
         else if (inventory_action != INVENTORY_ACTION_NONE)
         {
@@ -2595,31 +2595,31 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             case TARGETING_ACTION_LOOK:
             {
                 command = "Look";
-                controls = "u/d/l/r: Move, ESC: Cancel";
+                controls = "↕/↔: Move, ESC: Cancel";
             }
             break;
             case TARGETING_ACTION_EXAMINE:
             {
                 command = "Examine";
-                controls = "u/d/l/r: Move, ESC: Cancel";
+                controls = "x: Examine, ↕/↔: Move, ESC: Cancel";
             }
             break;
             case TARGETING_ACTION_READ:
             {
                 command = "Read";
-                controls = "r: Read, u/d/l/r: Move, ESC: Cancel";
+                controls = "r: Read, ↕/↔: Move, ESC: Cancel";
             }
             break;
             case TARGETING_ACTION_SHOOT:
             {
                 command = "Shoot";
-                controls = "f: Shoot, u/d/l/r: Move, ESC: Cancel";
+                controls = "f: Shoot, ↕/↔: Move, ESC: Cancel";
             }
             break;
             case TARGETING_ACTION_SPELL:
             {
                 command = "Cast Spell";
-                controls = "z: Cast, u/d/l/r: Move, ESC: Cancel";
+                controls = "z: Cast, ↕/↔: Move, ESC: Cancel";
             }
             break;
             }

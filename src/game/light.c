@@ -57,6 +57,12 @@ const struct light_data light_database[] = {
         .intensity = 0.5f,
         .flicker = true,
     },
+    [LIGHT_TYPE_PLAYER] = {
+        .radius = -1,
+        .color = {COLOR_WHITE},
+        .intensity = 0,
+        .flicker = false,
+    },
     [LIGHT_TYPE_STAIRS] = {
         .radius = 2,
         .color = {COLOR_WHITE},

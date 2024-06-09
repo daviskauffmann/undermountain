@@ -31,7 +31,7 @@ void map_uninit(struct map *map);
 
 void map_generate(struct map *map, TCOD_Random *random);
 
-int map_calc_dungeon_level(const struct map *map);
+int map_get_dungeon_level(const struct map *map);
 
 bool map_is_inside(int x, int y);
 

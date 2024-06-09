@@ -118,6 +118,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
 
     const struct map *const map = &world->maps[projectile->floor];
     const struct tile *const tile = &map->tiles[x][y];
+
     if (!tile_database[tile->type].is_walkable)
     {
         should_move = false;
@@ -238,7 +239,7 @@ done:
     return should_move;
 }
 
-void projectile_calc_light(struct projectile *const projectile)
+void projectile_update_light(struct projectile *const projectile)
 {
     if (projectile->light_fov)
     {
@@ -246,15 +247,14 @@ void projectile_calc_light(struct projectile *const projectile)
         projectile->light_fov = NULL;
     }
 
-    const struct projectile_data *const projectile_data = &projectile_database[projectile->type];
-    const struct light_data *const light_data = &light_database[projectile_data->light_type];
+    const int radius = light_database[projectile_database[projectile->type].light_type].radius;
 
-    if (light_data->radius >= 0)
+    if (radius >= 0)
     {
         projectile->light_fov = map_to_fov_map(
             &world->maps[projectile->floor],
             (int)projectile->x,
             (int)projectile->y,
-            light_data->radius);
+            radius);
     }
 }

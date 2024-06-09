@@ -63,17 +63,39 @@ struct actor
     int last_seen_y;
     int turns_chased;
 
+    struct actor *last_attacked_target;
+
     struct actor *leader;
 
     enum light_type light_type;
     TCOD_Map *light_fov;
 
     TCOD_ColorRGB flash_color;
-    float flash_fade_coef;
+    float flash_alpha;
 
     bool controllable;
 
     bool dead;
+};
+
+struct actor_special_abilities
+{
+    bool has[NUM_SPECIAL_ABILITIES];
+};
+
+struct actor_special_attacks
+{
+    bool has[NUM_SPECIAL_ATTACKS];
+};
+
+struct actor_feats
+{
+    bool has[NUM_FEATS];
+};
+
+struct actor_spells
+{
+    bool has[NUM_SPELL_TYPES];
 };
 
 extern const struct actor_metadata actor_metadata;
@@ -94,64 +116,60 @@ struct actor *actor_new(
     int y);
 void actor_delete(struct actor *actor);
 
-int actor_calc_experience_for_level(int level);
+int actor_get_experience_for_level(int level);
 void actor_give_experience(struct actor *actor, int experience);
 void actor_level_up(struct actor *actor);
 
-int actor_calc_ability_score(const struct actor *actor, enum ability ability);
-int actor_calc_ability_modifer(const struct actor *actor, enum ability ability);
+int actor_get_ability_score(const struct actor *actor, enum ability ability);
+int actor_get_ability_modifer(const struct actor *actor, enum ability ability);
 void actor_spend_ability_point(struct actor *actor, enum ability ability);
 
-void actor_calc_special_abilities(const struct actor *actor, bool (*special_abilities)[NUM_SPECIAL_ABILITIES]);
-bool actor_has_special_ability(const struct actor *actor, enum special_ability special_ability);
+struct actor_special_abilities actor_get_special_abilities(const struct actor *actor);
 
-void actor_calc_special_attacks(const struct actor *actor, bool (*special_attacks)[NUM_SPECIAL_ATTACKS]);
-bool actor_has_special_attack(const struct actor *actor, enum special_attack special_attack);
+struct actor_special_attacks actor_get_special_attacks(const struct actor *actor);
 
-void actor_calc_feats(const struct actor *actor, bool (*feats)[NUM_FEATS]);
-bool actor_has_feat(const struct actor *actor, enum feat feat);
+struct actor_feats actor_get_feats(const struct actor *actor);
 bool actor_has_prerequisites_for_feat(const struct actor *actor, enum feat feat);
 
-void actor_calc_spells(const struct actor *actor, bool (*spells)[NUM_SPELL_TYPES]);
-bool actor_has_spell(const struct actor *actor, enum spell_type spell_type);
+struct actor_spells actor_get_spells(const struct actor *actor);
 
-int actor_calc_max_hit_points(const struct actor *actor);
+int actor_get_max_hit_points(const struct actor *actor);
 void actor_restore_hit_points(struct actor *actor, int health);
 bool actor_damage_hit_points(struct actor *actor, struct actor *attacker, int damage);
 
-int actor_calc_max_mana(const struct actor *actor);
+int actor_get_max_mana(const struct actor *actor);
 void actor_restore_mana(struct actor *actor, int mana);
-float actor_calc_arcane_spell_failure(const struct actor *actor);
-int actor_calc_spell_mana_cost(const struct actor *actor, enum spell_type spell_type);
+float actor_get_arcane_spell_failure(const struct actor *actor);
+int actor_get_spell_mana_cost(const struct actor *actor, enum spell_type spell_type);
 
-int actor_calc_saving_throw(const struct actor *actor, enum saving_throw saving_throw);
+int actor_get_saving_throw(const struct actor *actor, enum saving_throw saving_throw);
 
-int actor_calc_armor_class(const struct actor *actor);
+int actor_get_armor_class(const struct actor *actor);
 
-int actor_calc_attacks_per_round(const struct actor *actor);
-int actor_calc_secondary_attack_penalty(const struct actor *actor);
-int actor_calc_base_attack_bonus(const struct actor *actor);
-int actor_calc_attack_bonus(const struct actor *actor);
-int actor_calc_ranged_attack_penalty(const struct actor *actor, const struct actor *other);
-int actor_calc_threat_range(const struct actor *actor);
-int actor_calc_critical_multiplier(const struct actor *actor);
-int actor_calc_damage_bonus(const struct actor *actor);
-const char *actor_calc_damage(const struct actor *actor);
+int actor_get_attacks_per_round(const struct actor *actor);
+int actor_get_secondary_attack_penalty(const struct actor *actor);
+int actor_get_base_attack_bonus(const struct actor *actor);
+int actor_get_attack_bonus(const struct actor *actor);
+int actor_get_ranged_attack_penalty(const struct actor *actor, const struct actor *other);
+int actor_get_threat_range(const struct actor *actor);
+int actor_get_critical_multiplier(const struct actor *actor);
+int actor_get_damage_bonus(const struct actor *actor);
+const char *actor_get_damage(const struct actor *actor);
 
 bool actor_melee_touch_attack(struct actor *actor, struct actor *other);
 bool actor_ranged_touch_attack(struct actor *actor, struct actor *other);
 
-enum equippability actor_calc_item_equippability(const struct actor *actor, const struct item *item);
+enum equippability actor_get_item_equippability(const struct actor *actor, const struct item *item);
 
-float actor_calc_max_carry_weight(const struct actor *actor);
-float actor_calc_carry_weight(const struct actor *actor);
-float actor_calc_speed(const struct actor *actor);
+float actor_get_max_carry_weight(const struct actor *actor);
+float actor_get_carry_weight(const struct actor *actor);
+float actor_get_speed(const struct actor *actor);
 
-void actor_calc_light(struct actor *actor);
-void actor_calc_fade(struct actor *actor, float delta_time);
+void actor_update_light(struct actor *actor);
+void actor_update_fade(struct actor *actor, float delta_time);
 
-int actor_calc_sight_radius(const struct actor *actor);
-void actor_calc_fov(struct actor *actor);
+int actor_get_sight_radius(const struct actor *actor);
+void actor_update_fov(struct actor *actor);
 
 bool actor_can_take_turn(const struct actor *actor);
 

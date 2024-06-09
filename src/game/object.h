@@ -59,6 +59,6 @@ struct object *object_new(
     int y);
 void object_delete(struct object *object);
 
-void object_calc_light(struct object *object);
+void object_update_light(struct object *object);
 
 #endif

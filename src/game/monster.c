@@ -26,12 +26,7 @@ const struct monster_data monster_database[] = {
         },
 
         .special_abilities = {
-            [SPECIAL_ABILITY_BLINDSENSE] = true,
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-        },
-
-        .feats = {
-            [FEAT_ALERTNESS] = true,
         },
     },
     [MONSTER_TYPE_BUGBEAR] = {
@@ -55,14 +50,12 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
-            [FEAT_WEAPON_FOCUS] = true,
             [FEAT_SHIELD_PROFICIENCY] = true,
+            [FEAT_WEAPON_FOCUS] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
         },
 
@@ -112,11 +105,9 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .feats = {
-            [FEAT_STEALTHY] = true,
             [FEAT_WEAPON_FINESSE] = true,
         },
     },
@@ -141,7 +132,6 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .special_attacks = {
@@ -149,7 +139,6 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_WEAPON_FINESSE] = true,
         },
     },
@@ -174,12 +163,6 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
-        },
-
-        .feats = {
-            [FEAT_ALERTNESS] = true,
-            [FEAT_TRACK] = true,
         },
     },
     [MONSTER_TYPE_FIRE_BEETLE] = {
@@ -222,18 +205,6 @@ const struct monster_data monster_database[] = {
             [ABILITY_INTELLIGENCE] = 0,
             [ABILITY_WISDOM] = 11,
             [ABILITY_CHARISMA] = 9,
-        },
-
-        .special_abilities = {
-            [SPECIAL_ABILITY_SCENT] = true,
-        },
-
-        .special_attacks = {
-            [SPECIAL_ATTACK_IMPROVED_GRAB] = true,
-        },
-
-        .feats = {
-            [FEAT_TRACK] = true,
         },
     },
     [MONSTER_TYPE_GNOLL] = {
@@ -323,7 +294,6 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
             [FEAT_SHIELD_PROFICIENCY] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
@@ -381,7 +351,6 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
             [FEAT_SHIELD_PROFICIENCY] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
@@ -437,11 +406,6 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
-        },
-
-        .feats = {
-            [FEAT_ALERTNESS] = true,
         },
     },
     [MONSTER_TYPE_KOBOLD] = {
@@ -465,11 +429,9 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
-            [SPECIAL_ABILITY_LIGHT_SENSITIVITY] = true,
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
         },
@@ -576,11 +538,9 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
-            [SPECIAL_ABILITY_LIGHT_SENSITIVITY] = true,
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_ARMOR_PROFICIENCY_LIGHT] = true,
             [FEAT_WEAPON_PROFICIENCY_SIMPLE] = true,
             [FEAT_WEAPON_PROFICIENCY_MARTIAL] = true,
@@ -632,7 +592,6 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_WEAPON_FINESSE] = true,
         },
     },
@@ -660,7 +619,6 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_WEAPON_FINESSE] = true,
         },
     },
@@ -686,7 +644,6 @@ const struct monster_data monster_database[] = {
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .special_attacks = {
@@ -726,8 +683,6 @@ const struct monster_data monster_database[] = {
         // TODO: spells
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
-            [FEAT_COMBAT_CASTING] = true,
             [FEAT_DODGE] = true,
         },
     },
@@ -752,12 +707,10 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .feats = {
             [FEAT_WEAPON_FINESSE] = true,
-            [FEAT_STEALTHY] = true,
         },
     },
     [MONSTER_TYPE_RED_DRAGON_WYRMLING] = {
@@ -881,10 +834,6 @@ const struct monster_data monster_database[] = {
             [ABILITY_CHARISMA] = 2,
         },
 
-        .special_abilities = {
-            [SPECIAL_ABILITY_SCENT] = true,
-        },
-
         .special_attacks = {
             [SPECIAL_ATTACK_POISON] = true,
         },
@@ -915,7 +864,6 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_DARKVISION] = true,
-            [SPECIAL_ABILITY_TREMORSENSE] = true,
         },
 
         .special_attacks = {
@@ -950,7 +898,6 @@ const struct monster_data monster_database[] = {
             [SPECIAL_ABILITY_DARKVISION] = true,
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
             [SPECIAL_ABILITY_REGENERATION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .special_attacks = {
@@ -958,9 +905,7 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
-            [FEAT_ALERTNESS] = true,
             [FEAT_IRON_WILL] = true,
-            [FEAT_TRACK] = true,
         },
     },
     [MONSTER_TYPE_WOLF] = {
@@ -984,7 +929,6 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             [SPECIAL_ABILITY_LOW_LIGHT_VISION] = true,
-            [SPECIAL_ABILITY_SCENT] = true,
         },
 
         .special_attacks = {
@@ -992,7 +936,6 @@ const struct monster_data monster_database[] = {
         },
 
         .feats = {
-            [FEAT_TRACK] = true,
             [FEAT_WEAPON_FOCUS] = true,
         },
     },

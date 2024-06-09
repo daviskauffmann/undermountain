@@ -54,7 +54,7 @@ struct actor *actor_new(
     actor->faction = faction;
 
     actor->level = 1;
-    actor->experience = actor_calc_experience_for_level(level);
+    actor->experience = actor_get_experience_for_level(level);
 
     actor->ability_points = 0;
     memcpy(actor->ability_scores, ability_scores, sizeof(actor->ability_scores));
@@ -66,7 +66,7 @@ struct actor *actor_new(
     memcpy(actor->feats, feats, sizeof(actor->feats));
 
     actor->base_hit_points = TCOD_random_dice_new(class_database[actor->class].hit_die).nb_faces;
-    actor->hit_points = actor_calc_max_hit_points(actor);
+    actor->hit_points = actor_get_max_hit_points(actor);
 
     actor->gold = 0;
     for (enum equip_slot equip_slot = 0; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
@@ -75,7 +75,7 @@ struct actor *actor_new(
     }
     actor->items = list_new();
 
-    actor->mana = actor_calc_max_mana(actor);
+    actor->mana = actor_get_max_mana(actor);
     for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
     {
         actor->spells[spell_type] = false;
@@ -89,12 +89,14 @@ struct actor *actor_new(
     actor->fov = NULL;
 
     actor->took_turn = false;
-    actor->energy = actor_calc_speed(actor);
+    actor->energy = actor_get_speed(actor);
 
     actor->current_target = NULL;
     actor->last_seen_x = -1;
     actor->last_seen_y = -1;
     actor->turns_chased = 0;
+
+    actor->last_attacked_target = NULL;
 
     actor->leader = NULL;
 
@@ -102,7 +104,7 @@ struct actor *actor_new(
     actor->light_fov = NULL;
 
     actor->flash_color = color_white;
-    actor->flash_fade_coef = 0;
+    actor->flash_alpha = 0;
 
     actor->controllable = false;
 
@@ -147,7 +149,7 @@ void actor_delete(struct actor *const actor)
     free(actor);
 }
 
-int actor_calc_experience_for_level(const int level)
+int actor_get_experience_for_level(const int level)
 {
     return level * (level - 1) / 2 * 1000;
 }
@@ -165,7 +167,7 @@ void actor_give_experience(struct actor *const actor, const int experience)
         actor->name,
         experience);
 
-    while (actor->experience >= actor_calc_experience_for_level(actor->level + 1))
+    while (actor->experience >= actor_get_experience_for_level(actor->level + 1))
     {
         actor_level_up(actor);
 
@@ -181,15 +183,15 @@ void actor_give_experience(struct actor *const actor, const int experience)
 
 void actor_level_up(struct actor *const actor)
 {
-    const float current_hit_point_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
-    const float current_mana_percent = (float)actor->mana / actor_calc_max_mana(actor);
+    const float current_hit_point_percent = (float)actor->hit_points / actor_get_max_hit_points(actor);
+    const float current_mana_percent = (float)actor->mana / actor_get_max_mana(actor);
 
     actor->level++;
     actor->ability_points++; // TODO: revisit this, may be unbalanced to grant an ability point every level
     actor->base_hit_points += TCOD_random_dice_roll_s(NULL, class_database[actor->class].hit_die);
 
-    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_point_percent);
-    actor->mana = (int)(actor_calc_max_mana(actor) * current_mana_percent);
+    actor->hit_points = (int)(actor_get_max_hit_points(actor) * current_hit_point_percent);
+    actor->mana = (int)(actor_get_max_mana(actor) * current_mana_percent);
 
     if (actor->hit_points <= 0)
     {
@@ -201,28 +203,28 @@ void actor_level_up(struct actor *const actor)
     }
 }
 
-int actor_calc_ability_score(const struct actor *const actor, const enum ability ability)
+int actor_get_ability_score(const struct actor *const actor, const enum ability ability)
 {
     return actor->ability_scores[ability] + race_database[actor->race].ability_adjustments[ability];
 }
 
-int actor_calc_ability_modifer(const struct actor *const actor, const enum ability ability)
+int actor_get_ability_modifer(const struct actor *const actor, const enum ability ability)
 {
-    int modifier = (int)floorf((actor_calc_ability_score(actor, ability) - 10) / 2.0f);
+    int modifier = (int)floorf((actor_get_ability_score(actor, ability) - 10) / 2.0f);
 
+    // apply maximum dexterity bonus from armor
     if (ability == ABILITY_DEXTERITY)
     {
         const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
 
         if (armor)
         {
-            const struct item_data *const armor_data = &item_database[armor->type];
-            const struct base_item_data *const base_armor_data = &base_item_database[armor_data->type];
+            const int max_dexterity_bonus = base_item_database[item_database[armor->type].type].max_dexterity_bonus;
 
-            if (base_armor_data->max_dexterity_bonus > 0 &&
-                modifier > base_armor_data->max_dexterity_bonus)
+            if (max_dexterity_bonus > 0 &&
+                modifier > max_dexterity_bonus)
             {
-                modifier = base_armor_data->max_dexterity_bonus;
+                modifier = max_dexterity_bonus;
             }
         }
     }
@@ -232,14 +234,14 @@ int actor_calc_ability_modifer(const struct actor *const actor, const enum abili
 
 void actor_spend_ability_point(struct actor *const actor, const enum ability ability)
 {
-    const float current_hit_point_percent = (float)actor->hit_points / actor_calc_max_hit_points(actor);
-    const float current_mana_percent = (float)actor->mana / actor_calc_max_mana(actor);
+    const float current_hit_point_percent = (float)actor->hit_points / actor_get_max_hit_points(actor);
+    const float current_mana_percent = (float)actor->mana / actor_get_max_mana(actor);
 
     actor->ability_scores[ability]++;
     actor->ability_points--;
 
-    actor->hit_points = (int)(actor_calc_max_hit_points(actor) * current_hit_point_percent);
-    actor->mana = (int)(actor_calc_max_mana(actor) * current_mana_percent);
+    actor->hit_points = (int)(actor_get_max_hit_points(actor) * current_hit_point_percent);
+    actor->mana = (int)(actor_get_max_mana(actor) * current_mana_percent);
 
     if (actor->hit_points <= 0)
     {
@@ -251,87 +253,83 @@ void actor_spend_ability_point(struct actor *const actor, const enum ability abi
     }
 }
 
-void actor_calc_special_abilities(const struct actor *const actor, bool (*const special_abilities)[NUM_SPECIAL_ABILITIES])
+struct actor_special_abilities actor_get_special_abilities(const struct actor *const actor)
 {
+    struct actor_special_abilities actor_special_abilities = {
+        .has = {false},
+    };
+
     for (enum special_ability special_ability = 0; special_ability < NUM_SPECIAL_ABILITIES; special_ability++)
     {
         if (race_database[actor->race].special_abilities[special_ability])
         {
-            (*special_abilities)[special_ability] = true;
+            actor_special_abilities.has[special_ability] = true;
         }
 
         if (actor->special_abilities[special_ability])
         {
-            (*special_abilities)[special_ability] = true;
+            actor_special_abilities.has[special_ability] = true;
         }
     }
+
+    return actor_special_abilities;
 }
 
-bool actor_has_special_ability(const struct actor *const actor, const enum special_ability special_ability)
+struct actor_special_attacks actor_get_special_attacks(const struct actor *const actor)
 {
-    bool special_abilities[NUM_SPECIAL_ABILITIES] = {false};
-    actor_calc_special_abilities(actor, &special_abilities);
+    struct actor_special_attacks actor_special_attacks = {
+        .has = {false},
+    };
 
-    return special_abilities[special_ability];
-}
-
-void actor_calc_special_attacks(const struct actor *const actor, bool (*const special_attacks)[NUM_SPECIAL_ATTACKS])
-{
     for (enum special_attack special_attack = 0; special_attack < NUM_SPECIAL_ATTACKS; special_attack++)
     {
         if (actor->special_attacks[special_attack])
         {
-            (*special_attacks)[special_attack] = true;
+            actor_special_attacks.has[special_attack] = true;
         }
     }
+
+    return actor_special_attacks;
 }
 
-bool actor_has_special_attack(const struct actor *const actor, const enum special_attack special_attack)
+struct actor_feats actor_get_feats(const struct actor *actor)
 {
-    bool special_attacks[NUM_SPECIAL_ATTACKS] = {false};
-    actor_calc_special_attacks(actor, &special_attacks);
+    struct actor_feats actor_feats = {
+        .has = {false},
+    };
 
-    return special_attacks[special_attack];
-}
-
-void actor_calc_feats(const struct actor *actor, bool (*const feats)[NUM_FEATS])
-{
     for (enum feat feat = 0; feat < NUM_FEATS; feat++)
     {
         if (race_database[actor->race].feats[feat])
         {
-            (*feats)[feat] = true;
+            actor_feats.has[feat] = true;
         }
 
         const int level = class_database[actor->class].feat_progression[feat];
 
         if (level > 0 && level <= actor->level)
         {
-            (*feats)[feat] = true;
+            actor_feats.has[feat] = true;
         }
 
         if (actor->feats[feat])
         {
-            (*feats)[feat] = true;
+            actor_feats.has[feat] = true;
         }
 
         // TODO: feats from equipment
     }
-}
 
-bool actor_has_feat(const struct actor *const actor, const enum feat feat)
-{
-    bool feats[NUM_FEATS] = {false};
-    actor_calc_feats(actor, &feats);
-
-    return feats[feat];
+    return actor_feats;
 }
 
 bool actor_has_prerequisites_for_feat(const struct actor *actor, const enum feat feat)
 {
-    // TODO: if getting the feat from equipment, the actor should still be able to learn it
-    if (actor_has_feat(actor, feat))
+    const struct actor_feats actor_feats = actor_get_feats(actor);
+
+    if (actor_feats.has[feat])
     {
+        // TODO: if getting the feat from equipment, the actor should still be able to learn it
         return false;
     }
 
@@ -354,7 +352,7 @@ bool actor_has_prerequisites_for_feat(const struct actor *actor, const enum feat
         return false;
     }
 
-    if (feat_database[feat].prerequisites.base_attack_bonus > actor_calc_base_attack_bonus(actor))
+    if (feat_database[feat].prerequisites.base_attack_bonus > actor_get_base_attack_bonus(actor))
     {
         return false;
     }
@@ -371,8 +369,12 @@ bool actor_has_prerequisites_for_feat(const struct actor *actor, const enum feat
     return true;
 }
 
-void actor_calc_spells(const struct actor *const actor, bool (*const spells)[NUM_SPELL_TYPES])
+struct actor_spells actor_get_spells(const struct actor *const actor)
 {
+    struct actor_spells spells = {
+        .has = {false},
+    };
+
     for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
     {
         const struct class_data *class_data = &class_database[actor->class];
@@ -382,32 +384,28 @@ void actor_calc_spells(const struct actor *const actor, bool (*const spells)[NUM
             level <= actor->level &&
             level <= 10 + actor->ability_scores[class_data->spellcasting_ability])
         {
-            (*spells)[spell_type] = true;
+            spells.has[spell_type] = true;
         }
 
         if (actor->spells[spell_type])
         {
-            (*spells)[spell_type] = true;
+            spells.has[spell_type] = true;
         }
     }
+
+    return spells;
 }
 
-bool actor_has_spell(const struct actor *const actor, const enum spell_type spell_type)
-{
-    bool spells[NUM_SPELL_TYPES] = {false};
-    actor_calc_spells(actor, &spells);
-
-    return spells[spell_type];
-}
-
-int actor_calc_max_hit_points(const struct actor *const actor)
+int actor_get_max_hit_points(const struct actor *const actor)
 {
     const int base_hit_points = actor->base_hit_points;
-    const int constitution_modifer = actor_calc_ability_modifer(actor, ABILITY_CONSTITUTION);
+    const int constitution_modifer = actor_get_ability_modifer(actor, ABILITY_CONSTITUTION);
 
     int max_hit_points = base_hit_points + (constitution_modifer * actor->level);
 
-    if (actor_has_feat(actor, FEAT_TOUGHNESS))
+    const struct actor_feats actor_feats = actor_get_feats(actor);
+
+    if (actor_feats.has[FEAT_TOUGHNESS])
     {
         max_hit_points += actor->level;
     }
@@ -419,9 +417,10 @@ void actor_restore_hit_points(struct actor *const actor, const int health)
 {
     actor->hit_points += health;
     actor->flash_color = color_green;
-    actor->flash_fade_coef = 1;
+    actor->flash_alpha = 1;
 
-    const int max_hit_points = actor_calc_max_hit_points(actor);
+    const int max_hit_points = actor_get_max_hit_points(actor);
+
     if (actor->hit_points > max_hit_points)
     {
         actor->hit_points = max_hit_points;
@@ -444,7 +443,7 @@ bool actor_damage_hit_points(struct actor *const actor, struct actor *const atta
 
     actor->hit_points -= damage;
     actor->flash_color = color_red;
-    actor->flash_fade_coef = 1;
+    actor->flash_alpha = 1;
 
     if (actor->hit_points <= 0)
     {
@@ -457,7 +456,8 @@ bool actor_damage_hit_points(struct actor *const actor, struct actor *const atta
 
     return false;
 }
-int actor_calc_max_mana(const struct actor *const actor)
+
+int actor_get_max_mana(const struct actor *const actor)
 {
     const enum ability spellcasting_ability = class_database[actor->class].spellcasting_ability;
 
@@ -466,29 +466,30 @@ int actor_calc_max_mana(const struct actor *const actor)
         return 0;
     }
 
-    // TODO: better formula
-    return actor->level * actor_calc_ability_modifer(actor, spellcasting_ability);
+    return actor->level * actor_get_ability_modifer(actor, spellcasting_ability);
 }
 
 void actor_restore_mana(struct actor *const actor, const int mana)
 {
     actor->mana += mana;
 
-    const int max_mana = actor_calc_max_mana(actor);
+    const int max_mana = actor_get_max_mana(actor);
     if (actor->mana > max_mana)
     {
         actor->mana = max_mana;
     }
 }
 
-float actor_calc_arcane_spell_failure(const struct actor *const actor)
+float actor_get_arcane_spell_failure(const struct actor *const actor)
 {
-    float arcane_spell_failure = 0;
+    const struct actor_feats actor_feats = actor_get_feats(actor);
 
-    if (actor_has_feat(actor, FEAT_STILL_SPELL))
+    if (actor_feats.has[FEAT_STILL_SPELL])
     {
         return 0;
     }
+
+    float arcane_spell_failure = 0;
 
     for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
@@ -496,21 +497,20 @@ float actor_calc_arcane_spell_failure(const struct actor *const actor)
 
         if (item)
         {
-            const struct item_data *const item_data = &item_database[item->type];
-            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-
-            arcane_spell_failure += base_item_data->arcane_spell_failure;
+            arcane_spell_failure += base_item_database[item_database[item->type].type].arcane_spell_failure;
         }
     }
 
     return arcane_spell_failure;
 }
 
-int actor_calc_spell_mana_cost(const struct actor *const actor, const enum spell_type spell_type)
+int actor_get_spell_mana_cost(const struct actor *const actor, const enum spell_type spell_type)
 {
     int mana_cost = spell_database[spell_type].level;
 
-    if (actor_has_feat(actor, FEAT_STILL_SPELL))
+    const struct actor_feats actor_feats = actor_get_feats(actor);
+
+    if (actor_feats.has[FEAT_STILL_SPELL])
     {
         mana_cost++;
     }
@@ -518,28 +518,26 @@ int actor_calc_spell_mana_cost(const struct actor *const actor, const enum spell
     return mana_cost;
 }
 
-int actor_calc_saving_throw(const struct actor *const actor, const enum saving_throw saving_throw)
+int actor_get_saving_throw(const struct actor *const actor, const enum saving_throw saving_throw)
 {
-    const enum ability saving_throw_ability = saving_throw_database[saving_throw].ability;
     const int base_save = actor->level / 2 + 2;
-    const int ability_modifer = actor_calc_ability_modifer(actor, saving_throw_ability);
+    const int ability_modifer = actor_get_ability_modifer(actor, saving_throw_database[saving_throw].ability);
 
     int value = base_save + ability_modifer;
 
-    bool feats[NUM_FEATS] = {false};
-    actor_calc_feats(actor, &feats);
+    const struct actor_feats actor_feats = actor_get_feats(actor);
 
-    if (saving_throw == SAVING_THROW_FORTITUDE && feats[FEAT_GREAT_FORTITUDE])
+    if (saving_throw == SAVING_THROW_FORTITUDE && actor_feats.has[FEAT_GREAT_FORTITUDE])
     {
         value += 2;
     }
 
-    if (saving_throw == SAVING_THROW_REFLEX && feats[FEAT_LIGHTNING_REFLEXES])
+    if (saving_throw == SAVING_THROW_REFLEX && actor_feats.has[FEAT_LIGHTNING_REFLEXES])
     {
         value += 2;
     }
 
-    if (saving_throw == SAVING_THROW_WILL && feats[FEAT_IRON_WILL])
+    if (saving_throw == SAVING_THROW_WILL && actor_feats.has[FEAT_IRON_WILL])
     {
         value += 2;
     }
@@ -547,13 +545,13 @@ int actor_calc_saving_throw(const struct actor *const actor, const enum saving_t
     return value;
 }
 
-int actor_calc_armor_class(const struct actor *const actor)
+int actor_get_armor_class(const struct actor *const actor)
 {
-    const int dexterity_modifer = actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
-    const int natural_armor_bonus = class_database[actor->class].natural_armor_bonus;
-    const int size_modifer = size_database[actor->size].modifier;
-
-    int armor_class = 10 + dexterity_modifer + natural_armor_bonus + size_modifer;
+    int armor_class =
+        10 +
+        actor_get_ability_modifer(actor, ABILITY_DEXTERITY) +
+        class_database[actor->class].natural_armor_bonus +
+        size_database[actor->size].modifier;
 
     for (enum equip_slot equip_slot = EQUIP_SLOT_NONE + 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
     {
@@ -562,14 +560,15 @@ int actor_calc_armor_class(const struct actor *const actor)
         if (item)
         {
             const struct item_data *const item_data = &item_database[item->type];
-            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
-            armor_class += base_item_data->armor_class;
+            armor_class += base_item_database[item_data->type].armor_class;
             armor_class += item_data->enhancement_bonus;
         }
     }
 
-    if (actor_has_feat(actor, FEAT_DODGE))
+    const struct actor_feats actor_feats = actor_get_feats(actor);
+
+    if (actor_feats.has[FEAT_DODGE])
     {
         armor_class += 1;
     }
@@ -577,7 +576,7 @@ int actor_calc_armor_class(const struct actor *const actor)
     return armor_class;
 }
 
-int actor_calc_attacks_per_round(const struct actor *const actor)
+int actor_get_attacks_per_round(const struct actor *const actor)
 {
     // actors using crossbows without the rapid reload feat can only make one attack per round
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
@@ -585,20 +584,21 @@ int actor_calc_attacks_per_round(const struct actor *const actor)
     if (weapon)
     {
         const struct item_data *const weapon_data = &item_database[weapon->type];
-        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+        const struct actor_feats actor_feats = actor_get_feats(actor);
 
-        if (base_weapon_data->ranged &&
+        if (base_item_database[weapon_data->type].ranged &&
             (weapon_data->type == BASE_ITEM_TYPE_LIGHT_CROSSBOW ||
              weapon_data->type == BASE_ITEM_TYPE_HEAVY_CROSSBOW) &&
-            !actor_has_feat(actor, FEAT_RAPID_RELOAD))
+            !actor_feats.has[FEAT_RAPID_RELOAD])
         {
             return 1;
         }
     }
 
-    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
+    const int base_attack_bonus = actor_get_base_attack_bonus(actor);
 
     int attacks_per_round = 1;
+
     if (base_attack_bonus > 5)
     {
         attacks_per_round++;
@@ -623,9 +623,11 @@ int actor_calc_attacks_per_round(const struct actor *const actor)
     return attacks_per_round;
 }
 
-int actor_calc_secondary_attack_penalty(const struct actor *const actor)
+int actor_get_secondary_attack_penalty(const struct actor *const actor)
 {
-    if (actor_has_feat(actor, FEAT_MULTIATTACK))
+    const struct actor_feats actor_feats = actor_get_feats(actor);
+
+    if (actor_feats.has[FEAT_MULTIATTACK])
     {
         return 2;
     }
@@ -633,21 +635,18 @@ int actor_calc_secondary_attack_penalty(const struct actor *const actor)
     return 5;
 }
 
-int actor_calc_base_attack_bonus(const struct actor *const actor)
+int actor_get_base_attack_bonus(const struct actor *const actor)
 {
-    const enum base_attack_bonus_type base_attack_bonus_type = class_database[actor->class].base_attack_bonus_type;
-
-    return (int)floorf(actor->level * base_attack_bonus_database[base_attack_bonus_type].multiplier);
+    return (int)floorf(actor->level * base_attack_bonus_database[class_database[actor->class].base_attack_bonus_type].multiplier);
 }
 
-int actor_calc_attack_bonus(const struct actor *const actor)
+int actor_get_attack_bonus(const struct actor *const actor)
 {
-    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
-    const int size_modifer = size_database[actor->size].modifier;
-
-    int attack_bonus = base_attack_bonus + size_modifer;
+    int attack_bonus = actor_get_base_attack_bonus(actor) + size_database[actor->size].modifier;
 
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+    const struct actor_feats actor_feats = actor_get_feats(actor);
+
     if (weapon)
     {
         const struct item_data *const weapon_data = &item_database[weapon->type];
@@ -659,35 +658,33 @@ int actor_calc_attack_bonus(const struct actor *const actor)
         // ranged weapons use dexterity modifier instead of strength modifier
         if (base_weapon_data->ranged)
         {
-            attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+            attack_bonus += actor_get_ability_modifer(actor, ABILITY_DEXTERITY);
 
             const struct item *const ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
 
             if (ammunition)
             {
-                const struct item_data *const ammunition_data = &item_database[ammunition->type];
-
-                attack_bonus += ammunition_data->enhancement_bonus;
+                attack_bonus += item_database[ammunition->type].enhancement_bonus;
             }
         }
         else
         {
-            const enum equippability equippability = actor_calc_item_equippability(actor, weapon);
+            const enum equippability equippability = actor_get_item_equippability(actor, weapon);
 
             // if the actor has the weapon finesse feat, the weapon is light, and is not two-handed, then use dexterity modifier instead of strength modifier
-            if (actor_has_feat(actor, FEAT_WEAPON_FINESSE) &&
+            if (actor_feats.has[FEAT_WEAPON_FINESSE] &&
                 base_weapon_data->light &&
                 equippability != EQUIPPABILITY_BARELY)
             {
-                attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+                attack_bonus += actor_get_ability_modifer(actor, ABILITY_DEXTERITY);
             }
             else
             {
-                attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+                attack_bonus += actor_get_ability_modifer(actor, ABILITY_STRENGTH);
             }
         }
 
-        if (actor_has_feat(actor, FEAT_WEAPON_FOCUS))
+        if (actor_feats.has[FEAT_WEAPON_FOCUS])
         {
             attack_bonus += 1;
         }
@@ -695,17 +692,17 @@ int actor_calc_attack_bonus(const struct actor *const actor)
     else
     {
         // unarmed attacks are always considered light, so if the actor has the weapon finesse feat, then use dexterity modifier instead of strength modifier
-        if (actor_has_feat(actor, FEAT_WEAPON_FINESSE))
+        if (actor_feats.has[FEAT_WEAPON_FINESSE])
         {
-            attack_bonus += actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
+            attack_bonus += actor_get_ability_modifer(actor, ABILITY_DEXTERITY);
         }
         else
         {
-            attack_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+            attack_bonus += actor_get_ability_modifer(actor, ABILITY_STRENGTH);
         }
     }
 
-    if (actor_has_feat(actor, FEAT_POWER_ATTACK))
+    if (actor_feats.has[FEAT_POWER_ATTACK])
     {
         attack_bonus -= 5;
     }
@@ -713,18 +710,18 @@ int actor_calc_attack_bonus(const struct actor *const actor)
     return attack_bonus;
 }
 
-int actor_calc_ranged_attack_penalty(const struct actor *const actor, const struct actor *const other)
+int actor_get_ranged_attack_penalty(const struct actor *const actor, const struct actor *const other)
 {
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+
     if (weapon)
     {
-        const struct item_data *const weapon_data = &item_database[weapon->type];
-        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
-
         // ranged weapons fired at close range suffer an automatic -4 attack penalty, unless the actor has the point blank shot feat
-        if (base_weapon_data->ranged &&
+        const struct actor_feats actor_feats = actor_get_feats(actor);
+
+        if (base_item_database[item_database[weapon->type].type].ranged &&
             distance_between(actor->x, actor->y, other->x, other->y) < 2 &&
-            !actor_has_feat(actor, FEAT_POINT_BLANK_SHOT))
+            !actor_feats.has[FEAT_POINT_BLANK_SHOT])
         {
             return 4;
         }
@@ -733,61 +730,65 @@ int actor_calc_ranged_attack_penalty(const struct actor *const actor, const stru
     return 0;
 }
 
-int actor_calc_threat_range(const struct actor *const actor)
+int actor_get_threat_range(const struct actor *const actor)
 {
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
 
     if (weapon)
     {
-        const struct item_data *const weapon_data = &item_database[weapon->type];
-        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+        const struct item_data weapon_data = item_database[weapon->type];
+        const struct base_item_data base_weapon_data = base_item_database[weapon_data.type];
 
-        return base_weapon_data->threat_range;
+        return base_weapon_data.threat_range;
     }
+    const enum natural_weapon_type natural_weapon_type = class_database[actor->class].natural_weapon_type;
 
-    return natural_weapon_database[class_database[actor->class].natural_weapon_type].threat_range;
+    return natural_weapon_database[natural_weapon_type].threat_range;
 }
 
-int actor_calc_critical_multiplier(const struct actor *const actor)
+int actor_get_critical_multiplier(const struct actor *const actor)
 {
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
 
     if (weapon)
     {
-        const struct item_data *const weapon_data = &item_database[weapon->type];
-        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+        const struct item_data weapon_data = item_database[weapon->type];
+        const struct base_item_data base_weapon_data = base_item_database[weapon_data.type];
 
-        return base_weapon_data->critical_multiplier;
+        return base_weapon_data.critical_multiplier;
     }
 
-    return natural_weapon_database[class_database[actor->class].natural_weapon_type].critical_multiplier;
+    const enum natural_weapon_type natural_weapon_type = class_database[actor->class].natural_weapon_type;
+
+    return natural_weapon_database[natural_weapon_type].critical_multiplier;
 }
 
-int actor_calc_damage_bonus(const struct actor *const actor)
+int actor_get_damage_bonus(const struct actor *const actor)
 {
     int damage_bonus = 0;
 
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+    const struct actor_feats actor_feats = actor_get_feats(actor);
 
     if (weapon)
     {
-        const struct item_data *const weapon_data = &item_database[weapon->type];
+        const struct item_data weapon_data = item_database[weapon->type];
 
-        damage_bonus += weapon_data->enhancement_bonus;
+        damage_bonus += weapon_data.enhancement_bonus;
 
-        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+        const struct base_item_data base_weapon_data = base_item_database[weapon_data.type];
 
-        if (base_weapon_data->ranged)
+        if (base_weapon_data.ranged)
         {
             // ranged weapons do not get strength modifier to damage, except for slings
             // though, they do receive strength penalties, except for composite bows
-            const int strength_modifier = actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+            const int strength_modifier = actor_get_ability_modifer(actor, ABILITY_STRENGTH);
 
-            if (weapon_data->type == BASE_ITEM_TYPE_SLING)
+            if (weapon_data.type == BASE_ITEM_TYPE_SLING)
             {
                 damage_bonus += strength_modifier;
             }
-            else if (strength_modifier < 0 && weapon_data->type != BASE_ITEM_TYPE_COMPOSITE_BOW)
+            else if (strength_modifier < 0 && weapon_data.type != BASE_ITEM_TYPE_COMPOSITE_BOW)
             {
                 damage_bonus += strength_modifier;
             }
@@ -796,27 +797,27 @@ int actor_calc_damage_bonus(const struct actor *const actor)
 
             if (ammunition)
             {
-                const struct item_data *const ammunition_data = &item_database[ammunition->type];
+                const struct item_data ammunition_data = item_database[ammunition->type];
 
-                damage_bonus += ammunition_data->enhancement_bonus;
+                damage_bonus += ammunition_data.enhancement_bonus;
             }
         }
         else
         {
-            const enum equippability equippability = actor_calc_item_equippability(actor, weapon);
+            const enum equippability equippability = actor_get_item_equippability(actor, weapon);
 
             // two-handing a weapon adds 1.5x damage bonus
             if (equippability == EQUIPPABILITY_BARELY)
             {
-                damage_bonus += (int)(actor_calc_ability_modifer(actor, ABILITY_STRENGTH) * 1.5f);
+                damage_bonus += (int)(actor_get_ability_modifer(actor, ABILITY_STRENGTH) * 1.5f);
             }
             else
             {
-                damage_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+                damage_bonus += actor_get_ability_modifer(actor, ABILITY_STRENGTH);
             }
 
             // power attack only works with melee attacks
-            if (actor_has_feat(actor, FEAT_POWER_ATTACK))
+            if (actor_feats.has[FEAT_POWER_ATTACK])
             {
                 damage_bonus += 5;
             }
@@ -824,10 +825,10 @@ int actor_calc_damage_bonus(const struct actor *const actor)
     }
     else
     {
-        damage_bonus += actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
+        damage_bonus += actor_get_ability_modifer(actor, ABILITY_STRENGTH);
 
         // power attack only works with melee attacks
-        if (actor_has_feat(actor, FEAT_POWER_ATTACK))
+        if (actor_feats.has[FEAT_POWER_ATTACK])
         {
             damage_bonus += 5;
         }
@@ -836,37 +837,39 @@ int actor_calc_damage_bonus(const struct actor *const actor)
     return damage_bonus;
 }
 
-const char *actor_calc_damage(const struct actor *const actor)
+const char *actor_get_damage(const struct actor *const actor)
 {
     const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
 
     if (weapon)
     {
-        const struct item_data *const weapon_data = &item_database[weapon->type];
-        const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
-
-        return base_weapon_data->damage;
+        return base_item_database[item_database[weapon->type].type].damage;
     }
 
-    const struct class_data *const class_data = &class_database[actor->class];
-
-    return natural_weapon_database[class_data->natural_weapon_type].damage;
+    return natural_weapon_database[class_database[actor->class].natural_weapon_type].damage;
 }
 
 bool actor_melee_touch_attack(struct actor *const actor, struct actor *const other)
 {
-    // calculate other armor class
-    const int dexterity_bonus = actor_calc_ability_modifer(other, ABILITY_DEXTERITY);
-    const int armor_class = 10 + dexterity_bonus;
-
-    // calculate hit
     const int attack_roll = TCOD_random_dice_roll_s(NULL, "1d20");
-    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
-    const int attack_bonus = actor_calc_ability_modifer(actor, ABILITY_STRENGTH);
-    const int hit_challenge = attack_roll + base_attack_bonus + attack_bonus;
 
-    if (attack_roll == 1 ||
-        (attack_roll != 20 && hit_challenge < armor_class))
+    if (attack_roll == 1)
+    {
+        return false;
+    }
+
+    if (attack_roll == 20)
+    {
+        return true;
+    }
+
+    const int hit_challenge =
+        attack_roll +
+        actor_get_base_attack_bonus(actor) +
+        actor_get_ability_modifer(actor, ABILITY_STRENGTH);
+    const int armor_class = 10 + actor_get_ability_modifer(other, ABILITY_DEXTERITY);
+
+    if (hit_challenge < armor_class)
     {
         return false;
     }
@@ -876,18 +879,25 @@ bool actor_melee_touch_attack(struct actor *const actor, struct actor *const oth
 
 bool actor_ranged_touch_attack(struct actor *const actor, struct actor *const other)
 {
-    // calculate other armor class
-    const int dexterity_bonus = actor_calc_ability_modifer(other, ABILITY_DEXTERITY);
-    const int armor_class = 10 + dexterity_bonus;
-
-    // calculate hit
     const int attack_roll = TCOD_random_dice_roll_s(NULL, "1d20");
-    const int base_attack_bonus = actor_calc_base_attack_bonus(actor);
-    const int attack_bonus = actor_calc_ability_modifer(actor, ABILITY_DEXTERITY);
-    const int hit_challenge = attack_roll + base_attack_bonus + attack_bonus;
 
-    if (attack_roll == 1 ||
-        (attack_roll != 20 && hit_challenge < armor_class))
+    if (attack_roll == 1)
+    {
+        return false;
+    }
+
+    if (attack_roll == 20)
+    {
+        return true;
+    }
+
+    const int hit_challenge =
+        attack_roll +
+        actor_get_base_attack_bonus(actor) +
+        actor_get_ability_modifer(actor, ABILITY_DEXTERITY);
+    const int armor_class = 10 + actor_get_ability_modifer(other, ABILITY_DEXTERITY);
+
+    if (hit_challenge < armor_class)
     {
         return false;
     }
@@ -895,12 +905,9 @@ bool actor_ranged_touch_attack(struct actor *const actor, struct actor *const ot
     return true;
 }
 
-enum equippability actor_calc_item_equippability(const struct actor *const actor, const struct item *const item)
+enum equippability actor_get_item_equippability(const struct actor *const actor, const struct item *const item)
 {
-    const struct item_data *const item_data = &item_database[item->type];
-    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-
-    const int difference = actor->size - base_item_data->size;
+    const int difference = actor->size - base_item_database[item_database[item->type].type].size;
 
     if (difference < -1)
     {
@@ -924,22 +931,20 @@ enum equippability actor_calc_item_equippability(const struct actor *const actor
     }
 }
 
-float actor_calc_max_carry_weight(const struct actor *actor)
+float actor_get_max_carry_weight(const struct actor *actor)
 {
-    return 100 + actor_calc_ability_modifer(actor, ABILITY_STRENGTH) * 10.0f;
+    return 100 + actor_get_ability_modifer(actor, ABILITY_STRENGTH) * 10.0f;
 }
 
-float actor_calc_carry_weight(const struct actor *actor)
+float actor_get_carry_weight(const struct actor *actor)
 {
     float weight = 0.0f;
 
     for (size_t item_index = 0; item_index < actor->items->size; item_index++)
     {
         const struct item *const item = list_get(actor->items, item_index);
-        const struct item_data *const item_data = &item_database[item->type];
-        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
-        weight += base_item_data->weight;
+        weight += base_item_database[item_database[item->type].type].weight;
     }
 
     for (enum equip_slot equip_slot = 1; equip_slot < NUM_EQUIP_SLOTS; equip_slot++)
@@ -948,25 +953,19 @@ float actor_calc_carry_weight(const struct actor *actor)
 
         if (item)
         {
-            const struct item_data *const item_data = &item_database[item->type];
-            const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-
-            weight += base_item_data->weight;
+            weight += base_item_database[item_database[item->type].type].weight;
         }
     }
 
     return weight;
 }
 
-float actor_calc_speed(const struct actor *actor)
+float actor_get_speed(const struct actor *actor)
 {
-    const float speed = size_database[actor->size].speed;
-    const bool encumbered = actor_calc_carry_weight(actor) > actor_calc_max_carry_weight(actor);
-
-    return speed * (encumbered ? 0.5f : 1);
+    return size_database[actor->size].speed * (actor_get_carry_weight(actor) > actor_get_max_carry_weight(actor) ? 0.5f : 1);
 }
 
-void actor_calc_light(struct actor *const actor)
+void actor_update_light(struct actor *const actor)
 {
     if (actor->light_fov)
     {
@@ -974,55 +973,61 @@ void actor_calc_light(struct actor *const actor)
         actor->light_fov = NULL;
     }
 
-    const struct light_data *const light_data = &light_database[actor->light_type];
+    const struct map *map = &world->maps[actor->floor];
+    const int radius = light_database[actor->light_type].radius;
 
-    if (light_data->radius >= 0)
+    if (radius >= 0)
     {
         actor->light_fov = map_to_fov_map(
-            &world->maps[actor->floor],
+            map,
             actor->x,
             actor->y,
-            light_data->radius);
+            radius);
+    }
+    else if (actor->light_type == LIGHT_TYPE_PLAYER)
+    {
+        const int sight_radius = actor_get_sight_radius(actor);
+
+        actor->light_fov = map_to_fov_map(
+            map,
+            actor->x,
+            actor->y,
+            sight_radius);
     }
 }
 
-void actor_calc_fade(struct actor *const actor, const float delta_time)
+void actor_update_fade(struct actor *const actor, const float delta_time)
 {
-    if (actor->flash_fade_coef > 0)
+    if (actor->flash_alpha > 0)
     {
         // TODO: slower/faster fade depending on circumstances
         // TODO: different fade functions such as sin()
-        actor->flash_fade_coef -= 4 * delta_time;
+        actor->flash_alpha -= 4 * delta_time;
     }
     else
     {
-        actor->flash_fade_coef = 0;
+        actor->flash_alpha = 0;
     }
 }
 
-int actor_calc_sight_radius(const struct actor *actor)
+int actor_get_sight_radius(const struct actor *actor)
 {
-    // TODO: want to think about this more
-    // extending sight radius like this kinda breaks rogue sneak attacks, which are pretty fun
-    // so before implementing this, find another way to make sneak attacks fun
+    const struct actor_special_abilities actor_special_abilities = actor_get_special_abilities(actor);
 
-    bool special_abilities[NUM_SPECIAL_ABILITIES] = {false};
-    actor_calc_special_abilities(actor, &special_abilities);
+    if (actor_special_abilities.has[SPECIAL_ABILITY_DARKVISION])
+    {
+        return 4;
+    }
 
-    // if (special_abilities[SPECIAL_ABILITY_DARKVISION])
-    // {
-    //     return 3;
-    // }
+    if (actor_special_abilities.has[SPECIAL_ABILITY_LOW_LIGHT_VISION])
+    {
+        return 3;
+    }
 
-    // if (special_abilities[SPECIAL_ABILITY_LOW_LIGHT_VISION])
-    // {
-    //     return 2;
-    // }
-
-    return 1;
+    return 2;
 }
 
-void actor_calc_fov(struct actor *const actor)
+void actor_update_fov(struct actor *const actor)
 {
     if (actor->fov)
     {
@@ -1031,7 +1036,7 @@ void actor_calc_fov(struct actor *const actor)
 
     struct map *const map = &world->maps[actor->floor];
 
-    actor->fov = map_to_fov_map(map, actor->x, actor->y, actor_calc_sight_radius(actor));
+    actor->fov = map_to_fov_map(map, actor->x, actor->y, actor_get_sight_radius(actor));
 
     TCOD_Map *los_map = map_to_fov_map(map, actor->x, actor->y, 0);
 
@@ -1061,7 +1066,8 @@ void actor_calc_fov(struct actor *const actor)
                 {
                     const struct actor *const other = list_get(map->actors, actor_index);
 
-                    if (other->light_fov &&
+                    if (other->light_type != LIGHT_TYPE_PLAYER &&
+                        other->light_fov &&
                         TCOD_map_is_in_fov(other->light_fov, x, y))
                     {
                         in_fov = true;
@@ -1148,7 +1154,7 @@ bool actor_is_enemy(const struct actor *const actor, const struct actor *const o
 
 bool actor_is_enemy_nearby(const struct actor *const actor)
 {
-    const struct map *const map = &world->maps[world->player->floor];
+    const struct map *const map = &world->maps[actor->floor];
 
     for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
     {
@@ -1165,7 +1171,7 @@ bool actor_is_enemy_nearby(const struct actor *const actor)
 
 struct actor *actor_find_nearest_enemy(const struct actor *const actor)
 {
-    const struct map *const map = &world->maps[world->player->floor];
+    const struct map *const map = &world->maps[actor->floor];
 
     struct actor *nearest_enemy = NULL;
     float min_distance = FLT_MAX;
@@ -1193,51 +1199,48 @@ struct actor *actor_find_nearest_enemy(const struct actor *const actor)
 
 bool actor_is_proficient(const struct actor *const actor, const struct item *const item)
 {
-    const struct item_data *const item_data = &item_database[item->type];
-    const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+    const struct base_item_data base_item_data = base_item_database[item_database[item->type].type];
+    const struct actor_feats actor_feats = actor_get_feats(actor);
 
-    bool feats[NUM_FEATS] = {false};
-    actor_calc_feats(actor, &feats);
-
-    if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON)
+    if (base_item_data.equip_slot == EQUIP_SLOT_WEAPON)
     {
         bool is_weapon_proficient = false;
 
         for (enum weapon_proficiency weapon_proficiency = WEAPON_PROFICIENCY_NONE + 1; weapon_proficiency < NUM_WEAPON_PROFICIENCIES; weapon_proficiency++)
         {
-            if (base_item_data->weapon_proficiencies[weapon_proficiency])
+            if (base_item_data.weapon_proficiencies[weapon_proficiency])
             {
-                if (weapon_proficiency == WEAPON_PROFICIENCY_ELF && feats[FEAT_WEAPON_PROFICIENCY_ELF])
+                if (weapon_proficiency == WEAPON_PROFICIENCY_ELF && actor_feats.has[FEAT_WEAPON_PROFICIENCY_ELF])
                 {
                     is_weapon_proficient = true;
 
                     break;
                 }
-                else if (weapon_proficiency == WEAPON_PROFICIENCY_EXOTIC && feats[FEAT_WEAPON_PROFICIENCY_EXOTIC])
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_EXOTIC && actor_feats.has[FEAT_WEAPON_PROFICIENCY_EXOTIC])
                 {
                     is_weapon_proficient = true;
 
                     break;
                 }
-                else if (weapon_proficiency == WEAPON_PROFICIENCY_MARTIAL && feats[FEAT_WEAPON_PROFICIENCY_MARTIAL])
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_MARTIAL && actor_feats.has[FEAT_WEAPON_PROFICIENCY_MARTIAL])
                 {
                     is_weapon_proficient = true;
 
                     break;
                 }
-                else if (weapon_proficiency == WEAPON_PROFICIENCY_ROGUE && feats[FEAT_WEAPON_PROFICIENCY_ROGUE])
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_ROGUE && actor_feats.has[FEAT_WEAPON_PROFICIENCY_ROGUE])
                 {
                     is_weapon_proficient = true;
 
                     break;
                 }
-                else if (weapon_proficiency == WEAPON_PROFICIENCY_SIMPLE && feats[FEAT_WEAPON_PROFICIENCY_SIMPLE])
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_SIMPLE && actor_feats.has[FEAT_WEAPON_PROFICIENCY_SIMPLE])
                 {
                     is_weapon_proficient = true;
 
                     break;
                 }
-                else if (weapon_proficiency == WEAPON_PROFICIENCY_WIZARD && feats[FEAT_WEAPON_PROFICIENCY_WIZARD])
+                else if (weapon_proficiency == WEAPON_PROFICIENCY_WIZARD && actor_feats.has[FEAT_WEAPON_PROFICIENCY_WIZARD])
                 {
                     is_weapon_proficient = true;
 
@@ -1248,24 +1251,24 @@ bool actor_is_proficient(const struct actor *const actor, const struct item *con
 
         return is_weapon_proficient;
     }
-    else if (base_item_data->equip_slot == EQUIP_SLOT_ARMOR ||
-             base_item_data->equip_slot == EQUIP_SLOT_SHIELD)
+    else if (base_item_data.equip_slot == EQUIP_SLOT_ARMOR ||
+             base_item_data.equip_slot == EQUIP_SLOT_SHIELD)
     {
-        if (base_item_data->armor_proficiency != ARMOR_PROFICIENCY_NONE)
+        if (base_item_data.armor_proficiency != ARMOR_PROFICIENCY_NONE)
         {
-            if (base_item_data->armor_proficiency == ARMOR_PROFICIENCY_HEAVY && feats[FEAT_ARMOR_PROFICIENCY_HEAVY])
+            if (base_item_data.armor_proficiency == ARMOR_PROFICIENCY_HEAVY && actor_feats.has[FEAT_ARMOR_PROFICIENCY_HEAVY])
             {
                 return true;
             }
-            else if (base_item_data->armor_proficiency == ARMOR_PROFICIENCY_LIGHT && feats[FEAT_ARMOR_PROFICIENCY_LIGHT])
+            else if (base_item_data.armor_proficiency == ARMOR_PROFICIENCY_LIGHT && actor_feats.has[FEAT_ARMOR_PROFICIENCY_LIGHT])
             {
                 return true;
             }
-            else if (base_item_data->armor_proficiency == ARMOR_PROFICIENCY_MEDIUM && feats[FEAT_ARMOR_PROFICIENCY_MEDIUM])
+            else if (base_item_data.armor_proficiency == ARMOR_PROFICIENCY_MEDIUM && actor_feats.has[FEAT_ARMOR_PROFICIENCY_MEDIUM])
             {
                 return true;
             }
-            else if (base_item_data->armor_proficiency == ARMOR_PROFICIENCY_SHIELD && feats[FEAT_SHIELD_PROFICIENCY])
+            else if (base_item_data.armor_proficiency == ARMOR_PROFICIENCY_SHIELD && actor_feats.has[FEAT_SHIELD_PROFICIENCY])
             {
                 return true;
             }
@@ -1284,11 +1287,10 @@ struct item *actor_find_melee_weapon(const struct actor *const actor)
     for (size_t item_index = 0; item_index < actor->items->size; item_index++)
     {
         struct item *const item = list_get(actor->items, item_index);
-        const struct item_data *const item_data = &item_database[item->type];
-        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+        const struct base_item_data base_item_data = base_item_database[item_database[item->type].type];
 
-        if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON &&
-            !base_item_data->ranged &&
+        if (base_item_data.equip_slot == EQUIP_SLOT_WEAPON &&
+            !base_item_data.ranged &&
             actor_is_proficient(actor, item))
         {
             return item;
@@ -1307,10 +1309,7 @@ bool actor_has_ranged_weapon(const struct actor *actor)
         return false;
     }
 
-    const struct item_data *const weapon_data = &item_database[weapon->type];
-    const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
-
-    if (!base_weapon_data->ranged)
+    if (!base_item_database[item_database[weapon->type].type].ranged)
     {
         return false;
     }
@@ -1323,11 +1322,10 @@ struct item *actor_find_ranged_weapon(const struct actor *actor)
     for (size_t item_index = 0; item_index < actor->items->size; item_index++)
     {
         struct item *const item = list_get(actor->items, item_index);
-        const struct item_data *const item_data = &item_database[item->type];
-        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+        const struct base_item_data base_item_data = base_item_database[item_database[item->type].type];
 
-        if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON &&
-            base_item_data->ranged &&
+        if (base_item_data.equip_slot == EQUIP_SLOT_WEAPON &&
+            base_item_data.ranged &&
             actor_is_proficient(actor, item))
         {
             return item;
@@ -1339,20 +1337,19 @@ struct item *actor_find_ranged_weapon(const struct actor *actor)
 
 bool actor_has_ammunition(const struct actor *const actor, const struct item *const weapon)
 {
-    const struct item_data *const weapon_data = &item_database[weapon->type];
-    const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+    const struct base_item_data base_weapon_data = base_item_database[item_database[weapon->type].type];
 
-    if (base_weapon_data->equip_slot != EQUIP_SLOT_WEAPON)
+    if (base_weapon_data.equip_slot != EQUIP_SLOT_WEAPON)
     {
         return false;
     }
 
-    if (!base_weapon_data->ranged)
+    if (!base_weapon_data.ranged)
     {
         return false;
     }
 
-    if (base_weapon_data->ammunition_type == AMMUNITION_TYPE_NONE)
+    if (base_weapon_data.ammunition_type == AMMUNITION_TYPE_NONE)
     {
         return true;
     }
@@ -1364,10 +1361,9 @@ bool actor_has_ammunition(const struct actor *const actor, const struct item *co
         return false;
     }
 
-    const struct item_data *const ammunition_data = &item_database[ammunition->type];
-    const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
+    const struct base_item_data base_ammunition_data = base_item_database[item_database[ammunition->type].type];
 
-    if (base_ammunition_data->ammunition_type != base_weapon_data->ammunition_type)
+    if (base_ammunition_data.ammunition_type != base_weapon_data.ammunition_type)
     {
         return false;
     }
@@ -1377,20 +1373,19 @@ bool actor_has_ammunition(const struct actor *const actor, const struct item *co
 
 struct item *actor_find_ammunition(const struct actor *const actor, const struct item *const weapon)
 {
-    const struct item_data *const weapon_data = &item_database[weapon->type];
-    const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+    const struct base_item_data base_weapon_data = base_item_database[item_database[weapon->type].type];
 
-    if (base_weapon_data->equip_slot != EQUIP_SLOT_WEAPON)
+    if (base_weapon_data.equip_slot != EQUIP_SLOT_WEAPON)
     {
         return NULL;
     }
 
-    if (!base_weapon_data->ranged)
+    if (!base_weapon_data.ranged)
     {
         return NULL;
     }
 
-    if (base_weapon_data->ammunition_type == AMMUNITION_TYPE_NONE)
+    if (base_weapon_data.ammunition_type == AMMUNITION_TYPE_NONE)
     {
         return NULL;
     }
@@ -1398,11 +1393,10 @@ struct item *actor_find_ammunition(const struct actor *const actor, const struct
     for (size_t item_index = 0; item_index < actor->items->size; item_index++)
     {
         struct item *const item = list_get(actor->items, item_index);
-        const struct item_data *const item_data = &item_database[item->type];
-        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+        const struct base_item_data base_item_data = base_item_database[item_database[item->type].type];
 
-        if (base_item_data->equip_slot == EQUIP_SLOT_AMMUNITION &&
-            base_item_data->ammunition_type == base_weapon_data->ammunition_type &&
+        if (base_item_data.equip_slot == EQUIP_SLOT_AMMUNITION &&
+            base_item_data.ammunition_type == base_weapon_data.ammunition_type &&
             actor_is_proficient(actor, item))
         {
             return item;
@@ -1415,9 +1409,8 @@ struct item *actor_find_ammunition(const struct actor *const actor, const struct
 bool actor_ai(struct actor *const actor)
 {
     const struct map *const map = &world->maps[actor->floor];
-    const struct tile *const tile = &map->tiles[actor->x][actor->y];
 
-    if (actor->hit_points < actor_calc_max_hit_points(actor) / 2)
+    if (actor->hit_points < actor_get_max_hit_points(actor) / 2)
     {
         // TODO: look in inventory for potion
 
@@ -1481,16 +1474,16 @@ bool actor_ai(struct actor *const actor)
         actor->turns_chased = 0;
 
         const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+        const struct actor_feats actor_feats = actor_get_feats(actor);
 
         // is the actor in melee range?
         if (distance_between(
                 actor->x, actor->y,
                 nearest_enemy->x, nearest_enemy->y) < 2)
         {
-            // does the actor have a weapon?
+            // if no melee weapon, look for a melee weapon to equip
             if (!weapon)
             {
-                // look for a melee weapon to equip
                 struct item *const melee_weapon = actor_find_melee_weapon(actor);
 
                 if (melee_weapon)
@@ -1506,7 +1499,7 @@ bool actor_ai(struct actor *const actor)
             if (actor_has_ranged_weapon(actor))
             {
                 // look for a melee weapon to equip
-                if (!actor_has_feat(actor, FEAT_POINT_BLANK_SHOT))
+                if (!actor_feats.has[FEAT_POINT_BLANK_SHOT])
                 {
                     struct item *const melee_weapon = actor_find_melee_weapon(actor);
 
@@ -1690,6 +1683,8 @@ bool actor_ai(struct actor *const actor)
     // TODO: look for items to pick up
 
     // pick up items on ground
+    const struct tile *const tile = &map->tiles[actor->x][actor->y];
+
     if (tile->item)
     {
         if (actor_grab(actor, actor->x, actor->y))
@@ -1742,6 +1737,7 @@ bool actor_rest(struct actor *const actor)
         if (item->type == ITEM_TYPE_FOOD)
         {
             food = item;
+
             break;
         }
     }
@@ -1768,8 +1764,8 @@ bool actor_rest(struct actor *const actor)
         item_delete(food);
     }
 
-    actor_restore_hit_points(actor, actor_calc_max_hit_points(actor) - actor->hit_points);
-    actor_restore_mana(actor, actor_calc_max_mana(actor) - actor->mana);
+    actor_restore_hit_points(actor, actor_get_max_hit_points(actor) - actor->hit_points);
+    actor_restore_mana(actor, actor_get_max_mana(actor) - actor->mana);
 
     world_log(
         actor->floor,
@@ -1870,9 +1866,9 @@ bool actor_move(
 
         if (tile->object->type == OBJECT_TYPE_TRAP)
         {
-            const int reflex_save = actor_calc_saving_throw(actor, SAVING_THROW_REFLEX);
+            const int reflex_save = actor_get_saving_throw(actor, SAVING_THROW_REFLEX);
             const int roll = TCOD_random_dice_roll_s(NULL, "1d20") + reflex_save;
-            const int dungeon_level = map_calc_dungeon_level(map);
+            const int dungeon_level = map_get_dungeon_level(map);
             const int challenge_rating = 10 + dungeon_level; // object_database[tile->object->type].challenge_rating;
 
             if (roll == 1 ||
@@ -1929,8 +1925,7 @@ bool actor_move(
         }
     }
 
-    struct tile *const current_tile = &map->tiles[actor->x][actor->y];
-    current_tile->actor = NULL;
+    map->tiles[actor->x][actor->y].actor = NULL;
 
     tile->actor = actor;
 
@@ -2036,8 +2031,7 @@ bool actor_open_door(
         return false;
     }
 
-    struct map *const map = &world->maps[actor->floor];
-    struct tile *const tile = &map->tiles[x][y];
+    struct tile *const tile = &world->maps[actor->floor].tiles[x][y];
 
     if (!tile->object || tile->object->type != OBJECT_TYPE_DOOR_CLOSED)
     {
@@ -2074,8 +2068,7 @@ bool actor_close_door(
         return false;
     }
 
-    struct map *const map = &world->maps[actor->floor];
-    struct tile *const tile = &map->tiles[x][y];
+    struct tile *const tile = &world->maps[actor->floor].tiles[x][y];
 
     if (!tile->object || tile->object->type != OBJECT_TYPE_DOOR_OPEN)
     {
@@ -2351,8 +2344,8 @@ bool actor_drink(
         return false;
     }
 
-    actor_restore_hit_points(actor, actor_calc_max_hit_points(actor) - actor->hit_points);
-    actor_restore_mana(actor, actor_calc_max_mana(actor) - actor->mana);
+    actor_restore_hit_points(actor, actor_get_max_hit_points(actor) - actor->hit_points);
+    actor_restore_mana(actor, actor_get_max_mana(actor) - actor->mana);
 
     list_remove(map->objects, tile->object);
 
@@ -2379,8 +2372,7 @@ bool actor_dip(
         return false;
     }
 
-    struct map *const map = &world->maps[actor->floor];
-    struct tile *const tile = &map->tiles[x][y];
+    struct tile *const tile = &world->maps[actor->floor].tiles[x][y];
 
     if (tile->object && tile->object->type == OBJECT_TYPE_BRAZIER)
     {
@@ -2526,8 +2518,6 @@ bool actor_grab(
 
 bool actor_drop(struct actor *const actor, struct item *const item)
 {
-    struct map *const map = &world->maps[actor->floor];
-
     // remove from actor's inventory
     list_remove(actor->items, item);
 
@@ -2537,6 +2527,8 @@ bool actor_drop(struct actor *const actor, struct item *const item)
     item->y = actor->y;
 
     // find a clear tile to drop the item on
+    struct map *const map = &world->maps[actor->floor];
+
     map_find_empty_tile(map, &item->x, &item->y);
 
     // add item to map
@@ -2564,9 +2556,8 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     // is item equipment?
     const struct item_data *const item_data = &item_database[item->type];
     const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
-    const enum equip_slot equip_slot = base_item_data->equip_slot;
 
-    if (equip_slot == EQUIP_SLOT_NONE)
+    if (base_item_data->equip_slot == EQUIP_SLOT_NONE)
     {
         world_log(
             actor->floor,
@@ -2581,7 +2572,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     }
 
     // is item equippable
-    const enum equippability equippability = actor_calc_item_equippability(actor, item);
+    const enum equippability equippability = actor_get_item_equippability(actor, item);
 
     if (equippability == EQUIPPABILITY_TOO_LARGE)
     {
@@ -2626,13 +2617,13 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     }
 
     // unequip the current item in the slot
-    if (actor->equipment[equip_slot])
+    if (actor->equipment[base_item_data->equip_slot])
     {
-        actor_unequip(actor, equip_slot);
+        actor_unequip(actor, base_item_data->equip_slot);
     }
 
     // if the item being equipped is two handed weapon, also unequip the shield
-    if (equip_slot == EQUIP_SLOT_WEAPON)
+    if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON)
     {
         if (equippability == EQUIPPABILITY_BARELY)
         {
@@ -2644,13 +2635,13 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     }
 
     // if the item being equipped is a shield and the equipped main hand is two handed, also unequip the main hand
-    if (equip_slot == EQUIP_SLOT_SHIELD)
+    if (base_item_data->equip_slot == EQUIP_SLOT_SHIELD)
     {
         const struct item *const main_hand = actor->equipment[EQUIP_SLOT_WEAPON];
 
         if (main_hand)
         {
-            const enum equippability main_hand_equippability = actor_calc_item_equippability(actor, main_hand);
+            const enum equippability main_hand_equippability = actor_get_item_equippability(actor, main_hand);
 
             if (main_hand_equippability == EQUIPPABILITY_BARELY)
             {
@@ -2663,7 +2654,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     list_remove(actor->items, item);
 
     // add to slot
-    actor->equipment[equip_slot] = item;
+    actor->equipment[base_item_data->equip_slot] = item;
 
     world_log(
         actor->floor,
@@ -2680,7 +2671,7 @@ bool actor_equip(struct actor *const actor, struct item *const item)
 bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
 {
     // is something equipped in the slot?
-    struct item *equipment = actor->equipment[equip_slot];
+    struct item *const equipment = actor->equipment[equip_slot];
 
     if (!equipment)
     {
@@ -2793,27 +2784,24 @@ bool actor_read(struct actor *const actor, struct item *const item, const int x,
         actor->name,
         item_data->name);
 
-    if (item_data->type == BASE_ITEM_TYPE_SCROLL)
+    // cast the stored spell
+    actor_cast(
+        actor,
+        item_data->spell_type,
+        x, y,
+        false);
+
+    // decrement item stack
+    item->stack--;
+
+    // delete item if stack is empty
+    if (item->stack <= 0)
     {
-        // cast the stored spell
-        actor_cast(
-            actor,
-            item_data->spell_type,
-            x, y,
-            false);
+        // remove from inventory
+        list_remove(actor->items, item);
 
-        // decrement item stack
-        item->stack--;
-
-        // delete item if stack is empty
-        if (item->stack <= 0)
-        {
-            // remove from inventory
-            list_remove(actor->items, item);
-
-            // delete the item
-            item_delete(item);
-        }
+        // delete the item
+        item_delete(item);
     }
 
     return true;
@@ -2982,8 +2970,7 @@ bool actor_shoot(
     }
 
     // is the weapon ranged?
-    const struct item_data *const weapon_data = &item_database[weapon->type];
-    const struct base_item_data *const base_weapon_data = &base_item_database[weapon_data->type];
+    const struct base_item_data *const base_weapon_data = &base_item_database[item_database[weapon->type].type];
 
     if (!base_weapon_data->ranged)
     {
@@ -3023,10 +3010,7 @@ bool actor_shoot(
         }
 
         // is it the right ammo?
-        const struct item_data *const ammunition_data = &item_database[ammunition->type];
-        const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
-
-        if (base_ammunition_data->ammunition_type != base_weapon_data->ammunition_type)
+        if (base_item_database[item_database[ammunition->type].type].ammunition_type != base_weapon_data->ammunition_type)
         {
             world_log(
                 actor->floor,
@@ -3058,7 +3042,7 @@ bool actor_shoot(
         0);
 
     // add the projectile to the map
-    struct map *const map = &world->maps[actor->floor];
+    const struct map *const map = &world->maps[actor->floor];
     list_add(map->projectiles, projectile);
 
     // decrement the actor's ammunition
@@ -3068,10 +3052,7 @@ bool actor_shoot(
     if (ammunition->stack <= 0)
     {
         // remove from slot
-        const struct item_data *const ammunition_data = &item_database[ammunition->type];
-        const struct base_item_data *const base_ammunition_data = &base_item_database[ammunition_data->type];
-
-        actor->equipment[base_ammunition_data->equip_slot] = NULL;
+        actor->equipment[base_item_database[item_database[ammunition->type].type].equip_slot] = NULL;
 
         // delete the item
         item_delete(ammunition);
@@ -3082,26 +3063,32 @@ bool actor_shoot(
 
 bool actor_attack(struct actor *const actor, struct actor *const other)
 {
+    // remember the target
+    actor->last_attacked_target = other;
+
     // calculate other armor class
-    const int armor_class = actor_calc_armor_class(other);
+    const int armor_class = actor_get_armor_class(other);
 
     // calculate number of attacks
-    const int attacks_per_round = actor_calc_attacks_per_round(actor);
+    const int attacks_per_round = actor_get_attacks_per_round(actor);
+
+    // calculate feats
+    const struct actor_feats actor_feats = actor_get_feats(actor);
 
     for (int attack = 0; attack < attacks_per_round; attack++)
     {
         // calculate hit
         const int attack_roll = TCOD_random_dice_roll_s(NULL, "1d20");
-        const int attack_bonus = actor_calc_attack_bonus(actor);
-        const int successive_attack_penalty = attack * actor_calc_secondary_attack_penalty(actor);
-        const int ranged_attack_penalty = actor_calc_ranged_attack_penalty(actor, other);
+        const int attack_bonus = actor_get_attack_bonus(actor);
+        const int ranged_attack_penalty = actor_get_ranged_attack_penalty(actor, other);
+        const int successive_attack_penalty = attack * actor_get_secondary_attack_penalty(actor);
         const int hit_challenge = attack_roll + attack_bonus - ranged_attack_penalty - successive_attack_penalty;
 
         if (attack_roll == 1 ||
             (attack_roll != 20 && hit_challenge < armor_class))
         {
             other->flash_color = color_gray;
-            other->flash_fade_coef = 1;
+            other->flash_alpha = 1;
 
             world_log(
                 actor->floor,
@@ -3118,7 +3105,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         // calculate critical hit
         bool crit = false;
 
-        if (attack_roll >= actor_calc_threat_range(actor))
+        if (attack_roll >= actor_get_threat_range(actor))
         {
             const int threat_roll = TCOD_random_dice_roll_s(NULL, "1d20");
             const int crit_challenge = threat_roll + attack_bonus;
@@ -3130,11 +3117,11 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         }
 
         // calculate damage
-        const char *const damage_die = actor_calc_damage(actor);
-        const int damage_bonus = actor_calc_damage_bonus(actor);
+        const char *const damage_die = actor_get_damage(actor);
+        const int damage_bonus = actor_get_damage_bonus(actor);
         const int num_attack_rolls =
             crit
-                ? actor_calc_critical_multiplier(actor)
+                ? actor_get_critical_multiplier(actor)
                 : 1;
 
         int damage = 0;
@@ -3149,7 +3136,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         // sneak attack
         bool sneak_attack = false;
 
-        if (actor_has_feat(actor, FEAT_SNEAK_ATTACK) && other->current_target != actor)
+        if (actor_feats.has[FEAT_SNEAK_ATTACK] && other->last_attacked_target != actor)
         {
             sneak_attack = true;
 
@@ -3195,8 +3182,9 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         // weapon breakage
         bool weapon_broken = false;
         struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+        const struct item_data *const weapon_data = weapon ? &item_database[weapon->type] : NULL;
 
-        if (weapon && item_database[weapon->type].breakable &&
+        if (weapon && weapon_data->breakable &&
             TCOD_random_get_float(NULL, 0, 1) <= 0.01f)
         {
             weapon_broken = true;
@@ -3208,7 +3196,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
                 color_red,
                 "%s's %s breaks!",
                 actor->name,
-                item_database[weapon->type].name);
+                weapon_data->name);
 
             actor->equipment[EQUIP_SLOT_WEAPON] = NULL;
 
@@ -3239,14 +3227,14 @@ bool actor_cast(
     }
 
     const struct spell_data *const spell_data = &spell_database[spell_type];
-    const int mana_cost = actor_calc_spell_mana_cost(actor, spell_type);
+    const int mana_cost = actor_get_spell_mana_cost(actor, spell_type);
 
     if (from_memory)
     {
+        const struct actor_spells actor_spells = actor_get_spells(actor);
+
         // does the actor know the spell?
-        // this should never happen, but just in case
-        // an actor should only be able to "ready" a spell they know
-        if (!actor_has_spell(actor, spell_type))
+        if (!actor_spells.has[spell_type])
         {
             world_log(
                 actor->floor,
@@ -3260,6 +3248,7 @@ bool actor_cast(
             return false;
         }
 
+        // is the actor high enough level?
         if (actor->level < spell_data->level)
         {
             world_log(
@@ -3290,7 +3279,7 @@ bool actor_cast(
         }
 
         // arcane spell failure
-        const float arcane_spell_failure = actor_calc_arcane_spell_failure(actor);
+        const float arcane_spell_failure = actor_get_arcane_spell_failure(actor);
 
         if (arcane_spell_failure > 0 && spell_data->magic_type == MAGIC_TYPE_ARCANE)
         {
@@ -3357,15 +3346,12 @@ bool actor_cast(
             caster_level);
 
         // add the projectile to the map
-        struct map *const map = &world->maps[actor->floor];
-        list_add(map->projectiles, projectile);
+        list_add(world->maps[actor->floor].projectiles, projectile);
     }
     break;
     case SPELL_TYPE_CURE_MINOR_WOUNDS:
     {
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3416,9 +3402,7 @@ bool actor_cast(
     break;
     case SPELL_TYPE_CURE_LIGHT_WOUNDS:
     {
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3471,9 +3455,7 @@ bool actor_cast(
     break;
     case SPELL_TYPE_CURE_MODERATE_WOUNDS:
     {
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3526,9 +3508,7 @@ bool actor_cast(
     break;
     case SPELL_TYPE_CURE_SERIOUS_WOUNDS:
     {
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3581,9 +3561,7 @@ bool actor_cast(
     break;
     case SPELL_TYPE_CURE_CRITICAL_WOUNDS:
     {
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3641,9 +3619,7 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3687,9 +3663,7 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3739,8 +3713,7 @@ bool actor_cast(
             caster_level);
 
         // add the projectile to the map
-        struct map *const map = &world->maps[actor->floor];
-        list_add(map->projectiles, projectile);
+        list_add(world->maps[actor->floor].projectiles, projectile);
     }
     break;
     case SPELL_TYPE_HARM:
@@ -3750,15 +3723,13 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
             if (other->race == RACE_UNDEAD)
             {
-                const int health = actor_calc_max_hit_points(other) - other->hit_points;
+                const int health = actor_get_max_hit_points(other) - other->hit_points;
 
                 world_log(
                     other->floor,
@@ -3808,9 +3779,7 @@ bool actor_cast(
     break;
     case SPELL_TYPE_HEAL:
     {
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3847,7 +3816,7 @@ bool actor_cast(
             }
             else
             {
-                const int health = actor_calc_max_hit_points(other) - other->hit_points;
+                const int health = actor_get_max_hit_points(other) - other->hit_points;
 
                 world_log(
                     other->floor,
@@ -3871,9 +3840,7 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3929,9 +3896,7 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -3989,9 +3954,7 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -4049,9 +4012,7 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -4109,9 +4070,7 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -4182,8 +4141,7 @@ bool actor_cast(
             caster_level);
 
         // add the projectile to the map
-        struct map *const map = &world->maps[actor->floor];
-        list_add(map->projectiles, projectile);
+        list_add(world->maps[actor->floor].projectiles, projectile);
     }
     break;
     case SPELL_TYPE_RAY_OF_FROST:
@@ -4193,9 +4151,7 @@ bool actor_cast(
             return false;
         }
 
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
@@ -4230,13 +4186,11 @@ bool actor_cast(
     break;
     case SPELL_TYPE_RESTORE_MANA:
     {
-        struct map *const map = &world->maps[actor->floor];
-        struct tile *const tile = &map->tiles[x][y];
-        struct actor *const other = tile->actor;
+        struct actor *const other = world->maps[actor->floor].tiles[x][y].actor;
 
         if (other)
         {
-            const int mana = actor_calc_max_mana(other) - other->mana;
+            const int mana = actor_get_max_mana(other) - other->mana;
 
             world_log(
                 other->floor,

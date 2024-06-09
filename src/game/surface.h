@@ -50,6 +50,6 @@ struct surface *surface_new(
     int y,
     struct actor *initiator);
 void surface_delete(struct surface *surface);
-void surface_calc_light(struct surface *surface);
+void surface_update_light(struct surface *surface);
 
 #endif

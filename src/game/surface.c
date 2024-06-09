@@ -71,7 +71,7 @@ void surface_delete(struct surface *surface)
     free(surface);
 }
 
-void surface_calc_light(struct surface *const surface)
+void surface_update_light(struct surface *const surface)
 {
     if (surface->light_fov)
     {
@@ -79,7 +79,8 @@ void surface_calc_light(struct surface *const surface)
         surface->light_fov = NULL;
     }
 
-    const struct light_data *const light_data = &light_database[surface_database[surface->type].light_type];
+    const struct surface_data *const surface_data = &surface_database[surface->type];
+    const struct light_data *const light_data = &light_database[surface_data->light_type];
 
     if (light_data->radius >= 0)
     {

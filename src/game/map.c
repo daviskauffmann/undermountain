@@ -703,7 +703,7 @@ void map_generate(struct map *const map, TCOD_Random *random)
     }
 }
 
-int map_calc_dungeon_level(const struct map *map)
+int map_get_dungeon_level(const struct map *map)
 {
     return map->floor + 1;
 }

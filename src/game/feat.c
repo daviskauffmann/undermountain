@@ -4,10 +4,6 @@
 #include "race.h"
 
 const struct feat_data feat_database[] = {
-    [FEAT_ALERTNESS] = {
-        .name = "Alertness",
-        .description = "A character with this feat gets a +2 bonus on all spot and listen checks.",
-    },
     [FEAT_ARMOR_PROFICIENCY_LIGHT] = {
         .name = "Armor Proficiency: Light",
         .description = "A character with this feat can equip light armor.",
@@ -100,10 +96,6 @@ const struct feat_data feat_database[] = {
             .class = CLASS_ROGUE,
         },
     },
-    [FEAT_STEALTHY] = {
-        .name = "Stealthy",
-        .description = "A character with this feat gets a +2 bonus on all hide and move silently checks.",
-    },
     [FEAT_STILL_SPELL] = {
         .name = "Still Spell",
         .description = "A character with this feat ignores arcane spell failure, but all arcane spell mana costs are increased by 1.",
@@ -111,10 +103,6 @@ const struct feat_data feat_database[] = {
     [FEAT_TOUGHNESS] = {
         .name = "Toughness",
         .description = "A character with this feat retroactively gains 1 hit point per level.",
-    },
-    [FEAT_TRACK] = {
-        .name = "Track",
-        .description = "A character with this feat can track creatures by following their tracks.",
     },
     [FEAT_WEAPON_FINESSE] = {
         .name = "Weapon Finesse",

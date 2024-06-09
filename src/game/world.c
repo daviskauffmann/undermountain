@@ -267,7 +267,7 @@ void world_save(FILE *const file)
             fwrite(&actor->light_type, sizeof(actor->light_type), 1, file);
 
             fwrite(&actor->flash_color, sizeof(actor->flash_color), 1, file);
-            fwrite(&actor->flash_fade_coef, sizeof(actor->flash_fade_coef), 1, file);
+            fwrite(&actor->flash_alpha, sizeof(actor->flash_alpha), 1, file);
 
             fwrite(&actor->controllable, sizeof(actor->controllable), 1, file);
 
@@ -286,6 +286,14 @@ void world_save(FILE *const file)
 
             const size_t current_target_index = list_index_of(map->actors, actor->current_target);
             fwrite(&current_target_index, sizeof(current_target_index), 1, file);
+        }
+
+        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+        {
+            const struct actor *const actor = list_get(map->actors, actor_index);
+
+            const size_t last_attacked_target_index = list_index_of(map->actors, actor->last_attacked_target);
+            fwrite(&last_attacked_target_index, sizeof(last_attacked_target_index), 1, file);
         }
 
         for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
@@ -560,13 +568,15 @@ void world_load(FILE *const file)
             fread(&actor->last_seen_y, sizeof(actor->last_seen_y), 1, file);
             fread(&actor->turns_chased, sizeof(actor->turns_chased), 1, file);
 
+            actor->last_attacked_target = NULL;
+
             actor->leader = NULL;
 
             fread(&actor->light_type, sizeof(actor->light_type), 1, file);
             actor->light_fov = NULL;
 
             fread(&actor->flash_color, sizeof(actor->flash_color), 1, file);
-            fread(&actor->flash_fade_coef, sizeof(actor->flash_fade_coef), 1, file);
+            fread(&actor->flash_alpha, sizeof(actor->flash_alpha), 1, file);
 
             fread(&actor->controllable, sizeof(actor->controllable), 1, file);
 
@@ -597,6 +607,15 @@ void world_load(FILE *const file)
             size_t current_target_index;
             fread(&current_target_index, sizeof(current_target_index), 1, file);
             actor->current_target = list_get(map->actors, current_target_index);
+        }
+
+        for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+        {
+            struct actor *const actor = list_get(map->actors, actor_index);
+
+            size_t last_attacked_target_index;
+            fread(&last_attacked_target_index, sizeof(last_attacked_target_index), 1, file);
+            actor->last_attacked_target = list_get(map->actors, last_attacked_target_index);
         }
 
         for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
@@ -779,29 +798,29 @@ void world_update(float delta_time)
     {
         struct object *const object = list_get(map->objects, object_index);
 
-        object_calc_light(object);
+        object_update_light(object);
     }
 
     for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
     {
         struct surface *const surface = list_get(map->surfaces, surface_index);
 
-        surface_calc_light(surface);
+        surface_update_light(surface);
     }
 
     for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
     {
         struct actor *const actor = list_get(map->actors, actor_index);
 
-        actor_calc_light(actor);
-        actor_calc_fade(actor, delta_time);
+        actor_update_light(actor);
+        actor_update_fade(actor, delta_time);
     }
 
     for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
     {
         struct actor *const actor = list_get(map->actors, actor_index);
 
-        actor_calc_fov(actor);
+        actor_update_fov(actor);
     }
 
     for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
@@ -810,7 +829,7 @@ void world_update(float delta_time)
 
         if (projectile_move(projectile, delta_time))
         {
-            projectile_calc_light(projectile);
+            projectile_update_light(projectile);
         }
         else
         {
@@ -861,18 +880,16 @@ void world_update(float delta_time)
                     tile->surface = NULL;
 
                     surface_delete(surface);
-
-                    continue;
                 }
             }
 
-            // process dead actors
+            // update actors
             for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
             {
                 struct actor *const actor = list_get(map->actors, actor_index);
-
                 struct tile *const tile = &map->tiles[actor->x][actor->y];
 
+                // process surface effects on actors
                 if (tile->surface)
                 {
                     const struct surface_data *const surface_data = &surface_database[tile->surface->type];
@@ -895,6 +912,7 @@ void world_update(float delta_time)
                     }
                 }
 
+                // process dead actors
                 if (actor->dead)
                 {
                     // remove from map
@@ -985,7 +1003,7 @@ void world_update(float delta_time)
                 struct actor *const actor = list_get(map->actors, actor_index);
 
                 // give energy
-                actor->energy += actor_calc_speed(actor);
+                actor->energy += actor_get_speed(actor);
 
                 // reset took_turn status
                 actor->took_turn = false;
@@ -1000,8 +1018,8 @@ void world_update(float delta_time)
                         if (object->trap_detection_state == OBJECT_TRAP_DETECTION_STATE_UNCHECKED &&
                             TCOD_map_is_in_fov(actor->fov, object->x, object->y))
                         {
-                            const int roll = TCOD_random_dice_roll_s(NULL, "1d20") + actor_calc_ability_modifer(actor, ABILITY_INTELLIGENCE);
-                            const int dungeon_level = map_calc_dungeon_level(map);
+                            const int roll = TCOD_random_dice_roll_s(NULL, "1d20") + actor_get_ability_modifer(actor, ABILITY_INTELLIGENCE);
+                            const int dungeon_level = map_get_dungeon_level(map);
                             const int challenge_rating = 10 + dungeon_level; // object_database[tile->object->type].challenge_rating;
 
                             if (roll != 1 &&
@@ -1061,10 +1079,9 @@ void world_update(float delta_time)
             else
             {
                 // if not, then run the actor's AI
-
-                // slow down the AI if the hero is dead
                 if (world->doomed)
                 {
+                    // slow down the AI if the hero is dead
                     static float timer = 0;
                     timer += delta_time;
                     if (timer < 1)

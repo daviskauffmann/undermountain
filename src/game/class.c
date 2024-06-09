@@ -128,8 +128,8 @@ const struct class_data class_database[] = {
         },
 
         .starting_equipment = {
-            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_FULL_PLATE,
-            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_HEAVY_SHIELD,
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_BREASTPLATE,
+            [EQUIP_SLOT_SHIELD] = ITEM_TYPE_LIGHT_SHIELD,
             [EQUIP_SLOT_WEAPON] = ITEM_TYPE_LONGSWORD,
         },
 
@@ -176,7 +176,7 @@ const struct class_data class_database[] = {
         },
 
         .starting_equipment = {
-            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_FULL_PLATE,
+            [EQUIP_SLOT_ARMOR] = ITEM_TYPE_BREASTPLATE,
             [EQUIP_SLOT_WEAPON] = ITEM_TYPE_GREATSWORD,
         },
 

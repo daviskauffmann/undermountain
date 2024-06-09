@@ -114,17 +114,17 @@ static bool do_directional_action(const enum direction direction)
     {
     case DIRECTIONAL_ACTION_CLOSE_DOOR:
     {
-        took_turn = actor_close_door(world->player, x, y);
+        took_turn = world_can_player_take_turn() && actor_close_door(world->player, x, y);
     }
     break;
     case DIRECTIONAL_ACTION_DIP:
     {
-        took_turn = actor_dip(world->player, x, y);
+        took_turn = world_can_player_take_turn() && actor_dip(world->player, x, y);
     }
     break;
     case DIRECTIONAL_ACTION_OPEN_DOOR:
     {
-        took_turn = actor_open_door(world->player, x, y);
+        took_turn = world_can_player_take_turn() && actor_open_door(world->player, x, y);
     }
     break;
     }
@@ -175,9 +175,11 @@ static bool do_inventory_action(struct item *const item)
         bool needs_target = false;
 
         const struct item_data *const item_data = &item_database[item->type];
+
         if (item_data->type == BASE_ITEM_TYPE_SCROLL)
         {
             const struct spell_data *const spell_data = &spell_database[item_data->spell_type];
+
             if (spell_data->range == SPELL_RANGE_TOUCH)
             {
                 needs_target = true;
@@ -452,61 +454,50 @@ struct scene *handle_event(const SDL_Event *event)
             if (inventory_action != INVENTORY_ACTION_NONE &&
                 alpha >= 0 && alpha < world->player->items->size)
             {
-                if (world_can_player_take_turn())
-                {
-                    struct item *const item = list_get(world->player->items, alpha);
+                struct item *const selected_item = list_get(world->player->items, alpha);
 
-                    world->player->took_turn = do_inventory_action(item);
-                }
+                world->player->took_turn = do_inventory_action(selected_item);
             }
             else if ((character_action == CHARACTER_ACTION_ABILITY_SPEND_POINT) &&
-                     alpha >= 0 && alpha < NUM_ABILITIES - 1)
+                     alpha >= ABILITY_NONE && alpha < NUM_ABILITIES - 1)
             {
-                if (world_can_player_take_turn())
-                {
-                    const enum ability_type ability = alpha + 1;
+                const enum ability_type selected_ability = alpha + 1;
 
-                    world->player->took_turn = do_character_action_ability(ability);
-                }
+                world->player->took_turn = do_character_action_ability(selected_ability);
             }
             else if ((character_action == CHARACTER_ACTION_EQUIPMENT_EXAMINE ||
                       character_action == CHARACTER_ACTION_EQUIPMENT_UNEQUIP) &&
-                     alpha >= 0 && alpha < NUM_EQUIP_SLOTS - 1)
+                     alpha >= EQUIP_SLOT_NONE && alpha < NUM_EQUIP_SLOTS - 1)
             {
-                if (world_can_player_take_turn())
-                {
-                    const enum equip_slot equip_slot = alpha + 1;
+                const enum equip_slot selected_equip_slot = alpha + 1;
 
-                    world->player->took_turn = do_character_action_equipment(equip_slot);
-                }
+                world->player->took_turn = do_character_action_equipment(selected_equip_slot);
             }
             else if (spellbook_action != SPELLBOOK_ACTION_NONE)
             {
-                if (world_can_player_take_turn())
+                enum spell_type selected_spell_type = SPELL_TYPE_NONE;
+
+                const struct actor_spells player_spells = actor_get_spells(world->player);
+
+                int spell_count = 0;
+                for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
                 {
-                    enum spell_type spell_type = SPELL_TYPE_NONE;
-
-                    bool spells[NUM_SPELL_TYPES] = {false};
-                    actor_calc_spells(world->player, &spells);
-                    int spell_count = 0;
-                    for (enum spell_type _spell_type = SPELL_TYPE_NONE + 1; _spell_type < NUM_SPELL_TYPES; _spell_type++)
+                    if (player_spells.has[spell_type])
                     {
-                        if (spells[_spell_type])
-                        {
-                            spell_count++;
+                        spell_count++;
 
-                            if (alpha + 1 == spell_count)
-                            {
-                                spell_type = _spell_type;
-                                break;
-                            }
+                        if (alpha + 1 == spell_count)
+                        {
+                            selected_spell_type = spell_type;
+
+                            break;
                         }
                     }
+                }
 
-                    if (spell_type != SPELL_TYPE_NONE)
-                    {
-                        world->player->took_turn = do_spellbook_action(spell_type);
-                    }
+                if (selected_spell_type != SPELL_TYPE_NONE)
+                {
+                    world->player->took_turn = do_spellbook_action(selected_spell_type);
                 }
             }
 
@@ -728,7 +719,7 @@ struct scene *handle_event(const SDL_Event *event)
                 {
                     if (world->player->light_type == LIGHT_TYPE_GLOW)
                     {
-                        world->player->light_type = LIGHT_TYPE_NONE;
+                        world->player->light_type = LIGHT_TYPE_PLAYER;
                     }
                     else
                     {
@@ -744,7 +735,7 @@ struct scene *handle_event(const SDL_Event *event)
                 {
                     if (world->player->light_type == LIGHT_TYPE_TORCH)
                     {
-                        world->player->light_type = LIGHT_TYPE_NONE;
+                        world->player->light_type = LIGHT_TYPE_PLAYER;
                     }
                     else
                     {
@@ -1191,9 +1182,13 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
                             if (actor->light_fov && TCOD_map_is_in_fov(actor->light_fov, x, y))
                             {
-                                const struct light_data *light_data = &light_database[actor->light_type];
+                                const struct light_data *const light_data = &light_database[actor->light_type];
 
-                                const float radius_sq = powf((float)light_data->radius, 2);
+                                const float radius_sq = powf(
+                                    (float)(actor->light_type == LIGHT_TYPE_PLAYER
+                                                ? actor_get_sight_radius(actor)
+                                                : light_data->radius),
+                                    2);
                                 const float distance_sq =
                                     powf((float)(x - actor->x + (light_data->flicker ? dx : 0)), 2) +
                                     powf((float)(y - actor->y + (light_data->flicker ? dy : 0)), 2);
@@ -1333,9 +1328,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 const struct class_data *const class_data = &class_database[actor->class];
 
                                 TCOD_ColorRGB color = class_data->color;
-                                if (actor->flash_fade_coef > 0)
+                                if (actor->flash_alpha > 0)
                                 {
-                                    color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade_coef);
+                                    color = TCOD_color_lerp(color, actor->flash_color, actor->flash_alpha);
                                 }
 
                                 fg_color = color;
@@ -1443,9 +1438,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                     const struct class_data *const class_data = &class_database[actor->class];
 
                                     TCOD_ColorRGB color = class_data->color;
-                                    if (actor->flash_fade_coef > 0)
+                                    if (actor->flash_alpha > 0)
                                     {
-                                        color = TCOD_color_lerp(color, actor->flash_color, actor->flash_fade_coef);
+                                        color = TCOD_color_lerp(color, actor->flash_color, actor->flash_alpha);
                                     }
 
                                     fg_color = color;
@@ -1613,7 +1608,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 tile->actor->level,
                                 tile->actor->name,
                                 tile->actor->hit_points,
-                                actor_calc_max_hit_points(tile->actor));
+                                actor_get_max_hit_points(tile->actor));
                         }
                         else
                         {
@@ -1720,7 +1715,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             int y = 1;
 
             {
-                const int max_hit_points = actor_calc_max_hit_points(world->player);
+                const int max_hit_points = actor_get_max_hit_points(world->player);
                 const TCOD_ColorRGB fg =
                     (float)world->player->hit_points / max_hit_points > 0.5f
                         ? TCOD_color_lerp(color_yellow, color_green, world->player->hit_points / (max_hit_points * 0.5f))
@@ -1741,7 +1736,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
             if (class_database[world->player->class].spellcasting_ability != ABILITY_NONE)
             {
-                const int max_mana = actor_calc_max_mana(world->player);
+                const int max_mana = actor_get_max_mana(world->player);
                 const TCOD_ColorRGB fg = TCOD_color_lerp(color_gray, color_azure, (float)world->player->mana / max_mana);
 
                 console_print(
@@ -1942,7 +1937,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_RIGHT,
                 "%d/%d",
                 world->player->experience,
-                actor_calc_experience_for_level(world->player->level + 1));
+                actor_get_experience_for_level(world->player->level + 1));
             y++;
 
             TCOD_console_printf(
@@ -1972,8 +1967,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 "%.1f/%.1f",
-                actor_calc_carry_weight(world->player),
-                actor_calc_max_carry_weight(world->player));
+                actor_get_carry_weight(world->player),
+                actor_get_max_carry_weight(world->player));
             y++;
 
             y++;
@@ -2032,8 +2027,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
                     "%d (%d)",
-                    actor_calc_ability_score(world->player, ability),
-                    actor_calc_ability_modifer(world->player, ability));
+                    actor_get_ability_score(world->player, ability),
+                    actor_get_ability_modifer(world->player, ability));
                 y++;
             }
 
@@ -2107,10 +2102,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_RIGHT,
                 "%d/%d",
                 world->player->hit_points,
-                actor_calc_max_hit_points(world->player));
+                actor_get_max_hit_points(world->player));
             y++;
 
-            const int max_mana = actor_calc_max_mana(world->player);
+            const int max_mana = actor_get_max_mana(world->player);
 
             if (max_mana > 0)
             {
@@ -2153,7 +2148,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
                     "%d",
-                    actor_calc_saving_throw(world->player, saving_throw));
+                    actor_get_saving_throw(world->player, saving_throw));
                 y++;
             }
 
@@ -2169,7 +2164,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 "%d",
-                actor_calc_armor_class(world->player));
+                actor_get_armor_class(world->player));
             y++;
 
             const struct item *const armor = world->player->equipment[EQUIP_SLOT_ARMOR];
@@ -2219,7 +2214,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 "%d%%",
-                (int)(actor_calc_arcane_spell_failure(world->player) * 100));
+                (int)(actor_get_arcane_spell_failure(world->player) * 100));
             y++;
 
             TCOD_console_printf(
@@ -2227,10 +2222,10 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 1,
                 y - current_panel_status->scroll,
                 "Base Attack Bonus");
-            const int base_attack_bonus = actor_calc_base_attack_bonus(world->player);
+            const int base_attack_bonus = actor_get_base_attack_bonus(world->player);
             char base_attack_bonus_string[20] = {0};
             snprintf(base_attack_bonus_string, sizeof(base_attack_bonus_string), "+%d", base_attack_bonus);
-            const int attacks_per_round = actor_calc_attacks_per_round(world->player);
+            const int attacks_per_round = actor_get_attacks_per_round(world->player);
             for (int i = 1; i < attacks_per_round; i++)
             {
                 char extra_attack_string[10] = {0};
@@ -2258,7 +2253,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 TCOD_BKGND_NONE,
                 TCOD_RIGHT,
                 "%d",
-                actor_calc_attack_bonus(world->player));
+                actor_get_attack_bonus(world->player));
             y++;
 
             TCOD_console_printf(
@@ -2266,7 +2261,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                 1,
                 y - current_panel_status->scroll,
                 "Damage");
-            const int threat_range = actor_calc_threat_range(world->player);
+            const int threat_range = actor_get_threat_range(world->player);
             if (threat_range == 20)
             {
                 TCOD_console_printf_ex(
@@ -2276,9 +2271,9 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
                     "%s + %d (x%d)",
-                    actor_calc_damage(world->player),
-                    actor_calc_damage_bonus(world->player),
-                    actor_calc_critical_multiplier(world->player));
+                    actor_get_damage(world->player),
+                    actor_get_damage_bonus(world->player),
+                    actor_get_critical_multiplier(world->player));
             }
             else
             {
@@ -2289,14 +2284,14 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
                     "%s + %d (%d-20/x%d)",
-                    actor_calc_damage(world->player),
-                    actor_calc_damage_bonus(world->player),
+                    actor_get_damage(world->player),
+                    actor_get_damage_bonus(world->player),
                     threat_range,
-                    actor_calc_critical_multiplier(world->player));
+                    actor_get_critical_multiplier(world->player));
             }
             y++;
 
-            if (actor_calc_carry_weight(world->player) <= actor_calc_max_carry_weight(world->player))
+            if (actor_get_carry_weight(world->player) <= actor_get_max_carry_weight(world->player))
             {
                 TCOD_console_printf(
                     panel_rect.console,
@@ -2310,7 +2305,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
                     "%.2f",
-                    actor_calc_speed(world->player));
+                    actor_get_speed(world->player));
             }
             else
             {
@@ -2326,7 +2321,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     TCOD_BKGND_NONE,
                     TCOD_RIGHT,
                     "%.2f (overburdened)",
-                    actor_calc_speed(world->player));
+                    actor_get_speed(world->player));
             }
             y++;
 
@@ -2354,7 +2349,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             for (size_t item_index = 0; item_index < world->player->items->size; item_index++)
             {
                 const struct item *const item = list_get(world->player->items, item_index);
-                const struct item_data item_data = item_database[item->type];
+                const struct item_data *const item_data = &item_database[item->type];
 
                 if (inventory_action == INVENTORY_ACTION_NONE)
                 {
@@ -2362,12 +2357,12 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &item_data.color,
+                        &item_data->color,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         item->stack > 1 ? "%s (%d)" : "%s",
-                        item_data.name,
+                        item_data->name,
                         item->stack);
                 }
                 else
@@ -2376,13 +2371,13 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         panel_rect.console,
                         1,
                         y - current_panel_status->scroll,
-                        &item_data.color,
+                        &item_data->color,
                         NULL,
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         item->stack > 1 ? "%c) %s (%d)" : "%c) %s",
                         y - 1 + SDLK_a - current_panel_status->scroll,
-                        item_data.name,
+                        item_data->name,
                         item->stack);
                 }
 
@@ -2411,11 +2406,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         {
             int y = 1;
 
-            bool spells[NUM_SPELL_TYPES] = {false};
-            actor_calc_spells(world->player, &spells);
+            const struct actor_spells player_spells = actor_get_spells(world->player);
+
             for (enum spell_type spell_type = SPELL_TYPE_NONE + 1; spell_type < NUM_SPELL_TYPES; spell_type++)
             {
-                if (spells[spell_type])
+                if (player_spells.has[spell_type])
                 {
                     const struct spell_data *const spell_data = &spell_database[spell_type];
 
@@ -2456,7 +2451,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_RIGHT,
                         "%d",
-                        actor_calc_spell_mana_cost(world->player, spell_type));
+                        actor_get_spell_mana_cost(world->player, spell_type));
 
                     y++;
                 }

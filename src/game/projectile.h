@@ -58,6 +58,6 @@ struct projectile *projectile_new(
     int caster_level);
 void projectile_delete(struct projectile *projectile);
 bool projectile_move(struct projectile *projectile, float delta_time);
-void projectile_calc_light(struct projectile *projectile);
+void projectile_update_light(struct projectile *projectile);
 
 #endif

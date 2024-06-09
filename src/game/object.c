@@ -123,7 +123,7 @@ void object_delete(struct object *const object)
     free(object);
 }
 
-void object_calc_light(struct object *const object)
+void object_update_light(struct object *const object)
 {
     if (object->light_fov)
     {
@@ -131,7 +131,8 @@ void object_calc_light(struct object *const object)
         object->light_fov = NULL;
     }
 
-    const struct light_data *const light_data = &light_database[object_database[object->type].light_type];
+    const struct object_data *const object_data = &object_database[object->type];
+    const struct light_data *const light_data = &light_database[object_data->light_type];
 
     if (light_data->radius >= 0)
     {

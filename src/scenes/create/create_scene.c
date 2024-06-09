@@ -41,7 +41,7 @@ static int remaining_feats;
 struct list *available_feats;
 static size_t selected_feat_index;
 
-static int calc_ability_score_cost(const int ability_score)
+static int get_ability_score_cost(const int ability_score)
 {
     if (ability_score <= 14)
     {
@@ -100,8 +100,7 @@ static bool feat_is_available(enum feat feat)
         return false;
     }
 
-    const enum base_attack_bonus_type base_attack_bonus_type = class_database[selected_class].base_attack_bonus_type;
-    const int base_attack_bonus = (int)floorf(STARTING_LEVEL * base_attack_bonus_database[base_attack_bonus_type].multiplier);
+    const int base_attack_bonus = (int)floorf(STARTING_LEVEL * base_attack_bonus_database[class_database[selected_class].base_attack_bonus_type].multiplier);
 
     if (prerequisites->base_attack_bonus > base_attack_bonus)
     {
@@ -250,7 +249,7 @@ static struct scene *handle_event(const SDL_Event *const event)
                     }
                 }
 
-                hero->light_type = LIGHT_TYPE_TORCH;
+                hero->light_type = LIGHT_TYPE_PLAYER;
 
                 world_create(hero, (unsigned int)time(0)); // TODO: user input seed
 
@@ -424,7 +423,7 @@ static struct scene *handle_event(const SDL_Event *const event)
             {
             case STATE_ABILITY_SCORES:
             {
-                const int cost = calc_ability_score_cost(ability_scores[selected_ability]);
+                const int cost = get_ability_score_cost(ability_scores[selected_ability]);
 
                 if (ability_scores[selected_ability] > 8)
                 {
@@ -443,7 +442,7 @@ static struct scene *handle_event(const SDL_Event *const event)
             {
             case STATE_ABILITY_SCORES:
             {
-                const int cost = calc_ability_score_cost(ability_scores[selected_ability] + 1);
+                const int cost = get_ability_score_cost(ability_scores[selected_ability] + 1);
 
                 if (ability_points >= cost && ability_scores[selected_ability] < 18)
                 {
@@ -865,7 +864,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             const int base_score = ability_scores[ability];
             const int adjusted_score = base_score + race_database[selected_race].ability_adjustments[ability];
             const int modifier = (int)floorf((adjusted_score - 10) / 2.0f);
-            const int cost = calc_ability_score_cost(base_score + 1);
+            const int cost = get_ability_score_cost(base_score + 1);
 
             console_print(
                 console,

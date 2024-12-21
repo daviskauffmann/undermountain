@@ -131,15 +131,14 @@ void object_update_light(struct object *const object)
         object->light_fov = NULL;
     }
 
-    const struct object_data *const object_data = &object_database[object->type];
-    const struct light_data *const light_data = &light_database[object_data->light_type];
+    const int radius = light_database[object_database[object->type].light_type].radius;
 
-    if (light_data->radius >= 0)
+    if (radius >= 0)
     {
         object->light_fov = map_to_fov_map(
             &world->maps[object->floor],
             object->x,
             object->y,
-            light_data->radius);
+            radius);
     }
 }

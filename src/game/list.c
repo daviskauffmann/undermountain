@@ -31,9 +31,9 @@ void *list_get(const struct list *const list, const size_t index)
 
 bool list_contains(const struct list *list, const void *const data)
 {
-    for (size_t i = 0; i < list->size; ++i)
+    for (size_t index = 0; index < list->size; index++)
     {
-        if (list->data[i] == data)
+        if (list->data[index] == data)
         {
             return true;
         }
@@ -44,11 +44,11 @@ bool list_contains(const struct list *list, const void *const data)
 
 size_t list_index_of(const struct list *list, const void *const data)
 {
-    for (size_t i = 0; i < list->size; ++i)
+    for (size_t index = 0; index < list->size; index++)
     {
-        if (list->data[i] == data)
+        if (list->data[index] == data)
         {
-            return i;
+            return index;
         }
     }
 
@@ -68,11 +68,11 @@ void list_add(struct list *const list, void *const data)
 
 void list_remove(struct list *const list, const void *const data)
 {
-    for (size_t i = 0; i < list->size; ++i)
+    for (size_t index = 0; index < list->size; index++)
     {
-        if (list->data[i] == data)
+        if (list->data[index] == data)
         {
-            list_remove_at(list, i);
+            list_remove_at(list, index);
             break;
         }
     }
@@ -85,9 +85,9 @@ void list_remove_at(struct list *const list, const size_t index)
         return;
     }
 
-    for (size_t i = index; i < list->size - 1; ++i)
+    for (size_t next_index = index; next_index < list->size - 1; next_index++)
     {
-        list->data[i] = list->data[i + 1];
+        list->data[next_index] = list->data[next_index + 1];
     }
 
     list->size--;

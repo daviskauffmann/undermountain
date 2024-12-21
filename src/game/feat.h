@@ -2,6 +2,7 @@
 #define UM_GAME_FEAT_H
 
 #include "ability.h"
+#include <stdbool.h>
 
 enum feat
 {
@@ -10,7 +11,9 @@ enum feat
     FEAT_ARMOR_PROFICIENCY_LIGHT,
     FEAT_ARMOR_PROFICIENCY_MEDIUM,
     FEAT_ARMOR_PROFICIENCY_HEAVY,
+    FEAT_CLEAVE,
     FEAT_COMBAT_CASTING,
+    FEAT_COMBAT_REFLEXES,
     FEAT_DODGE,
     FEAT_GREAT_FORTITUDE,
     FEAT_IMPROVED_INITIATIVE,
@@ -51,6 +54,8 @@ struct feat_prerequisites
     int base_attack_bonus;
 
     int ability_scores[NUM_ABILITIES];
+
+    bool feats[NUM_FEATS];
 };
 
 struct feat_data

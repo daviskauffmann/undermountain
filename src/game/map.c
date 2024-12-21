@@ -63,51 +63,51 @@ void map_init(struct map *const map, const int floor)
 
 void map_uninit(struct map *const map)
 {
-    for (size_t i = 0; i < map->surfaces->size; i++)
+    for (size_t surface_index = 0; surface_index < map->surfaces->size; surface_index++)
     {
-        surface_delete(list_get(map->surfaces, i));
+        surface_delete(list_get(map->surfaces, surface_index));
     }
     list_delete(map->surfaces);
 
-    for (size_t i = 0; i < map->explosions->size; i++)
+    for (size_t explosion_index = 0; explosion_index < map->explosions->size; explosion_index++)
     {
-        explosion_delete(list_get(map->explosions, i));
+        explosion_delete(list_get(map->explosions, explosion_index));
     }
     list_delete(map->explosions);
 
-    for (size_t i = 0; i < map->projectiles->size; i++)
+    for (size_t projectile_index = 0; projectile_index < map->projectiles->size; projectile_index++)
     {
-        projectile_delete(list_get(map->projectiles, i));
+        projectile_delete(list_get(map->projectiles, projectile_index));
     }
     list_delete(map->projectiles);
 
-    for (size_t i = 0; i < map->items->size; i++)
+    for (size_t item_index = 0; item_index < map->items->size; item_index++)
     {
-        item_delete(list_get(map->items, i));
+        item_delete(list_get(map->items, item_index));
     }
     list_delete(map->items);
 
-    for (size_t i = 0; i < map->corpses->size; i++)
+    for (size_t corpse_index = 0; corpse_index < map->corpses->size; corpse_index++)
     {
-        corpse_delete(list_get(map->corpses, i));
+        corpse_delete(list_get(map->corpses, corpse_index));
     }
     list_delete(map->corpses);
 
-    for (size_t i = 0; i < map->actors->size; i++)
+    for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
     {
-        actor_delete(list_get(map->actors, i));
+        actor_delete(list_get(map->actors, actor_index));
     }
     list_delete(map->actors);
 
-    for (size_t i = 0; i < map->objects->size; i++)
+    for (size_t object_index = 0; object_index < map->objects->size; object_index++)
     {
-        object_delete(list_get(map->objects, i));
+        object_delete(list_get(map->objects, object_index));
     }
     list_delete(map->objects);
 
-    for (size_t i = 0; i < map->rooms->size; i++)
+    for (size_t room_index = 0; room_index < map->rooms->size; room_index++)
     {
-        room_delete(list_get(map->rooms, i));
+        room_delete(list_get(map->rooms, room_index));
     }
     list_delete(map->rooms);
 
@@ -228,7 +228,7 @@ void map_generate(struct map *const map, TCOD_Random *random)
     const int room_buffer = TCOD_random_get_int(random, MIN_ROOM_BUFFER, MAX_ROOM_BUFFER);
     const float prevent_overlap_chance = TCOD_random_get_float(random, MIN_PREVENT_OVERLAP_CHANCE, MAX_PREVENT_OVERLAP_CHANCE);
 
-    for (size_t i = 0; i < num_room_attempts; i++)
+    for (size_t room_attempt = 0; room_attempt < num_room_attempts; room_attempt++)
     {
         const int room_x = TCOD_random_get_int(random, 0, MAP_WIDTH);
         const int room_y = TCOD_random_get_int(random, 0, MAP_HEIGHT);
@@ -276,16 +276,16 @@ void map_generate(struct map *const map, TCOD_Random *random)
             room_new(room_x, room_y, room_w, room_h));
     }
 
-    for (size_t i = 0; i < map->rooms->size - 1; i++)
+    for (size_t room_index = 0; room_index < map->rooms->size - 1; room_index++)
     {
         int x1, y1;
         room_get_random_pos(
-            list_get(map->rooms, i),
+            list_get(map->rooms, room_index),
             &x1, &y1);
 
         int x2, y2;
         room_get_random_pos(
-            list_get(map->rooms, i + 1),
+            list_get(map->rooms, room_index + 1),
             &x2, &y2);
 
         if (TCOD_random_get_int(random, 0, 1) == 0)
@@ -629,7 +629,7 @@ void map_generate(struct map *const map, TCOD_Random *random)
                     {
                         const struct monster_data *const monster_data = &monster_database[monster_type];
 
-                        for (size_t i = 0; i < count; i++)
+                        for (size_t current_monster = 0; current_monster < count; current_monster++)
                         {
                             int x, y;
                             do

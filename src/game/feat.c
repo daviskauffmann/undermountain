@@ -16,9 +16,26 @@ const struct feat_data feat_database[] = {
         .name = "Armor Proficiency: Heavy",
         .description = "A character with this feat can equip heavy armor.",
     },
+    [FEAT_CLEAVE] = {
+        .name = "Cleave",
+        .description = "A character with this feat can make an additional attack of opportunity after a successful melee attack.",
+
+        .prerequisites = {
+            .ability_scores = {
+                [ABILITY_STRENGTH] = 13,
+            },
+            .feats = {
+                [FEAT_POWER_ATTACK] = true,
+            },
+        },
+    },
     [FEAT_COMBAT_CASTING] = {
         .name = "Combat Casting",
         .description = "A character with this feat gets a +4 bonus on concentration checks made to cast a spell or use a spell-like ability when on the defensive or while grappling or pinned.",
+    },
+    [FEAT_COMBAT_REFLEXES] = {
+        .name = "Combat Reflexes",
+        .description = "A character with this feat can make a number of additional attacks of opportunity equal to his dexterity modifier.",
     },
     [FEAT_DODGE] = {
         .name = "Dodge",

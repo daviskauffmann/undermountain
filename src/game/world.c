@@ -139,7 +139,7 @@ void world_save(FILE *const file)
     fwrite(&world->spawned_unique_item_types->size, sizeof(world->spawned_unique_item_types->size), 1, file);
     for (size_t spawned_unique_item_type_index = 0; spawned_unique_item_type_index < world->spawned_unique_item_types->size; spawned_unique_item_type_index++)
     {
-        const enum item_type type = (size_t)list_get(world->spawned_unique_item_types, spawned_unique_item_type_index);
+        const enum item_type type = (uintptr_t)list_get(world->spawned_unique_item_types, spawned_unique_item_type_index);
 
         fwrite(&type, sizeof(type), 1, file);
     }
@@ -463,7 +463,7 @@ void world_load(FILE *const file)
 
         size_t num_objects;
         fread(&num_objects, sizeof(num_objects), 1, file);
-        for (size_t i = 0; i < num_objects; i++)
+        for (size_t object_index = 0; object_index < num_objects; object_index++)
         {
             struct object *const object = malloc(sizeof(*object));
 
@@ -651,7 +651,7 @@ void world_load(FILE *const file)
 
         size_t num_items;
         fread(&num_items, sizeof(num_items), 1, file);
-        for (size_t i = 0; i < num_items; i++)
+        for (size_t item_index = 0; item_index < num_items; item_index++)
         {
             struct item *const item = malloc(sizeof(*item));
 
@@ -1068,6 +1068,7 @@ void world_update(float delta_time)
 
         // get the current actor and figure out their turn(s), as long as they have energy
         struct actor *const actor = list_get(map->actors, map->current_actor_index);
+
         if (actor_can_take_turn(actor))
         {
             // have we reached an actor that requires player input?
@@ -1083,11 +1084,14 @@ void world_update(float delta_time)
                 {
                     // slow down the AI if the hero is dead
                     static float timer = 0;
+
                     timer += delta_time;
+
                     if (timer < 1)
                     {
                         break;
                     }
+
                     timer = 0;
                 }
 

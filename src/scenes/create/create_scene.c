@@ -116,7 +116,29 @@ static bool feat_is_available(enum feat feat)
         }
     }
 
+    for (enum feat _feat = FEAT_NONE + 1; _feat < NUM_FEATS; _feat++)
+    {
+        if (prerequisites->feats[_feat] &&
+            !feats[_feat])
+        {
+            return false;
+        }
+    }
+
     return true;
+}
+
+static void recalculate_available_feats(void)
+{
+    list_clear(available_feats);
+
+    for (enum feat feat = FEAT_NONE + 1; feat < NUM_FEATS; feat++)
+    {
+        if (feat_is_available(feat))
+        {
+            list_add(available_feats, (void *)(long long)feat);
+        }
+    }
 }
 
 static void reset_feats(void)
@@ -138,14 +160,7 @@ static void reset_feats(void)
         remaining_feats++;
     }
 
-    list_clear(available_feats);
-    for (enum feat feat = FEAT_NONE + 1; feat < NUM_FEATS; feat++)
-    {
-        if (feat_is_available(feat))
-        {
-            list_add(available_feats, (void *)(long long)feat);
-        }
-    }
+    recalculate_available_feats();
 }
 
 static void init(const struct scene *const previous_scene)
@@ -332,7 +347,7 @@ static struct scene *handle_event(const SDL_Event *const event)
 
                 if (event->key.keysym.sym == SDLK_x)
                 {
-                    const enum feat selected_feat = (enum feat)(long long)list_get(available_feats, selected_feat_index);
+                    const enum feat selected_feat = (enum feat)(uintptr_t)list_get(available_feats, selected_feat_index);
 
                     if (!race_database[selected_race].feats[selected_feat] &&
                         class_database[selected_class].feat_progression[selected_feat] == 0)
@@ -341,11 +356,13 @@ static struct scene *handle_event(const SDL_Event *const event)
                         {
                             feats[selected_feat] = false;
                             remaining_feats++;
+                            recalculate_available_feats();
                         }
                         else if (remaining_feats > 0)
                         {
                             feats[selected_feat] = true;
                             remaining_feats--;
+                            recalculate_available_feats();
                         }
                     }
                 }
@@ -927,11 +944,11 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
 
         int y = 2;
 
-        const enum feat selected_feat = (enum feat)(long long)list_get(available_feats, selected_feat_index);
+        const enum feat selected_feat = (enum feat)(uintptr_t)list_get(available_feats, selected_feat_index);
 
         for (size_t available_feat_index = 0; available_feat_index < available_feats->size; available_feat_index++)
         {
-            const enum feat feat = (enum feat)(long long)list_get(available_feats, available_feat_index);
+            const enum feat feat = (enum feat)(uintptr_t)list_get(available_feats, available_feat_index);
 
             const char *text = "[ ] %s";
 

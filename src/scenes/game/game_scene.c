@@ -288,8 +288,6 @@ static bool do_spellbook_action(const enum spell_type spell_type)
             color_purple,
             "%s readied.",
             spell_database[spell_type].name);
-
-        took_turn = true;
     }
     break;
     }
@@ -375,7 +373,7 @@ static bool player_swing(const enum direction direction)
         {
             whiff = false;
 
-            if (actor_attack(world->player, tile->actor))
+            if (actor_attack(world->player, tile->actor, false, NULL))
             {
                 return true;
             }

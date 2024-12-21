@@ -79,15 +79,14 @@ void surface_update_light(struct surface *const surface)
         surface->light_fov = NULL;
     }
 
-    const struct surface_data *const surface_data = &surface_database[surface->type];
-    const struct light_data *const light_data = &light_database[surface_data->light_type];
+    const int radius = light_database[surface_database[surface->type].light_type].radius;
 
-    if (light_data->radius >= 0)
+    if (radius >= 0)
     {
         surface->light_fov = map_to_fov_map(
             &world->maps[surface->floor],
             surface->x,
             surface->y,
-            light_data->radius);
+            radius);
     }
 }

@@ -147,7 +147,7 @@ int actor_get_saving_throw(const struct actor *actor, enum saving_throw saving_t
 int actor_get_armor_class(const struct actor *actor);
 
 int actor_get_attacks_per_round(const struct actor *actor);
-int actor_get_secondary_attack_penalty(const struct actor *actor);
+int actor_get_successive_attack_penalty(const struct actor *actor);
 int actor_get_base_attack_bonus(const struct actor *actor);
 int actor_get_attack_bonus(const struct actor *actor);
 int actor_get_ranged_attack_penalty(const struct actor *actor, const struct actor *other);
@@ -183,6 +183,9 @@ bool actor_has_ranged_weapon(const struct actor *actor);
 struct item *actor_find_ranged_weapon(const struct actor *actor);
 bool actor_has_ammunition(const struct actor *actor, const struct item *weapon);
 struct item *actor_find_ammunition(const struct actor *actor, const struct item *weapon);
+
+bool actor_can_make_attack_of_opportunity(const struct actor *actor, const struct actor *other);
+void actor_provoke_attack_of_opportunity(struct actor *actor, struct list **damages);
 
 bool actor_ai(struct actor *actor);
 bool actor_rest(struct actor *actor);
@@ -238,7 +241,7 @@ bool actor_bash(struct actor *actor, struct object *object);
 bool actor_shoot(
     struct actor *actor,
     int x, int y);
-bool actor_attack(struct actor *actor, struct actor *other);
+bool actor_attack(struct actor *actor, struct actor *other, bool opportunity, int *damage_dealt);
 bool actor_cast(
     struct actor *actor,
     enum spell_type spell_type,

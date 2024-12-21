@@ -158,26 +158,32 @@ void actor_give_experience(struct actor *const actor, const int experience)
 {
     actor->experience += experience;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_azure,
-        "%s gains %d experience.",
-        actor->name,
-        experience);
+    if (actor == world->player)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            color_azure,
+            "%s gains %d experience.",
+            actor->name,
+            experience);
+    }
 
     while (actor->experience >= actor_get_experience_for_level(actor->level + 1))
     {
         actor_level_up(actor);
 
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_yellow,
-            "%s has gained a level!",
-            actor->name);
+        if (actor == world->player)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_yellow,
+                "%s has gained a level!",
+                actor->name);
+        }
     }
 }
 
@@ -361,6 +367,15 @@ bool actor_has_prerequisites_for_feat(const struct actor *actor, const enum feat
     {
         if (prerequisites->ability_scores[ability] > 0 &&
             actor->ability_scores[ability] < prerequisites->ability_scores[ability])
+        {
+            return false;
+        }
+    }
+
+    for (enum feat _feat = FEAT_NONE + 1; _feat < NUM_FEATS; _feat++)
+    {
+        if (prerequisites->feats[_feat] &&
+            !actor_feats.has[_feat])
         {
             return false;
         }
@@ -623,7 +638,7 @@ int actor_get_attacks_per_round(const struct actor *const actor)
     return attacks_per_round;
 }
 
-int actor_get_secondary_attack_penalty(const struct actor *const actor)
+int actor_get_successive_attack_penalty(const struct actor *const actor)
 {
     const struct actor_feats actor_feats = actor_get_feats(actor);
 
@@ -1143,7 +1158,7 @@ void actor_update_fov(struct actor *const actor)
 
 bool actor_can_take_turn(const struct actor *const actor)
 {
-    return actor->energy >= 1 && !actor->dead;
+    return !world->doomed && actor->energy >= 1 && !actor->dead;
 }
 
 bool actor_is_enemy(const struct actor *const actor, const struct actor *const other)
@@ -1406,6 +1421,47 @@ struct item *actor_find_ammunition(const struct actor *const actor, const struct
     return NULL;
 }
 
+bool actor_can_make_attack_of_opportunity(const struct actor *const actor, const struct actor *const other)
+{
+    return actor_is_enemy(actor, other) &&
+           !actor_has_ranged_weapon(actor) &&
+           distance_between(actor->x, actor->y, other->x, other->y) < 2;
+}
+
+void actor_provoke_attack_of_opportunity(struct actor *actor, struct list **const damages)
+{
+    const struct map *const map = &world->maps[actor->floor];
+
+    for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+    {
+        struct actor *const other = list_get(map->actors, actor_index);
+
+        if (actor_can_make_attack_of_opportunity(other, actor))
+        {
+            if (damages)
+            {
+                int damage = 0;
+
+                actor_attack(other, actor, true, &damage);
+
+                if (damage > 0)
+                {
+                    list_add(*damages, (void *)(intptr_t)damage);
+                }
+            }
+            else
+            {
+                actor_attack(other, actor, true, NULL);
+            }
+
+            if (actor->dead)
+            {
+                break;
+            }
+        }
+    }
+}
+
 bool actor_ai(struct actor *const actor)
 {
     const struct map *const map = &world->maps[actor->floor];
@@ -1541,7 +1597,7 @@ bool actor_ai(struct actor *const actor)
             }
 
             // enemy is in melee range, so melee attack
-            if (actor_attack(actor, nearest_enemy))
+            if (actor_attack(actor, nearest_enemy, false, NULL))
             {
                 return true;
             }
@@ -1698,6 +1754,7 @@ bool actor_ai(struct actor *const actor)
     {
         const int x = actor->x + TCOD_random_get_int(NULL, -1, 1);
         const int y = actor->y + TCOD_random_get_int(NULL, -1, 1);
+
         actor_move(actor, x, y);
 
         return true;
@@ -1920,8 +1977,19 @@ bool actor_move(
             }
             else
             {
-                return actor_attack(actor, tile->actor);
+                return actor_attack(actor, tile->actor, false, NULL);
             }
+        }
+    }
+
+    for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
+    {
+        struct actor *const other = list_get(map->actors, actor_index);
+
+        if (actor_can_make_attack_of_opportunity(other, actor) &&
+            distance_between(x, y, other->x, other->y) >= 2)
+        {
+            actor_attack(other, actor, false, NULL);
         }
     }
 
@@ -3061,7 +3129,7 @@ bool actor_shoot(
     return true;
 }
 
-bool actor_attack(struct actor *const actor, struct actor *const other)
+bool actor_attack(struct actor *const actor, struct actor *const other, const bool opportunity, int *const damage_dealt)
 {
     // remember the target
     actor->last_attacked_target = other;
@@ -3069,11 +3137,16 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
     // calculate other armor class
     const int armor_class = actor_get_armor_class(other);
 
-    // calculate number of attacks
-    const int attacks_per_round = actor_get_attacks_per_round(actor);
-
     // calculate feats
     const struct actor_feats actor_feats = actor_get_feats(actor);
+
+    // calculate number of attacks
+    const int attacks_per_round =
+        opportunity
+            ? actor_feats.has[FEAT_COMBAT_REFLEXES]
+                  ? actor_get_ability_modifer(actor, ABILITY_DEXTERITY)
+                  : 1
+            : actor_get_attacks_per_round(actor);
 
     for (int attack = 0; attack < attacks_per_round; attack++)
     {
@@ -3081,7 +3154,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         const int attack_roll = TCOD_random_dice_roll_s(NULL, "1d20");
         const int attack_bonus = actor_get_attack_bonus(actor);
         const int ranged_attack_penalty = actor_get_ranged_attack_penalty(actor, other);
-        const int successive_attack_penalty = attack * actor_get_secondary_attack_penalty(actor);
+        const int successive_attack_penalty = attack * actor_get_successive_attack_penalty(actor);
         const int hit_challenge = attack_roll + attack_bonus - ranged_attack_penalty - successive_attack_penalty;
 
         if (attack_roll == 1 ||
@@ -3098,6 +3171,11 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
                 "%s misses %s.",
                 actor->name,
                 other->name);
+
+            if (damage_dealt)
+            {
+                *damage_dealt = 0;
+            }
 
             return true;
         }
@@ -3126,7 +3204,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
 
         int damage = 0;
 
-        for (size_t i = 0; i < num_attack_rolls; i++)
+        for (size_t current_roll = 0; current_roll < num_attack_rolls; current_roll++)
         {
             const int weapon_damage = TCOD_random_dice_roll_s(NULL, damage_die);
 
@@ -3140,7 +3218,7 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         {
             sneak_attack = true;
 
-            for (size_t i = 0; i < actor->level / 2; i++)
+            for (size_t current_roll = 0; current_roll < actor->level / 2; current_roll++)
             {
                 damage += TCOD_random_dice_roll_s(NULL, "1d6");
             }
@@ -3172,11 +3250,12 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
             actor->x,
             actor->y,
             crit ? color_light_red : color_white,
-            "%s %s %s for %d%s.",
+            "%s %s %s for %d%s%s.",
             actor->name,
             crit ? "crits" : "hits",
             other->name,
             damage,
+            opportunity ? " (opportunity)" : "",
             sneak_attack ? " (sneak)" : "");
 
         // weapon breakage
@@ -3206,8 +3285,38 @@ bool actor_attack(struct actor *const actor, struct actor *const other)
         // deal damage
         const bool killed = actor_damage_hit_points(other, actor, damage);
 
-        if (weapon_broken || killed)
+        if (damage_dealt)
         {
+            *damage_dealt += damage;
+        }
+
+        if (weapon_broken)
+        {
+            break;
+        }
+
+        if (killed)
+        {
+            // TODO: this currently acts like great cleave, need to limit to only 1 attack per turn
+            if (actor_feats.has[FEAT_CLEAVE])
+            {
+                const struct map *const map = &world->maps[actor->floor];
+
+                for (int actor_index = 0; actor_index < map->actors->size; actor_index++)
+                {
+                    struct actor *const target = list_get(map->actors, actor_index);
+
+                    if (target != other &&
+                        actor_is_enemy(actor, target) &&
+                        distance_between(actor->x, actor->y, target->x, target->y) < 2)
+                    {
+                        actor_attack(actor, target, false, NULL);
+
+                        break;
+                    }
+                }
+            }
+
             break;
         }
     }
@@ -3278,6 +3387,57 @@ bool actor_cast(
             return false;
         }
 
+        // provoke attack of opportunity and check concentration
+        bool interrupted = false;
+        struct list *damages = list_new();
+
+        actor_provoke_attack_of_opportunity(actor, &damages);
+
+        if (damages->size)
+        {
+            const struct actor_feats actor_feats = actor_get_feats(actor);
+
+            for (size_t damage_index = 0; damage_index < damages->size; damage_index++)
+            {
+                const int damage = (int)(intptr_t)list_get(damages, damage_index);
+                const int concentration_check = 10 + damage;
+                const int concentration_roll =
+                    TCOD_random_dice_roll_s(NULL, "1d20") +
+                    actor_get_ability_modifer(actor, ABILITY_CONSTITUTION) +
+                    (actor_feats.has[FEAT_COMBAT_CASTING] ? 4 : 0);
+
+                if (concentration_roll < concentration_check)
+                {
+                    interrupted = true;
+
+                    break;
+                }
+            }
+        }
+
+        list_delete(damages);
+
+        if (actor->dead)
+        {
+            return false;
+        }
+
+        if (interrupted)
+        {
+            world_log(
+                actor->floor,
+                actor->x,
+                actor->y,
+                color_red,
+                "%s's spell is interrupted.",
+                actor->name,
+                spell_data->name);
+
+            actor->mana -= mana_cost;
+
+            return true;
+        }
+
         // arcane spell failure
         const float arcane_spell_failure = actor_get_arcane_spell_failure(actor);
 
@@ -3291,15 +3451,12 @@ bool actor_cast(
                     actor->floor,
                     actor->x,
                     actor->y,
-                    color_white,
+                    color_red,
                     "%s's spell fizzles.",
                     actor->name,
                     spell_data->name);
 
-                if (from_memory)
-                {
-                    actor->mana -= mana_cost;
-                }
+                actor->mana -= mana_cost;
 
                 return true;
             }

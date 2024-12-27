@@ -173,17 +173,6 @@ void actor_give_experience(struct actor *const actor, const int experience)
     while (actor->experience >= actor_get_experience_for_level(actor->level + 1))
     {
         actor_level_up(actor);
-
-        if (actor == world->player)
-        {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_yellow,
-                "%s has gained a level!",
-                actor->name);
-        }
     }
 }
 
@@ -206,6 +195,17 @@ void actor_level_up(struct actor *const actor)
     if (actor->mana <= 0)
     {
         actor->mana = 0;
+    }
+
+    if (actor == world->player)
+    {
+        world_log(
+            actor->floor,
+            actor->x,
+            actor->y,
+            color_yellow,
+            "%s has gained a level!",
+            actor->name);
     }
 }
 
@@ -699,6 +699,7 @@ int actor_get_attack_bonus(const struct actor *const actor)
             }
         }
 
+        // TODO: implement weapon specific focuses
         if (actor_feats.has[FEAT_WEAPON_FOCUS])
         {
             attack_bonus += 1;
@@ -2690,16 +2691,12 @@ bool actor_equip(struct actor *const actor, struct item *const item)
         actor_unequip(actor, base_item_data->equip_slot);
     }
 
-    // if the item being equipped is two handed weapon, also unequip the shield
-    if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON)
+    // if the item being equipped is two handed weapon, also unequip the shield if equipped
+    if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON &&
+        equippability == EQUIPPABILITY_BARELY &&
+        actor->equipment[EQUIP_SLOT_SHIELD])
     {
-        if (equippability == EQUIPPABILITY_BARELY)
-        {
-            if (actor->equipment[EQUIP_SLOT_SHIELD])
-            {
-                actor_unequip(actor, EQUIP_SLOT_SHIELD);
-            }
-        }
+        actor_unequip(actor, EQUIP_SLOT_SHIELD);
     }
 
     // if the item being equipped is a shield and the equipped main hand is two handed, also unequip the main hand

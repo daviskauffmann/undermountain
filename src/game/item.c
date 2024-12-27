@@ -460,6 +460,13 @@ struct item *item_new(
 
     if (item_database[type].unique)
     {
+        if (list_contains(world->spawned_unique_item_types, (void *)(size_t)type))
+        {
+            item_delete(item);
+
+            return NULL;
+        }
+
         list_add(world->spawned_unique_item_types, (void *)(size_t)type);
     }
 

@@ -1,7 +1,7 @@
 #include "config.h"
 #include "scene.h"
 #include "scenes/menu/menu_scene.h"
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 #include <libtcod.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         .tcod_version = TCOD_COMPILEDVERSION,
         .console = console,
         .window_title = TITLE,
-        .sdl_window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP,
+        .sdl_window_flags = SDL_WINDOW_FULLSCREEN,
         .renderer_type = TCOD_RENDERER_SDL2,
         .tileset = tileset,
         .vsync = true,
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     while (scene)
     {
         const uint64_t previous_time = current_time;
-        current_time = SDL_GetTicks64();
+        current_time = SDL_GetTicks();
         const float delta_time = (current_time - previous_time) / 1000.0f;
 
         SDL_Event event;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
             switch (event.type)
             {
-            case SDL_QUIT:
+            case SDL_EVENT_QUIT:
             {
                 if (scene)
                 {

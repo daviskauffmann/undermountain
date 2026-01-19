@@ -456,7 +456,7 @@ struct item *item_new(
     item->x = x;
     item->y = y;
 
-    item->stack = CLAMP(0, base_item_database[item_database[type].type].max_stack, stack);
+    item->stack = SDL_clamp(0, base_item_database[item_database[type].type].max_stack, stack);
 
     if (item_database[type].unique)
     {

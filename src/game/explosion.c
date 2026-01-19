@@ -104,7 +104,7 @@ struct explosion *explosion_new(
                         tile->actor != initiator)
                     {
                         TCOD_dice_t dice = TCOD_random_dice_new("1d6");
-                        dice.nb_rolls = MIN(explosion->caster_level, 10);
+                        dice.nb_rolls = SDL_min(explosion->caster_level, 10);
 
                         const int damage = TCOD_random_dice_roll(NULL, dice);
 

@@ -193,9 +193,9 @@ static struct scene *handle_event(const SDL_Event *const event)
 {
     switch (event->type)
     {
-    case SDL_KEYDOWN:
+    case SDL_EVENT_KEY_DOWN:
     {
-        switch (event->key.keysym.sym)
+        switch (event->key.key)
         {
         case SDLK_BACKSPACE:
         {
@@ -286,34 +286,34 @@ static struct scene *handle_event(const SDL_Event *const event)
             }
         }
         break;
-        case SDLK_a:
-        case SDLK_b:
-        case SDLK_c:
-        case SDLK_d:
-        case SDLK_e:
-        case SDLK_f:
-        case SDLK_g:
-        case SDLK_h:
-        case SDLK_i:
-        case SDLK_j:
-        case SDLK_k:
-        case SDLK_l:
-        case SDLK_m:
-        case SDLK_n:
-        case SDLK_o:
-        case SDLK_p:
-        case SDLK_q:
-        case SDLK_r:
-        case SDLK_s:
-        case SDLK_t:
-        case SDLK_u:
-        case SDLK_v:
-        case SDLK_w:
-        case SDLK_x:
-        case SDLK_y:
-        case SDLK_z:
+        case SDLK_A:
+        case SDLK_B:
+        case SDLK_C:
+        case SDLK_D:
+        case SDLK_E:
+        case SDLK_F:
+        case SDLK_G:
+        case SDLK_H:
+        case SDLK_I:
+        case SDLK_J:
+        case SDLK_K:
+        case SDLK_L:
+        case SDLK_M:
+        case SDLK_N:
+        case SDLK_O:
+        case SDLK_P:
+        case SDLK_Q:
+        case SDLK_R:
+        case SDLK_S:
+        case SDLK_T:
+        case SDLK_U:
+        case SDLK_V:
+        case SDLK_W:
+        case SDLK_X:
+        case SDLK_Y:
+        case SDLK_Z:
         {
-            const int alpha = event->key.keysym.sym - SDLK_a;
+            const int alpha = event->key.key - SDLK_A;
 
             switch (state)
             {
@@ -323,7 +323,7 @@ static struct scene *handle_event(const SDL_Event *const event)
 
                 if (length < sizeof(name) - 1)
                 {
-                    name[length] = (char)(alpha + (event->key.keysym.mod & KMOD_SHIFT ? 'A' : 'a'));
+                    name[length] = (char)(alpha + (event->key.mod & SDL_KMOD_SHIFT ? 'A' : 'a'));
                     name[length + 1] = '\0';
 
                     default_name_modified = true;
@@ -332,7 +332,7 @@ static struct scene *handle_event(const SDL_Event *const event)
             break;
             case STATE_ABILITY_SCORES:
             {
-                if (event->key.keysym.sym == SDLK_r)
+                if (event->key.key == SDLK_R)
                 {
                     set_default_ability_scores();
                 }
@@ -340,12 +340,12 @@ static struct scene *handle_event(const SDL_Event *const event)
             break;
             case STATE_FEATS:
             {
-                if (event->key.keysym.sym == SDLK_r)
+                if (event->key.key == SDLK_R)
                 {
                     reset_feats();
                 }
 
-                if (event->key.keysym.sym == SDLK_x)
+                if (event->key.key == SDLK_X)
                 {
                     const enum feat selected_feat = (enum feat)(uintptr_t)list_get(available_feats, selected_feat_index);
 

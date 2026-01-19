@@ -10,6 +10,7 @@
 #include "../game/game_scene.h"
 #include "option.h"
 #include <libtcod.h>
+#include <stdio.h>
 
 static struct option_data option_data[NUM_OPTIONS];
 
@@ -35,9 +36,9 @@ static struct scene *handle_event(const SDL_Event *const event)
 {
     switch (event->type)
     {
-    case SDL_KEYDOWN:
+    case SDL_EVENT_KEY_DOWN:
     {
-        switch (event->key.keysym.sym)
+        switch (event->key.key)
         {
         case SDLK_RETURN:
         {

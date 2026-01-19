@@ -411,7 +411,7 @@ static bool player_interact(const SDL_Event *const event, const enum direction d
         return do_directional_action(direction);
     }
 
-    if (event->key.keysym.mod & KMOD_CTRL)
+    if (event->key.mod & SDL_KMOD_CTRL)
     {
         return player_swing(direction);
     }
@@ -438,16 +438,16 @@ struct scene *handle_event(const SDL_Event *event)
 
     switch (event->type)
     {
-    case SDL_KEYDOWN:
+    case SDL_EVENT_KEY_DOWN:
     {
         // determine if player is selecting something in a list
         // if so, don't process any other keyboard input
-        if (event->key.keysym.sym >= SDLK_a && event->key.keysym.sym <= SDLK_z &&
+        if (event->key.key >= SDLK_A && event->key.key <= SDLK_Z &&
             (inventory_action != INVENTORY_ACTION_NONE ||
              character_action != CHARACTER_ACTION_NONE ||
              spellbook_action != SPELLBOOK_ACTION_NONE))
         {
-            const int alpha = event->key.keysym.sym - SDLK_a;
+            const int alpha = event->key.key - SDLK_A;
 
             if (inventory_action != INVENTORY_ACTION_NONE &&
                 alpha >= 0 && alpha < world->player->items->size)
@@ -502,7 +502,7 @@ struct scene *handle_event(const SDL_Event *event)
             break;
         }
 
-        switch (event->key.keysym.sym)
+        switch (event->key.key)
         {
         case SDLK_ESCAPE:
         {
@@ -536,7 +536,7 @@ struct scene *handle_event(const SDL_Event *event)
         break;
         case SDLK_COMMA:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 world->player->took_turn = world_can_player_take_turn() && actor_ascend(world->player);
             }
@@ -544,7 +544,7 @@ struct scene *handle_event(const SDL_Event *event)
         break;
         case SDLK_PERIOD:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 world->player->took_turn = world_can_player_take_turn() && actor_descend(world->player);
             }
@@ -552,26 +552,26 @@ struct scene *handle_event(const SDL_Event *event)
         break;
         case SDLK_SLASH:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 show_panel(PANEL_HELP);
             }
         }
         break;
-        case SDLK_a:
+        case SDLK_A:
         {
             show_panel(PANEL_CHARACTER);
             character_action = CHARACTER_ACTION_ABILITY_SPEND_POINT;
         }
         break;
-        case SDLK_b:
+        case SDLK_B:
         {
             toggle_panel(PANEL_SPELLBOOK);
         }
         break;
-        case SDLK_c:
+        case SDLK_C:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 toggle_panel(PANEL_CHARACTER);
             }
@@ -581,9 +581,9 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
-        case SDLK_d:
+        case SDLK_D:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 toggle_panel(PANEL_CHARACTER);
                 directional_action = DIRECTIONAL_ACTION_DIP;
@@ -595,13 +595,13 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
-        case SDLK_e:
+        case SDLK_E:
         {
             show_panel(PANEL_INVENTORY);
             inventory_action = INVENTORY_ACTION_EQUIP;
         }
         break;
-        case SDLK_f:
+        case SDLK_F:
         {
             if (targeting_action == TARGETING_ACTION_SHOOT)
             {
@@ -628,29 +628,29 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
-        case SDLK_g:
+        case SDLK_G:
         {
             world->player->took_turn = world_can_player_take_turn() && actor_grab(world->player, world->player->x, world->player->y);
         }
         break;
-        case SDLK_h:
+        case SDLK_H:
         {
             hud_rect.visible = !hud_rect.visible;
         }
         break;
-        case SDLK_i:
+        case SDLK_I:
         {
             toggle_panel(PANEL_INVENTORY);
         }
         break;
-        case SDLK_k:
+        case SDLK_K:
         {
             actor_die(world->player, NULL);
         }
         break;
-        case SDLK_l:
+        case SDLK_L:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 show_panel(PANEL_INVENTORY);
                 inventory_action = INVENTORY_ACTION_LEARN;
@@ -670,20 +670,20 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
-        case SDLK_o:
+        case SDLK_O:
         {
             directional_action = DIRECTIONAL_ACTION_OPEN_DOOR;
         }
         break;
-        case SDLK_q:
+        case SDLK_Q:
         {
             show_panel(PANEL_INVENTORY);
             inventory_action = INVENTORY_ACTION_QUAFF;
         }
         break;
-        case SDLK_r:
+        case SDLK_R:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 world->player->took_turn = world_can_player_take_turn() && actor_rest(world->player);
             }
@@ -709,9 +709,9 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
-        case SDLK_t:
+        case SDLK_T:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 if (world_can_player_take_turn())
                 {
@@ -745,22 +745,22 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
-        case SDLK_u:
+        case SDLK_U:
         {
             show_panel(PANEL_CHARACTER);
             character_action = CHARACTER_ACTION_EQUIPMENT_UNEQUIP;
         }
         break;
-        case SDLK_x:
+        case SDLK_X:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 show_panel(PANEL_INVENTORY);
                 inventory_action = INVENTORY_ACTION_EXAMINE;
             }
             else
             {
-                if (event->key.keysym.mod & KMOD_CTRL)
+                if (event->key.mod & SDL_KMOD_CTRL)
                 {
                     show_panel(PANEL_CHARACTER);
                     character_action = CHARACTER_ACTION_EQUIPMENT_EXAMINE;
@@ -782,9 +782,9 @@ struct scene *handle_event(const SDL_Event *event)
             }
         }
         break;
-        case SDLK_z:
+        case SDLK_Z:
         {
-            if (event->key.keysym.mod & KMOD_SHIFT)
+            if (event->key.mod & SDL_KMOD_SHIFT)
             {
                 show_panel(PANEL_SPELLBOOK);
                 spellbook_action = SPELLBOOK_ACTION_READY;
@@ -1159,7 +1159,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 const float distance_sq =
                                     powf((float)(x - object->x + (light_data->flicker ? dx : 0)), 2) +
                                     powf((float)(y - object->y + (light_data->flicker ? dy : 0)), 2);
-                                const float attenuation = CLAMP(
+                                const float attenuation = SDL_clamp(
                                     0.0f,
                                     1.0f,
                                     (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
@@ -1190,7 +1190,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 const float distance_sq =
                                     powf((float)(x - actor->x + (light_data->flicker ? dx : 0)), 2) +
                                     powf((float)(y - actor->y + (light_data->flicker ? dy : 0)), 2);
-                                const float attenuation = CLAMP(
+                                const float attenuation = SDL_clamp(
                                     0.0f,
                                     1.0f,
                                     (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
@@ -1218,7 +1218,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 const float distance_sq =
                                     powf((float)(x - projectile->x + (light_data->flicker ? dx : 0)), 2) +
                                     powf((float)(y - projectile->y + (light_data->flicker ? dy : 0)), 2);
-                                const float attenuation = CLAMP(
+                                const float attenuation = SDL_clamp(
                                     0.0f,
                                     1.0f,
                                     (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
@@ -1244,7 +1244,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 const float distance_sq =
                                     powf((float)(x - explosion->x + dx * 2), 2) +
                                     powf((float)(y - explosion->y + dy * 2), 2);
-                                const float attenuation = CLAMP(
+                                const float attenuation = SDL_clamp(
                                     0.0f,
                                     1.0f,
                                     (radius_sq - distance_sq) / radius_sq + di * 2);
@@ -1272,7 +1272,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                                 const float distance_sq =
                                     powf((float)(x - surface->x + (light_data->flicker ? dx : 0)), 2) +
                                     powf((float)(y - surface->y + (light_data->flicker ? dy : 0)), 2);
-                                const float attenuation = CLAMP(
+                                const float attenuation = SDL_clamp(
                                     0.0f,
                                     1.0f,
                                     (radius_sq - distance_sq) / radius_sq + (light_data->flicker ? di : 0));
@@ -1291,7 +1291,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                     const struct tile *const tile = &map->tiles[x][y];
                     const struct tile_data *const tile_data = &tile_database[tile->type];
 
-                    const float fg_max = MAX(fg_r, MAX(fg_g, fg_b));
+                    const float fg_max = SDL_max(fg_r, SDL_max(fg_g, fg_b));
                     const float fg_mult = fg_max > 255 ? 255 / fg_max : 1;
                     TCOD_ColorRGB fg_color = TCOD_color_multiply(
                         TCOD_color_RGB(
@@ -1299,7 +1299,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             (uint8_t)(fg_g * fg_mult),
                             (uint8_t)(fg_b * fg_mult)),
                         tile_data->color);
-                    const float bg_max = MAX(bg_r, MAX(bg_g, bg_b));
+                    const float bg_max = SDL_max(bg_r, SDL_max(bg_g, bg_b));
                     const float bg_mult = bg_max > 255 ? 255 / bg_max : 1;
                     const TCOD_ColorRGB bg_color = TCOD_color_multiply(
                         TCOD_color_RGB(
@@ -1999,7 +1999,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         "%c) %s",
-                        ability - 1 + SDLK_a,
+                        ability - 1 + SDLK_A,
                         ability_database[ability].name);
                 }
                 else
@@ -2048,7 +2048,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         "%c) %s",
-                        equip_slot + SDLK_a - 1,
+                        equip_slot + SDLK_A - 1,
                         equip_slot_data.name);
                 }
                 else
@@ -2374,7 +2374,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                         TCOD_BKGND_NONE,
                         TCOD_LEFT,
                         item->stack > 1 ? "%c) %s (%d)" : "%c) %s",
-                        y - 1 + SDLK_a - current_panel_status->scroll,
+                        y - 1 + SDLK_A - current_panel_status->scroll,
                         item_data->name,
                         item->stack);
                 }
@@ -2436,7 +2436,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
                             TCOD_BKGND_NONE,
                             TCOD_LEFT,
                             world->player->readied_spell == spell_type ? "%c) %s (readied)" : "%c) %s",
-                            y - 1 + SDLK_a - current_panel_status->scroll,
+                            y - 1 + SDLK_A - current_panel_status->scroll,
                             spell_data->name);
                     }
 

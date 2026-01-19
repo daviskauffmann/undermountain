@@ -3560,7 +3560,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(NULL, "1d8") + MIN(caster_level, 5);
+            const int health = TCOD_random_dice_roll_s(NULL, "1d8") + SDL_min(caster_level, 5);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3613,7 +3613,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(NULL, "2d8") + MIN(caster_level, 10);
+            const int health = TCOD_random_dice_roll_s(NULL, "2d8") + SDL_min(caster_level, 10);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3666,7 +3666,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(NULL, "3d8") + MIN(caster_level, 15);
+            const int health = TCOD_random_dice_roll_s(NULL, "3d8") + SDL_min(caster_level, 15);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3719,7 +3719,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(NULL, "4d8") + MIN(caster_level, 20);
+            const int health = TCOD_random_dice_roll_s(NULL, "4d8") + SDL_min(caster_level, 20);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -3779,7 +3779,7 @@ bool actor_cast(
         {
             // TODO: spread to nearby enemies
             TCOD_dice_t dice = TCOD_random_dice_new("1d6");
-            dice.nb_rolls = MIN(caster_level, 20);
+            dice.nb_rolls = SDL_min(caster_level, 20);
 
             const int damage = TCOD_random_dice_roll(NULL, dice);
 
@@ -4054,7 +4054,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(NULL, "1d8") + MIN(caster_level, 5);
+            const int health = TCOD_random_dice_roll_s(NULL, "1d8") + SDL_min(caster_level, 5);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -4112,7 +4112,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(NULL, "2d8") + MIN(caster_level, 10);
+            const int health = TCOD_random_dice_roll_s(NULL, "2d8") + SDL_min(caster_level, 10);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -4170,7 +4170,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(NULL, "3d8") + MIN(caster_level, 15);
+            const int health = TCOD_random_dice_roll_s(NULL, "3d8") + SDL_min(caster_level, 15);
 
             if (other->race == RACE_UNDEAD)
             {
@@ -4228,7 +4228,7 @@ bool actor_cast(
 
         if (other)
         {
-            const int health = TCOD_random_dice_roll_s(NULL, "4d8") + MIN(caster_level, 20);
+            const int health = TCOD_random_dice_roll_s(NULL, "4d8") + SDL_min(caster_level, 20);
 
             if (other->race == RACE_UNDEAD)
             {

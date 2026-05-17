@@ -23,7 +23,6 @@
 #include "../../print.h"
 #include "../../scene.h"
 #include "../../util.h"
-#include "../menu/menu_scene.h"
 #include "character_action.h"
 #include "direction.h"
 #include "directional_action.h"
@@ -38,6 +37,10 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <SDL3/SDL.h>
+
+int console_width = 80;
+int console_height = 24;
 
 // TODO: prompts
 
@@ -432,7 +435,7 @@ struct scene *handle_event(const SDL_Event *event)
         world->player = world->hero;
         if (!world->player)
         {
-            return &game_scene;
+            return &game_scene_old;
         }
     }
 
@@ -528,9 +531,8 @@ struct scene *handle_event(const SDL_Event *event)
             }
             else
             {
-                game_scene.uninit();
-                menu_scene.init(&game_scene);
-                return &menu_scene;
+                game_scene_old.uninit();
+                return NULL;
             }
         }
         break;
@@ -987,7 +989,7 @@ struct scene *handle_event(const SDL_Event *event)
     break;
     }
 
-    return &game_scene;
+    return &game_scene_old;
 }
 
 static int get_wall_glyph(const struct map *const map, const int x, const int y)
@@ -1039,7 +1041,7 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
         world->player = world->hero;
         if (!world->player)
         {
-            return &game_scene;
+            return &game_scene_old;
         }
     }
 
@@ -2649,11 +2651,8 @@ static struct scene *update(TCOD_Console *const console, const float delta_time)
             "Waiting...");
     }
 
-    return &game_scene;
+    return &game_scene_old;
 }
 
-struct scene game_scene =
-    {&init,
-     &uninit,
-     &handle_event,
-     &update};
+struct scene game_scene_old =
+    {};

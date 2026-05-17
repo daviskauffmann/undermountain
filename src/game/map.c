@@ -657,7 +657,7 @@ void map_generate(struct map *const map, TCOD_Random *random)
                             {
                                 const enum item_type item_type = monster_data->equipment[equip_slot].type;
 
-                                if (item_type != EQUIP_SLOT_NONE)
+                                if (item_type != ITEM_TYPE_NONE)
                                 {
                                     const int min_stack = monster_data->equipment[equip_slot].min_stack;
                                     const int max_stack = monster_data->equipment[equip_slot].max_stack;

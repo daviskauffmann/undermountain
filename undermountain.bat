@@ -1,1 +1,1 @@
-"build/Debug/undermountain"
+"build/undermountain"

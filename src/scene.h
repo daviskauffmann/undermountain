@@ -1,16 +1,11 @@
 #ifndef UM_SCENE_H
 #define UM_SCENE_H
 
-#include <SDL3/SDL.h>
-#include <libtcod.h>
-
 struct scene
 {
     void (*init)(const struct scene *previous_scene);
     void (*uninit)(void);
-
-    struct scene *(*handle_event)(const SDL_Event *event);
-    struct scene *(*update)(TCOD_Console *console, float delta_time);
+    struct scene *(*update)(float delta_time);
 };
 
 #endif

@@ -1,16 +1,14 @@
 #include "config.h"
+#include "menu.h"
 #include "scene.h"
-#include "scenes/menu/menu_scene.h"
-#include <SDL3/SDL.h>
-#include <libtcod.h>
+#include <curses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 int main(int argc, char *argv[])
 {
-    config_load();
-
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
@@ -27,107 +25,55 @@ int main(int argc, char *argv[])
             printf("%s\n", VERSION);
             return 0;
         }
-        if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--columns") == 0)
-        {
-            console_width = atoi(argv[i + 1]);
-        }
-        if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--rows") == 0)
-        {
-            console_height = atoi(argv[i + 1]);
-        }
     }
 
-    TCOD_Console *const console = TCOD_console_new(console_width, console_height);
-    if (!console)
+    const WINDOW *win = initscr();
+    if (!win)
     {
-        printf("Error: Couldn't initialize console: \n%s\n", TCOD_get_error());
+        printf("Error: Couldn't initialize pdcurses\n");
         return 1;
     }
 
-    TCOD_Tileset *const tileset = TCOD_tileset_load(
-        tileset_filename,
-        tileset_columns,
-        tileset_rows,
-        tileset_columns * tileset_rows,
-        tileset_charmap);
-    if (!tileset)
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    nodelay(stdscr, TRUE);
+    curs_set(0);
+
+    struct scene *current_scene = &menu_scene;
+    current_scene->init(NULL);
+
+    clock_t previous_time = clock();
+
+    while (current_scene)
     {
-        printf("Error: Couldn't load tileset: \n%s\n", TCOD_get_error());
-        return 1;
-    }
+        clock_t current_time = clock();
+        float delta_time = (float)(current_time - previous_time) / CLOCKS_PER_SEC;
+        previous_time = current_time;
 
-    const TCOD_ContextParams params = {
-        .tcod_version = TCOD_COMPILEDVERSION,
-        .console = console,
-        .window_title = TITLE,
-        .sdl_window_flags = SDL_WINDOW_FULLSCREEN,
-        .renderer_type = TCOD_RENDERER_SDL2,
-        .tileset = tileset,
-        .vsync = true,
-        .argc = argc,
-        .argv = argv,
-    };
-    TCOD_Context *context;
-    if (TCOD_context_new(&params, &context) != 0)
-    {
-        printf("Error: Couldn't initialize context: \n%s\n", TCOD_get_error());
-        return 1;
-    }
+        struct scene *next_scene = current_scene->update(delta_time);
 
-    struct scene *scene = &menu_scene;
-    scene->init(NULL);
-
-    uint64_t current_time = 0;
-
-    while (scene)
-    {
-        const uint64_t previous_time = current_time;
-        current_time = SDL_GetTicks();
-        const float delta_time = (current_time - previous_time) / 1000.0f;
-
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
+        if (!next_scene)
         {
-            TCOD_context_convert_event_coordinates(context, &event);
-
-            switch (event.type)
-            {
-            case SDL_EVENT_QUIT:
-            {
-                if (scene)
-                {
-                    scene->uninit();
-                }
-
-                scene = NULL;
-            }
             break;
-            }
-
-            if (scene)
-            {
-                scene = scene->handle_event(&event);
-            }
         }
 
-        TCOD_console_clear(console);
-
-        if (scene)
+        if (next_scene != current_scene)
         {
-            scene = scene->update(console, delta_time);
+            if (current_scene)
+            {
+                current_scene->uninit();
+            }
+
+            next_scene->init(current_scene);
+
+            current_scene = next_scene;
         }
 
-        TCOD_context_present(context, console, NULL);
+        napms(16);
     }
 
-    if (scene)
-    {
-        scene->uninit();
-    }
-
-    TCOD_tileset_delete(tileset);
-    TCOD_console_delete(console);
-    TCOD_quit();
+    endwin();
 
     return 0;
 }

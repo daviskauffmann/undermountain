@@ -1,18 +1,135 @@
 #ifndef UM_GAME_MESSAGE_H
 #define UM_GAME_MESSAGE_H
 
-#include <libtcod.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+struct game_event;
+
+enum message_type
+{
+    MESSAGE_NONE,
+    MESSAGE_ITEM_DROPPED,
+    MESSAGE_ITEM_EQUIPPED,
+    MESSAGE_ITEM_UNEQUIPPED,
+    MESSAGE_ITEM_CANNOT_EQUIP,
+    MESSAGE_ITEM_TOO_LARGE,
+    MESSAGE_ITEM_TOO_SMALL,
+    MESSAGE_ITEM_NOT_PROFICIENT,
+    MESSAGE_EQUIPMENT_SLOT_EMPTY,
+    MESSAGE_ATTACK_MISSED,
+    MESSAGE_ATTACK_HIT,
+    MESSAGE_ATTACK_SWUNG,
+    MESSAGE_NOTHING_TO_SELECT,
+    MESSAGE_NO_EQUIPMENT,
+    MESSAGE_ABILITY_INCREASED,
+    MESSAGE_SPELL_READIED,
+    MESSAGE_NO_READIED_SPELL,
+    MESSAGE_GAME_RESUMED,
+    MESSAGE_GAME_STARTED,
+    MESSAGE_GAME_OVER,
+    MESSAGE_EXPERIENCE_GAINED,
+    MESSAGE_LEVEL_GAINED,
+    MESSAGE_REST_ENEMIES_NEARBY,
+    MESSAGE_REST_NO_FOOD,
+    MESSAGE_ACTOR_RESTED,
+    MESSAGE_TRAP_TRIGGERED,
+    MESSAGE_TRAP_AVOIDED,
+    MESSAGE_TRAP_DETECTED,
+    MESSAGE_TRAP_NOT_DETECTED,
+    MESSAGE_ACTORS_SWAPPED,
+    MESSAGE_DOOR_CANNOT_OPEN,
+    MESSAGE_DOOR_OPENED,
+    MESSAGE_DOOR_CANNOT_CLOSE,
+    MESSAGE_DOOR_CLOSED,
+    MESSAGE_DUNGEON_END_REACHED,
+    MESSAGE_CANNOT_DESCEND,
+    MESSAGE_ACTOR_DESCENDED,
+    MESSAGE_CANNOT_GO_HIGHER,
+    MESSAGE_CANNOT_ASCEND,
+    MESSAGE_ACTOR_ASCENDED,
+    MESSAGE_CHEST_CANNOT_OPEN,
+    MESSAGE_CHEST_OPENED,
+    MESSAGE_CANNOT_PRAY,
+    MESSAGE_ALTAR_PRAYED,
+    MESSAGE_CANNOT_DRINK,
+    MESSAGE_FOUNTAIN_DRANK,
+    MESSAGE_CANNOT_SIT,
+    MESSAGE_THRONE_SAT,
+    MESSAGE_NOTHING_TO_PICK_UP,
+    MESSAGE_INVENTORY_FULL,
+    MESSAGE_GOLD_PICKED_UP,
+    MESSAGE_ITEM_PICKED_UP,
+    MESSAGE_ITEM_CANNOT_QUAFF,
+    MESSAGE_ITEM_QUAFFED,
+    MESSAGE_ITEM_CANNOT_READ,
+    MESSAGE_ITEM_READ,
+    MESSAGE_ITEM_CANNOT_LEARN,
+    MESSAGE_CLASS_CANNOT_LEARN,
+    MESSAGE_CLASS_REQUIRES_DIVINE,
+    MESSAGE_CLASS_REQUIRES_ARCANE,
+    MESSAGE_SPELL_ALREADY_KNOWN,
+    MESSAGE_OBJECT_CANNOT_DESTROY,
+    MESSAGE_OBJECT_DESTROYED,
+    MESSAGE_SHOOT_NO_WEAPON,
+    MESSAGE_SHOOT_NOT_RANGED,
+    MESSAGE_SHOOT_NO_AMMUNITION,
+    MESSAGE_SHOOT_WRONG_AMMUNITION,
+    MESSAGE_WEAPON_BROKEN,
+    MESSAGE_SPELL_NOT_KNOWN,
+    MESSAGE_SPELL_LEVEL_TOO_LOW,
+    MESSAGE_SPELL_NOT_ENOUGH_MANA,
+    MESSAGE_SPELL_INTERRUPTED,
+    MESSAGE_SPELL_FIZZLED,
+    MESSAGE_SPELL_CAST,
+    MESSAGE_ACTOR_DAMAGED,
+    MESSAGE_ACTOR_HEALED,
+    MESSAGE_ACTOR_ZAPPED,
+    MESSAGE_SPELL_CANNOT_CAST_HERE,
+    MESSAGE_ACTOR_DAZED,
+    MESSAGE_ACTOR_FROZEN,
+    MESSAGE_MANA_RECOVERED,
+    MESSAGE_ACTOR_DIED,
+    MESSAGE_ACTOR_ACIDIFIED,
+    MESSAGE_ACTOR_BURNED,
+    MESSAGE_ACTOR_BOMBARDED,
+    MESSAGE_SURFACE_DAMAGED,
+
+    NUM_MESSAGE_TYPES
+};
+
+struct message_data
+{
+    enum message_type type;
+
+    const char *actor;
+    const char *target;
+    const char *item;
+    const char *slot;
+    const char *spell;
+    const char *class_name;
+    const char *object;
+    const char *ability;
+    const char *action;
+    const char *source;
+    int amount;
+    bool critical;
+    bool opportunity;
+    bool sneak;
+};
 
 struct message
 {
     char *text;
-
-    TCOD_ColorRGB color; // TODO: change to message type, let an asset or something decide the color
 };
 
-struct message *message_new(
-    const char *text,
-    TCOD_ColorRGB color);
-void message_delete(struct message *message);
+void message_init(void);
+void message_clear(void);
+void message_add(const char *text);
+size_t message_count(void);
+const struct message *message_get(size_t index);
+
+bool message_from_event(const struct game_event *event, struct message_data *data);
+char *message_format(const struct message_data *data);
 
 #endif

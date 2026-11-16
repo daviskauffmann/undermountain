@@ -1,5 +1,5 @@
-#ifndef UM_SCENES_GAME_DIRECTION_H
-#define UM_SCENES_GAME_DIRECTION_H
+#ifndef UM_GAME_DIRECTION_H
+#define UM_GAME_DIRECTION_H
 
 enum direction
 {

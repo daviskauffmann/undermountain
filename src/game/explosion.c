@@ -1,7 +1,7 @@
 #include "explosion.h"
 
 #include "actor.h"
-#include "color.h"
+#include "message.h"
 #include "list.h"
 #include "surface.h"
 #include "world.h"
@@ -10,14 +10,10 @@
 
 const struct explosion_data explosion_database[NUM_EXPLOSION_TYPES] = {
     [EXPLOSION_TYPE_ACID_SPLASH] = {
-        .intensity = 0.5f,
         .radius = 2,
-        .color = COLOR_LIME,
     },
     [EXPLOSION_TYPE_FIREBALL] = {
-        .intensity = 0.5f,
         .radius = 5,
-        .color = COLOR_FLAME,
     },
 };
 
@@ -69,15 +65,15 @@ struct explosion *explosion_new(
                     {
                         const int damage = TCOD_random_dice_roll_s(NULL, "1d3");
 
-                        world_log(
-                            initiator->floor,
-                            initiator->x,
-                            initiator->y,
-                            color_white,
-                            "%s acidifies %s for %d damage.",
-                            initiator->name,
-                            tile->actor->name,
-                            damage);
+                        event_emit(&(struct game_event){
+                            .type = EVENT_ACTOR_ACIDIFIED,
+                            .floor = initiator->floor,
+                            .x = initiator->x,
+                            .y = initiator->y,
+                            .actor = initiator->name,
+                            .target = tile->actor->name,
+                            .amount = damage,
+                        });
 
                         actor_damage_hit_points(tile->actor, initiator, damage);
                     }
@@ -108,15 +104,15 @@ struct explosion *explosion_new(
 
                         const int damage = TCOD_random_dice_roll(NULL, dice);
 
-                        world_log(
-                            initiator->floor,
-                            initiator->x,
-                            initiator->y,
-                            color_white,
-                            "%s burns %s for %d.",
-                            initiator->name,
-                            tile->actor->name,
-                            damage);
+                        event_emit(&(struct game_event){
+                            .type = EVENT_ACTOR_BURNED,
+                            .floor = initiator->floor,
+                            .x = initiator->x,
+                            .y = initiator->y,
+                            .actor = initiator->name,
+                            .target = tile->actor->name,
+                            .amount = damage,
+                        });
 
                         actor_damage_hit_points(tile->actor, initiator, damage);
                     }

@@ -4,6 +4,7 @@ project(undermountain LANGUAGES C)
 
 find_package(libtcod CONFIG REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
+find_package(unofficial-pdcurses CONFIG REQUIRED)
 
 file(
     GLOB_RECURSE SOURCE_FILES
@@ -29,4 +30,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     libtcod::libtcod
     $<TARGET_NAME_IF_EXISTS:SDL3::SDL3main>
     $<IF:$<TARGET_EXISTS:SDL3::SDL3-shared>,SDL3::SDL3-shared,SDL3::SDL3-static>
+    unofficial::pdcurses::pdcurses
 )

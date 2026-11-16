@@ -1,7 +1,6 @@
 #include "class.h"
 
 #include "base_attack_bonus.h"
-#include "color.h"
 #include "monster.h"
 #include "natural_weapon.h"
 
@@ -9,7 +8,6 @@ const struct class_data class_database[] = {
     // player classes
     [CLASS_BARBARIAN] = {
         .name = "Barbarian",
-        .color = {COLOR_LIGHT_RED},
         .glyph = '@',
 
         .hit_die = "1d12",
@@ -46,7 +44,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_CLERIC] = {
         .name = "Cleric",
-        .color = {COLOR_AMBER},
         .glyph = '@',
 
         .hit_die = "1d8",
@@ -102,7 +99,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_FIGHTER] = {
         .name = "Fighter",
-        .color = {COLOR_BRASS},
         .glyph = '@',
 
         .hit_die = "1d10",
@@ -142,7 +138,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_PALADIN] = {
         .name = "Paladin",
-        .color = {COLOR_LIGHTEST_PINK},
         .glyph = '@',
 
         .hit_die = "1d10",
@@ -190,7 +185,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_ROGUE] = {
         .name = "Rogue",
-        .color = {COLOR_YELLOW},
         .glyph = '@',
 
         .hit_die = "1d6",
@@ -228,7 +222,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_WIZARD] = {
         .name = "Wizard",
-        .color = {COLOR_AZURE},
         .glyph = '@',
 
         .hit_die = "1d4",
@@ -276,7 +269,6 @@ const struct class_data class_database[] = {
     // monster classes
     [CLASS_BAT] = {
         .name = "Bat",
-        .color = {COLOR_GRAY},
         .glyph = 'b',
 
         .hit_die = "1d2",
@@ -287,7 +279,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_BUGBEAR] = {
         .name = "Bugbear",
-        .color = {COLOR_BRASS},
         .glyph = 'b',
 
         .hit_die = "1d8",
@@ -298,7 +289,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_CAT] = {
         .name = "Cat",
-        .color = {COLOR_LIGHT_ORANGE},
         .glyph = 'c',
 
         .hit_die = "1d4",
@@ -309,7 +299,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_DIRE_RAT] = {
         .name = "Dire Rat",
-        .color = {COLOR_GRAY},
         .glyph = 'R',
 
         .hit_die = "1d8",
@@ -322,7 +311,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_DOG] = {
         .name = "Dog",
-        .color = {COLOR_LIGHTEST_GRAY},
         .glyph = 'd',
 
         .hit_die = "1d8",
@@ -335,7 +323,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_FIRE_BEETLE] = {
         .name = "Fire Beetle",
-        .color = {COLOR_FLAME},
         .glyph = 'b',
 
         .hit_die = "1d8",
@@ -348,7 +335,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_GIANT_ANT] = {
         .name = "Giant Ant",
-        .color = {COLOR_DARK_FLAME},
         .glyph = 'a',
 
         .hit_die = "1d8",
@@ -361,7 +347,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_GNOLL] = {
         .name = "Gnoll",
-        .color = {COLOR_DARK_AMBER},
         .glyph = 'g',
 
         .hit_die = "1d8",
@@ -372,7 +357,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_GOBLIN] = {
         .name = "Goblin",
-        .color = {COLOR_DARK_GREEN},
         .glyph = 'g',
 
         .hit_die = "1d8",
@@ -381,7 +365,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_HOBGOBLIN] = {
         .name = "Hobgoblin",
-        .color = {COLOR_LIGHT_CRIMSON},
         .glyph = 'h',
 
         .hit_die = "1d8",
@@ -390,7 +373,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_HYENA] = {
         .name = "Hyena",
-        .color = {COLOR_DARK_AMBER},
         .glyph = 'h',
 
         .hit_die = "1d8",
@@ -403,7 +385,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_KOBOLD] = {
         .name = "Kobold",
-        .color = {COLOR_LIGHT_GRAY},
         .glyph = 'k',
 
         .hit_die = "1d8",
@@ -414,7 +395,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_KRENSHAR] = {
         .name = "Krenshar",
-        .color = {COLOR_LIGHT_SEPIA},
         .glyph = 'k',
 
         .hit_die = "1d10",
@@ -425,7 +405,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_OGRE] = {
         .name = "Ogre",
-        .color = {COLOR_LIGHTEST_AMBER},
         .glyph = 'O',
 
         .hit_die = "1d8",
@@ -436,7 +415,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_ORC] = {
         .name = "Orc",
-        .color = {COLOR_DARK_GREEN},
         .glyph = 'o',
 
         .hit_die = "1d8",
@@ -445,7 +423,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_OWL] = {
         .name = "Owl",
-        .color = {COLOR_LIGHTEST_GRAY},
         .glyph = 'o',
 
         .hit_die = "1d8",
@@ -458,7 +435,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_PONY] = {
         .name = "Pony",
-        .color = {COLOR_LIGHT_AMBER},
         .glyph = 'p',
 
         .hit_die = "1d8",
@@ -471,7 +447,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_RAKSHASA] = {
         .name = "Rakshasa",
-        .color = {COLOR_LIGHT_SEPIA},
         .glyph = 'R',
 
         .hit_die = "1d8",
@@ -482,7 +457,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_RAT] = {
         .name = "Rat",
-        .color = {COLOR_LIGHTEST_GRAY},
         .glyph = 'r',
 
         .hit_die = "1d2",
@@ -495,7 +469,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_RED_DRAGON_WYRMLING] = {
         .name = "Wyrmling Red Dragon",
-        .color = {COLOR_LIGHT_RED},
         .glyph = 'D',
 
         .hit_die = "1d12",
@@ -508,7 +481,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_RED_DRAGON_ADULT] = {
         .name = "Adult Red Dragon",
-        .color = {COLOR_RED},
         .glyph = 'D',
 
         .hit_die = "1d12",
@@ -521,7 +493,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_RED_DRAGON_ANCIENT] = {
         .name = "Ancient Red Dragon",
-        .color = {COLOR_DARK_RED},
         .glyph = 'D',
 
         .hit_die = "1d12",
@@ -534,7 +505,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_SKELETON_WARRIOR] = {
         .name = "Skeleton Warrior",
-        .color = {COLOR_WHITE},
         .glyph = 's',
 
         .hit_die = "1d12",
@@ -545,7 +515,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_SNAKE] = {
         .name = "Snake",
-        .color = {COLOR_LIGHT_CRIMSON},
         .glyph = 's',
 
         .hit_die = "1d8",
@@ -558,7 +527,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_SPIDER] = {
         .name = "Spider",
-        .color = {COLOR_DARK_GRAY},
         .glyph = 's',
 
         .hit_die = "1d8",
@@ -569,7 +537,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_TROLL] = {
         .name = "Rat",
-        .color = {COLOR_GREEN},
         .glyph = 'T',
 
         .hit_die = "1d8",
@@ -582,7 +549,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_WOLF] = {
         .name = "Wolf",
-        .color = {COLOR_LIGHT_GRAY},
         .glyph = 'w',
 
         .hit_die = "1d8",
@@ -595,7 +561,6 @@ const struct class_data class_database[] = {
     },
     [CLASS_ZOMBIE] = {
         .name = "Zombie",
-        .color = {COLOR_WHITE},
         .glyph = 'z',
 
         .hit_die = "1d12",

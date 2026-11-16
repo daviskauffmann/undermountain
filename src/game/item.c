@@ -1,7 +1,6 @@
 #include "item.h"
 
 #include "base_item.h"
-#include "color.h"
 #include "list.h"
 #include "spell.h"
 #include "world.h"
@@ -13,7 +12,6 @@ const struct item_data item_database[] = {
 
         .name = "Adamantine Breastplate",
         .description = "",
-        .color = {COLOR_DARK_AZURE},
 
         .level = 1,
 
@@ -24,7 +22,6 @@ const struct item_data item_database[] = {
 
         .name = "Arrow",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -33,7 +30,6 @@ const struct item_data item_database[] = {
 
         .name = "Battleaxe",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -44,7 +40,6 @@ const struct item_data item_database[] = {
 
         .name = "Breastplate",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -53,7 +48,6 @@ const struct item_data item_database[] = {
 
         .name = "Bolt",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -62,7 +56,6 @@ const struct item_data item_database[] = {
 
         .name = "Bullet",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -71,7 +64,6 @@ const struct item_data item_database[] = {
 
         .name = "Club",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -82,7 +74,6 @@ const struct item_data item_database[] = {
 
         .name = "Dagger",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -93,7 +84,6 @@ const struct item_data item_database[] = {
 
         .name = "Falchion",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -104,7 +94,6 @@ const struct item_data item_database[] = {
 
         .name = "Food",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -113,7 +102,6 @@ const struct item_data item_database[] = {
 
         .name = "Full Plate",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -122,7 +110,6 @@ const struct item_data item_database[] = {
 
         .name = "Gold",
         .description = "",
-        .color = {COLOR_GOLD},
 
         .level = 1,
     },
@@ -131,7 +118,6 @@ const struct item_data item_database[] = {
 
         .name = "Greatclub",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -142,7 +128,6 @@ const struct item_data item_database[] = {
 
         .name = "Greatsword",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -153,7 +138,6 @@ const struct item_data item_database[] = {
 
         .name = "Half Plate",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -162,7 +146,6 @@ const struct item_data item_database[] = {
 
         .name = "Heavy Crossbow",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -171,7 +154,6 @@ const struct item_data item_database[] = {
 
         .name = "Heavy Mace",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -182,7 +164,6 @@ const struct item_data item_database[] = {
 
         .name = "Heavy Shield",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -191,7 +172,6 @@ const struct item_data item_database[] = {
 
         .name = "Hide Armor",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -200,7 +180,6 @@ const struct item_data item_database[] = {
 
         .name = "Javelin",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -209,7 +188,6 @@ const struct item_data item_database[] = {
 
         .name = "Leather Armor",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -218,7 +196,6 @@ const struct item_data item_database[] = {
 
         .name = "Light Crossbow",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -227,7 +204,6 @@ const struct item_data item_database[] = {
 
         .name = "Light Mace",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -238,7 +214,6 @@ const struct item_data item_database[] = {
 
         .name = "Light Shield",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -247,7 +222,6 @@ const struct item_data item_database[] = {
 
         .name = "Longbow",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -256,7 +230,6 @@ const struct item_data item_database[] = {
 
         .name = "Longsword",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -267,7 +240,6 @@ const struct item_data item_database[] = {
 
         .name = "Morningstar",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -278,7 +250,6 @@ const struct item_data item_database[] = {
 
         .name = "Potion of Cure Light Wounds",
         .description = "",
-        .color = {COLOR_LIGHT_RED},
 
         .spell_type = SPELL_TYPE_CURE_LIGHT_WOUNDS,
 
@@ -289,7 +260,6 @@ const struct item_data item_database[] = {
 
         .name = "Potion of Cure Moderate Wounds",
         .description = "",
-        .color = {COLOR_LIGHT_RED},
 
         .spell_type = SPELL_TYPE_CURE_MODERATE_WOUNDS,
 
@@ -300,7 +270,6 @@ const struct item_data item_database[] = {
 
         .name = "Potion of Cure Serious Wounds",
         .description = "",
-        .color = {COLOR_LIGHT_RED},
 
         .spell_type = SPELL_TYPE_CURE_SERIOUS_WOUNDS,
 
@@ -311,7 +280,6 @@ const struct item_data item_database[] = {
 
         .name = "Potion of Cure Critical Wounds",
         .description = "",
-        .color = {COLOR_LIGHT_RED},
 
         .spell_type = SPELL_TYPE_CURE_CRITICAL_WOUNDS,
 
@@ -322,7 +290,6 @@ const struct item_data item_database[] = {
 
         .name = "Potion of Heal",
         .description = "",
-        .color = {COLOR_LIGHT_RED},
 
         .spell_type = SPELL_TYPE_HEAL,
 
@@ -333,7 +300,6 @@ const struct item_data item_database[] = {
 
         .name = "Potion of Restore Mana",
         .description = "",
-        .color = {COLOR_LIGHT_AZURE},
 
         .spell_type = SPELL_TYPE_RESTORE_MANA,
 
@@ -344,7 +310,6 @@ const struct item_data item_database[] = {
 
         .name = "Scimitar",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -355,7 +320,6 @@ const struct item_data item_database[] = {
 
         .name = "Scroll of Chain Lightning",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .spell_type = SPELL_TYPE_CHAIN_LIGHTNING,
 
@@ -366,7 +330,6 @@ const struct item_data item_database[] = {
 
         .name = "Scroll of Fireball",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .spell_type = SPELL_TYPE_FIREBALL,
 
@@ -377,7 +340,6 @@ const struct item_data item_database[] = {
 
         .name = "Shortbow",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -386,7 +348,6 @@ const struct item_data item_database[] = {
 
         .name = "Shortspear",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -397,7 +358,6 @@ const struct item_data item_database[] = {
 
         .name = "Sling",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -406,7 +366,6 @@ const struct item_data item_database[] = {
 
         .name = "Spear",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
 
@@ -417,7 +376,6 @@ const struct item_data item_database[] = {
 
         .name = "Studded Leather Armor",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -426,7 +384,6 @@ const struct item_data item_database[] = {
 
         .name = "Tower Shield",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },
@@ -435,7 +392,6 @@ const struct item_data item_database[] = {
 
         .name = "Wizard's Robe",
         .description = "",
-        .color = {COLOR_WHITE},
 
         .level = 1,
     },

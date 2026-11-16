@@ -61,7 +61,6 @@ enum class
 struct class_data
 {
     const char *name;
-    TCOD_ColorRGB color;
     unsigned char glyph;
 
     const char *hit_die;

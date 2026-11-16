@@ -23,7 +23,6 @@ struct object_data
 {
     const char *name;
     unsigned char glyph;
-    TCOD_ColorRGB color;
     enum light_type light_type;
 
     bool is_walkable;

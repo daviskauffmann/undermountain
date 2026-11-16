@@ -6,7 +6,6 @@
 struct corpse_metadata
 {
     unsigned char glyph;
-    TCOD_ColorRGB color;
 };
 
 struct corpse

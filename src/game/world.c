@@ -2,7 +2,6 @@
 
 #include "actor.h"
 #include "class.h"
-#include "color.h"
 #include "corpse.h"
 #include "explosion.h"
 #include "list.h"
@@ -15,12 +14,13 @@
 #include "surface.h"
 #include "util.h"
 #include <malloc.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 struct world *world;
+
+static const char save_header[] = "UMSAVE\0";
 
 void world_init(void)
 {
@@ -40,16 +40,17 @@ void world_init(void)
     world->hero = NULL;
     world->doomed = false;
 
-    world->messages = list_new();
+    message_init();
 }
 
 void world_uninit(void)
 {
-    for (size_t message_index = 0; message_index < world->messages->size; message_index++)
+    if (!event_reset())
     {
-        message_delete(list_get(world->messages, message_index));
+        return;
     }
-    list_delete(world->messages);
+
+    message_clear();
 
     for (size_t floor = 0; floor < NUM_MAPS; floor++)
     {
@@ -125,17 +126,19 @@ void world_create(struct actor *hero, unsigned int seed)
         }
     }
 
-    world_log(
-        -1,
-        -1,
-        -1,
-        color_white,
-        "Hail, %s!",
-        world->hero->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_GAME_STARTED,
+        .floor = -1,
+        .x = -1,
+        .y = -1,
+        .actor = world->hero->name,
+    });
 }
 
 void world_save(FILE *const file)
 {
+    fwrite(save_header, sizeof(save_header), 1, file);
+
     fwrite(&world->spawned_unique_item_types->size, sizeof(world->spawned_unique_item_types->size), 1, file);
     for (size_t spawned_unique_item_type_index = 0; spawned_unique_item_type_index < world->spawned_unique_item_types->size; spawned_unique_item_type_index++)
     {
@@ -265,9 +268,6 @@ void world_save(FILE *const file)
             fwrite(&actor->turns_chased, sizeof(actor->turns_chased), 1, file);
 
             fwrite(&actor->light_type, sizeof(actor->light_type), 1, file);
-
-            fwrite(&actor->flash_color, sizeof(actor->flash_color), 1, file);
-            fwrite(&actor->flash_alpha, sizeof(actor->flash_alpha), 1, file);
 
             fwrite(&actor->controllable, sizeof(actor->controllable), 1, file);
 
@@ -401,21 +401,18 @@ void world_save(FILE *const file)
         fwrite(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
     }
 
-    fwrite(&world->messages->size, sizeof(world->messages->size), 1, file);
-    for (size_t message_index = 0; message_index < world->messages->size; message_index++)
-    {
-        const struct message *const message = list_get(world->messages, message_index);
-
-        const size_t message_length = strlen(message->text);
-        fwrite(&message_length, sizeof(message_length), 1, file);
-        fwrite(message->text, message_length, 1, file);
-
-        fwrite(&message->color, sizeof(message->color), 1, file);
-    }
 }
 
-void world_load(FILE *const file)
+bool world_load(FILE *const file)
 {
+    char header[sizeof(save_header)];
+    if (fread(header, sizeof(header), 1, file) != 1 ||
+        memcmp(header, save_header, sizeof(header)) != 0)
+    {
+        fprintf(stderr, "Cannot load save: unsupported or missing save header.\n");
+        return false;
+    }
+
     size_t spawned_unique_item_types;
     fread(&spawned_unique_item_types, sizeof(spawned_unique_item_types), 1, file);
     for (size_t spawned_unique_item_type_index = 0; spawned_unique_item_type_index < spawned_unique_item_types; spawned_unique_item_type_index++)
@@ -574,9 +571,6 @@ void world_load(FILE *const file)
 
             fread(&actor->light_type, sizeof(actor->light_type), 1, file);
             actor->light_fov = NULL;
-
-            fread(&actor->flash_color, sizeof(actor->flash_color), 1, file);
-            fread(&actor->flash_alpha, sizeof(actor->flash_alpha), 1, file);
 
             fread(&actor->controllable, sizeof(actor->controllable), 1, file);
 
@@ -761,32 +755,7 @@ void world_load(FILE *const file)
         fread(&map->current_actor_index, sizeof(map->current_actor_index), 1, file);
     }
 
-    size_t num_messages;
-    fread(&num_messages, sizeof(num_messages), 1, file);
-    for (int message_index = 0; message_index < num_messages; message_index++)
-    {
-        struct message *const message = malloc(sizeof(*message));
-
-        size_t message_text_length;
-        fread(&message_text_length, sizeof(message_text_length), 1, file);
-        message->text = malloc(message_text_length + 1);
-        fread(message->text, message_text_length, 1, file);
-        message->text[message_text_length] = '\0';
-
-        fread(&message->color, sizeof(message->color), 1, file);
-
-        list_add(world->messages, message);
-    }
-
-    fclose(file);
-
-    world_log(
-        -1,
-        -1,
-        -1,
-        color_white,
-        "Welcome back, %s!",
-        world->hero->name);
+    return !ferror(file) && !feof(file) && world->hero;
 }
 
 void world_update(float delta_time)
@@ -813,7 +782,6 @@ void world_update(float delta_time)
         struct actor *const actor = list_get(map->actors, actor_index);
 
         actor_update_light(actor);
-        actor_update_fade(actor, delta_time);
     }
 
     for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)
@@ -898,15 +866,15 @@ void world_update(float delta_time)
                     {
                         const int damage = TCOD_random_dice_roll_s(NULL, surface_data->damage);
 
-                        world_log(
-                            actor->floor,
-                            actor->x,
-                            actor->y,
-                            color_white,
-                            "%s damages %s for %d",
-                            surface_data->name,
-                            actor->name,
-                            damage);
+                        event_emit(&(struct game_event){
+                            .type = EVENT_SURFACE_DAMAGED,
+                            .floor = actor->floor,
+                            .x = actor->x,
+                            .y = actor->y,
+                            .source = surface_data->name,
+                            .target = actor->name,
+                            .amount = damage,
+                        });
 
                         actor_damage_hit_points(actor, tile->surface->initiator, damage);
                     }
@@ -979,12 +947,12 @@ void world_update(float delta_time)
                     {
                         world->doomed = true;
 
-                        world_log(
-                            actor->floor,
-                            actor->x,
-                            actor->y,
-                            color_green,
-                            "Game over! Press 'ESC' to return to the menu.");
+                        event_emit(&(struct game_event){
+                            .type = EVENT_GAME_OVER,
+                            .floor = actor->floor,
+                            .x = actor->x,
+                            .y = actor->y,
+                        });
                     }
                     else
                     {
@@ -1028,25 +996,25 @@ void world_update(float delta_time)
                             {
                                 object->trap_detection_state = OBJECT_TRAP_DETECTION_STATE_DETECTED;
 
-                                world_log(
-                                    actor->floor,
-                                    actor->x,
-                                    actor->y,
-                                    color_red,
-                                    "%s detects a trap!",
-                                    actor->name);
+                                event_emit(&(struct game_event){
+                                    .type = EVENT_TRAP_DETECTED,
+                                    .floor = actor->floor,
+                                    .x = actor->x,
+                                    .y = actor->y,
+                                    .actor = actor->name,
+                                });
                             }
                             else
                             {
                                 object->trap_detection_state = OBJECT_TRAP_DETECTION_STATE_UNDETECTED;
 
-                                world_log(
-                                    actor->floor,
-                                    actor->x,
-                                    actor->y,
-                                    color_red,
-                                    "%s failed to detect trap!",
-                                    actor->name);
+                                event_emit(&(struct game_event){
+                                    .type = EVENT_TRAP_NOT_DETECTED,
+                                    .floor = actor->floor,
+                                    .x = actor->x,
+                                    .y = actor->y,
+                                    .actor = actor->name,
+                                });
                             }
                         }
                     }
@@ -1152,54 +1120,19 @@ bool world_can_player_take_turn(void)
     return true;
 }
 
-void world_log(int floor, int x, int y, TCOD_ColorRGB color, const char *fmt, ...)
+bool world_event_is_visible(const struct game_event *const event)
 {
-    if (floor != -1)
+    if (!world || !event)
     {
-        if (!world->player)
-        {
-            return;
-        }
-
-        if (floor != world->player->floor)
-        {
-            return;
-        }
-
-        if (!world->player->fov)
-        {
-            return;
-        }
-
-        if (!TCOD_map_is_in_fov(world->player->fov, x, y))
-        {
-            return;
-        }
+        return false;
     }
 
-    va_list args;
-    va_start(args, fmt);
-
-    const size_t size = vsnprintf(NULL, 0, fmt, args);
-    char *string = malloc(size + 1);
-    vsprintf_s(string, size + 1, fmt, args);
-
-    va_end(args);
-
-    char *line_begin = string;
-    char *line_end;
-    do
+    if (event->floor == -1)
     {
-        line_end = strchr(line_begin, '\n');
-        if (line_end)
-        {
-            *line_end = '\0';
-        }
-        printf("%s\n", line_begin);
-        struct message *message = message_new(line_begin, color);
-        list_add(world->messages, message);
-        line_begin = line_end + 1;
-    } while (line_end);
+        return true;
+    }
 
-    free(string);
+    return world->player && world->player->fov && event->floor == world->player->floor &&
+           map_is_inside(event->x, event->y) &&
+           TCOD_map_is_in_fov(world->player->fov, event->x, event->y);
 }

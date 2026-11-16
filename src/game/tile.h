@@ -13,17 +13,10 @@ enum tile_type
     NUM_TILE_TYPES
 };
 
-struct tile_metadata
-{
-    TCOD_ColorRGB ambient_light_color;
-    float ambient_light_intensity;
-};
-
 struct tile_data
 {
     const char *name;
     unsigned char glyph;
-    TCOD_ColorRGB color;
     bool is_walkable;
     bool is_transparent;
 };
@@ -39,7 +32,6 @@ struct tile
     struct surface *surface;
 };
 
-extern const struct tile_metadata tile_metadata;
 extern const struct tile_data tile_database[NUM_TILE_TYPES];
 
 void tile_init(

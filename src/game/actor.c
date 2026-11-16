@@ -5,8 +5,8 @@
 #include "base_attack_bonus.h"
 #include "base_item.h"
 #include "class.h"
-#include "color.h"
 #include "equippability.h"
+#include "event.h"
 #include "explosion.h"
 #include "light.h"
 #include "list.h"
@@ -103,9 +103,6 @@ struct actor *actor_new(
     actor->light_type = LIGHT_TYPE_NONE;
     actor->light_fov = NULL;
 
-    actor->flash_color = color_white;
-    actor->flash_alpha = 0;
-
     actor->controllable = false;
 
     actor->dead = false;
@@ -160,14 +157,14 @@ void actor_give_experience(struct actor *const actor, const int experience)
 
     if (actor == world->player)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_azure,
-            "%s gains %d experience.",
-            actor->name,
-            experience);
+        event_emit(&(struct game_event){
+            .type = EVENT_EXPERIENCE_GAINED,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .amount = experience,
+        });
     }
 
     while (actor->experience >= actor_get_experience_for_level(actor->level + 1))
@@ -199,13 +196,13 @@ void actor_level_up(struct actor *const actor)
 
     if (actor == world->player)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_yellow,
-            "%s has gained a level!",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_LEVEL_GAINED,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
     }
 }
 
@@ -241,7 +238,8 @@ int actor_get_ability_modifer(const struct actor *const actor, const enum abilit
 void actor_spend_ability_point(struct actor *const actor, const enum ability ability)
 {
     const float current_hit_point_percent = (float)actor->hit_points / actor_get_max_hit_points(actor);
-    const float current_mana_percent = (float)actor->mana / actor_get_max_mana(actor);
+    const int max_mana = actor_get_max_mana(actor);
+    const float current_mana_percent = max_mana > 0 ? (float)actor->mana / max_mana : 0;
 
     actor->ability_scores[ability]++;
     actor->ability_points--;
@@ -431,8 +429,6 @@ int actor_get_max_hit_points(const struct actor *const actor)
 void actor_restore_hit_points(struct actor *const actor, const int health)
 {
     actor->hit_points += health;
-    actor->flash_color = color_green;
-    actor->flash_alpha = 1;
 
     const int max_hit_points = actor_get_max_hit_points(actor);
 
@@ -457,8 +453,6 @@ bool actor_damage_hit_points(struct actor *const actor, struct actor *const atta
     }
 
     actor->hit_points -= damage;
-    actor->flash_color = color_red;
-    actor->flash_alpha = 1;
 
     if (actor->hit_points <= 0)
     {
@@ -1009,20 +1003,6 @@ void actor_update_light(struct actor *const actor)
             actor->x,
             actor->y,
             sight_radius);
-    }
-}
-
-void actor_update_fade(struct actor *const actor, const float delta_time)
-{
-    if (actor->flash_alpha > 0)
-    {
-        // TODO: slower/faster fade depending on circumstances
-        // TODO: different fade functions such as sin()
-        actor->flash_alpha -= 4 * delta_time;
-    }
-    else
-    {
-        actor->flash_alpha = 0;
     }
 }
 
@@ -1774,13 +1754,13 @@ bool actor_rest(struct actor *const actor)
 
         if (other->faction != actor->faction)
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s cannot rest while enemies are nearby.",
-                actor->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_REST_ENEMIES_NEARBY,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+            });
 
             return false;
         }
@@ -1802,13 +1782,13 @@ bool actor_rest(struct actor *const actor)
 
     if (!food)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s has no food to rest with.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_REST_NO_FOOD,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -1825,13 +1805,13 @@ bool actor_rest(struct actor *const actor)
     actor_restore_hit_points(actor, actor_get_max_hit_points(actor) - actor->hit_points);
     actor_restore_mana(actor, actor_get_max_mana(actor) - actor->mana);
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s rests.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ACTOR_RESTED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     return true;
 }
@@ -1935,26 +1915,26 @@ bool actor_move(
             {
                 const int damage = TCOD_random_dice_roll_s(NULL, "1d6") * dungeon_level;
 
-                world_log(
-                    actor->floor,
-                    actor->x,
-                    actor->y,
-                    color_red,
-                    "%s triggers a trap and takes %d damage!",
-                    actor->name,
-                    damage);
+                event_emit(&(struct game_event){
+                    .type = EVENT_TRAP_TRIGGERED,
+                    .floor = actor->floor,
+                    .x = actor->x,
+                    .y = actor->y,
+                    .actor = actor->name,
+                    .amount = damage,
+                });
 
                 actor_damage_hit_points(actor, NULL, damage);
             }
             else
             {
-                world_log(
-                    actor->floor,
-                    actor->x,
-                    actor->y,
-                    color_white,
-                    "%s avoids a trap!",
-                    actor->name);
+                event_emit(&(struct game_event){
+                    .type = EVENT_TRAP_AVOIDED,
+                    .floor = actor->floor,
+                    .x = actor->x,
+                    .y = actor->y,
+                    .actor = actor->name,
+                });
             }
 
             list_remove(map->objects, tile->object);
@@ -2025,14 +2005,14 @@ bool actor_swap(struct actor *const actor, struct actor *const other)
     map->tiles[actor->x][actor->y].actor = actor;
     map->tiles[other->x][other->y].actor = other;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s swaps with %s.",
-        actor->name,
-        other->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ACTORS_SWAPPED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .target = other->name,
+    });
 
     return true;
 }
@@ -2104,26 +2084,26 @@ bool actor_open_door(
 
     if (!tile->object || tile->object->type != OBJECT_TYPE_DOOR_CLOSED)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't open the door.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_DOOR_CANNOT_OPEN,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
 
     tile->object->type = OBJECT_TYPE_DOOR_OPEN;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_orange,
-        "%s opens the door.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_DOOR_OPENED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     return true;
 }
@@ -2141,26 +2121,26 @@ bool actor_close_door(
 
     if (!tile->object || tile->object->type != OBJECT_TYPE_DOOR_OPEN)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't close this.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_DOOR_CANNOT_CLOSE,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
 
     tile->object->type = OBJECT_TYPE_DOOR_CLOSED;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_orange,
-        "%s closes the door.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_DOOR_CLOSED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     return true;
 }
@@ -2170,13 +2150,13 @@ bool actor_descend(struct actor *const actor)
     // is there a next map?
     if (actor->floor >= NUM_MAPS - 1)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s has reached the end.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_DUNGEON_END_REACHED,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2187,13 +2167,13 @@ bool actor_descend(struct actor *const actor)
     // is the actor on stairs down?
     if (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_DOWN)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't descend here.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CANNOT_DESCEND,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2219,13 +2199,13 @@ bool actor_descend(struct actor *const actor)
 
     // TODO: find all followers and move them to the next map as well
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s descends.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ACTOR_DESCENDED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     return true;
 }
@@ -2235,13 +2215,13 @@ bool actor_ascend(struct actor *actor)
     // is there a previous map?
     if (actor->floor == 0)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't go any higher.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CANNOT_GO_HIGHER,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2252,13 +2232,13 @@ bool actor_ascend(struct actor *actor)
     // is the actor on stairs up?
     if (!tile->object || tile->object->type != OBJECT_TYPE_STAIR_UP)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't ascend here.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CANNOT_ASCEND,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2284,13 +2264,13 @@ bool actor_ascend(struct actor *actor)
 
     // TODO: find all followers and move them to the next map as well
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s ascends.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ACTOR_ASCENDED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     return true;
 }
@@ -2309,13 +2289,13 @@ bool actor_open_chest(
 
     if (!tile->object || tile->object->type != OBJECT_TYPE_CHEST)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't open the chest.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CHEST_CANNOT_OPEN,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2329,13 +2309,13 @@ bool actor_open_chest(
     object_delete(tile->object);
     tile->object = NULL;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_orange,
-        "%s opens the chest.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_CHEST_OPENED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     return true;
 }
@@ -2354,13 +2334,13 @@ bool actor_pray(
 
     if (!tile->object || tile->object->type != OBJECT_TYPE_ALTAR)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't pray here.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CANNOT_PRAY,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2375,15 +2355,15 @@ bool actor_pray(
     object_delete(tile->object);
     tile->object = NULL;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_orange,
-        "%s prays at the altar. The gods grant %d %s.",
-        actor->name,
-        score,
-        ability_database[ability].name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ALTAR_PRAYED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .amount = score,
+        .ability = ability_database[ability].name,
+    });
 
     return true;
 }
@@ -2402,13 +2382,13 @@ bool actor_drink(
 
     if (!tile->object || tile->object->type != OBJECT_TYPE_FOUNTAIN)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't drink here.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CANNOT_DRINK,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2421,13 +2401,13 @@ bool actor_drink(
     object_delete(tile->object);
     tile->object = NULL;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_orange,
-        "%s drinks from the fountain.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_FOUNTAIN_DRANK,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     return true;
 }
@@ -2480,13 +2460,13 @@ bool actor_sit(
 
     if (!tile->object || tile->object->type != OBJECT_TYPE_THRONE)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s can't sit here",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CANNOT_SIT,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2499,13 +2479,13 @@ bool actor_sit(
     object_delete(tile->object);
     tile->object = NULL;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_orange,
-        "%s sits on the throne.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_THRONE_SAT,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     return true;
 }
@@ -2524,26 +2504,26 @@ bool actor_grab(
 
     if (!tile->item)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s cannot find anything to pick up.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_NOTHING_TO_PICK_UP,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
 
     if (actor->items->size >= 26)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s is carrying too many items.",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_INVENTORY_FULL,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -2559,27 +2539,27 @@ bool actor_grab(
 
         item_delete(item);
 
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s picks up %d gold.",
-            actor->name,
-            gold);
+        event_emit(&(struct game_event){
+            .type = EVENT_GOLD_PICKED_UP,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .amount = gold,
+        });
     }
     else
     {
         list_add(actor->items, item);
 
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s picks up %s.",
-            actor->name,
-            item_database[item->type].name);
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_PICKED_UP,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_database[item->type].name,
+        });
     }
 
     return true;
@@ -2608,14 +2588,14 @@ bool actor_drop(struct actor *const actor, struct item *const item)
 
     tile->item = item;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s drops %s.",
-        actor->name,
-        item_database[item->type].name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ITEM_DROPPED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .item = item_database[item->type].name,
+    });
 
     return true;
 }
@@ -2628,14 +2608,14 @@ bool actor_equip(struct actor *const actor, struct item *const item)
 
     if (base_item_data->equip_slot == EQUIP_SLOT_NONE)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s cannot equip %s.",
-            actor->name,
-            item_data->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_CANNOT_EQUIP,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_data->name,
+        });
 
         return false;
     }
@@ -2645,42 +2625,42 @@ bool actor_equip(struct actor *const actor, struct item *const item)
 
     if (equippability == EQUIPPABILITY_TOO_LARGE)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s is too large for %s.",
-            item_data->name,
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_TOO_LARGE,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_data->name,
+        });
 
         return false;
     }
 
     if (equippability == EQUIPPABILITY_TOO_SMALL)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s is too small for %s.",
-            item_data->name,
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_TOO_SMALL,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_data->name,
+        });
 
         return false;
     }
 
     if (!actor_is_proficient(actor, item))
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s is not proficient with %s.",
-            actor->name,
-            item_data->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_NOT_PROFICIENT,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_data->name,
+        });
 
         return false;
     }
@@ -2721,14 +2701,14 @@ bool actor_equip(struct actor *const actor, struct item *const item)
     // add to slot
     actor->equipment[base_item_data->equip_slot] = item;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s equips %s.",
-        actor->name,
-        item_data->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ITEM_EQUIPPED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .item = item_data->name,
+    });
 
     return true;
 }
@@ -2740,14 +2720,14 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
 
     if (!equipment)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s is not equipping anything their %s slot.",
-            actor->name,
-            equip_slot_database[equip_slot].name);
+        event_emit(&(struct game_event){
+            .type = EVENT_EQUIPMENT_SLOT_EMPTY,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .slot = equip_slot_database[equip_slot].name,
+        });
 
         return false;
     }
@@ -2758,14 +2738,14 @@ bool actor_unequip(struct actor *const actor, const enum equip_slot equip_slot)
     // remove from slot
     actor->equipment[equip_slot] = NULL;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s unequips %s.",
-        actor->name,
-        item_database[equipment->type].name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ITEM_UNEQUIPPED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .item = item_database[equipment->type].name,
+    });
 
     return true;
 }
@@ -2777,26 +2757,26 @@ bool actor_quaff(struct actor *const actor, struct item *const item)
 
     if (item_data->type != BASE_ITEM_TYPE_POTION)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s cannot quaff %s.",
-            actor->name,
-            item_data->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_CANNOT_QUAFF,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_data->name,
+        });
 
         return false;
     }
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s quaffs %s.",
-        actor->name,
-        item_data->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ITEM_QUAFFED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .item = item_data->name,
+    });
 
     // cast the stored spell
     actor_cast(
@@ -2828,26 +2808,26 @@ bool actor_read(struct actor *const actor, struct item *const item, const int x,
 
     if (item_data->type != BASE_ITEM_TYPE_SCROLL)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s cannot read %s.",
-            actor->name,
-            item_data->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_CANNOT_READ,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_data->name,
+        });
 
         return false;
     }
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s reads %s.",
-        actor->name,
-        item_data->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ITEM_READ,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .item = item_data->name,
+    });
 
     // cast the stored spell
     actor_cast(
@@ -2879,28 +2859,28 @@ bool actor_learn(struct actor *const actor, struct item *const item)
 
     if (item_data->type != BASE_ITEM_TYPE_SCROLL)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s cannot learn from %s.",
-            actor->name,
-            item_data->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_CANNOT_LEARN,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_data->name,
+        });
 
         return false;
     }
 
     // TODO: data driven?
-    if (actor->class != CLASS_CLERIC || actor->class != CLASS_WIZARD)
+    if (actor->class != CLASS_CLERIC && actor->class != CLASS_WIZARD)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%ss cannot learn spells.",
-            class_database[actor->class].name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CLASS_CANNOT_LEARN,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .class_name = class_database[actor->class].name,
+        });
 
         return false;
     }
@@ -2909,40 +2889,40 @@ bool actor_learn(struct actor *const actor, struct item *const item)
 
     if (actor->class == CLASS_CLERIC && spell_data->magic_type != MAGIC_TYPE_DIVINE)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%ss can only learn divine spells.",
-            class_database[actor->class].name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CLASS_REQUIRES_DIVINE,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .class_name = class_database[actor->class].name,
+        });
 
         return false;
     }
 
     if (actor->class == CLASS_WIZARD && spell_data->magic_type != MAGIC_TYPE_ARCANE)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%ss can only learn arcane spells.",
-            class_database[actor->class].name);
+        event_emit(&(struct game_event){
+            .type = EVENT_CLASS_REQUIRES_ARCANE,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .class_name = class_database[actor->class].name,
+        });
 
         return false;
     }
 
     if (actor->spells[item_data->spell_type])
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s already knows %s.",
-            actor->name,
-            spell_data->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_SPELL_ALREADY_KNOWN,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .spell = spell_data->name,
+        });
 
         return false;
     }
@@ -2968,14 +2948,14 @@ bool actor_bash(struct actor *const actor, struct object *const object)
     if (object->type == OBJECT_TYPE_STAIR_DOWN ||
         object->type == OBJECT_TYPE_STAIR_UP)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s cannot destroy the %s.",
-            actor->name,
-            object_data->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_OBJECT_CANNOT_DESTROY,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .object = object_data->name,
+        });
 
         return false;
     }
@@ -2996,14 +2976,14 @@ bool actor_bash(struct actor *const actor, struct object *const object)
     // TODO: mark for delete
     object_delete(object);
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_white,
-        "%s destroys the %s.",
-        actor->name,
-        object_data->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_OBJECT_DESTROYED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .object = object_data->name,
+    });
 
     return true;
 }
@@ -3023,13 +3003,13 @@ bool actor_shoot(
 
     if (!weapon)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s cannot shoot without a weapon!",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_SHOOT_NO_WEAPON,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -3039,13 +3019,13 @@ bool actor_shoot(
 
     if (!base_weapon_data->ranged)
     {
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            color_white,
-            "%s cannot shoot without a ranged weapon!",
-            actor->name);
+        event_emit(&(struct game_event){
+            .type = EVENT_SHOOT_NOT_RANGED,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+        });
 
         return false;
     }
@@ -3063,13 +3043,13 @@ bool actor_shoot(
 
         if (!ammunition)
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s has no ammunition equipped!",
-                actor->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SHOOT_NO_AMMUNITION,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+            });
 
             return false;
         }
@@ -3077,13 +3057,13 @@ bool actor_shoot(
         // is it the right ammo?
         if (base_item_database[item_database[ammunition->type].type].ammunition_type != base_weapon_data->ammunition_type)
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s has unsuitable ammunition equipped!",
-                actor->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SHOOT_WRONG_AMMUNITION,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+            });
 
             return false;
         }
@@ -3157,17 +3137,15 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const bo
         if (attack_roll == 1 ||
             (attack_roll != 20 && hit_challenge < armor_class))
         {
-            other->flash_color = color_gray;
-            other->flash_alpha = 1;
 
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_light_gray,
-                "%s misses %s.",
-                actor->name,
-                other->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_ATTACK_MISSED,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .target = other->name,
+            });
 
             if (damage_dealt)
             {
@@ -3242,18 +3220,18 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const bo
 
         // TODO: when projectiles come at the player from the dark, nothing gets logged
         // it'd be nice if there were a way to do something like "someone attacks <player> for <damage>"
-        world_log(
-            actor->floor,
-            actor->x,
-            actor->y,
-            crit ? color_light_red : color_white,
-            "%s %s %s for %d%s%s.",
-            actor->name,
-            crit ? "crits" : "hits",
-            other->name,
-            damage,
-            opportunity ? " (opportunity)" : "",
-            sneak_attack ? " (sneak)" : "");
+        event_emit(&(struct game_event){
+            .type = EVENT_ATTACK_HIT,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .target = other->name,
+            .amount = damage,
+            .critical = crit,
+            .opportunity = opportunity,
+            .sneak = sneak_attack,
+        });
 
         // weapon breakage
         bool weapon_broken = false;
@@ -3265,14 +3243,14 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const bo
         {
             weapon_broken = true;
 
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_red,
-                "%s's %s breaks!",
-                actor->name,
-                weapon_data->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_WEAPON_BROKEN,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .item = weapon_data->name,
+            });
 
             actor->equipment[EQUIP_SLOT_WEAPON] = NULL;
 
@@ -3342,14 +3320,14 @@ bool actor_cast(
         // does the actor know the spell?
         if (!actor_spells.has[spell_type])
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s does not know %s.",
-                actor->name,
-                spell_data->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SPELL_NOT_KNOWN,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .spell = spell_data->name,
+            });
 
             return false;
         }
@@ -3357,14 +3335,14 @@ bool actor_cast(
         // is the actor high enough level?
         if (actor->level < spell_data->level)
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s is not high enough level to cast %s.",
-                actor->name,
-                spell_data->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SPELL_LEVEL_TOO_LOW,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .spell = spell_data->name,
+            });
 
             return false;
         }
@@ -3372,14 +3350,14 @@ bool actor_cast(
         // does the actor have enough mana?
         if (actor->mana < mana_cost)
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s does not have enough mana.",
-                actor->name,
-                spell_data->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SPELL_NOT_ENOUGH_MANA,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .spell = spell_data->name,
+            });
 
             return false;
         }
@@ -3421,14 +3399,14 @@ bool actor_cast(
 
         if (interrupted)
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_red,
-                "%s's spell is interrupted.",
-                actor->name,
-                spell_data->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SPELL_INTERRUPTED,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .spell = spell_data->name,
+            });
 
             actor->mana -= mana_cost;
 
@@ -3444,14 +3422,14 @@ bool actor_cast(
 
             if (roll < arcane_spell_failure)
             {
-                world_log(
-                    actor->floor,
-                    actor->x,
-                    actor->y,
-                    color_red,
-                    "%s's spell fizzles.",
-                    actor->name,
-                    spell_data->name);
+                event_emit(&(struct game_event){
+                    .type = EVENT_SPELL_FIZZLED,
+                    .floor = actor->floor,
+                    .x = actor->x,
+                    .y = actor->y,
+                    .actor = actor->name,
+                    .spell = spell_data->name,
+                });
 
                 actor->mana -= mana_cost;
 
@@ -3460,14 +3438,14 @@ bool actor_cast(
         }
     }
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_purple,
-        "%s casts %s.",
-        actor->name,
-        spell_data->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_SPELL_CAST,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+        .spell = spell_data->name,
+    });
 
     int caster_level = spell_data->level;
 
@@ -3513,41 +3491,41 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        1);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = 1,
+                    });
 
                     actor_damage_hit_points(other, actor, 1);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for 1.",
-                    actor->name,
-                    other->name,
-                    1);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = 1,
+                });
 
                 actor_restore_hit_points(other, 1);
             }
@@ -3566,41 +3544,41 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        health);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = health,
+                    });
 
                     actor_damage_hit_points(other, actor, health);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -3619,41 +3597,41 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        health);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = health,
+                    });
 
                     actor_damage_hit_points(other, actor, health);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -3672,41 +3650,41 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        health);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = health,
+                    });
 
                     actor_damage_hit_points(other, actor, health);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -3725,41 +3703,41 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        health);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = health,
+                    });
 
                     actor_damage_hit_points(other, actor, health);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
             else
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -3783,28 +3761,28 @@ bool actor_cast(
 
             const int damage = TCOD_random_dice_roll(NULL, dice);
 
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s zaps %s for %d.",
-                actor->name,
-                other->name,
-                damage);
+            event_emit(&(struct game_event){
+                .type = EVENT_ACTOR_ZAPPED,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .target = other->name,
+                .amount = damage,
+            });
 
             actor_damage_hit_points(other, actor, damage);
         }
         else
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s cannot cast %s here.",
-                actor->name,
-                spell_data->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SPELL_CANNOT_CAST_HERE,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .spell = spell_data->name,
+            });
 
             return false;
         }
@@ -3823,25 +3801,25 @@ bool actor_cast(
         {
             // TODO: daze effect
 
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s dazes %s.",
-                actor->name,
-                other->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_ACTOR_DAZED,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .target = other->name,
+            });
         }
         else
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s cannot cast %s here.",
-                actor->name,
-                spell_data->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SPELL_CANNOT_CAST_HERE,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .spell = spell_data->name,
+            });
 
             return false;
         }
@@ -3885,15 +3863,15 @@ bool actor_cast(
             {
                 const int health = actor_get_max_hit_points(other) - other->hit_points;
 
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -3904,28 +3882,28 @@ bool actor_cast(
                     const int health = TCOD_random_dice_roll_s(NULL, "1d4");
                     const int damage = other->hit_points - health;
 
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        damage);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = damage,
+                    });
 
                     actor_damage_hit_points(other, actor, damage);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
         }
@@ -3944,43 +3922,43 @@ bool actor_cast(
                     const int health = TCOD_random_dice_roll_s(NULL, "1d4");
                     const int damage = other->hit_points - health;
 
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        damage);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = damage,
+                    });
 
                     actor_damage_hit_points(other, actor, damage);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
             else
             {
                 const int health = actor_get_max_hit_points(other) - other->hit_points;
 
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -4000,15 +3978,15 @@ bool actor_cast(
         {
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for 1.",
-                    actor->name,
-                    other->name,
-                    1);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = 1,
+                });
 
                 actor_restore_hit_points(other, 1);
             }
@@ -4016,28 +3994,28 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        1);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = 1,
+                    });
 
                     actor_damage_hit_points(other, actor, 1);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
         }
@@ -4058,15 +4036,15 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -4074,28 +4052,28 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        health);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = health,
+                    });
 
                     actor_damage_hit_points(other, actor, health);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
         }
@@ -4116,15 +4094,15 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -4132,28 +4110,28 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        health);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = health,
+                    });
 
                     actor_damage_hit_points(other, actor, health);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
         }
@@ -4174,15 +4152,15 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -4190,28 +4168,28 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        health);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = health,
+                    });
 
                     actor_damage_hit_points(other, actor, health);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
         }
@@ -4232,15 +4210,15 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                world_log(
-                    other->floor,
-                    other->x,
-                    other->y,
-                    color_white,
-                    "%s heals %s for %d.",
-                    actor->name,
-                    other->name,
-                    health);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_HEALED,
+                    .floor = other->floor,
+                    .x = other->x,
+                    .y = other->y,
+                    .actor = actor->name,
+                    .target = other->name,
+                    .amount = health,
+                });
 
                 actor_restore_hit_points(other, health);
             }
@@ -4248,28 +4226,28 @@ bool actor_cast(
             {
                 if (actor_ranged_touch_attack(actor, other))
                 {
-                    world_log(
-                        other->floor,
-                        other->x,
-                        other->y,
-                        color_white,
-                        "%s damages %s for %d.",
-                        actor->name,
-                        other->name,
-                        health);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ACTOR_DAMAGED,
+                        .floor = other->floor,
+                        .x = other->x,
+                        .y = other->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                        .amount = health,
+                    });
 
                     actor_damage_hit_points(other, actor, health);
                 }
                 else
                 {
-                    world_log(
-                        actor->floor,
-                        actor->x,
-                        actor->y,
-                        color_light_gray,
-                        "%s misses %s.",
-                        actor->name,
-                        other->name);
+                    event_emit(&(struct game_event){
+                        .type = EVENT_ATTACK_MISSED,
+                        .floor = actor->floor,
+                        .x = actor->x,
+                        .y = actor->y,
+                        .actor = actor->name,
+                        .target = other->name,
+                    });
                 }
             }
         }
@@ -4311,28 +4289,28 @@ bool actor_cast(
         {
             const int damage = TCOD_random_dice_roll_s(NULL, "1d3");
 
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s freezes %s for %d.",
-                actor->name,
-                other->name,
-                damage);
+            event_emit(&(struct game_event){
+                .type = EVENT_ACTOR_FROZEN,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .target = other->name,
+                .amount = damage,
+            });
 
             actor_damage_hit_points(other, actor, damage);
         }
         else
         {
-            world_log(
-                actor->floor,
-                actor->x,
-                actor->y,
-                color_white,
-                "%s cannot cast %s here.",
-                actor->name,
-                spell_data->name);
+            event_emit(&(struct game_event){
+                .type = EVENT_SPELL_CANNOT_CAST_HERE,
+                .floor = actor->floor,
+                .x = actor->x,
+                .y = actor->y,
+                .actor = actor->name,
+                .spell = spell_data->name,
+            });
 
             return false;
         }
@@ -4346,14 +4324,14 @@ bool actor_cast(
         {
             const int mana = actor_get_max_mana(other) - other->mana;
 
-            world_log(
-                other->floor,
-                other->x,
-                other->y,
-                color_white,
-                "%s recovers %d mana.",
-                other->name,
-                mana);
+            event_emit(&(struct game_event){
+                .type = EVENT_MANA_RECOVERED,
+                .floor = other->floor,
+                .x = other->x,
+                .y = other->y,
+                .actor = other->name,
+                .amount = mana,
+            });
 
             actor_restore_mana(other, mana);
         }
@@ -4371,13 +4349,13 @@ void actor_die(struct actor *const actor, struct actor *const killer)
     // so we shouldn't be removing/deleting actors while doing that
     actor->dead = true;
 
-    world_log(
-        actor->floor,
-        actor->x,
-        actor->y,
-        color_red,
-        "%s dies.",
-        actor->name);
+    event_emit(&(struct game_event){
+        .type = EVENT_ACTOR_DIED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = actor->name,
+    });
 
     if (killer)
     {

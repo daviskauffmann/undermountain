@@ -1,6 +1,6 @@
 #include "direction.h"
 
-#include "../../game/util.h"
+#include "util.h"
 
 enum direction get_direction_from_angle(const float angle)
 {

@@ -16,7 +16,6 @@ enum projectile_type
 struct projectile_data
 {
     unsigned char glyph;
-    TCOD_ColorRGB color;
 
     enum light_type light_type;
 

@@ -1,7 +1,7 @@
 #include "projectile.h"
 
 #include "actor.h"
-#include "color.h"
+#include "message.h"
 #include "explosion.h"
 #include "light.h"
 #include "list.h"
@@ -16,7 +16,6 @@
 const struct projectile_data projectile_database[] = {
     [PROJECTILE_TYPE_ACID_SPLASH] = {
         .glyph = '*',
-        .color = {COLOR_LIME},
 
         .light_type = LIGHT_TYPE_ACID_SPLASH,
 
@@ -24,7 +23,6 @@ const struct projectile_data projectile_database[] = {
     },
     [PROJECTILE_TYPE_ARROW] = {
         .glyph = '`',
-        .color = {COLOR_WHITE},
 
         .light_type = LIGHT_TYPE_NONE,
 
@@ -32,7 +30,6 @@ const struct projectile_data projectile_database[] = {
     },
     [PROJECTILE_TYPE_FIREBALL] = {
         .glyph = '*',
-        .color = {COLOR_FLAME},
 
         .light_type = LIGHT_TYPE_FIREBALL,
 
@@ -40,7 +37,6 @@ const struct projectile_data projectile_database[] = {
     },
     [PROJECTILE_TYPE_MAGIC_MISSILE] = {
         .glyph = '*',
-        .color = {COLOR_AZURE},
 
         .light_type = LIGHT_TYPE_MAGIC_MISSILE,
 
@@ -212,15 +208,15 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
                     damage += TCOD_random_dice_roll_s(NULL, "1d4+1");
                 }
 
-                world_log(
-                    projectile->shooter->floor,
-                    projectile->shooter->x,
-                    projectile->shooter->y,
-                    color_white,
-                    "%s bombards %s for %d damage.",
-                    projectile->shooter->name,
-                    tile->actor->name,
-                    damage);
+                event_emit(&(struct game_event){
+                    .type = EVENT_ACTOR_BOMBARDED,
+                    .floor = projectile->shooter->floor,
+                    .x = projectile->shooter->x,
+                    .y = projectile->shooter->y,
+                    .actor = projectile->shooter->name,
+                    .target = tile->actor->name,
+                    .amount = damage,
+                });
 
                 actor_damage_hit_points(tile->actor, projectile->shooter, damage);
             }

@@ -25,9 +25,6 @@ enum light_type
 struct light_data
 {
     int radius;
-    TCOD_ColorRGB color;
-    float intensity;
-    bool flicker;
 };
 
 extern const struct light_data light_database[NUM_LIGHT_TYPES];

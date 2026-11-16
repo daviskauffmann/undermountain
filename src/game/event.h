@@ -1,0 +1,128 @@
+#ifndef UM_GAME_EVENT_H
+#define UM_GAME_EVENT_H
+
+#include <stdbool.h>
+
+enum event_type
+{
+    EVENT_ITEM_DROPPED,
+    EVENT_ITEM_EQUIPPED,
+    EVENT_ITEM_UNEQUIPPED,
+    EVENT_ITEM_CANNOT_EQUIP,
+    EVENT_ITEM_TOO_LARGE,
+    EVENT_ITEM_TOO_SMALL,
+    EVENT_ITEM_NOT_PROFICIENT,
+    EVENT_EQUIPMENT_SLOT_EMPTY,
+    EVENT_ATTACK_MISSED,
+    EVENT_ATTACK_HIT,
+    EVENT_ATTACK_SWUNG,
+    EVENT_ABILITY_INCREASED,
+    EVENT_SPELL_READIED,
+    EVENT_GAME_RESUMED,
+    EVENT_GAME_STARTED,
+    EVENT_GAME_OVER,
+    EVENT_EXPERIENCE_GAINED,
+    EVENT_LEVEL_GAINED,
+    EVENT_REST_ENEMIES_NEARBY,
+    EVENT_REST_NO_FOOD,
+    EVENT_ACTOR_RESTED,
+    EVENT_TRAP_TRIGGERED,
+    EVENT_TRAP_AVOIDED,
+    EVENT_TRAP_DETECTED,
+    EVENT_TRAP_NOT_DETECTED,
+    EVENT_ACTORS_SWAPPED,
+    EVENT_DOOR_CANNOT_OPEN,
+    EVENT_DOOR_OPENED,
+    EVENT_DOOR_CANNOT_CLOSE,
+    EVENT_DOOR_CLOSED,
+    EVENT_DUNGEON_END_REACHED,
+    EVENT_CANNOT_DESCEND,
+    EVENT_ACTOR_DESCENDED,
+    EVENT_CANNOT_GO_HIGHER,
+    EVENT_CANNOT_ASCEND,
+    EVENT_ACTOR_ASCENDED,
+    EVENT_CHEST_CANNOT_OPEN,
+    EVENT_CHEST_OPENED,
+    EVENT_CANNOT_PRAY,
+    EVENT_ALTAR_PRAYED,
+    EVENT_CANNOT_DRINK,
+    EVENT_FOUNTAIN_DRANK,
+    EVENT_CANNOT_SIT,
+    EVENT_THRONE_SAT,
+    EVENT_NOTHING_TO_PICK_UP,
+    EVENT_INVENTORY_FULL,
+    EVENT_GOLD_PICKED_UP,
+    EVENT_ITEM_PICKED_UP,
+    EVENT_ITEM_CANNOT_QUAFF,
+    EVENT_ITEM_QUAFFED,
+    EVENT_ITEM_CANNOT_READ,
+    EVENT_ITEM_READ,
+    EVENT_ITEM_CANNOT_LEARN,
+    EVENT_CLASS_CANNOT_LEARN,
+    EVENT_CLASS_REQUIRES_DIVINE,
+    EVENT_CLASS_REQUIRES_ARCANE,
+    EVENT_SPELL_ALREADY_KNOWN,
+    EVENT_OBJECT_CANNOT_DESTROY,
+    EVENT_OBJECT_DESTROYED,
+    EVENT_SHOOT_NO_WEAPON,
+    EVENT_SHOOT_NOT_RANGED,
+    EVENT_SHOOT_NO_AMMUNITION,
+    EVENT_SHOOT_WRONG_AMMUNITION,
+    EVENT_WEAPON_BROKEN,
+    EVENT_SPELL_NOT_KNOWN,
+    EVENT_SPELL_LEVEL_TOO_LOW,
+    EVENT_SPELL_NOT_ENOUGH_MANA,
+    EVENT_SPELL_INTERRUPTED,
+    EVENT_SPELL_FIZZLED,
+    EVENT_SPELL_CAST,
+    EVENT_ACTOR_DAMAGED,
+    EVENT_ACTOR_HEALED,
+    EVENT_ACTOR_ZAPPED,
+    EVENT_SPELL_CANNOT_CAST_HERE,
+    EVENT_ACTOR_DAZED,
+    EVENT_ACTOR_FROZEN,
+    EVENT_MANA_RECOVERED,
+    EVENT_ACTOR_DIED,
+    EVENT_ACTOR_ACIDIFIED,
+    EVENT_ACTOR_BURNED,
+    EVENT_ACTOR_BOMBARDED,
+    EVENT_SURFACE_DAMAGED,
+
+    NUM_EVENT_TYPES
+};
+
+struct game_event
+{
+    enum event_type type;
+    int floor;
+    int x;
+    int y;
+
+    const char *actor;
+    const char *target;
+    const char *item;
+    const char *slot;
+    const char *spell;
+    const char *class_name;
+    const char *object;
+    const char *ability;
+    const char *source;
+    int amount;
+    bool critical;
+    bool opportunity;
+    bool sneak;
+};
+
+struct event_listener
+{
+    void (*receive)(const struct game_event *event, void *context);
+    void *context;
+    struct event_listener *next;
+};
+
+void event_emit(const struct game_event *event);
+bool event_subscribe(struct event_listener *listener);
+bool event_unsubscribe(struct event_listener *listener);
+bool event_reset(void);
+
+#endif

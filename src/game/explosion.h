@@ -15,9 +15,7 @@ enum explosion_type
 
 struct explosion_data
 {
-    float intensity;
     int radius;
-    TCOD_ColorRGB color;
 };
 
 struct explosion

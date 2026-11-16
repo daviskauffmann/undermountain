@@ -70,9 +70,6 @@ struct actor
     enum light_type light_type;
     TCOD_Map *light_fov;
 
-    TCOD_ColorRGB flash_color;
-    float flash_alpha;
-
     bool controllable;
 
     bool dead;
@@ -166,7 +163,6 @@ float actor_get_carry_weight(const struct actor *actor);
 float actor_get_speed(const struct actor *actor);
 
 void actor_update_light(struct actor *actor);
-void actor_update_fade(struct actor *actor, float delta_time);
 
 int actor_get_sight_radius(const struct actor *actor);
 void actor_update_fov(struct actor *actor);

@@ -16,7 +16,6 @@ struct surface_data
 {
     const char *name;
     char glyph;
-    TCOD_color_t color;
 
     int duration;
 

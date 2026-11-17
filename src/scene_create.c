@@ -1,24 +1,24 @@
-#include "create.h"
+#include "scene_create.h"
 
 #include "config.h"
-#include "game.h"
-#include "game/ability.h"
-#include "game/actor.h"
-#include "game/base_attack_bonus.h"
-#include "game/base_item.h"
-#include "game/class.h"
-#include "game/faction.h"
-#include "game/feat.h"
-#include "game/item.h"
-#include "game/light.h"
-#include "game/list.h"
-#include "game/monster.h"
-#include "game/race.h"
-#include "game/size.h"
-#include "game/special_ability.h"
-#include "game/spell.h"
-#include "game/world.h"
-#include "menu.h"
+#include "scene_game.h"
+#include "ability.h"
+#include "actor.h"
+#include "base_attack_bonus.h"
+#include "base_item.h"
+#include "class.h"
+#include "faction.h"
+#include "feat.h"
+#include "item.h"
+#include "light.h"
+#include "list.h"
+#include "monster.h"
+#include "race.h"
+#include "size.h"
+#include "special_ability.h"
+#include "spell.h"
+#include "world.h"
+#include "scene_menu.h"
 #include "scene.h"
 #include "ui.h"
 #include <curses.h>
@@ -209,7 +209,7 @@ static void handle_name_input(const int ch, struct scene **const next_scene)
     }
     else if (ch == 27)
     {
-        *next_scene = &menu_scene;
+        *next_scene = &scene_menu;
     }
     else if (isalpha(ch))
     {
@@ -396,7 +396,7 @@ static void handle_feats_input(const int ch, struct scene **const next_scene)
 
         world_create(hero, (unsigned int)time(0)); // TODO: user input seed
 
-        *next_scene = &game_scene;
+        *next_scene = &scene_game;
     }
     else if (ch == 27)
     {
@@ -409,10 +409,10 @@ static struct scene *handle_input(void)
     const int ch = ui_read_key();
     if (ch == ERR)
     {
-        return &create_scene;
+        return &scene_create;
     }
 
-    struct scene *next_scene = &create_scene;
+    struct scene *next_scene = &scene_create;
 
     switch (state)
     {
@@ -593,16 +593,16 @@ static struct scene *update(const float delta_time)
 
     struct scene *next_scene = handle_input();
 
-    if (next_scene != &create_scene)
+    if (next_scene != &scene_create)
     {
         return next_scene;
     }
 
     render();
-    return &create_scene;
+    return &scene_create;
 }
 
-struct scene create_scene = {
+struct scene scene_create = {
     .init = init,
     .uninit = uninit,
     .update = update,

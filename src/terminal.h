@@ -1,7 +1,7 @@
 #ifndef UM_TERMINAL_H
 #define UM_TERMINAL_H
 
-#include "game/color.h"
+#include "color.h"
 #include <stdbool.h>
 
 bool terminal_init(void);

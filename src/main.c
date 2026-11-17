@@ -1,5 +1,5 @@
 #include "config.h"
-#include "menu.h"
+#include "scene_menu.h"
 #include "scene.h"
 #include "terminal.h"
 #include <curses.h>
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    struct scene *current_scene = &menu_scene;
+    struct scene *current_scene = &scene_menu;
     current_scene->init(NULL);
 
     clock_t previous_time = clock();

@@ -1,29 +1,29 @@
-#include "game.h"
+#include "scene_game.h"
 
 #include "config.h"
-#include "game/ability.h"
-#include "game/actor.h"
-#include "game/base_item.h"
-#include "game/class.h"
-#include "game/corpse.h"
-#include "game/direction.h"
-#include "game/event.h"
-#include "game/explosion.h"
-#include "game/item.h"
-#include "game/light.h"
-#include "game/list.h"
-#include "game/map.h"
-#include "game/message.h"
-#include "game/object.h"
-#include "game/projectile.h"
-#include "game/race.h"
-#include "game/saving_throw.h"
-#include "game/spell.h"
-#include "game/spell_range.h"
-#include "game/surface.h"
-#include "game/tile.h"
-#include "game/world.h"
-#include "menu.h"
+#include "ability.h"
+#include "actor.h"
+#include "base_item.h"
+#include "class.h"
+#include "corpse.h"
+#include "direction.h"
+#include "event.h"
+#include "explosion.h"
+#include "item.h"
+#include "light.h"
+#include "list.h"
+#include "map.h"
+#include "message.h"
+#include "object.h"
+#include "projectile.h"
+#include "race.h"
+#include "saving_throw.h"
+#include "spell.h"
+#include "spell_range.h"
+#include "surface.h"
+#include "tile.h"
+#include "world.h"
+#include "scene_menu.h"
 #include "scene.h"
 #include "terminal.h"
 #include "ui.h"
@@ -780,7 +780,7 @@ static struct scene *input(void)
     const int ch = ui_read_key();
     if (ch == ERR)
     {
-        return &game_scene;
+        return &scene_game;
     }
     if (ch == 27)
     {
@@ -795,27 +795,27 @@ static struct scene *input(void)
         }
         else
         {
-            return &menu_scene;
+            return &scene_menu;
         }
-        return &game_scene;
+        return &scene_game;
     }
     switch (input_mode)
     {
     case INPUT_DIRECTION:
         handle_direction(ch);
-        return &game_scene;
+        return &scene_game;
     case INPUT_SELECTION:
         handle_selection(ch);
-        return &game_scene;
+        return &scene_game;
     case INPUT_TARGET:
         handle_target(ch);
-        return &game_scene;
+        return &scene_game;
     default:
         break;
     }
     if (handle_overlay_key(ch))
     {
-        return &game_scene;
+        return &scene_game;
     }
 
     if (active_overlay == OVERLAY_INVENTORY)
@@ -849,7 +849,7 @@ static struct scene *input(void)
         default:
             break;
         }
-        return &game_scene;
+        return &scene_game;
     }
     if (active_overlay == OVERLAY_CHARACTER)
     {
@@ -857,7 +857,7 @@ static struct scene *input(void)
         {
             begin_selection(ACTION_SPEND_POINT, OVERLAY_CHARACTER);
         }
-        return &game_scene;
+        return &scene_game;
     }
     if (active_overlay == OVERLAY_SPELLBOOK)
     {
@@ -865,31 +865,31 @@ static struct scene *input(void)
         {
             begin_selection(ACTION_READY, OVERLAY_SPELLBOOK);
         }
-        return &game_scene;
+        return &scene_game;
     }
     if (active_overlay != OVERLAY_NONE)
     {
-        return &game_scene;
+        return &scene_game;
     }
 
     if (ch == 'H')
     {
         hud_visible = !hud_visible;
-        return &game_scene;
+        return &scene_game;
     }
     if (ch == 'w' || ch == 'x')
     {
         begin_target(ch == 'w' ? ACTION_LOOK : ACTION_EXAMINE, false);
-        return &game_scene;
+        return &scene_game;
     }
     if (ch == 'X' || ch == 24)
     {
         begin_selection(ch == 'X' ? ACTION_EXAMINE_ITEM : ACTION_EXAMINE_EQUIPMENT, OVERLAY_INVENTORY);
-        return &game_scene;
+        return &scene_game;
     }
     if (!world_can_player_take_turn())
     {
-        return &game_scene;
+        return &scene_game;
     }
 
     struct actor *player = world->player;
@@ -897,12 +897,12 @@ static struct scene *input(void)
     if (key_attack_direction(ch, &direction))
     {
         player->took_turn = player_swing(direction);
-        return &game_scene;
+        return &scene_game;
     }
     if (ch != 'L' && ch != 'U' && key_direction(ch, &direction))
     {
         player->took_turn = try_move_player(direction);
-        return &game_scene;
+        return &scene_game;
     }
     switch (ch)
     {
@@ -993,7 +993,7 @@ static struct scene *input(void)
     default:
         break;
     }
-    return &game_scene;
+    return &scene_game;
 }
 
 static int get_wall_glyph(const struct map *const map, const int x, const int y)
@@ -1918,7 +1918,7 @@ static struct scene *update(const float delta_time)
     if (!world || !world->hero)
     {
         fprintf(stderr, "Cannot enter the game without a loaded character.\n");
-        return &menu_scene;
+        return &scene_menu;
     }
     if (!world->player)
     {
@@ -1929,7 +1929,7 @@ static struct scene *update(const float delta_time)
     collecting_feedback = true;
     struct scene *next = input();
     collecting_feedback = false;
-    if (next != &game_scene)
+    if (next != &scene_game)
     {
         return next;
     }
@@ -1948,10 +1948,10 @@ static struct scene *update(const float delta_time)
 
     render();
 
-    return &game_scene;
+    return &scene_game;
 }
 
-struct scene game_scene = {
+struct scene scene_game = {
     .init = init,
     .uninit = uninit,
     .update = update,

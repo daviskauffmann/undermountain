@@ -1,11 +1,11 @@
-#include "menu.h"
+#include "scene_menu.h"
 
 #include "config.h"
-#include "create.h"
-#include "game.h"
-#include "game/actor.h"
-#include "game/event.h"
-#include "game/world.h"
+#include "scene_create.h"
+#include "scene_game.h"
+#include "actor.h"
+#include "event.h"
+#include "world.h"
 #include "scene.h"
 #include "ui.h"
 #include <ctype.h>
@@ -73,7 +73,7 @@ static void select_option(struct scene **const next_scene)
     switch (selected_option)
     {
     case MENU_OPTION_START:
-        *next_scene = &create_scene;
+        *next_scene = &scene_create;
         break;
     case MENU_OPTION_CONTINUE: {
         FILE *const file = fopen(SAVE_PATH, "rb");
@@ -101,7 +101,7 @@ static void select_option(struct scene **const next_scene)
             .y = 0,
             .actor = world->hero->name,
         });
-        *next_scene = &game_scene;
+        *next_scene = &scene_game;
         break;
     }
     case MENU_OPTION_QUIT:
@@ -202,7 +202,7 @@ static struct scene *update(const float delta_time)
 {
     (void)delta_time;
 
-    struct scene *next_scene = &menu_scene;
+    struct scene *next_scene = &scene_menu;
     const int ch = ui_read_key();
 
     if (ch != ERR)
@@ -210,7 +210,7 @@ static struct scene *update(const float delta_time)
         handle_input(ch, &next_scene);
     }
 
-    if (next_scene == &menu_scene)
+    if (next_scene == &scene_menu)
     {
         render();
     }
@@ -218,7 +218,7 @@ static struct scene *update(const float delta_time)
     return next_scene;
 }
 
-struct scene menu_scene = {
+struct scene scene_menu = {
     .init = init,
     .uninit = uninit,
     .update = update,

@@ -3,6 +3,6 @@
 
 #include "scene.h"
 
-extern struct scene game_scene;
+extern struct scene scene_game;
 
 #endif

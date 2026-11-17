@@ -1,5 +1,6 @@
 #include "surface.h"
 
+#include "color.h"
 #include "light.h"
 #include "world.h"
 #include <malloc.h>
@@ -8,6 +9,7 @@ const struct surface_data surface_database[] = {
     [SURFACE_TYPE_ACID] = {
         .name = "Acid",
         .glyph = '\0',
+        .color = {UM_COLOR_LIME},
 
         .duration = 20,
 
@@ -18,6 +20,7 @@ const struct surface_data surface_database[] = {
     [SURFACE_TYPE_FIRE] = {
         .name = "Fire",
         .glyph = '\0',
+        .color = {UM_COLOR_FLAME},
 
         .duration = 20,
 
@@ -28,6 +31,7 @@ const struct surface_data surface_database[] = {
     [SURFACE_TYPE_WATER] = {
         .name = "Water",
         .glyph = '~',
+        .color = {UM_COLOR_AZURE},
 
         .light_type = LIGHT_TYPE_NONE,
     },

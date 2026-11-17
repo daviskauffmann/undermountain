@@ -1,7 +1,8 @@
 #ifndef UM_GAME_TILE_H
 #define UM_GAME_TILE_H
 
-#include <libtcod.h>
+#include "color.h"
+#include <stdbool.h>
 
 enum tile_type
 {
@@ -13,10 +14,17 @@ enum tile_type
     NUM_TILE_TYPES
 };
 
+struct tile_metadata
+{
+    struct color ambient_light_color;
+    float ambient_light_intensity;
+};
+
 struct tile_data
 {
     const char *name;
     unsigned char glyph;
+    struct color color;
     bool is_walkable;
     bool is_transparent;
 };
@@ -32,6 +40,7 @@ struct tile
     struct surface *surface;
 };
 
+extern const struct tile_metadata tile_metadata;
 extern const struct tile_data tile_database[NUM_TILE_TYPES];
 
 void tile_init(

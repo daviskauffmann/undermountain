@@ -1,6 +1,7 @@
 #ifndef UM_SURFACE_H
 #define UM_SURFACE_H
 
+#include "color.h"
 #include <libtcod.h>
 
 enum surface_type
@@ -16,6 +17,7 @@ struct surface_data
 {
     const char *name;
     char glyph;
+    struct color color;
 
     int duration;
 

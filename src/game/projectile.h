@@ -1,6 +1,7 @@
 #ifndef UM_GAME_PROJECTILE_H
 #define UM_GAME_PROJECTILE_H
 
+#include "color.h"
 #include <libtcod.h>
 
 enum projectile_type
@@ -16,6 +17,7 @@ enum projectile_type
 struct projectile_data
 {
     unsigned char glyph;
+    struct color color;
 
     enum light_type light_type;
 

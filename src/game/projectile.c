@@ -1,6 +1,7 @@
 #include "projectile.h"
 
 #include "actor.h"
+#include "color.h"
 #include "message.h"
 #include "explosion.h"
 #include "light.h"
@@ -16,6 +17,7 @@
 const struct projectile_data projectile_database[] = {
     [PROJECTILE_TYPE_ACID_SPLASH] = {
         .glyph = '*',
+        .color = {UM_COLOR_LIME},
 
         .light_type = LIGHT_TYPE_ACID_SPLASH,
 
@@ -23,6 +25,7 @@ const struct projectile_data projectile_database[] = {
     },
     [PROJECTILE_TYPE_ARROW] = {
         .glyph = '`',
+        .color = {UM_COLOR_WHITE},
 
         .light_type = LIGHT_TYPE_NONE,
 
@@ -30,6 +33,7 @@ const struct projectile_data projectile_database[] = {
     },
     [PROJECTILE_TYPE_FIREBALL] = {
         .glyph = '*',
+        .color = {UM_COLOR_FLAME},
 
         .light_type = LIGHT_TYPE_FIREBALL,
 
@@ -37,6 +41,7 @@ const struct projectile_data projectile_database[] = {
     },
     [PROJECTILE_TYPE_MAGIC_MISSILE] = {
         .glyph = '*',
+        .color = {UM_COLOR_AZURE},
 
         .light_type = LIGHT_TYPE_MAGIC_MISSILE,
 

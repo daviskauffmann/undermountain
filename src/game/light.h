@@ -1,7 +1,8 @@
 #ifndef UM_LIGHT_H
 #define UM_LIGHT_H
 
-#include <libtcod.h>
+#include "color.h"
+#include <stdbool.h>
 
 enum light_type
 {
@@ -25,6 +26,9 @@ enum light_type
 struct light_data
 {
     int radius;
+    struct color color;
+    float intensity;
+    bool flicker;
 };
 
 extern const struct light_data light_database[NUM_LIGHT_TYPES];

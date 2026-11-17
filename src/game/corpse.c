@@ -1,10 +1,12 @@
 #include "corpse.h"
 
+#include "color.h"
 #include <malloc.h>
 #include <string.h>
 
 const struct corpse_metadata corpse_metadata = {
     .glyph = '%',
+    .color = {UM_COLOR_DARK_RED},
 };
 
 struct corpse *corpse_new(

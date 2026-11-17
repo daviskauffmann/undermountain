@@ -1,6 +1,7 @@
 #ifndef UM_GAME_MESSAGE_H
 #define UM_GAME_MESSAGE_H
 
+#include "color.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -121,13 +122,15 @@ struct message_data
 struct message
 {
     char *text;
+    enum message_type type;
 };
 
 void message_init(void);
 void message_clear(void);
-void message_add(const char *text);
+void message_add(const char *text, enum message_type type);
 size_t message_count(void);
 const struct message *message_get(size_t index);
+struct color message_color(enum message_type type);
 
 bool message_from_event(const struct game_event *event, struct message_data *data);
 char *message_format(const struct message_data *data);

@@ -35,7 +35,7 @@ static void record_event(const struct game_event *const event, void *const conte
         return;
     }
 
-    message_add(text);
+    message_add(text, data.type);
     free(text);
 }
 
@@ -62,7 +62,7 @@ void message_clear(void)
     history_count = 0;
 }
 
-void message_add(const char *const text)
+void message_add(const char *const text, const enum message_type type)
 {
     const char *line = text;
     const char *end;
@@ -91,6 +91,7 @@ void message_add(const char *const text)
             history_count++;
         }
         history[slot].text = copy;
+        history[slot].type = type;
         printf("%s\n", copy);
 
         if (end)
@@ -98,6 +99,38 @@ void message_add(const char *const text)
             line = end + 1;
         }
     } while (end);
+}
+
+struct color message_color(const enum message_type type)
+{
+    switch (type)
+    {
+    case MESSAGE_GAME_OVER:
+    case MESSAGE_ACTOR_DIED:
+    case MESSAGE_TRAP_TRIGGERED:
+    case MESSAGE_ACTOR_DAMAGED:
+    case MESSAGE_ACTOR_BURNED:
+    case MESSAGE_ACTOR_ACIDIFIED:
+    case MESSAGE_ACTOR_BOMBARDED:
+    case MESSAGE_SURFACE_DAMAGED:
+        return (struct color){255, 95, 80};
+    case MESSAGE_ACTOR_HEALED:
+    case MESSAGE_ACTOR_RESTED:
+    case MESSAGE_LEVEL_GAINED:
+    case MESSAGE_ABILITY_INCREASED:
+        return (struct color){110, 230, 80};
+    case MESSAGE_EXPERIENCE_GAINED:
+    case MESSAGE_GOLD_PICKED_UP:
+    case MESSAGE_TRAP_DETECTED:
+        return (struct color){255, 190, 50};
+    case MESSAGE_SPELL_CAST:
+    case MESSAGE_SPELL_READIED:
+    case MESSAGE_MANA_RECOVERED:
+    case MESSAGE_ACTOR_ZAPPED:
+        return (struct color){90, 160, 255};
+    default:
+        return (struct color){255, 255, 255};
+    }
 }
 
 size_t message_count(void)

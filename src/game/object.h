@@ -1,6 +1,7 @@
 #ifndef UM_GAME_OBJECT_H
 #define UM_GAME_OBJECT_H
 
+#include "color.h"
 #include <libtcod.h>
 
 enum object_type
@@ -23,6 +24,7 @@ struct object_data
 {
     const char *name;
     unsigned char glyph;
+    struct color color;
     enum light_type light_type;
 
     bool is_walkable;

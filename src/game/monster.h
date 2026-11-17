@@ -7,8 +7,6 @@
 #include "special_ability.h"
 #include "special_attack.h"
 
-// TODO: maybe just merge all/some of this into the class data?
-
 enum monster_type
 {
     MONSTER_TYPE_BAT,

@@ -1,11 +1,12 @@
 #ifndef UM_GAME_CORPSE_H
 #define UM_GAME_CORPSE_H
 
-#include <libtcod.h>
+#include "color.h"
 
 struct corpse_metadata
 {
     unsigned char glyph;
+    struct color color;
 };
 
 struct corpse

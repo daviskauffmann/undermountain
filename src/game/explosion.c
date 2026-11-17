@@ -1,6 +1,7 @@
 #include "explosion.h"
 
 #include "actor.h"
+#include "color.h"
 #include "message.h"
 #include "list.h"
 #include "surface.h"
@@ -10,10 +11,14 @@
 
 const struct explosion_data explosion_database[NUM_EXPLOSION_TYPES] = {
     [EXPLOSION_TYPE_ACID_SPLASH] = {
+        .intensity = 0.5f,
         .radius = 2,
+        .color = {UM_COLOR_LIME},
     },
     [EXPLOSION_TYPE_FIREBALL] = {
+        .intensity = 0.5f,
         .radius = 5,
+        .color = {UM_COLOR_FLAME},
     },
 };
 

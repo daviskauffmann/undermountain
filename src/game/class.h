@@ -2,10 +2,10 @@
 #define UM_GAME_CLASS_H
 
 #include "ability.h"
+#include "color.h"
 #include "feat.h"
 #include "item.h"
 #include "spell.h"
-#include <libtcod.h>
 
 enum class
 {
@@ -61,6 +61,7 @@ enum class
 struct class_data
 {
     const char *name;
+    struct color color;
     unsigned char glyph;
 
     const char *hit_die;

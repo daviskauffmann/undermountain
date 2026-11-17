@@ -8,6 +8,7 @@
 #include "game/corpse.h"
 #include "game/direction.h"
 #include "game/event.h"
+#include "game/explosion.h"
 #include "game/item.h"
 #include "game/light.h"
 #include "game/list.h"
@@ -24,10 +25,12 @@
 #include "game/world.h"
 #include "menu.h"
 #include "scene.h"
+#include "terminal.h"
 #include "ui.h"
 #include <curses.h>
 #include <errno.h>
 #include <libtcod.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +56,7 @@ enum overlay
 static enum overlay active_overlay = OVERLAY_NONE;
 static int overlay_scroll = 0;
 static bool hud_visible = true;
+static float lighting_time;
 
 enum input_mode
 {
@@ -110,7 +114,7 @@ static void show_notice(const struct message_data *const data)
     }
     else
     {
-        message_add(text);
+        message_add(text, data->type);
     }
 
     free(text);
@@ -201,6 +205,7 @@ static void init(const struct scene *const previous_scene)
     active_overlay = OVERLAY_NONE;
     overlay_scroll = 0;
     hud_visible = true;
+    lighting_time = 0;
     collecting_feedback = false;
     event_subscribe(&feedback_listener);
 
@@ -1522,6 +1527,99 @@ static void draw_help_overlay(const int max_y, const int max_x)
     ui_panel_scrollbar(total_rows, max_y, max_x, overlay_scroll);
 }
 
+static void add_light(float foreground[3], float background[3], const TCOD_Map *fov,
+                      int source_x, int source_y, int x, int y, int radius,
+                      struct color color, float intensity, bool flicker, float time)
+{
+    if (!fov || radius <= 0 || !TCOD_map_is_in_fov(fov, x, y))
+    {
+        return;
+    }
+
+    const float dx = (float)(x - source_x);
+    const float dy = (float)(y - source_y);
+    const float radius_sq = (float)radius * radius;
+    float attenuation = 1.0f - (dx * dx + dy * dy) / radius_sq;
+    if (flicker)
+    {
+        attenuation += 0.01f * sinf(time * 10.0f + (float)(source_x * 7 + source_y * 13));
+    }
+    attenuation = fmaxf(0.0f, fminf(1.0f, attenuation));
+    const float components[3] = {color.r, color.g, color.b};
+    for (int i = 0; i < 3; i++)
+    {
+        foreground[i] += components[i] * attenuation;
+        background[i] += components[i] * intensity * attenuation;
+    }
+}
+
+static struct color tone_map(const float light[3], struct color material)
+{
+    const float maximum = fmaxf(light[0], fmaxf(light[1], light[2]));
+    const float scale = maximum > 255.0f ? 255.0f / maximum : 1.0f;
+    return (struct color){
+        (uint8_t)(light[0] * scale * material.r / 255.0f),
+        (uint8_t)(light[1] * scale * material.g / 255.0f),
+        (uint8_t)(light[2] * scale * material.b / 255.0f),
+    };
+}
+
+static void lighting_tile(const struct map *const map, const struct actor *const player,
+                          const int x, const int y, const float time,
+                          struct color *const foreground, struct color *const background)
+{
+    const struct color ambient = tile_metadata.ambient_light_color;
+    float fg[3] = {ambient.r, ambient.g, ambient.b};
+    float bg[3] = {ambient.r * tile_metadata.ambient_light_intensity,
+                   ambient.g * tile_metadata.ambient_light_intensity,
+                   ambient.b * tile_metadata.ambient_light_intensity};
+
+    if (TCOD_map_is_in_fov(player->fov, x, y))
+    {
+        for (size_t i = 0; i < map->objects->size; i++)
+        {
+            const struct object *object = list_get(map->objects, i);
+            const struct light_data *light = &light_database[object_database[object->type].light_type];
+            add_light(fg, bg, object->light_fov, object->x, object->y, x, y,
+                      light->radius, light->color, light->intensity, light->flicker, time);
+        }
+        for (size_t i = 0; i < map->actors->size; i++)
+        {
+            const struct actor *actor = list_get(map->actors, i);
+            const struct light_data *light = &light_database[actor->light_type];
+            const int radius = actor->light_type == LIGHT_TYPE_PLAYER
+                                   ? actor_get_sight_radius(actor) : light->radius;
+            add_light(fg, bg, actor->light_fov, actor->x, actor->y, x, y,
+                      radius, light->color, light->intensity, light->flicker, time);
+        }
+        for (size_t i = 0; i < map->projectiles->size; i++)
+        {
+            const struct projectile *projectile = list_get(map->projectiles, i);
+            const struct light_data *light = &light_database[projectile_database[projectile->type].light_type];
+            add_light(fg, bg, projectile->light_fov, (int)projectile->x, (int)projectile->y, x, y,
+                      light->radius, light->color, light->intensity, light->flicker, time);
+        }
+        for (size_t i = 0; i < map->explosions->size; i++)
+        {
+            const struct explosion *explosion = list_get(map->explosions, i);
+            const struct explosion_data *light = &explosion_database[explosion->type];
+            add_light(fg, bg, explosion->fov, explosion->x, explosion->y, x, y,
+                      light->radius, light->color, light->intensity, true, time);
+        }
+        for (size_t i = 0; i < map->surfaces->size; i++)
+        {
+            const struct surface *surface = list_get(map->surfaces, i);
+            const struct light_data *light = &light_database[surface_database[surface->type].light_type];
+            add_light(fg, bg, surface->light_fov, surface->x, surface->y, x, y,
+                      light->radius, light->color, light->intensity, light->flicker, time);
+        }
+    }
+
+    const struct color material = tile_database[map->tiles[x][y].type].color;
+    *foreground = tone_map(fg, material);
+    *background = tone_map(bg, material);
+}
+
 static void render(void)
 {
     if (!world || !world->player)
@@ -1564,6 +1662,7 @@ static void render(void)
     }
 
     const struct map *map = &world->maps[player->floor];
+    struct color backgrounds[MAP_WIDTH][MAP_HEIGHT] = {0};
 
     for (int x = view_x; x < view_x + view_width && x < MAP_WIDTH; x++)
     {
@@ -1589,6 +1688,9 @@ static void render(void)
                 }
 
                 const bool in_fov = TCOD_map_is_in_fov(player->fov, x, y);
+                struct color foreground, background;
+                lighting_tile(map, player, x, y, lighting_time, &foreground, &background);
+                backgrounds[x][y] = background;
 
                 if (in_fov)
                 {
@@ -1597,6 +1699,7 @@ static void render(void)
                         const struct actor *actor = tile->actor;
                         const struct class_data *class_data = &class_database[actor->class];
                         glyph = class_data->glyph;
+                        foreground = class_data->color;
                     }
                     else if (tile->object && (tile->object->type != OBJECT_TYPE_TRAP ||
                                               tile->object->trap_detection_state == OBJECT_TRAP_DETECTION_STATE_DETECTED))
@@ -1604,6 +1707,7 @@ static void render(void)
                         const struct object_data *object_data = &object_database[tile->object->type];
 
                         glyph = object_data->glyph;
+                        foreground = object_data->color;
                     }
 
                     else if (tile->item)
@@ -1612,29 +1716,27 @@ static void render(void)
                         const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
 
                         glyph = base_item_data->glyph;
+                        foreground = item_data->color;
                     }
                     else if (tile->corpse)
                     {
                         glyph = corpse_metadata.glyph;
+                        foreground = corpse_metadata.color;
                     }
                     else if (tile->surface)
                     {
                         const struct surface_data *const surface_data = &surface_database[tile->surface->type];
+                        foreground = surface_data->color;
 
                         if (surface_data->glyph)
                         {
                             glyph = surface_data->glyph;
                         }
                     }
-
-                    attron(A_BOLD);
-                    mvaddch(screen_y, screen_x, glyph);
-                    attroff(A_BOLD);
                 }
-                else
-                {
-                    mvaddch(screen_y, screen_x, glyph);
-                }
+                terminal_set_color(foreground, background, in_fov ? A_BOLD : 0);
+                mvaddch(screen_y, screen_x, glyph);
+                terminal_reset_color();
             }
         }
     }
@@ -1665,9 +1767,9 @@ static void render(void)
                     glyph = (dx > 0) == (dy > 0) ? '\\' : '/';
                 }
             }
-            attron(A_BOLD);
+            terminal_set_color(projectile_database[projectile->type].color, backgrounds[x][y], A_BOLD);
             mvaddch(y - view_y, x - view_x, glyph);
-            attroff(A_BOLD);
+            terminal_reset_color();
         }
     }
 
@@ -1715,13 +1817,31 @@ static void render(void)
             char text[64];
 
             snprintf(text, sizeof(text), "HP: %d/%d", world->player->hit_points, max_hit_points);
+            const float hp_ratio = max_hit_points > 0
+                                       ? fmaxf(0.0f, fminf(1.0f, (float)world->player->hit_points / max_hit_points))
+                                       : 0.0f;
+            const struct color red = {255, 0, 0};
+            const struct color yellow = {255, 255, 0};
+            const struct color green = {0, 255, 0};
+            const struct color black = {0, 0, 0};
+            const struct color hp_color = hp_ratio < 0.5f
+                                              ? color_lerp(red, yellow, hp_ratio * 2)
+                                              : color_lerp(yellow, green, (hp_ratio - 0.5f) * 2);
+            terminal_set_color(hp_color, black, 0);
             mvaddnstr(row++, 0, text, status_width);
+            terminal_reset_color();
 
             if (class_database[world->player->class].spellcasting_ability != ABILITY_NONE)
             {
                 const int max_mana = actor_get_max_mana(world->player);
                 snprintf(text, sizeof(text), "MP: %d/%d", world->player->mana, max_mana);
+                const float mana_ratio = max_mana > 0
+                                             ? fmaxf(0.0f, fminf(1.0f, (float)world->player->mana / max_mana))
+                                             : 0.0f;
+                terminal_set_color(color_lerp((struct color){127, 127, 127},
+                                              (struct color){0, 127, 255}, mana_ratio), black, 0);
                 mvaddnstr(row++, 0, text, status_width);
+                terminal_reset_color();
             }
 
             snprintf(text, sizeof(text), "CL: %d%s", world->player->level, world->player->ability_points > 0 ? "*" : "");
@@ -1752,7 +1872,12 @@ static void render(void)
             for (int i = first_message; i < (int)message_count() && log_y < max_y; i++, log_y++)
             {
                 const struct message *const message = message_get((size_t)i);
+                const float age = (float)(i - first_message + 1) / (message_count() - first_message);
+                const struct color color = color_lerp((struct color){127, 127, 127},
+                                                      message_color(message->type), age);
+                terminal_set_color(color, (struct color){0, 0, 0}, 0);
                 mvprintw(log_y, status_width + 1, "%.*s", message_width, message->text);
+                terminal_reset_color();
                 clrtoeol();
             }
         }
@@ -1811,6 +1936,7 @@ static struct scene *update(const float delta_time)
 
     const bool was_doomed = world->doomed;
     world_update(delta_time);
+    lighting_time = fmodf(lighting_time + delta_time, 1000.0f);
     if (action_actor && (action_actor != world->player || world->doomed || world->player->dead))
     {
         cancel_action();

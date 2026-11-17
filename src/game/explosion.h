@@ -1,6 +1,7 @@
 #ifndef UM_GAME_EXPLOSION_H
 #define UM_GAME_EXPLOSION_H
 
+#include "color.h"
 #include <libtcod.h>
 
 struct actor;
@@ -15,7 +16,9 @@ enum explosion_type
 
 struct explosion_data
 {
+    float intensity;
     int radius;
+    struct color color;
 };
 
 struct explosion

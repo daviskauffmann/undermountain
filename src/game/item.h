@@ -1,9 +1,10 @@
 #ifndef UM_GAME_ITEM_H
 #define UM_GAME_ITEM_H
 
+#include "color.h"
 #include "equip_slot.h"
 #include "size.h"
-#include <libtcod.h>
+#include <stdbool.h>
 
 enum item_type
 {
@@ -62,6 +63,7 @@ struct item_data
 
     const char *name;
     const char *description;
+    struct color color;
 
     int enhancement_bonus;
 

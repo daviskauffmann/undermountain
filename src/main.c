@@ -1,6 +1,7 @@
 #include "config.h"
 #include "menu.h"
 #include "scene.h"
+#include "terminal.h"
 #include <curses.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,18 +27,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    const WINDOW *const win = initscr();
-    if (!win)
+    if (!terminal_init())
     {
-        printf("Error: Couldn't initialize pdcurses\n");
+        printf("Error: Couldn't initialize terminal\n");
         return 1;
     }
-
-    cbreak();
-    noecho();
-    keypad(stdscr, TRUE);
-    nodelay(stdscr, TRUE);
-    curs_set(0);
 
     struct scene *current_scene = &menu_scene;
     current_scene->init(NULL);
@@ -70,7 +64,7 @@ int main(int argc, char *argv[])
         napms(16);
     }
 
-    endwin();
+    terminal_shutdown();
 
     return 0;
 }

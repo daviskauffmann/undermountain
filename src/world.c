@@ -268,6 +268,8 @@ void world_save(FILE *const file)
             fwrite(&actor->turns_chased, sizeof(actor->turns_chased), 1, file);
 
             fwrite(&actor->light_type, sizeof(actor->light_type), 1, file);
+            fwrite(&actor->flash_color, sizeof(actor->flash_color), 1, file);
+            fwrite(&actor->flash_alpha, sizeof(actor->flash_alpha), 1, file);
 
             fwrite(&actor->controllable, sizeof(actor->controllable), 1, file);
 
@@ -571,6 +573,8 @@ bool world_load(FILE *const file)
 
             fread(&actor->light_type, sizeof(actor->light_type), 1, file);
             actor->light_fov = NULL;
+            fread(&actor->flash_color, sizeof(actor->flash_color), 1, file);
+            fread(&actor->flash_alpha, sizeof(actor->flash_alpha), 1, file);
 
             fread(&actor->controllable, sizeof(actor->controllable), 1, file);
 
@@ -782,6 +786,7 @@ void world_update(float delta_time)
         struct actor *const actor = list_get(map->actors, actor_index);
 
         actor_update_light(actor);
+        actor_update_fade(actor, delta_time);
     }
 
     for (size_t actor_index = 0; actor_index < map->actors->size; actor_index++)

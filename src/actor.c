@@ -103,6 +103,9 @@ struct actor *actor_new(
     actor->light_type = LIGHT_TYPE_NONE;
     actor->light_fov = NULL;
 
+    actor->flash_color = (struct color){UM_COLOR_WHITE};
+    actor->flash_alpha = 0;
+
     actor->controllable = false;
 
     actor->dead = false;
@@ -429,6 +432,8 @@ int actor_get_max_hit_points(const struct actor *const actor)
 void actor_restore_hit_points(struct actor *const actor, const int health)
 {
     actor->hit_points += health;
+    actor->flash_color = (struct color){UM_COLOR_GREEN};
+    actor->flash_alpha = 1;
 
     const int max_hit_points = actor_get_max_hit_points(actor);
 
@@ -453,6 +458,8 @@ bool actor_damage_hit_points(struct actor *const actor, struct actor *const atta
     }
 
     actor->hit_points -= damage;
+    actor->flash_color = (struct color){UM_COLOR_RED};
+    actor->flash_alpha = 1;
 
     if (actor->hit_points <= 0)
     {
@@ -464,6 +471,11 @@ bool actor_damage_hit_points(struct actor *const actor, struct actor *const atta
     }
 
     return false;
+}
+
+void actor_update_fade(struct actor *const actor, const float delta_time)
+{
+    actor->flash_alpha = fmaxf(0, actor->flash_alpha - 4 * delta_time);
 }
 
 int actor_get_max_mana(const struct actor *const actor)
@@ -3137,6 +3149,8 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const bo
         if (attack_roll == 1 ||
             (attack_roll != 20 && hit_challenge < armor_class))
         {
+            other->flash_color = (struct color){UM_COLOR_GRAY};
+            other->flash_alpha = 1;
 
             event_emit(&(struct game_event){
                 .type = EVENT_ATTACK_MISSED,

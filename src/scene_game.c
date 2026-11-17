@@ -1699,7 +1699,7 @@ static void render(void)
                         const struct actor *actor = tile->actor;
                         const struct class_data *class_data = &class_database[actor->class];
                         glyph = class_data->glyph;
-                        foreground = class_data->color;
+                        foreground = color_lerp(class_data->color, actor->flash_color, actor->flash_alpha);
                     }
                     else if (tile->object && (tile->object->type != OBJECT_TYPE_TRAP ||
                                               tile->object->trap_detection_state == OBJECT_TRAP_DETECTION_STATE_DETECTED))

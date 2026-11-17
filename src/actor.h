@@ -2,6 +2,7 @@
 #define UM_GAME_ACTOR_H
 
 #include "ability.h"
+#include "color.h"
 #include "feat.h"
 #include "item.h"
 #include "saving_throw.h"
@@ -70,6 +71,9 @@ struct actor
     enum light_type light_type;
     TCOD_Map *light_fov;
 
+    struct color flash_color;
+    float flash_alpha;
+
     bool controllable;
 
     bool dead;
@@ -133,6 +137,7 @@ struct actor_spells actor_get_spells(const struct actor *actor);
 int actor_get_max_hit_points(const struct actor *actor);
 void actor_restore_hit_points(struct actor *actor, int health);
 bool actor_damage_hit_points(struct actor *actor, struct actor *attacker, int damage);
+void actor_update_fade(struct actor *actor, float delta_time);
 
 int actor_get_max_mana(const struct actor *actor);
 void actor_restore_mana(struct actor *actor, int mana);

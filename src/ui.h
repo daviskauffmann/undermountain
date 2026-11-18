@@ -10,7 +10,7 @@ void ui_screen_frame(const char *title);
 void ui_footer_hint(const char *text);
 void ui_centered(int y, const char *text, int attrs);
 void ui_panel_frame(const char *title, const char *hint);
-void ui_panel_notice(const char *text);
+void ui_panel_region_frame(const char *title, const char *hint, int x, int y, int width, int height);
 
 int ui_panel_row(int row, int scroll);
 bool ui_panel_row_in_view(int row, int scroll, int max_rows);

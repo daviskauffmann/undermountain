@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
+static int panel_origin_x;
+static int panel_origin_y;
+
 int ui_read_key(void)
 {
     const int key = getch();
@@ -97,30 +100,69 @@ void ui_centered(const int y, const char *const text, const int attrs)
 
 void ui_panel_frame(const char *const title, const char *const hint)
 {
+    panel_origin_x = 0;
+    panel_origin_y = 0;
     ui_screen_frame(title);
     ui_footer_hint(hint);
 }
 
-void ui_panel_notice(const char *const text)
+void ui_panel_region_frame(const char *const title, const char *const hint,
+                           const int x, const int y, const int width, const int height)
 {
-    const int width = getmaxx(stdscr) - 4;
-    if (getmaxy(stdscr) > 2 && width > 0)
+    panel_origin_x = x;
+    panel_origin_y = y;
+
+    for (int row = y; row < y + height; row++)
+    {
+        mvhline(row, x, ' ', width);
+    }
+    if (width < 2 || height < 2)
+    {
+        return;
+    }
+
+    mvhline(y, x, ACS_HLINE, width);
+    mvhline(y + height - 1, x, ACS_HLINE, width);
+    mvvline(y, x, ACS_VLINE, height);
+    mvvline(y, x + width - 1, ACS_VLINE, height);
+    mvaddch(y, x, ACS_ULCORNER);
+    mvaddch(y, x + width - 1, ACS_URCORNER);
+    mvaddch(y + height - 1, x, ACS_LLCORNER);
+    mvaddch(y + height - 1, x + width - 1, ACS_LRCORNER);
+
+    char buffer[128];
+    snprintf(buffer, sizeof(buffer), "[ %s ]", title);
+    const int length = (int)strlen(buffer);
+    int col = x + (width - length) / 2;
+    if (col < x + 1)
+    {
+        col = x + 1;
+    }
+    attron(A_BOLD);
+    if (x + width - 1 > col)
+    {
+        mvaddnstr(y, col, buffer, x + width - 1 - col);
+    }
+    attroff(A_BOLD);
+
+    const int hint_width = width - 4;
+    if (hint_width > 0)
     {
         attron(A_DIM);
-        mvaddnstr(1, 2, text, width);
+        mvaddnstr(y + height - 1, x + 2, hint, hint_width);
         attroff(A_DIM);
     }
 }
 
 int ui_panel_row(const int row, const int scroll)
 {
-    return row - scroll + 2;
+    return panel_origin_y + row - scroll + 1;
 }
 
 bool ui_panel_row_in_view(const int row, const int scroll, const int max_rows)
 {
-    const int screen_row = ui_panel_row(row, scroll);
-    return screen_row >= 2 && screen_row <= max_rows - 2;
+    const int local_row = row - scroll + 1;
+    return local_row >= 1 && local_row <= max_rows - 2;
 }
 
 void ui_panel_blank(int *const row)
@@ -133,7 +175,7 @@ void ui_panel_header(int *const row, const int scroll, const int col, const int 
     if (width > 0 && ui_panel_row_in_view(*row, scroll, max_rows))
     {
         attron(A_BOLD | A_UNDERLINE);
-        mvprintw(ui_panel_row(*row, scroll), col, "%-.*s", width, text);
+        mvprintw(ui_panel_row(*row, scroll), panel_origin_x + col, "%-.*s", width, text);
         attroff(A_BOLD | A_UNDERLINE);
     }
     (*row)++;
@@ -142,12 +184,12 @@ void ui_panel_header(int *const row, const int scroll, const int col, const int 
 void ui_panel_value(int *const row, const int scroll, const int col, const int width, const char *const label, const char *const value, const int max_rows)
 {
     const int screen_row = ui_panel_row(*row, scroll);
-    if (width > 0 && screen_row >= 2 && screen_row <= max_rows - 2)
+    if (width > 0 && ui_panel_row_in_view(*row, scroll, max_rows))
     {
-        mvprintw(screen_row, col, "%-.*s", width, label);
+        mvprintw(screen_row, panel_origin_x + col, "%-.*s", width, label);
         const int value_len = (int)strlen(value);
-        const int value_col = col + width - value_len;
-        if (value_col >= col)
+        const int value_col = panel_origin_x + col + width - value_len;
+        if (value_col >= panel_origin_x + col)
         {
             mvprintw(screen_row, value_col, "%s", value);
         }
@@ -163,7 +205,7 @@ void ui_panel_item(int *const row, const int scroll, const int col, const int wi
         {
             attron(A_REVERSE | A_BOLD);
         }
-        mvaddnstr(ui_panel_row(*row, scroll), col, text, width);
+        mvaddnstr(ui_panel_row(*row, scroll), panel_origin_x + col, text, width);
         if (selected)
         {
             attroff(A_REVERSE | A_BOLD);
@@ -200,7 +242,7 @@ void ui_panel_paragraph(int *const row, const int scroll, const int col, const i
         }
         if (ui_panel_row_in_view(*row, scroll, max_rows))
         {
-            mvaddnstr(ui_panel_row(*row, scroll), col, text, (int)length);
+            mvaddnstr(ui_panel_row(*row, scroll), panel_origin_x + col, text, (int)length);
         }
         (*row)++;
         text += length;
@@ -220,7 +262,7 @@ void ui_panel_paragraph(int *const row, const int scroll, const int col, const i
 
 int ui_panel_scroll(int scroll, const int total_rows, const int max_rows)
 {
-    const int visible_rows = max_rows > 3 ? max_rows - 3 : 1;
+    const int visible_rows = max_rows > 2 ? max_rows - 2 : 1;
     const int limit = total_rows > visible_rows ? total_rows - visible_rows : 0;
     if (scroll > limit)
     {
@@ -231,7 +273,7 @@ int ui_panel_scroll(int scroll, const int total_rows, const int max_rows)
 
 int ui_panel_show_row(const int scroll, const int row, const int max_rows)
 {
-    const int visible_rows = max_rows > 3 ? max_rows - 3 : 1;
+    const int visible_rows = max_rows > 2 ? max_rows - 2 : 1;
     if (row < scroll)
     {
         return row;
@@ -247,7 +289,7 @@ void ui_panel_divider(const int column, const int max_rows)
 {
     for (int y = 1; y < max_rows - 1; y++)
     {
-        mvaddch(y, column, ACS_VLINE);
+        mvaddch(panel_origin_y + y, panel_origin_x + column, ACS_VLINE);
     }
 }
 
@@ -256,11 +298,11 @@ void ui_panel_scrollbar(const int total_rows, const int max_rows, const int max_
     scroll = ui_panel_scroll(scroll, total_rows, max_rows);
     if (scroll > 0)
     {
-        mvaddch(2, max_cols - 1, ACS_UARROW);
+        mvaddch(panel_origin_y + 1, panel_origin_x + max_cols - 1, ACS_UARROW);
     }
-    if ((total_rows - scroll) > max_rows - 3)
+    if ((total_rows - scroll) > max_rows - 2)
     {
-        mvaddch(max_rows - 2, max_cols - 1, ACS_DARROW);
+        mvaddch(panel_origin_y + max_rows - 2, panel_origin_x + max_cols - 1, ACS_DARROW);
     }
 }
 

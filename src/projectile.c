@@ -102,6 +102,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
 {
     bool should_move = true;
 
+    // TODO: if a projectile is too fast, it might skip over targets or obstacles
     const float distance = distance_between(projectile->origin_x, projectile->origin_y, projectile->target_x, projectile->target_y);
     const float dx = ((float)projectile->target_x - (float)projectile->origin_x) / distance;
     const float dy = ((float)projectile->target_y - (float)projectile->origin_y) / distance;

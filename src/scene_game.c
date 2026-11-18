@@ -58,6 +58,11 @@ static int overlay_scroll = 0;
 static bool hud_visible = true;
 static float lighting_time;
 
+static bool is_side_panel_overlay(void)
+{
+    return getmaxx(stdscr) >= 72 && active_overlay != OVERLAY_NONE;
+}
+
 enum input_mode
 {
     INPUT_NORMAL,
@@ -96,8 +101,6 @@ static int target_x, target_y;
 static struct item *targeting_item;
 static enum item_type examined_item = ITEM_TYPE_NONE;
 static struct actor *action_actor;
-static char overlay_notice[512];
-static bool collecting_feedback;
 
 static void show_notice(const struct message_data *const data)
 {
@@ -107,41 +110,9 @@ static void show_notice(const struct message_data *const data)
         return;
     }
 
-    if (active_overlay == OVERLAY_INVENTORY || active_overlay == OVERLAY_CHARACTER ||
-        active_overlay == OVERLAY_SPELLBOOK)
-    {
-        snprintf(overlay_notice, sizeof(overlay_notice), "%s", text);
-    }
-    else
-    {
-        message_add(text, data->type);
-    }
-
+    message_add(text, data->type);
     free(text);
 }
-
-static void receive_action_feedback(const struct game_event *const event, void *const context)
-{
-    (void)context;
-    if (!collecting_feedback || !world_event_is_visible(event) ||
-        (active_overlay != OVERLAY_INVENTORY && active_overlay != OVERLAY_CHARACTER &&
-         active_overlay != OVERLAY_SPELLBOOK))
-    {
-        return;
-    }
-
-    struct message_data data;
-    if (!message_from_event(event, &data))
-    {
-        return;
-    }
-
-    show_notice(&data);
-}
-
-static struct event_listener feedback_listener = {
-    .receive = receive_action_feedback,
-};
 
 static const char *const action_names[] = {
     [ACTION_NONE] = "Game",
@@ -176,7 +147,6 @@ static void cancel_action(void)
 static void begin_action(const enum input_mode mode, const enum action action)
 {
     cancel_action();
-    overlay_notice[0] = '\0';
     input_mode = mode;
     current_action = action;
     action_actor = world->player;
@@ -185,7 +155,6 @@ static void begin_action(const enum input_mode mode, const enum action action)
 static void open_overlay(const enum overlay overlay)
 {
     cancel_action();
-    overlay_notice[0] = '\0';
     if (active_overlay == overlay)
     {
         active_overlay = OVERLAY_NONE;
@@ -201,13 +170,10 @@ static void init(const struct scene *const previous_scene)
 {
     (void)previous_scene;
     cancel_action();
-    overlay_notice[0] = '\0';
     active_overlay = OVERLAY_NONE;
     overlay_scroll = 0;
     hud_visible = true;
     lighting_time = 0;
-    collecting_feedback = false;
-    event_subscribe(&feedback_listener);
 
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
@@ -218,10 +184,6 @@ static void init(const struct scene *const previous_scene)
 
 static void uninit(void)
 {
-    if (world)
-    {
-        event_unsubscribe(&feedback_listener);
-    }
     if (world && !world->doomed)
     {
         FILE *const file = fopen(SAVE_PATH, "wb");
@@ -564,7 +526,6 @@ static void select_action(int index)
         return;
     }
 
-    overlay_notice[0] = '\0';
     if (action == ACTION_SPEND_POINT)
     {
         if (player->ability_points > 0)
@@ -719,7 +680,12 @@ static void handle_selection(int ch)
 
 static bool handle_overlay_key(const int ch)
 {
-    const int page = getmaxy(stdscr) > 3 ? getmaxy(stdscr) - 3 : 1;
+    int page_height = getmaxy(stdscr);
+    if (is_side_panel_overlay() && hud_visible && page_height > MESSAGE_LOG_HEIGHT + 3)
+    {
+        page_height -= MESSAGE_LOG_HEIGHT;
+    }
+    const int page = page_height > 3 ? page_height - 3 : 1;
     switch (ch)
     {
     case 'i':
@@ -791,7 +757,6 @@ static struct scene *input(void)
         else if (active_overlay != OVERLAY_NONE)
         {
             active_overlay = OVERLAY_NONE;
-            overlay_notice[0] = '\0';
         }
         else
         {
@@ -1258,11 +1223,12 @@ static void draw_carried_items(int *const row, const int col, const int width, c
     }
 }
 
-static void draw_inventory_overlay(const int max_y, const int max_x)
+static void draw_inventory_overlay(const int max_y, const int max_x, const int origin_x)
 {
     const bool selecting = input_mode == INPUT_SELECTION;
-    ui_panel_frame(selecting ? action_names[current_action] : "Inventory",
-                   selecting ? "[Up/Down] select  [a-z/Enter] confirm  [PgUp/PgDn] page  [ESC] cancel" : "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close  [?] help");
+    ui_panel_region_frame(selecting ? action_names[current_action] : "Inventory",
+                          selecting ? "[Up/Down] select  [a-z/Enter] confirm  [PgUp/PgDn] page  [ESC] cancel" : "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close  [?] help",
+                          origin_x, 0, max_x, max_y);
 
     const bool columns = max_x >= 72;
     const int divider = max_x / 2;
@@ -1293,10 +1259,11 @@ static void draw_inventory_overlay(const int max_y, const int max_x)
     ui_panel_scrollbar(total_rows, max_y, max_x, overlay_scroll);
 }
 
-static void draw_character_sheet_overlay(const int max_y, const int max_x)
+static void draw_character_sheet_overlay(const int max_y, const int max_x, const int origin_x)
 {
-    ui_panel_frame(current_action == ACTION_SPEND_POINT ? "Spend Ability Point" : "Character Sheet",
-                   current_action == ACTION_SPEND_POINT ? "[Up/Down] select  [a-f/Enter] spend  [ESC] cancel" : "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close  [a] spend points");
+    ui_panel_region_frame(current_action == ACTION_SPEND_POINT ? "Spend Ability Point" : "Character Sheet",
+                          current_action == ACTION_SPEND_POINT ? "[Up/Down] select  [a-f/Enter] spend  [ESC] cancel" : "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close  [a] spend points",
+                          origin_x, 0, max_x, max_y);
 
     const bool columns = max_x >= 72;
     const int divider = max_x / 2;
@@ -1335,11 +1302,12 @@ static void draw_character_sheet_overlay(const int max_y, const int max_x)
     ui_panel_scrollbar(total_rows, max_y, max_x, overlay_scroll);
 }
 
-static void draw_spellbook_overlay(const int max_y, const int max_x)
+static void draw_spellbook_overlay(const int max_y, const int max_x, const int origin_x)
 {
     const bool selecting = current_action == ACTION_READY;
-    ui_panel_frame(selecting ? "Ready Spell" : "Spellbook",
-                   selecting ? "[Up/Down] select  [a-z/Enter] ready  [ESC] cancel" : "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close  [Z] ready");
+    ui_panel_region_frame(selecting ? "Ready Spell" : "Spellbook",
+                          selecting ? "[Up/Down] select  [a-z/Enter] ready  [ESC] cancel" : "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close  [Z] ready",
+                          origin_x, 0, max_x, max_y);
 
     const int col = 2;
     const int content_width = max_x - 4;
@@ -1474,16 +1442,17 @@ static int draw_examination(const int width, const int max_y)
     return row;
 }
 
-static void draw_examine_overlay(const int max_y, const int max_x)
+static void draw_examine_overlay(const int max_y, const int max_x, const int origin_x)
 {
-    ui_panel_frame("Examine", "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close");
+    ui_panel_region_frame("Examine", "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close",
+                          origin_x, 0, max_x, max_y);
     const int total_rows = draw_examination(max_x - 4, 0);
     overlay_scroll = ui_panel_scroll(overlay_scroll, total_rows, max_y);
     draw_examination(max_x - 4, max_y);
     ui_panel_scrollbar(total_rows, max_y, max_x, overlay_scroll);
 }
 
-static void draw_help_overlay(const int max_y, const int max_x)
+static void draw_help_overlay(const int max_y, const int max_x, const int origin_x)
 {
     static const char *const commands[] = {
         "Movement",
@@ -1512,7 +1481,8 @@ static void draw_help_overlay(const int max_y, const int max_x)
         "Up/Down or j/k: scroll    PgUp/PgDn: page",
         "i/c/v: switch overlays    ?: help",
     };
-    ui_panel_frame("Help", "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close");
+    ui_panel_region_frame("Help", "[↑↓/jk] scroll  [PgUp/PgDn] page  [ESC] close",
+                          origin_x, 0, max_x, max_y);
     int total_rows = 0;
     for (size_t i = 0; i < sizeof(commands) / sizeof(commands[0]); i++)
     {
@@ -1637,7 +1607,8 @@ static void render(void)
 
     clear();
 
-    view_width = max_x;
+    const bool side_panel = is_side_panel_overlay();
+    view_width = side_panel ? max_x - max_x / 2 : max_x;
     view_height = hud_visible && max_y > MESSAGE_LOG_HEIGHT + 3 ? max_y - MESSAGE_LOG_HEIGHT : max_y;
 
     const struct actor *player = world->player;
@@ -1775,33 +1746,36 @@ static void render(void)
 
     if (active_overlay == OVERLAY_INVENTORY)
     {
-        draw_inventory_overlay(max_y, max_x);
+        draw_inventory_overlay(side_panel ? view_height : max_y,
+                               side_panel ? max_x - view_width : max_x,
+                               side_panel ? view_width : 0);
     }
     else if (active_overlay == OVERLAY_CHARACTER)
     {
-        draw_character_sheet_overlay(max_y, max_x);
+        draw_character_sheet_overlay(side_panel ? view_height : max_y,
+                                     side_panel ? max_x - view_width : max_x,
+                                     side_panel ? view_width : 0);
     }
     else if (active_overlay == OVERLAY_SPELLBOOK)
     {
-        draw_spellbook_overlay(max_y, max_x);
+        draw_spellbook_overlay(side_panel ? view_height : max_y,
+                               side_panel ? max_x - view_width : max_x,
+                               side_panel ? view_width : 0);
     }
     else if (active_overlay == OVERLAY_HELP)
     {
-        draw_help_overlay(max_y, max_x);
+        draw_help_overlay(side_panel ? view_height : max_y,
+                          side_panel ? max_x - view_width : max_x,
+                          side_panel ? view_width : 0);
     }
     else if (active_overlay == OVERLAY_EXAMINE)
     {
-        draw_examine_overlay(max_y, max_x);
+        draw_examine_overlay(side_panel ? view_height : max_y,
+                             side_panel ? max_x - view_width : max_x,
+                             side_panel ? view_width : 0);
     }
 
-    if ((active_overlay == OVERLAY_INVENTORY || active_overlay == OVERLAY_CHARACTER ||
-         active_overlay == OVERLAY_SPELLBOOK) &&
-        overlay_notice[0])
-    {
-        ui_panel_notice(overlay_notice);
-    }
-
-    if (active_overlay == OVERLAY_NONE && view_height < max_y)
+    if ((active_overlay == OVERLAY_NONE || side_panel) && view_height < max_y)
     {
         const int status_width = max_x > STATUS_WIDTH + 10 ? STATUS_WIDTH : max_x / 2;
         attron(A_DIM);
@@ -1925,10 +1899,7 @@ static struct scene *update(const float delta_time)
         world->player = world->hero;
     }
 
-    // Handle input first so took_turn is set before world_update processes turns
-    collecting_feedback = true;
     struct scene *next = input();
-    collecting_feedback = false;
     if (next != &scene_game)
     {
         return next;

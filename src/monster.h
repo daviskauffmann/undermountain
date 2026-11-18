@@ -6,6 +6,7 @@
 #include "item.h"
 #include "special_ability.h"
 #include "special_attack.h"
+#include "spell.h"
 
 enum monster_type
 {
@@ -74,7 +75,7 @@ struct monster_data
         int max_stack;
     } items[NUM_ITEM_TYPES];
 
-    // TODO: spells
+    bool spells[NUM_SPELL_TYPES];
 };
 
 extern const struct monster_data monster_database[NUM_MONSTER_TYPES];

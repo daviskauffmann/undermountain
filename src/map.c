@@ -452,7 +452,7 @@ void map_generate(struct map *const map, TCOD_Random *random)
                      map->tiles[x][y].object != NULL);
 
             enum object_type object_type = 0;
-            switch (TCOD_random_get_int(random, 0, 5))
+            switch (TCOD_random_get_int(random, 0, 4))
             {
             case 0:
             {
@@ -475,11 +475,6 @@ void map_generate(struct map *const map, TCOD_Random *random)
             }
             break;
             case 4:
-            {
-                object_type = OBJECT_TYPE_THRONE;
-            }
-            break;
-            case 5:
             {
                 object_type = OBJECT_TYPE_TRAP;
             }
@@ -597,6 +592,7 @@ void map_generate(struct map *const map, TCOD_Random *random)
                 (bool[NUM_SPECIAL_ABILITIES]){false},
                 (bool[NUM_SPECIAL_ATTACKS]){false},
                 (bool[NUM_FEATS]){false},
+                (bool[NUM_SPELL_TYPES]){false},
                 map->floor,
                 x, y);
 
@@ -650,6 +646,7 @@ void map_generate(struct map *const map, TCOD_Random *random)
                                 monster_data->special_abilities,
                                 monster_data->special_attacks,
                                 monster_data->feats,
+                                monster_data->spells,
                                 map->floor,
                                 x, y);
 

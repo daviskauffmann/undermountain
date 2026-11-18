@@ -17,6 +17,7 @@ const struct base_item_data base_item_database[] = {
         .cost = 1,
 
         .ammunition_type = AMMUNITION_TYPE_ARROW,
+        .damage_type = DAMAGE_TYPE_PIERCING,
     },
     [BASE_ITEM_TYPE_BATTLEAXE] = {
         .name = "Battleaxe",
@@ -62,6 +63,7 @@ const struct base_item_data base_item_database[] = {
         .cost = 1,
 
         .ammunition_type = AMMUNITION_TYPE_BOLT,
+        .damage_type = DAMAGE_TYPE_PIERCING,
     },
     [BASE_ITEM_TYPE_BULLET] = {
         .name = "Bullet",
@@ -74,6 +76,7 @@ const struct base_item_data base_item_database[] = {
         .cost = 1,
 
         .ammunition_type = AMMUNITION_TYPE_BULLET,
+        .damage_type = DAMAGE_TYPE_BLUDGEONING,
     },
     [BASE_ITEM_TYPE_CLOTHING] = {
         .name = "Armor",

@@ -3,6 +3,7 @@
 
 #include "ability.h"
 #include "color.h"
+#include "damage_type.h"
 #include "feat.h"
 #include "item.h"
 #include "spell.h"
@@ -67,6 +68,10 @@ struct class_data
     const char *hit_die;
 
     int natural_armor_bonus;
+
+    int damage_reduction;
+    enum damage_type damage_reduction_bypass;
+    int spell_resistance;
 
     enum base_attack_bonus_type base_attack_bonus_type;
 

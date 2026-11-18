@@ -116,6 +116,7 @@ void world_create(struct actor *hero, unsigned int seed)
                 monster_data->special_abilities,
                 monster_data->special_attacks,
                 monster_data->feats,
+                monster_data->spells,
                 floor,
                 map->stair_up_x + 1, map->stair_up_y + 1);
             companion->leader = hero;
@@ -344,7 +345,7 @@ void world_save(FILE *const file)
             fwrite(&projectile->origin_x, sizeof(projectile->origin_x), 1, file);
             fwrite(&projectile->origin_y, sizeof(projectile->origin_y), 1, file);
             fwrite(&projectile->target_x, sizeof(projectile->target_x), 1, file);
-            fwrite(&projectile->target_x, sizeof(projectile->target_x), 1, file);
+            fwrite(&projectile->target_y, sizeof(projectile->target_y), 1, file);
             fwrite(&projectile->x, sizeof(projectile->x), 1, file);
             fwrite(&projectile->y, sizeof(projectile->y), 1, file);
 

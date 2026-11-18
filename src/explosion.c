@@ -102,7 +102,8 @@ struct explosion *explosion_new(
                 case EXPLOSION_TYPE_FIREBALL:
                 {
                     if (tile->actor &&
-                        tile->actor != initiator)
+                        tile->actor != initiator &&
+                        !actor_resists_spell(tile->actor, initiator, SPELL_TYPE_FIREBALL, caster_level))
                     {
                         TCOD_dice_t dice = TCOD_random_dice_new("1d6");
                         dice.nb_rolls = SDL_min(explosion->caster_level, 10);

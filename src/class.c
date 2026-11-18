@@ -479,6 +479,12 @@ const struct class_data class_database[] = {
         .base_attack_bonus_type = BASE_ATTACK_BONUS_TYPE_GOOD,
 
         .natural_armor_bonus = 2,
+
+        .damage_reduction = 15,
+        .damage_reduction_bypass = DAMAGE_TYPE_PIERCING,
+        .spell_resistance = 27,
+
+        .spellcasting_ability = ABILITY_CHARISMA,
     },
     [CLASS_RAT] = {
         .name = "Rat",

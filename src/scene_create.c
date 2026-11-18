@@ -369,6 +369,7 @@ static void handle_feats_input(const int ch, struct scene **const next_scene)
             (bool[NUM_SPECIAL_ABILITIES]){false},
             (bool[NUM_SPECIAL_ATTACKS]){false},
             feats,
+            (bool[NUM_SPELL_TYPES]){false},
             0,
             0, 0);
 

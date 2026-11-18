@@ -38,6 +38,7 @@ struct spell_data
     enum magic_type magic_type;
     enum spell_range range;
     bool harmful;
+    bool spell_resistance;
 };
 
 extern const struct spell_data spell_database[NUM_SPELL_TYPES];

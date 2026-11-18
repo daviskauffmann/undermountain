@@ -3,6 +3,7 @@
 
 #include "ability.h"
 #include "color.h"
+#include "damage_type.h"
 #include "feat.h"
 #include "item.h"
 #include "saving_throw.h"
@@ -112,6 +113,7 @@ struct actor *actor_new(
     const bool special_abilities[NUM_SPECIAL_ABILITIES],
     const bool special_attacks[NUM_SPECIAL_ATTACKS],
     const bool feats[NUM_FEATS],
+    const bool spells[NUM_SPELL_TYPES],
     int floor,
     int x,
     int y);
@@ -137,6 +139,8 @@ struct actor_spells actor_get_spells(const struct actor *actor);
 int actor_get_max_hit_points(const struct actor *actor);
 void actor_restore_hit_points(struct actor *actor, int health);
 bool actor_damage_hit_points(struct actor *actor, struct actor *attacker, int damage);
+int actor_reduce_weapon_damage(const struct actor *actor, enum damage_type damage_type, int damage);
+bool actor_resists_spell(const struct actor *actor, const struct actor *caster, enum spell_type spell, int caster_level);
 void actor_update_fade(struct actor *actor, float delta_time);
 
 int actor_get_max_mana(const struct actor *actor);
@@ -221,9 +225,6 @@ bool actor_drink(
 bool actor_dip(
     struct actor *actor,
     int x, int y);
-bool actor_sit(
-    struct actor *actor,
-    int x, int y);
 bool actor_grab(
     struct actor *actor,
     int x, int y);
@@ -243,6 +244,7 @@ bool actor_shoot(
     struct actor *actor,
     int x, int y);
 bool actor_attack(struct actor *actor, struct actor *other, bool opportunity, int *damage_dealt);
+bool actor_attack_with_ammunition(struct actor *actor, struct actor *other, const struct item *ammunition);
 bool actor_cast(
     struct actor *actor,
     enum spell_type spell_type,

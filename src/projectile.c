@@ -160,7 +160,7 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
         {
             if (tile->actor)
             {
-                actor_attack(projectile->shooter, tile->actor, false, NULL);
+                actor_attack_with_ammunition(projectile->shooter, tile->actor, projectile->ammunition);
 
                 should_move = false;
             }
@@ -187,7 +187,8 @@ bool projectile_move(struct projectile *const projectile, const float delta_time
         break;
         case PROJECTILE_TYPE_MAGIC_MISSILE:
         {
-            if (tile->actor)
+            if (tile->actor &&
+                !actor_resists_spell(tile->actor, projectile->shooter, SPELL_TYPE_MAGIC_MISSILE, projectile->caster_level))
             {
                 int num_missiles = 1;
                 if (projectile->caster_level >= 9)

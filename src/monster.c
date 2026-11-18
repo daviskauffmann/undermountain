@@ -675,12 +675,12 @@ const struct monster_data monster_database[] = {
 
         .special_abilities = {
             // TODO: shapeshift
-            // TODO: damage reduction
-            // TODO: spell resistance
             [SPECIAL_ABILITY_DARKVISION] = true,
         },
 
-        // TODO: spells
+        .spells = {
+            [SPELL_TYPE_MAGIC_MISSILE] = true,
+        },
 
         .feats = {
             [FEAT_DODGE] = true,

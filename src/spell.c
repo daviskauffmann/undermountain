@@ -16,30 +16,35 @@ const struct spell_data spell_database[] = {
         .level = 0,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_CURE_LIGHT_WOUNDS] = {
         .name = "Cure Light Wounds",
         .level = 1,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_CURE_MODERATE_WOUNDS] = {
         .name = "Cure Moderate Wounds",
         .level = 2,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_CURE_SERIOUS_WOUNDS] = {
         .name = "Cure Serious Wounds",
         .level = 3,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_CURE_CRITICAL_WOUNDS] = {
         .name = "Cure Critical Wounds",
         .level = 4,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_CHAIN_LIGHTNING] = {
         .name = "Lightning",
@@ -47,6 +52,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_ARCANE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_DAZE] = {
         .name = "Daze",
@@ -54,6 +60,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_ARCANE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_FIREBALL] = {
         .name = "Fireball",
@@ -61,6 +68,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_ARCANE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_HARM] = {
         .name = "Harm",
@@ -68,12 +76,14 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_HEAL] = {
         .name = "Heal",
         .level = 6,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_INFLICT_MINOR_WOUNDS] = {
         .name = "Inflict Minor Wounds",
@@ -81,6 +91,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_INFLICT_LIGHT_WOUNDS] = {
         .name = "Inflict Light Wounds",
@@ -88,6 +99,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_INFLICT_MODERATE_WOUNDS] = {
         .name = "Inflict Moderate Wounds",
@@ -95,6 +107,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_INFLICT_SERIOUS_WOUNDS] = {
         .name = "Inflict Serious Wounds",
@@ -102,6 +115,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_INFLICT_CRITICAL_WOUNDS] = {
         .name = "Inflict Critical Wounds",
@@ -109,6 +123,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_MAGIC_MISSILE] = {
         .name = "Magic Missile",
@@ -116,6 +131,7 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_ARCANE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_RAY_OF_FROST] = {
         .name = "Ray of Frost",
@@ -123,12 +139,14 @@ const struct spell_data spell_database[] = {
         .magic_type = MAGIC_TYPE_ARCANE,
         .range = SPELL_RANGE_TOUCH,
         .harmful = true,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_RESTORE_MANA] = {
         .name = "Restore Mana",
         .level = 0,
         .magic_type = MAGIC_TYPE_DIVINE,
         .range = SPELL_RANGE_TOUCH,
+        .spell_resistance = true,
     },
     [SPELL_TYPE_SUMMON_FAMILIAR] = {
         .name = "Summon Familiar",

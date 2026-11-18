@@ -40,6 +40,7 @@ struct actor *actor_new(
     const bool special_abilities[NUM_SPECIAL_ABILITIES],
     const bool special_attacks[NUM_SPECIAL_ATTACKS],
     const bool feats[NUM_FEATS],
+    const bool spells[NUM_SPELL_TYPES],
     const int floor,
     const int x,
     const int y)
@@ -76,10 +77,7 @@ struct actor *actor_new(
     actor->items = list_new();
 
     actor->mana = actor_get_max_mana(actor);
-    for (enum spell_type spell_type = 0; spell_type < NUM_SPELL_TYPES; spell_type++)
-    {
-        actor->spells[spell_type] = false;
-    }
+    memcpy(actor->spells, spells, sizeof(actor->spells));
     actor->readied_spell = SPELL_TYPE_NONE;
 
     actor->floor = floor;
@@ -445,18 +443,6 @@ void actor_restore_hit_points(struct actor *const actor, const int health)
 
 bool actor_damage_hit_points(struct actor *const actor, struct actor *const attacker, int damage)
 {
-    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
-
-    if (armor && armor->type == ITEM_TYPE_ADAMANTINE_BREASTPLATE)
-    {
-        damage -= 2;
-
-        if (damage < 0)
-        {
-            return true;
-        }
-    }
-
     actor->hit_points -= damage;
     actor->flash_color = (struct color){UM_COLOR_RED};
     actor->flash_alpha = 1;
@@ -471,6 +457,56 @@ bool actor_damage_hit_points(struct actor *const actor, struct actor *const atta
     }
 
     return false;
+}
+
+int actor_reduce_weapon_damage(const struct actor *const actor, const enum damage_type damage_type, const int damage)
+{
+    const struct class_data *const class_data = &class_database[actor->class];
+    int reduction = class_data->damage_reduction;
+
+    if (class_data->damage_reduction_bypass != DAMAGE_TYPE_NONE &&
+        (damage_type == class_data->damage_reduction_bypass ||
+         (damage_type == DAMAGE_TYPE_PIERCING_SLASHING &&
+          (class_data->damage_reduction_bypass == DAMAGE_TYPE_PIERCING ||
+           class_data->damage_reduction_bypass == DAMAGE_TYPE_SLASHING))))
+    {
+        reduction = 0;
+    }
+
+    const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
+    if (armor && armor->type == ITEM_TYPE_ADAMANTINE_BREASTPLATE && reduction < 2)
+    {
+        reduction = 2;
+    }
+
+    return damage > reduction ? damage - reduction : 0;
+}
+
+bool actor_resists_spell(const struct actor *const actor, const struct actor *const caster,
+                         const enum spell_type spell, const int caster_level)
+{
+    const int resistance = class_database[actor->class].spell_resistance;
+    if (actor == caster || resistance <= 0 || !spell_database[spell].spell_resistance)
+    {
+        return false;
+    }
+
+    if (TCOD_random_dice_roll_s(NULL, "1d20") + caster_level >= resistance)
+    {
+        return false;
+    }
+
+    event_emit(&(struct game_event){
+        .type = EVENT_SPELL_RESISTED,
+        .floor = actor->floor,
+        .x = actor->x,
+        .y = actor->y,
+        .actor = caster->name,
+        .target = actor->name,
+        .spell = spell_database[spell].name,
+    });
+
+    return true;
 }
 
 void actor_update_fade(struct actor *const actor, const float delta_time)
@@ -1455,6 +1491,55 @@ void actor_provoke_attack_of_opportunity(struct actor *actor, struct list **cons
     }
 }
 
+static enum spell_type actor_find_attack_spell(const struct actor *const actor, const struct actor *const target)
+{
+    const struct actor_spells spells = actor_get_spells(actor);
+    enum spell_type best = SPELL_TYPE_NONE;
+
+    for (enum spell_type spell = SPELL_TYPE_NONE + 1; spell < NUM_SPELL_TYPES; spell++)
+    {
+        if (!spells.has[spell] ||
+            actor->level < spell_database[spell].level ||
+            actor->mana < actor_get_spell_mana_cost(actor, spell))
+        {
+            continue;
+        }
+
+        switch (spell)
+        {
+        case SPELL_TYPE_CHAIN_LIGHTNING:
+        case SPELL_TYPE_MAGIC_MISSILE:
+        case SPELL_TYPE_RAY_OF_FROST:
+            break;
+        case SPELL_TYPE_HARM:
+            if (target->race == RACE_UNDEAD || target->hit_points <= 4)
+            {
+                continue;
+            }
+            break;
+        case SPELL_TYPE_INFLICT_MINOR_WOUNDS:
+        case SPELL_TYPE_INFLICT_LIGHT_WOUNDS:
+        case SPELL_TYPE_INFLICT_MODERATE_WOUNDS:
+        case SPELL_TYPE_INFLICT_SERIOUS_WOUNDS:
+        case SPELL_TYPE_INFLICT_CRITICAL_WOUNDS:
+            if (target->race == RACE_UNDEAD)
+            {
+                continue;
+            }
+            break;
+        default:
+            continue;
+        }
+
+        if (best == SPELL_TYPE_NONE || spell_database[spell].level > spell_database[best].level)
+        {
+            best = spell;
+        }
+    }
+
+    return best;
+}
+
 bool actor_ai(struct actor *const actor)
 {
     const struct map *const map = &world->maps[actor->floor];
@@ -1521,6 +1606,15 @@ bool actor_ai(struct actor *const actor)
         actor->last_seen_x = nearest_enemy->x;
         actor->last_seen_y = nearest_enemy->y;
         actor->turns_chased = 0;
+
+        const enum spell_type spell = actor_find_attack_spell(actor, nearest_enemy);
+        if (spell != SPELL_TYPE_NONE)
+        {
+            if (actor_cast(actor, spell, nearest_enemy->x, nearest_enemy->y, true) || actor->dead)
+            {
+                return true;
+            }
+        }
 
         const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
         const struct actor_feats actor_feats = actor_get_feats(actor);
@@ -2069,11 +2163,6 @@ bool actor_interact(struct actor *actor, struct object *object)
     {
     }
     break;
-    case OBJECT_TYPE_THRONE:
-    {
-        return actor_sit(actor, object->x, object->y);
-    }
-    break;
     case OBJECT_TYPE_TRAP:
     {
     }
@@ -2454,50 +2543,6 @@ bool actor_dip(
             // TODO: extinguish weapon
         }
     }
-
-    return true;
-}
-
-bool actor_sit(
-    struct actor *const actor,
-    const int x, const int y)
-{
-    if (!map_is_inside(x, y))
-    {
-        return false;
-    }
-
-    struct map *const map = &world->maps[actor->floor];
-    struct tile *const tile = &map->tiles[x][y];
-
-    if (!tile->object || tile->object->type != OBJECT_TYPE_THRONE)
-    {
-        event_emit(&(struct game_event){
-            .type = EVENT_CANNOT_SIT,
-            .floor = actor->floor,
-            .x = actor->x,
-            .y = actor->y,
-            .actor = actor->name,
-        });
-
-        return false;
-    }
-
-    // TODO: throne effects
-    // donate gold for a reward?
-
-    list_remove(map->objects, tile->object);
-
-    object_delete(tile->object);
-    tile->object = NULL;
-
-    event_emit(&(struct game_event){
-        .type = EVENT_THRONE_SAT,
-        .floor = actor->floor,
-        .x = actor->x,
-        .y = actor->y,
-        .actor = actor->name,
-    });
 
     return true;
 }
@@ -3118,7 +3163,8 @@ bool actor_shoot(
     return true;
 }
 
-bool actor_attack(struct actor *const actor, struct actor *const other, const bool opportunity, int *const damage_dealt)
+static bool actor_attack_internal(struct actor *const actor, struct actor *const other, const bool opportunity,
+                                  int *const damage_dealt, const struct item *const ammunition)
 {
     // remember the target
     actor->last_attacked_target = other;
@@ -3219,18 +3265,22 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const bo
             damage = 1;
         }
 
-        // adamantine breastplate
-        const struct item *const armor = actor->equipment[EQUIP_SLOT_ARMOR];
-
-        if (armor && armor->type == ITEM_TYPE_ADAMANTINE_BREASTPLATE)
+        const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+        enum damage_type damage_type;
+        if (ammunition)
         {
-            damage -= 2;
-
-            if (damage < 0)
-            {
-                damage = 0;
-            }
+            damage_type = base_item_database[item_database[ammunition->type].type].damage_type;
         }
+        else if (weapon)
+        {
+            damage_type = base_item_database[item_database[weapon->type].type].damage_type;
+        }
+        else
+        {
+            damage_type = natural_weapon_database[class_database[actor->class].natural_weapon_type].damage_type;
+        }
+        const int unreduced_damage = damage;
+        damage = actor_reduce_weapon_damage(other, damage_type, damage);
 
         // TODO: when projectiles come at the player from the dark, nothing gets logged
         // it'd be nice if there were a way to do something like "someone attacks <player> for <damage>"
@@ -3247,12 +3297,24 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const bo
             .sneak = sneak_attack,
         });
 
+        if (damage < unreduced_damage)
+        {
+            event_emit(&(struct game_event){
+                .type = EVENT_DAMAGE_REDUCED,
+                .floor = other->floor,
+                .x = other->x,
+                .y = other->y,
+                .target = other->name,
+                .amount = unreduced_damage - damage,
+            });
+        }
+
         // weapon breakage
         bool weapon_broken = false;
-        struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
-        const struct item_data *const weapon_data = weapon ? &item_database[weapon->type] : NULL;
+        struct item *const breakable_weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+        const struct item_data *const weapon_data = breakable_weapon ? &item_database[breakable_weapon->type] : NULL;
 
-        if (weapon && weapon_data->breakable &&
+        if (breakable_weapon && weapon_data->breakable &&
             TCOD_random_get_float(NULL, 0, 1) <= 0.01f)
         {
             weapon_broken = true;
@@ -3268,11 +3330,11 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const bo
 
             actor->equipment[EQUIP_SLOT_WEAPON] = NULL;
 
-            item_delete(weapon);
+            item_delete(breakable_weapon);
         }
 
         // deal damage
-        const bool killed = actor_damage_hit_points(other, actor, damage);
+        const bool killed = damage > 0 && actor_damage_hit_points(other, actor, damage);
 
         if (damage_dealt)
         {
@@ -3311,6 +3373,39 @@ bool actor_attack(struct actor *const actor, struct actor *const other, const bo
     }
 
     return true;
+}
+
+bool actor_attack(struct actor *const actor, struct actor *const other, const bool opportunity, int *const damage_dealt)
+{
+    return actor_attack_internal(actor, other, opportunity, damage_dealt, NULL);
+}
+
+bool actor_attack_with_ammunition(struct actor *const actor, struct actor *const other, const struct item *const ammunition)
+{
+    return actor_attack_internal(actor, other, false, NULL, ammunition);
+}
+
+static bool spell_requires_touch_attack(const enum spell_type spell, const struct actor *const target)
+{
+    switch (spell)
+    {
+    case SPELL_TYPE_CURE_MINOR_WOUNDS:
+    case SPELL_TYPE_CURE_LIGHT_WOUNDS:
+    case SPELL_TYPE_CURE_MODERATE_WOUNDS:
+    case SPELL_TYPE_CURE_SERIOUS_WOUNDS:
+    case SPELL_TYPE_CURE_CRITICAL_WOUNDS:
+    case SPELL_TYPE_HEAL:
+        return target->race == RACE_UNDEAD;
+    case SPELL_TYPE_HARM:
+    case SPELL_TYPE_INFLICT_MINOR_WOUNDS:
+    case SPELL_TYPE_INFLICT_LIGHT_WOUNDS:
+    case SPELL_TYPE_INFLICT_MODERATE_WOUNDS:
+    case SPELL_TYPE_INFLICT_SERIOUS_WOUNDS:
+    case SPELL_TYPE_INFLICT_CRITICAL_WOUNDS:
+        return target->race != RACE_UNDEAD;
+    default:
+        return false;
+    }
 }
 
 bool actor_cast(
@@ -3461,13 +3556,25 @@ bool actor_cast(
         .spell = spell_data->name,
     });
 
-    int caster_level = spell_data->level;
+    int caster_level = spell_data->level > 0 ? spell_data->level * 2 - 1 : 1;
 
     if (from_memory)
     {
         actor->mana -= mana_cost;
 
         caster_level = actor->level;
+    }
+
+    struct actor *const target = world->maps[actor->floor].tiles[x][y].actor;
+    const bool spell_touch_hit = !target || !spell_requires_touch_attack(spell_type, target) ||
+                                 actor_ranged_touch_attack(actor, target);
+    if (target && spell_touch_hit &&
+        spell_type != SPELL_TYPE_ACID_SPLASH &&
+        spell_type != SPELL_TYPE_FIREBALL &&
+        spell_type != SPELL_TYPE_MAGIC_MISSILE &&
+        actor_resists_spell(target, actor, spell_type, caster_level))
+    {
+        return true;
     }
 
     switch (spell_type)
@@ -3503,7 +3610,7 @@ bool actor_cast(
         {
             if (other->race == RACE_UNDEAD)
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -3556,7 +3663,7 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -3609,7 +3716,7 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -3662,7 +3769,7 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -3715,7 +3822,7 @@ bool actor_cast(
 
             if (other->race == RACE_UNDEAD)
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -3891,7 +3998,7 @@ bool actor_cast(
             }
             else
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     const int health = TCOD_random_dice_roll_s(NULL, "1d4");
                     const int damage = other->hit_points - health;
@@ -3931,7 +4038,7 @@ bool actor_cast(
         {
             if (other->race == RACE_UNDEAD)
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     const int health = TCOD_random_dice_roll_s(NULL, "1d4");
                     const int damage = other->hit_points - health;
@@ -4006,7 +4113,7 @@ bool actor_cast(
             }
             else
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -4064,7 +4171,7 @@ bool actor_cast(
             }
             else
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -4122,7 +4229,7 @@ bool actor_cast(
             }
             else
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -4180,7 +4287,7 @@ bool actor_cast(
             }
             else
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,
@@ -4238,7 +4345,7 @@ bool actor_cast(
             }
             else
             {
-                if (actor_ranged_touch_attack(actor, other))
+                if (spell_touch_hit)
                 {
                     event_emit(&(struct game_event){
                         .type = EVENT_ACTOR_DAMAGED,

@@ -74,14 +74,6 @@ const struct object_data object_database[] = {
         .is_walkable = true,
         .is_transparent = true,
     },
-    [OBJECT_TYPE_THRONE] = {
-        .name = "Throne",
-        .glyph = '\\',
-        .color = {UM_COLOR_GOLD},
-
-        .is_walkable = true,
-        .is_transparent = true,
-    },
     [OBJECT_TYPE_TRAP] = {
         .name = "Trap",
         .glyph = '^',

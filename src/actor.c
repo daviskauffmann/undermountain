@@ -29,6 +29,8 @@ const struct actor_metadata actor_metadata = {
     .turns_to_chase = 10,
 };
 
+#define ACTOR_MAX_INVENTORY_ITEMS 26
+
 struct actor *actor_new(
     const char *const name,
     const enum race race,
@@ -2376,6 +2378,182 @@ bool actor_ascend(struct actor *actor)
     return true;
 }
 
+static bool actor_has_healing_potion(const struct actor *const actor)
+{
+    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+    {
+        const struct item *const item = list_get(actor->items, item_index);
+        const enum spell_type spell_type = item_database[item->type].spell_type;
+
+        if (spell_type == SPELL_TYPE_CURE_LIGHT_WOUNDS ||
+            spell_type == SPELL_TYPE_CURE_MODERATE_WOUNDS ||
+            spell_type == SPELL_TYPE_CURE_SERIOUS_WOUNDS ||
+            spell_type == SPELL_TYPE_CURE_CRITICAL_WOUNDS ||
+            spell_type == SPELL_TYPE_HEAL)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static int actor_get_chest_ammunition_count(
+    const struct actor *const actor,
+    const enum ammunition_type ammunition_type)
+{
+    int count = 0;
+    const struct item *const equipped_ammunition = actor->equipment[EQUIP_SLOT_AMMUNITION];
+
+    if (equipped_ammunition &&
+        base_item_database[item_database[equipped_ammunition->type].type].ammunition_type == ammunition_type)
+    {
+        count += equipped_ammunition->stack;
+    }
+
+    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+    {
+        const struct item *const item = list_get(actor->items, item_index);
+
+        if (base_item_database[item_database[item->type].type].ammunition_type == ammunition_type)
+        {
+            count += item->stack;
+        }
+    }
+
+    return count;
+}
+
+static enum item_type actor_choose_chest_reward(const struct actor *const actor)
+{
+    int weights[NUM_ITEM_TYPES] = {0};
+    int total_weight = 0;
+    const int max_hit_points = actor_get_max_hit_points(actor);
+    const int missing_hit_points = max_hit_points - actor->hit_points;
+    const int max_mana = actor_get_max_mana(actor);
+    const struct item *const weapon = actor->equipment[EQUIP_SLOT_WEAPON];
+    enum ammunition_type ammunition_type = AMMUNITION_TYPE_NONE;
+    int ammunition_count = 0;
+    bool has_mana_potion = false;
+    const bool has_healing_potion = actor_has_healing_potion(actor);
+
+    for (size_t item_index = 0; item_index < actor->items->size; item_index++)
+    {
+        const struct item *const item = list_get(actor->items, item_index);
+        if (item->type == ITEM_TYPE_POTION_RESTORE_MANA)
+        {
+            has_mana_potion = true;
+            break;
+        }
+    }
+
+    if (weapon)
+    {
+        const struct base_item_data *const weapon_data =
+            &base_item_database[item_database[weapon->type].type];
+
+        if (weapon_data->ranged)
+        {
+            ammunition_type = weapon_data->ammunition_type;
+            ammunition_count = actor_get_chest_ammunition_count(actor, ammunition_type);
+        }
+    }
+
+    for (enum item_type type = ITEM_TYPE_NONE + 1; type < NUM_ITEM_TYPES; type++)
+    {
+        const struct item_data *const item_data = &item_database[type];
+        const struct base_item_data *const base_item_data = &base_item_database[item_data->type];
+
+        if (item_data->level > actor->floor + 1 ||
+            (item_data->unique &&
+             list_contains(world->spawned_unique_item_types, (void *)(size_t)type)))
+        {
+            continue;
+        }
+
+        if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON ||
+            base_item_data->equip_slot == EQUIP_SLOT_ARMOR ||
+            base_item_data->equip_slot == EQUIP_SLOT_SHIELD)
+        {
+            const struct item candidate = {.type = type};
+            const enum equip_slot equip_slot = base_item_data->equip_slot;
+            const enum equippability equippability = actor_get_item_equippability(actor, &candidate);
+
+            if (actor->equipment[equip_slot] ||
+                equippability == EQUIPPABILITY_TOO_LARGE ||
+                equippability == EQUIPPABILITY_TOO_SMALL ||
+                !actor_is_proficient(actor, &candidate))
+            {
+                continue;
+            }
+        }
+
+        int weight = 1;
+        const enum spell_type spell_type = item_data->spell_type;
+
+        if (base_item_data->equip_slot == EQUIP_SLOT_WEAPON ||
+            base_item_data->equip_slot == EQUIP_SLOT_ARMOR ||
+            base_item_data->equip_slot == EQUIP_SLOT_SHIELD)
+        {
+            weight += 5;
+        }
+
+        if (spell_type == SPELL_TYPE_CURE_LIGHT_WOUNDS ||
+            spell_type == SPELL_TYPE_CURE_MODERATE_WOUNDS ||
+            spell_type == SPELL_TYPE_CURE_SERIOUS_WOUNDS ||
+            spell_type == SPELL_TYPE_CURE_CRITICAL_WOUNDS ||
+            spell_type == SPELL_TYPE_HEAL)
+        {
+            if (!has_healing_potion && max_hit_points > 0 &&
+                missing_hit_points * 4 >= max_hit_points)
+            {
+                weight += missing_hit_points * 2 >= max_hit_points ? 12 : 6;
+            }
+        }
+        else if (spell_type == SPELL_TYPE_RESTORE_MANA)
+        {
+            if (!has_mana_potion && max_mana > 0 &&
+                class_database[actor->class].spellcasting_ability != ABILITY_NONE &&
+                actor->mana * 2 <= max_mana)
+            {
+                weight += actor->mana * 4 <= max_mana ? 12 : 6;
+            }
+        }
+
+        if (ammunition_type != AMMUNITION_TYPE_NONE &&
+            base_item_data->ammunition_type == ammunition_type &&
+            ammunition_count <= 5)
+        {
+            weight += ammunition_count == 0 ? 12 : 6;
+        }
+
+        if (type == ITEM_TYPE_GOLD)
+        {
+            weight += 1;
+        }
+
+        weights[type] = weight;
+        total_weight += weight;
+    }
+
+    if (total_weight == 0)
+    {
+        return ITEM_TYPE_GOLD;
+    }
+
+    int roll = TCOD_random_get_int(NULL, 1, total_weight);
+    for (enum item_type type = ITEM_TYPE_NONE + 1; type < NUM_ITEM_TYPES; type++)
+    {
+        roll -= weights[type];
+        if (roll <= 0)
+        {
+            return type;
+        }
+    }
+
+    return ITEM_TYPE_GOLD;
+}
+
 bool actor_open_chest(
     struct actor *const actor,
     const int x, const int y)
@@ -2401,9 +2579,38 @@ bool actor_open_chest(
         return false;
     }
 
-    // TODO: give item
-    // this should dynamically figure out what the player might need
-    // with a little randomness thrown in
+    const enum item_type reward_type = actor_choose_chest_reward(actor);
+    int gold_reward = 0;
+    bool reward_in_inventory = false;
+
+    if (reward_type == ITEM_TYPE_GOLD)
+    {
+        gold_reward = TCOD_random_get_int(
+            NULL,
+            10 * (actor->floor + 1),
+            100 * (actor->floor + 1));
+        actor->gold += gold_reward;
+    }
+    else
+    {
+        const int max_stack = base_item_database[item_database[reward_type].type].max_stack;
+        struct item *const reward = item_new(
+            reward_type,
+            actor->floor,
+            x, y,
+            TCOD_random_get_int(NULL, 1, max_stack));
+
+        if (actor->items->size < ACTOR_MAX_INVENTORY_ITEMS)
+        {
+            list_add(actor->items, reward);
+            reward_in_inventory = true;
+        }
+        else
+        {
+            list_add(map->items, reward);
+            tile->item = reward;
+        }
+    }
 
     list_remove(map->objects, tile->object);
 
@@ -2417,6 +2624,29 @@ bool actor_open_chest(
         .y = actor->y,
         .actor = actor->name,
     });
+
+    if (gold_reward > 0)
+    {
+        event_emit(&(struct game_event){
+            .type = EVENT_GOLD_PICKED_UP,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .amount = gold_reward,
+        });
+    }
+    else if (reward_in_inventory)
+    {
+        event_emit(&(struct game_event){
+            .type = EVENT_ITEM_PICKED_UP,
+            .floor = actor->floor,
+            .x = actor->x,
+            .y = actor->y,
+            .actor = actor->name,
+            .item = item_database[reward_type].name,
+        });
+    }
 
     return true;
 }
@@ -2572,7 +2802,7 @@ bool actor_grab(
         return false;
     }
 
-    if (actor->items->size >= 26)
+    if (actor->items->size >= ACTOR_MAX_INVENTORY_ITEMS)
     {
         event_emit(&(struct game_event){
             .type = EVENT_INVENTORY_FULL,

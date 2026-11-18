@@ -17,10 +17,6 @@ cd build
 cmake ..
 ```
 
-## Configuration
-
-In `data`, copy `config.cfg` and rename to `config.local.cfg` to make local changes to the configuration. This file is not source controlled. Some configuration values can be controlled by command line arguments as well. Run with `--help` to view them. Command line arguments will override config file values for the same setting.
-
 ## Resources Used
 
 [Coding a Classic Roguelike in C](https://www.youtube.com/playlist?list=PLnjvY7knqLad8seP1ZIMQZ354buAmXMax)  

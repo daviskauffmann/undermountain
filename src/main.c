@@ -14,8 +14,6 @@ int main(int argc, char *argv[])
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
         {
             printf("Options:\n");
-            printf("  -c, --columns\tSet the width of the console in characters\n");
-            printf("  -r, --rows\tSet the height of the console in characters\n");
             printf("  -h, --help\tPrint this message\n");
             printf("  -v, --version\tPrint current version\n");
             return 0;

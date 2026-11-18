@@ -10,6 +10,13 @@
             ]
         },
         "sdl3",
-        "pdcurses"
+        {
+            "name": "pdcurses",
+            "platform": "windows"
+        },
+        {
+            "name": "ncurses",
+            "platform": "!windows"
+        }
     ]
   }
